@@ -1,3 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Estilos adicionais customizados, se necessários */
+:root {
+  --primary-color: #007A78;
+  --secondary-color: #FFFAFA;
+}
