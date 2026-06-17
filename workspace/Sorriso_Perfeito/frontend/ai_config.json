@@ -1,0 +1,7 @@
+{
+  "app_name": "Sorriso Perfeito",
+  "primary_color": "#007A78",
+  "secondary_color": "#FFFAFA",
+  "supabase_url": "https://xyzcompany.supabase.co",
+  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5c..."
+}

@@ -1,0 +1,7 @@
+{
+  "app_name": "Barbearia Navalha de Ouro",
+  "primary_color": "#D4AF37",
+  "secondary_color": "#1A1A1A",
+  "supabase_url": "https://xyzcompany.supabase.co",
+  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5c..."
+}
