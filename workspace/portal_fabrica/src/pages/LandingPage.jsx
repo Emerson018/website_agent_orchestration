@@ -218,6 +218,7 @@ ${linksDescription}`;
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          model: 'google/gemma-3-4b',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
@@ -359,7 +360,7 @@ ${linksDescription}`;
     return () => {
       timers.forEach((t) => clearTimeout(t));
     };
-  }, [isSimulating, simStep]);
+  }, [isSimulating]);
 
   return (
     <div className="relative">
