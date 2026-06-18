@@ -212,7 +212,10 @@ Links de referência do usuário:
 ${linksDescription}`;
 
     try {
-      const response = await fetch('http://localhost:1234/v1/chat/completions', {
+      const isDev = import.meta.env.DEV;
+      const apiEndpoint = isDev ? '/api-lm/v1/chat/completions' : 'http://localhost:1234/v1/chat/completions';
+
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
