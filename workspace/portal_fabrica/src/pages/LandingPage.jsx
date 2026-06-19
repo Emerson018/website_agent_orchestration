@@ -87,6 +87,27 @@ export default function LandingPage() {
   const [simLogs, setSimLogs] = useState([]);
   const [generatedPayload, setGeneratedPayload] = useState(null);
 
+  // Supabase Backend States
+  const [recentProjects, setRecentProjects] = useState([]);
+  const [currentProjectId, setCurrentProjectId] = useState(null);
+
+  const fetchRecentProjects = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/projetos');
+      if (response.ok) {
+        const data = await response.json();
+        setRecentProjects(data);
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar projetos do banco de dados (backend offline?):', err.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecentProjects();
+  }, []);
+
+
   // Apply colors to :root variables on palette change
   useEffect(() => {
     document.documentElement.style.setProperty('--primary', selectedPalette.rgb);
@@ -304,7 +325,7 @@ ${linksDescription}`;
     });
   };
 
-  const handleStartIaBuild = (e) => {
+  const handleStartIaBuild = async (e) => {
     e.preventDefault();
     if (!clientEmail || !clientPhone) {
       alert('Por favor, preencha seu e-mail e celular!');
@@ -328,42 +349,113 @@ ${linksDescription}`;
         total_setup_price: calculateTotalPrice(),
         monthly_maintenance: calculateMonthlyPrice(),
       },
+      ai_analysis: analysisResult,
       timestamp: new Date().toISOString(),
     };
 
     setGeneratedPayload(payload);
     setIsSimulating(true);
-    setSimStep(0);
-    setSimLogs([]);
+    setSimStep(1);
+    setSimLogs(['🤖 Iniciando Orquestrador de Agentes da Fábrica de IA...']);
+
+    try {
+      // 1. Salva o projeto no backend/Supabase
+      setSimLogs(prev => [...prev, '💾 Salvando especificações do projeto no banco de dados Supabase...']);
+      const saveResponse = await fetch('http://localhost:5000/api/projetos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!saveResponse.ok) throw new Error('Falha ao registrar projeto no backend.');
+      const project = await saveResponse.json();
+      setCurrentProjectId(project.id);
+      setSimLogs(prev => [...prev, `✅ Projeto salvo com sucesso! ID: #${project.id}. Status: PENDENTE`]);
+
+      // 2. Dispara o processamento
+      setSimLogs(prev => [...prev, '🚀 Disparando o pipeline de compilação da Fábrica de IA...']);
+      await fetch(`http://localhost:5000/api/projetos/${project.id}/processar`, { method: 'POST' });
+      setSimLogs(prev => [...prev, '⏳ Projeto aguardando liberação na fila do compilador...']);
+
+      // 3. Inicia polling de status
+      let attempts = 0;
+      const interval = setInterval(async () => {
+        attempts++;
+        try {
+          const statusRes = await fetch(`http://localhost:5000/api/projetos/${project.id}`);
+          if (statusRes.ok) {
+            const currentProj = await statusRes.json();
+            
+            if (currentProj.status === 'processando') {
+              setSimStep(4);
+              setSimLogs(prev => {
+                const logs = [...prev];
+                if (!logs.includes('⚙️ Agentes compiladores ativos: Construindo arquivos no workspace...')) {
+                  logs.push('⚙️ Agentes compiladores ativos: Construindo arquivos no workspace...');
+                  logs.push('✨ Agente Desenvolvedor: Injetando branding e cores de estilo...');
+                  logs.push('📂 Agente de Infra: Clonando templates ouro e aplicando dependências...');
+                }
+                return logs;
+              });
+            } else if (currentProj.status === 'concluido') {
+              clearInterval(interval);
+              setSimStep(8);
+              setSimLogs(prev => [
+                ...prev, 
+                '✅ Compilação e testes de QA finalizados com sucesso!', 
+                '🎉 O projeto está pronto e disponível na pasta workspace!'
+              ]);
+              fetchRecentProjects(); // Atualiza a lista de projetos recentes
+            } else if (currentProj.status === 'erro') {
+              clearInterval(interval);
+              setSimStep(8);
+              setSimLogs(prev => [
+                ...prev, 
+                '❌ Ocorreu um erro durante a compilação do projeto.', 
+                '⚠️ Por favor, revise as configurações e tente novamente.'
+              ]);
+              fetchRecentProjects(); // Atualiza a lista de projetos recentes
+            }
+          }
+        } catch (pollErr) {
+          console.error('Erro de polling:', pollErr);
+        }
+
+        // Timeout de segurança após 5 minutos (150 tentativas a cada 2s)
+        if (attempts > 150) {
+          clearInterval(interval);
+          setSimStep(8);
+          setSimLogs(prev => [...prev, '⚠️ Limite de tempo esgotado. Verifique os logs do servidor principal.']);
+        }
+      }, 2000);
+
+    } catch (err) {
+      console.error('Erro ao orquestrar build real:', err);
+      setSimLogs(prev => [
+        ...prev, 
+        '❌ Falha ao conectar com o backend local na porta 5000.', 
+        '⚠️ Executando simulação offline para demonstração...'
+      ]);
+      
+      // Fallback para simulação offline original
+      const logMessages = [
+        { text: '🔍 [Offline] Carregando templates locais e analisando diretivas de design...', delay: 1000 },
+        { text: `🎨 [Offline] Configurando identidade visual para: "${businessName}" com paleta ${selectedPalette.name}`, delay: 2000 },
+        { text: '🏗️ [Offline] Montando arquitetura do projeto e instalando dependências base...', delay: 3500 },
+        { text: '✨ [Offline] Agente Frontend: Gerando páginas responsivas e aplicando folha de estilos...', delay: 5000 },
+        { text: '🚀 [Offline] Projeto simulado gerado com sucesso! (Salvo apenas localmente)', delay: 6500 },
+      ];
+
+      logMessages.forEach((log, index) => {
+        setTimeout(() => {
+          setSimLogs(prev => [...prev, log.text]);
+          if (index === logMessages.length - 1) {
+            setSimStep(8);
+          }
+        }, log.delay);
+      });
+    }
   };
-
-  // Simulated AI Engine logging
-  useEffect(() => {
-    if (!isSimulating) return;
-
-    const logMessages = [
-      { text: '🤖 Iniciando Orquestrador de Agentes da Fábrica de IA...', delay: 200 },
-      { text: '🔍 Carregando templates e analisando diretivas de design...', delay: 800 },
-      { text: `🎨 Configurando identidade visual para: "${businessName}" com paleta ${selectedPalette.name}`, delay: 1400 },
-      { text: `📂 Módulos ativos identificados: [${activeModules.join(', ')}]`, delay: 2100 },
-      { text: '🏗️ Montando arquitetura do projeto e instalando dependências base...', delay: 2900 },
-      { text: '✨ Agente Frontend: Gerando páginas responsivas e aplicando folha de estilos...', delay: 4000 },
-      { text: activeModules.includes('agendamento') ? '📅 Agente de Serviços: Gerando banco de dados e APIs de agendamento...' : null, delay: 5000 },
-      { text: activeModules.includes('whatsapp') ? '💬 Agente de Integração: Configurando webhooks do bot de WhatsApp...' : null, delay: 6000 },
-      { text: '🚀 Projeto gerado com sucesso! Payload JSON consolidado e pronto para deploy local.', delay: 7000 },
-    ].filter((log) => log !== null);
-
-    const timers = logMessages.map((log, index) => {
-      return setTimeout(() => {
-        setSimLogs((prev) => [...prev, log.text]);
-        setSimStep(index + 1);
-      }, log.delay);
-    });
-
-    return () => {
-      timers.forEach((t) => clearTimeout(t));
-    };
-  }, [isSimulating]);
 
   return (
     <div className="relative">
@@ -1013,6 +1105,93 @@ ${linksDescription}`;
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* 4.5. Histórico de Projetos Recentes */}
+      <section className="py-20 border-t border-gray-900 bg-gray-950/40 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
+            <div>
+              <p className="text-xs text-indigo-400 font-bold tracking-widest uppercase">Integração Supabase</p>
+              <h2 className="text-3xl font-extrabold text-white mt-2">Fila de Projetos no Supabase</h2>
+            </div>
+            <button 
+              onClick={fetchRecentProjects}
+              className="mt-4 md:mt-0 text-xs font-semibold px-4 py-2 bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-300 hover:text-white rounded-xl transition-all flex items-center gap-1.5 self-start cursor-pointer"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18" />
+              </svg>
+              <span>Atualizar Fila</span>
+            </button>
+          </div>
+
+          {recentProjects.length === 0 ? (
+            <div className="glass-panel p-10 rounded-2xl border border-gray-850 text-center text-gray-550 text-xs">
+              Nenhum projeto encontrado no banco de dados Supabase. Crie um projeto acima para iniciar a fila de desenvolvimento!
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recentProjects.slice(0, 6).map((proj) => {
+                let name = proj.resultado_json?.app_name;
+                let primary = proj.resultado_json?.primary_color || '#D4AF37';
+                let secondary = proj.resultado_json?.secondary_color || '#1A1A1A';
+
+                if (!name) {
+                  const match = proj.mensagem_lead.match(/negócio chamado '([^']+)'/);
+                  name = match ? match[1] : 'AppCustomizado';
+                }
+
+                if (!proj.resultado_json) {
+                  const colorMatch = proj.mensagem_lead.match(/Cor principal:\s*(#[a-fA-F0-9]{6})/);
+                  if (colorMatch) primary = colorMatch[1];
+                }
+
+                return (
+                  <div key={proj.id} className="glass-panel p-6 rounded-2xl border border-gray-850 flex flex-col justify-between space-y-4 hover:border-gray-800 transition-all duration-300">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-lg flex items-center justify-center font-bold text-white text-xs shadow-md" style={{ backgroundColor: primary }}>
+                          {name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-white text-sm leading-tight">{name}</h4>
+                          <p className="text-[10px] text-gray-500 mt-0.5">ID: #{proj.id} • {new Date(proj.created_at).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        proj.status === 'concluido' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                        proj.status === 'processando' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 animate-pulse' :
+                        proj.status === 'erro' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
+                        'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      }`}>
+                        {proj.status.toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-gray-400 line-clamp-3 leading-relaxed border-t border-gray-900 pt-3">
+                      {proj.mensagem_lead}
+                    </div>
+
+                    {proj.resultado_json && (
+                      <div className="flex gap-4 text-[10px] text-gray-500 border-t border-gray-900 pt-3">
+                        <span className="flex items-center gap-1.5">
+                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: primary }}></span>
+                          Primária: {primary}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: secondary }}></span>
+                          Secundária: {secondary}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 

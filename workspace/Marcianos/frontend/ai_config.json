@@ -1,0 +1,7 @@
+{
+  "app_name": "Marcianos",
+  "primary_color": "#6366f1",
+  "secondary_color": "#FFFFFF",
+  "supabase_url": "https://xyzcompany.supabase.co",
+  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5c..."
+}

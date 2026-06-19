@@ -1,5 +1,19 @@
+import sys
 import re
 import os
+
+# Garante codificação UTF-8 no console do Windows para evitar UnicodeEncodeError
+if hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+if hasattr(sys.stderr, 'reconfigure'):
+    try:
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 import shutil
 import json
 import subprocess
@@ -13,6 +27,31 @@ from ai_software_factory.schemas import ClientConfig
 # Carrega chaves de API do arquivo .env
 load_dotenv()
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
+
+def parse_fallback_requirements(lead_raw: Dict[str, Any]) -> Dict[str, Any]:
+    mensagem = lead_raw.get("mensagem", "")
+    
+    # Tenta extrair o nome do negócio por regex
+    match_name = re.search(r"negócio chamado '([^']+)'", mensagem)
+    if not match_name:
+        match_name = re.search(r"chamada '([^']+)'", mensagem)
+    if not match_name:
+        match_name = re.search(r"chamado '([^']+)'", mensagem)
+    app_name = match_name.group(1) if match_name else lead_raw.get("app_name", "AppCustomizado")
+    
+    # Tenta extrair a cor principal por regex
+    match_primary = re.search(r"Cor principal:\s*(#[a-fA-F0-9]{6})", mensagem)
+    primary_color = match_primary.group(1) if match_primary else "#D4AF37"
+    
+    # Tenta extrair a cor secundária por regex
+    match_secondary = re.search(r"Cor secundária:\s*(#[a-fA-F0-9]{6})", mensagem)
+    secondary_color = match_secondary.group(1) if match_secondary else "#1A1A1A"
+    
+    return {
+        "app_name": app_name,
+        "primary_color": primary_color,
+        "secondary_color": secondary_color
+    }
 
 def requirements_analyst_node(state: AgentState) -> Dict[str, Any]:
     """
@@ -35,7 +74,7 @@ def requirements_analyst_node(state: AgentState) -> Dict[str, Any]:
     elif google_key:
         print("[Analista de Requisitos] GOOGLE_API_KEY configurada. Invocando Gemini real via endpoint compatível...")
         llm = ChatOpenAI(
-            model="gemini-3.5-flash",
+            model="gemini-1.5-flash",
             openai_api_key=google_key,
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
         )
@@ -46,26 +85,26 @@ def requirements_analyst_node(state: AgentState) -> Dict[str, Any]:
     if not use_llm:
         print("[Analista de Requisitos] AVISO: Nenhuma chave de API de LLM configurada.")
         print("Executando fallback local para simular a extração da estrutura ClientConfig...")
-        # Fallback estruturado seguro
-        custom_reqs = {
-            "app_name": lead_raw.get("app_name", "AppCustomizado"),
-            "primary_color": "#D4AF37",
-            "secondary_color": "#1A1A1A"
-        }
+        custom_reqs = parse_fallback_requirements(lead_raw)
         log_msg = "[RequirementsAnalyst] Requisitos estruturados via Fallback seguro (chave de API ausente)."
     else:
-        structured_llm = llm.with_structured_output(ClientConfig)
-        
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", "Você é um Analista de Requisitos especialista. Analise os dados de entrada do cliente e infira as configurações de personalização do app React (nome comercial, cor primária e secundária) de acordo com o esquema ClientConfig definido."),
-            ("user", "Dados brutos do lead:\n{lead_raw_json}")
-        ])
-        
-        chain = prompt | structured_llm
-        
-        result: ClientConfig = chain.invoke({"lead_raw_json": json.dumps(lead_raw, ensure_ascii=False)})
-        custom_reqs = result.model_dump()
-        log_msg = "[RequirementsAnalyst] Requisitos estruturados via LLM com sucesso."
+        try:
+            structured_llm = llm.with_structured_output(ClientConfig)
+            
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", "Você é um Analista de Requisitos especialista. Analise os dados de entrada do cliente e infira as configurações de personalização do app React (nome comercial, cor primária e secundária) de acordo com o esquema ClientConfig definido."),
+                ("user", "Dados brutos do lead:\n{lead_raw_json}")
+            ])
+            
+            chain = prompt | structured_llm
+            
+            result: ClientConfig = chain.invoke({"lead_raw_json": json.dumps(lead_raw, ensure_ascii=False)})
+            custom_reqs = result.model_dump()
+            log_msg = "[RequirementsAnalyst] Requisitos estruturados via LLM com sucesso."
+        except Exception as e:
+            print(f"[Analista de Requisitos] AVISO: Falha ao chamar a LLM ({str(e)}). Executando fallback local inteligente...")
+            custom_reqs = parse_fallback_requirements(lead_raw)
+            log_msg = f"[RequirementsAnalyst] Requisitos estruturados via Fallback inteligente devido a erro da LLM: {str(e)}"
     
     template = "gold_templates/template_base_app"
     
@@ -112,6 +151,193 @@ def infra_cloner_node(state: AgentState) -> Dict[str, Any]:
         "execution_logs": current_logs
     }
 
+def generate_fallback_landing_page_code(app_name: str, primary_color: str, secondary_color: str, mensagem: str) -> str:
+    # Identifica o tipo de negócio na mensagem
+    is_barber = any(x in app_name.lower() or x in mensagem.lower() for x in ["barbearia", "barba", "corte", "navalha", "pampas", "barber"])
+    is_dental = any(x in app_name.lower() or x in mensagem.lower() for x in ["odont", "sorriso", "dentist", "dente", "clinic"])
+    is_beauty = any(x in app_name.lower() or x in mensagem.lower() for x in ["estetic", "beleza", "salao", "hair", "unha", "spa"])
+    
+    if is_barber:
+        hero_title = "Estilo e Tradição Para o Homem Moderno"
+        hero_desc = f"Bem-vindo à {app_name}. Aliamos técnicas clássicas de barbearia a um ambiente premium e atendimento personalizado em Porto Alegre."
+        services = [
+            {"name": "Corte de Cabelo", "desc": "Corte moderno ou clássico com lavagem e finalização premium.", "price": "R$ 60"},
+            {"name": "Barba e Toalha Quente", "desc": "Barba feita na navalha com hidratação, óleo e toalha quente relaxante.", "price": "R$ 50"},
+            {"name": "Combo Pampas Premium", "desc": "Corte + Barba + Sobrancelha com cerveja inclusa como cortesia.", "price": "R$ 100"}
+        ]
+        visual_theme = "bg-gray-950 text-gray-100"
+        card_theme = "bg-gray-900 border-gray-800"
+    elif is_dental:
+        hero_title = "O Sorriso Perfeito Que Você Sempre Sonhou"
+        hero_desc = f"Na {app_name}, oferecemos tratamentos odontológicos avançados com tecnologia de ponta e equipe especializada para cuidar do seu sorriso."
+        services = [
+            {"name": "Clareamento Dental", "desc": "Técnicas a laser e caseira para deixar seu sorriso mais branco e radiante.", "price": "Consulte"},
+            {"name": "Implantes e Próteses", "desc": "Reabilitação oral completa com materiais de alta qualidade e durabilidade.", "price": "Consulte"},
+            {"name": "Ortodontia Invisível", "desc": "Alinhadores transparentes modernos para alinhar seus dentes com total discrição.", "price": "Consulte"}
+        ]
+        visual_theme = "bg-slate-50 text-slate-800"
+        card_theme = "bg-white border-slate-100 shadow-md"
+    elif is_beauty:
+        hero_title = "Realce Sua Beleza Natural Com Nossos Tratamentos"
+        hero_desc = f"Descubra a melhor versão de si mesma na {app_name}. Clínicas de estética facial, corporal e tratamentos de alta performance."
+        services = [
+            {"name": "Limpeza de Pele Profunda", "desc": "Remoção de impurezas, hidratação profunda e renovação celular.", "price": "R$ 120"},
+            {"name": "Massagem Modeladora", "desc": "Redução de medidas, drenagem linfática e tonificação corporal.", "price": "R$ 150"},
+            {"name": "Toxina Botulínica", "desc": "Prevenção e suavização de linhas de expressão com naturalidade.", "price": "Consulte"}
+        ]
+        visual_theme = "bg-stone-50 text-stone-800"
+        card_theme = "bg-white border-stone-100 shadow-sm"
+    else:
+        hero_title = f"Soluções Inovadoras Para Seu Dia a Dia"
+        hero_desc = f"Conheça os produtos e serviços da {app_name}. Desenvolvidos com o máximo padrão de qualidade e atenção aos mínimos detalhes."
+        services = [
+            {"name": "Serviço Padrão", "desc": "Nossa solução base adaptada sob medida para as necessidades do seu negócio.", "price": "Sob consulta"},
+            {"name": "Consultoria Premium", "desc": "Acompanhamento estratégico para alavancar seus resultados comerciais.", "price": "Sob consulta"},
+            {"name": "Suporte Integrado", "desc": "Atendimento e monitoramento contínuo para garantir estabilidade operacional.", "price": "Sob consulta"}
+        ]
+        visual_theme = "bg-slate-950 text-slate-100"
+        card_theme = "bg-slate-900 border-slate-800"
+
+    services_html = ""
+    for s in services:
+        services_html += f"""
+        <div className="p-6 rounded-2xl border {card_theme} transition-all duration-300 hover:-translate-y-1 text-left">
+          <h4 className="text-lg font-bold text-primary">{s['name']}</h4>
+          <p className="text-sm opacity-80 mt-2">{s['desc']}</p>
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-xs opacity-60 font-semibold uppercase tracking-wider">Valor</span>
+            <span className="text-sm font-black text-primary">{s['price']}</span>
+          </div>
+        </div>
+        """
+
+    code = f"""import React from 'react';
+import {{ Link }} from 'react-router-dom';
+
+export default function LandingPage() {{
+  return (
+    <div className="min-h-screen {visual_theme} flex flex-col font-sans">
+      {{"/* Hero Section */"}}
+      <section className="relative py-20 px-6 sm:px-12 flex flex-col items-center text-center max-w-5xl mx-auto">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-72 bg-primary/10 rounded-full filter blur-3xl pointer-events-none"></div>
+        <span className="text-xs font-bold text-primary uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
+          Bem-vindo
+        </span>
+        <h1 className="text-4xl sm:text-6xl font-black tracking-tight mt-6 leading-tight">
+          {hero_title}
+        </h1>
+        <p className="mt-6 text-base sm:text-lg opacity-85 max-w-2xl leading-relaxed">
+          {hero_desc}
+        </p>
+        <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
+          <Link 
+            to="/agendar"
+            className="w-full sm:w-auto px-8 py-4 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/25 hover:brightness-110 hover:shadow-primary/35 transition-all flex items-center justify-center gap-2 group cursor-pointer"
+          >
+            <span>Agendar Horário</span>
+            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </Link>
+        </div>
+      </section>
+
+      {{"/* Serviços Section */"}}
+      <section className="py-20 border-t border-gray-900/10 dark:border-gray-800/80 px-6 sm:px-12 max-w-6xl mx-auto w-full">
+        <div className="text-center mb-12">
+          <h2 className="text-2xl sm:text-3xl font-extrabold">Nossos Serviços</h2>
+          <p className="text-xs sm:text-sm opacity-60 mt-2">Diferenciais e cuidados que fazem a diferença no seu dia</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {services_html}
+        </div>
+      </section>
+
+      {{"/* Call to Action Section */"}}
+      <section className="py-16 px-6 sm:px-12 bg-primary/5 border border-primary/10 rounded-3xl max-w-5xl mx-auto w-full my-10 text-center flex flex-col items-center">
+        <h3 className="text-2xl font-bold">Pronto para ter uma experiência incrível?</h3>
+        <p className="text-sm opacity-80 mt-3 max-w-md">Escolha o melhor dia, horário e o profissional da sua preferência diretamente no nosso sistema.</p>
+        <Link 
+          to="/agendar"
+          className="mt-8 px-6 py-3 rounded-lg bg-primary text-white font-bold shadow-md hover:brightness-105 transition-all"
+        >
+          Iniciar Agendamento Online
+        </Link>
+      </section>
+    </div>
+  );
+}}
+"""
+    return code
+
+
+def generate_landing_page(target_path: str, reqs: Dict[str, Any], lead_raw: Dict[str, Any]):
+    app_name = reqs.get("app_name", "AppCustomizado")
+    primary_color = reqs.get("primary_color", "#D4AF37")
+    secondary_color = reqs.get("secondary_color", "#1A1A1A")
+    mensagem = lead_raw.get("mensagem", "")
+    
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    google_key = os.environ.get("GOOGLE_API_KEY")
+    
+    use_llm = False
+    if openai_key:
+        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        use_llm = True
+    elif google_key:
+        llm = ChatOpenAI(
+            model="gemini-1.5-flash",
+            openai_api_key=google_key,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+        )
+        use_llm = True
+        
+    code = None
+    if use_llm:
+        try:
+            print("[Desenvolvedor] Gerando LandingPage.jsx customizada via LLM...")
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", """Você é um Engenheiro Frontend especialista em React e Tailwind CSS.
+Sua tarefa é criar um componente funcional React e estilizado com Tailwind CSS para a página de destino (LandingPage) do novo negócio do cliente.
+
+O código gerado deve ser um arquivo LandingPage.jsx React completo e autocontido (export default function LandingPage() { ... }).
+Ele deve:
+1. Seguir exatamente as diretrizes e seções propostas na análise de design da IA enviada pelo usuário.
+2. Utilizar as classes do Tailwind CSS para uma estilização premium, moderna e limpa (use sombras, gradientes, transições e micro-animações).
+3. Importar Link de 'react-router-dom' para a ação de agendamento (use <Link to="/agendar" className="..."> para o CTA de agendamento).
+4. O design deve se adequar perfeitamente ao setor do negócio (Ex: Barbearia deve ter visual rústico/premium com tons de couro/madeira/escuros; Odontologia deve ser clean, confiável e corporativo; Estética deve ser elegante, rosa/bege, etc.).
+5. Usar as variáveis de cor de tailwind 'bg-primary' e 'text-primary' ou 'bg-secondary' e 'text-secondary' nos botões e destaques que devem herdar as cores da marca.
+6. Retornar APENAS o código do arquivo LandingPage.jsx, sem explicações adicionais e sem blocos de código markdown (como ```jsx ou ```). Comece direto com o código.
+"""),
+                ("user", "Informações e análises do lead:\n{mensagem}\n\nNome comercial: {app_name}\nCor Primária: {primary_color}\nCor Secundária: {secondary_color}")
+            ])
+            chain = prompt | llm
+            res = chain.invoke({
+                "mensagem": mensagem,
+                "app_name": app_name,
+                "primary_color": primary_color,
+                "secondary_color": secondary_color
+            })
+            code = res.content
+            # Remove markdown code fences if LLM accidentally added them
+            code = re.sub(r"^```[a-zA-Z0-9]*\n", "", code)
+            code = re.sub(r"\n```$", "", code)
+            code = code.strip()
+        except Exception as e:
+            print(f"[Desenvolvedor] Falha ao chamar LLM para código ({str(e)}). Usando fallback local...")
+            code = None
+            
+    if not code:
+        print("[Desenvolvedor] Utilizando gerador local de fallback para LandingPage.jsx...")
+        code = generate_fallback_landing_page_code(app_name, primary_color, secondary_color, mensagem)
+        
+    landing_page_path = os.path.join(target_path, "frontend", "src", "pages", "LandingPage.jsx")
+    os.makedirs(os.path.dirname(landing_page_path), exist_ok=True)
+    with open(landing_page_path, 'w', encoding='utf-8') as f:
+        f.write(code)
+    print(f"LandingPage.jsx gerada com sucesso em: {landing_page_path}")
+
+
 def code_injector_node(state: AgentState) -> Dict[str, Any]:
     """
     Agente Desenvolvedor / Injetor de Código (Real):
@@ -121,6 +347,7 @@ def code_injector_node(state: AgentState) -> Dict[str, Any]:
     print("\n--- [Agente: Desenvolvedor / Injetor] ---")
     target_path = state.get("target_project_path", "workspace/AppCustomizado")
     reqs = state.get("customization_requirements", {})
+    lead_raw = state.get("lead_raw_json", {})
     attempts = state.get("qa_attempts", 0)
     last_report = state.get("last_qa_report", {})
     
@@ -152,6 +379,12 @@ def code_injector_node(state: AgentState) -> Dict[str, Any]:
         
     print(f"Arquivo de parametrização '{config_file_path}' atualizado com sucesso.")
     
+    # Geração do código customizado da LandingPage baseada no lead_raw e na análise da IA
+    try:
+        generate_landing_page(target_path, reqs, lead_raw)
+    except Exception as page_err:
+        print(f"Erro ao gerar a LandingPage customizada: {page_err}")
+
     # Geração do contexto de arquitetura (Project Ledger) para orientar futuras manutenções
     app_name = reqs.get("app_name", "AppCustomizado")
     primary_color = reqs.get("primary_color", "#D4AF37")
@@ -190,7 +423,7 @@ DIRETRIZ 4: Mantenha as rotas protegidas sob o fluxo de autenticação atual.
         print(f"Corrigindo falha reportada pelo QA anterior: {last_report.get('error')}")
         
     current_logs = state.get("execution_logs", []).copy()
-    current_logs.append(f"[CodeInjector] Customização injetada fisicamente no ai_config.json.")
+    current_logs.append(f"[CodeInjector] Customização injetada fisicamente no ai_config.json e LandingPage.jsx gerada.")
     
     return {
         "execution_logs": current_logs

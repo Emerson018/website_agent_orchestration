@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-stone-50 text-stone-800 flex flex-col font-sans">
       {"/* Hero Section */"}
       <section className="relative py-20 px-6 sm:px-12 flex flex-col items-center text-center max-w-5xl mx-auto">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-72 bg-primary/10 rounded-full filter blur-3xl pointer-events-none"></div>
@@ -11,10 +11,10 @@ export default function LandingPage() {
           Bem-vindo
         </span>
         <h1 className="text-4xl sm:text-6xl font-black tracking-tight mt-6 leading-tight">
-          Estilo e Tradição Para o Homem Moderno
+          Realce Sua Beleza Natural Com Nossos Tratamentos
         </h1>
         <p className="mt-6 text-base sm:text-lg opacity-85 max-w-2xl leading-relaxed">
-          Bem-vindo à Barbearia dos Pampas. Aliamos técnicas clássicas de barbearia a um ambiente premium e atendimento personalizado em Porto Alegre.
+          Descubra a melhor versão de si mesma na Marcianos. Clínicas de estética facial, corporal e tratamentos de alta performance.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
           <Link 
@@ -37,30 +37,30 @@ export default function LandingPage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-        <div className="p-6 rounded-2xl border bg-gray-900 border-gray-800 transition-all duration-300 hover:-translate-y-1 text-left">
-          <h4 className="text-lg font-bold text-primary">Corte de Cabelo</h4>
-          <p className="text-sm opacity-80 mt-2">Corte moderno ou clássico com lavagem e finalização premium.</p>
+        <div className="p-6 rounded-2xl border bg-white border-stone-100 shadow-sm transition-all duration-300 hover:-translate-y-1 text-left">
+          <h4 className="text-lg font-bold text-primary">Limpeza de Pele Profunda</h4>
+          <p className="text-sm opacity-80 mt-2">Remoção de impurezas, hidratação profunda e renovação celular.</p>
           <div className="mt-4 flex items-center justify-between">
             <span className="text-xs opacity-60 font-semibold uppercase tracking-wider">Valor</span>
-            <span className="text-sm font-black text-primary">R$ 60</span>
+            <span className="text-sm font-black text-primary">R$ 120</span>
           </div>
         </div>
         
-        <div className="p-6 rounded-2xl border bg-gray-900 border-gray-800 transition-all duration-300 hover:-translate-y-1 text-left">
-          <h4 className="text-lg font-bold text-primary">Barba e Toalha Quente</h4>
-          <p className="text-sm opacity-80 mt-2">Barba feita na navalha com hidratação, óleo e toalha quente relaxante.</p>
+        <div className="p-6 rounded-2xl border bg-white border-stone-100 shadow-sm transition-all duration-300 hover:-translate-y-1 text-left">
+          <h4 className="text-lg font-bold text-primary">Massagem Modeladora</h4>
+          <p className="text-sm opacity-80 mt-2">Redução de medidas, drenagem linfática e tonificação corporal.</p>
           <div className="mt-4 flex items-center justify-between">
             <span className="text-xs opacity-60 font-semibold uppercase tracking-wider">Valor</span>
-            <span className="text-sm font-black text-primary">R$ 50</span>
+            <span className="text-sm font-black text-primary">R$ 150</span>
           </div>
         </div>
         
-        <div className="p-6 rounded-2xl border bg-gray-900 border-gray-800 transition-all duration-300 hover:-translate-y-1 text-left">
-          <h4 className="text-lg font-bold text-primary">Combo Pampas Premium</h4>
-          <p className="text-sm opacity-80 mt-2">Corte + Barba + Sobrancelha com cerveja inclusa como cortesia.</p>
+        <div className="p-6 rounded-2xl border bg-white border-stone-100 shadow-sm transition-all duration-300 hover:-translate-y-1 text-left">
+          <h4 className="text-lg font-bold text-primary">Toxina Botulínica</h4>
+          <p className="text-sm opacity-80 mt-2">Prevenção e suavização de linhas de expressão com naturalidade.</p>
           <div className="mt-4 flex items-center justify-between">
             <span className="text-xs opacity-60 font-semibold uppercase tracking-wider">Valor</span>
-            <span className="text-sm font-black text-primary">R$ 100</span>
+            <span className="text-sm font-black text-primary">Consulte</span>
           </div>
         </div>
         
