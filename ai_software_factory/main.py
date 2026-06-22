@@ -12,7 +12,8 @@ if hasattr(sys.stderr, 'reconfigure'):
         sys.stderr.reconfigure(encoding='utf-8')
     except Exception:
         pass
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 from langgraph.graph import StateGraph, END
@@ -40,6 +41,7 @@ from ai_software_factory.agents import (
     code_injector_node,
     qa_validator_node
 )
+from ai_software_factory.rag_pipeline import run_rag_analysis_pipeline
 
 # 1. Definição da Estrutura do Grafo
 workflow = StateGraph(AgentState)
@@ -91,6 +93,14 @@ app = workflow.compile()
 app_api = FastAPI(
     title="Fábrica de Software API",
     description="Endpoint HTTP para disparo automatizado de geração de sites baseados em templates ouro."
+)
+
+app_api.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 class WebhookPayload(BaseModel):
@@ -230,6 +240,18 @@ async def processar_fila():
             status_code=500,
             detail=f"Erro interno do servidor ao processar projeto da fila: {str(e)}"
         )
+
+@app_api.post("/api/analisar-rag/{contact_id}")
+async def analisar_rag(contact_id: str, background_tasks: BackgroundTasks):
+    """
+    Inicia o processamento assíncrono do pipeline RAG para o contato fornecido.
+    """
+    print(f"\n--- [API POST: /api/analisar-rag/{contact_id}] Recebido pedido ---")
+    background_tasks.add_task(run_rag_analysis_pipeline, contact_id)
+    return {
+        "status": "processing",
+        "message": f"Pipeline RAG iniciado em segundo plano para o contato {contact_id}"
+    }
 
 # 3. Inicialização do Servidor Uvicorn
 if __name__ == "__main__":

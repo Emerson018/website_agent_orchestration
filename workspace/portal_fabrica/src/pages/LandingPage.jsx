@@ -11,26 +11,40 @@ const PALETTES = [
 
 const MODULES_DATA = [
   {
-    id: 'site',
-    title: 'Site Institucional',
+    id: 'agendador_pwa',
+    title: 'Agendador PWA',
     price: 990,
     monthly: 49,
-    description: 'Landing page premium ultra rápida, otimizada para SEO e conversão, com visual personalizado e responsivo.',
-    features: ['Design exclusivo', 'Hospedagem inclusa', 'Formulário de contato', 'Otimização de SEO (Google)'],
+    description: 'Sistema de agendamento Progressive Web App (PWA) instalável, funcionando offline e otimizado para celulares.',
+    features: ['Instalável na tela inicial', 'Funcionamento offline (PWA)', 'Agenda interativa de clientes', 'Painel do administrador integrado'],
+    icon: (
+      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    ),
+    required: true,
+  },
+  {
+    id: 'site',
+    title: 'Site Institucional',
+    price: 600,
+    monthly: 39,
+    description: 'Landing page premium para divulgação institucional do seu negócio, otimizada para SEO e Google.',
+    features: ['Design institucional exclusivo', 'Otimização para SEO (Google)', 'Formulário de contato', 'Hospedagem inclusa'],
     icon: (
       <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
       </svg>
     ),
-    required: true, // Site is the baseline module
+    required: false,
   },
   {
     id: 'app',
     title: 'Aplicativo Mobile',
     price: 1200,
     monthly: 99,
-    description: 'Interface web adaptativa estilo PWA que seus clientes instalam no celular sem precisar baixar da App Store.',
-    features: ['Instalável no celular', 'Carregamento instantâneo', 'Experiência de app nativo', 'Painel administrativo integrado'],
+    description: 'Aplicativo nativo compilado para Android e iOS, publicado nas lojas App Store e Google Play.',
+    features: ['Publicação na Google Play', 'Publicação na App Store', 'Notificações push em tempo real', 'Suporte a hardware nativo'],
     icon: (
       <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -39,26 +53,12 @@ const MODULES_DATA = [
     required: false,
   },
   {
-    id: 'agendamento',
-    title: 'Agendamento Online',
-    price: 600,
-    monthly: 39,
-    description: 'Sistema completo de agendamento de horários para prestação de serviços com painel de gerenciamento.',
-    features: ['Calendário interativo', 'Seleção de profissionais', 'Bloqueio de horários', 'Histórico de agendamentos'],
-    icon: (
-      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    ),
-    required: false,
-  },
-  {
     id: 'whatsapp',
-    title: 'Automação WhatsApp',
+    title: 'Agendador de WhatsApp',
     price: 450,
     monthly: 29,
-    description: 'Robô com IA integrado ao WhatsApp para agendamentos automáticos, envio de lembretes e tira-dúvidas.',
-    features: ['Agendamento via chat', 'Lembretes automáticos', 'Atendimento 24h por IA', 'Integração de notificações'],
+    description: 'Robô com IA integrado ao WhatsApp para agendamentos automáticos por conversa de texto e envio de lembretes.',
+    features: ['Agendamento automático via chat', 'Lembretes de horário no WhatsApp', 'Atendimento de dúvidas com IA 24h', 'Integração direta com o número da empresa'],
     icon: (
       <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -71,7 +71,7 @@ const MODULES_DATA = [
 export default function LandingPage() {
   const [businessName, setBusinessName] = useState('Meu Negócio Perfeito');
   const [selectedPalette, setSelectedPalette] = useState(PALETTES[0]);
-  const [activeModules, setActiveModules] = useState(['site']);
+  const [activeModules, setActiveModules] = useState(['agendador_pwa']);
   const [clientEmail, setClientEmail] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   
@@ -80,6 +80,16 @@ export default function LandingPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState('');
   const [analysisError, setAnalysisError] = useState('');
+
+  // RAG States
+  const [appObjective, setAppObjective] = useState('');
+  const [servicesList, setServicesList] = useState('');
+  const [workingHours, setWorkingHours] = useState('');
+  const [professionals, setProfessionals] = useState('');
+  const [avgDuration, setAvgDuration] = useState('');
+  const [customFields, setCustomFields] = useState('');
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Simulation Modal states
   const [isSimulating, setIsSimulating] = useState(false);
@@ -90,6 +100,54 @@ export default function LandingPage() {
   // Supabase Backend States
   const [recentProjects, setRecentProjects] = useState([]);
   const [currentProjectId, setCurrentProjectId] = useState(null);
+
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setIsUploading(true);
+    const newUploadedFiles = [...uploadedFiles];
+
+    for (const file of files) {
+      try {
+        const base64Data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = (error) => reject(error);
+        });
+
+        console.log(`Uploading file ${file.name} to server...`);
+        const response = await fetch('http://localhost:5000/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            base64Data,
+            fileName: file.name,
+            mimeType: file.type
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Erro ao fazer upload do arquivo: ${file.name}`);
+        }
+
+        const uploadedFile = await response.json();
+        newUploadedFiles.push({ name: uploadedFile.name, url: uploadedFile.url });
+        console.log(`File ${file.name} uploaded successfully! URL: ${uploadedFile.url}`);
+      } catch (err) {
+        console.error(err);
+        alert(err.message || 'Erro durante o upload.');
+      }
+    }
+
+    setUploadedFiles(newUploadedFiles);
+    setIsUploading(false);
+  };
+
+  const removeUploadedFile = (index) => {
+    setUploadedFiles(uploadedFiles.filter((_, idx) => idx !== index));
+  };
 
   const fetchRecentProjects = async () => {
     try {
@@ -115,7 +173,7 @@ export default function LandingPage() {
   }, [selectedPalette]);
 
   const toggleModule = (moduleId) => {
-    if (moduleId === 'site') return; // site is mandatory
+    if (moduleId === 'agendador_pwa') return; // agendador_pwa is mandatory
     if (activeModules.includes(moduleId)) {
       setActiveModules(activeModules.filter((id) => id !== moduleId));
     } else {
@@ -332,6 +390,22 @@ ${linksDescription}`;
       return;
     }
 
+    // Estrutura o additional_data do RAG
+    const additional_data = {
+      files: uploadedFiles,
+      links: referenceLinks
+        .filter(l => l.url.trim() !== '')
+        .map(l => ({ label: `Referência (${l.type})${l.notes ? ` - ${l.notes}` : ''}`, url: l.url })),
+      texts: [
+        { label: 'Objetivo do Aplicativo', text: appObjective },
+        { label: 'Lista de Serviços/Produtos', text: servicesList },
+        { label: 'Horários de Funcionamento', text: workingHours },
+        { label: 'Profissionais/Colaboradores', text: professionals },
+        { label: 'Duração Média dos Serviços', text: avgDuration },
+        { label: 'Campos de Agendamento Personalizados', text: customFields }
+      ]
+    };
+
     const payload = {
       project_name: businessName,
       branding: {
@@ -350,13 +424,14 @@ ${linksDescription}`;
         monthly_maintenance: calculateMonthlyPrice(),
       },
       ai_analysis: analysisResult,
+      additional_data,
       timestamp: new Date().toISOString(),
     };
 
     setGeneratedPayload(payload);
     setIsSimulating(true);
     setSimStep(1);
-    setSimLogs(['🤖 Iniciando Orquestrador de Agentes da Fábrica de IA...']);
+    setSimLogs(['🤖 Iniciando envio de especificações...']);
 
     try {
       // 1. Salva o projeto no backend/Supabase
@@ -370,65 +445,16 @@ ${linksDescription}`;
       if (!saveResponse.ok) throw new Error('Falha ao registrar projeto no backend.');
       const project = await saveResponse.json();
       setCurrentProjectId(project.id);
-      setSimLogs(prev => [...prev, `✅ Projeto salvo com sucesso! ID: #${project.id}. Status: PENDENTE`]);
-
-      // 2. Dispara o processamento
-      setSimLogs(prev => [...prev, '🚀 Disparando o pipeline de compilação da Fábrica de IA...']);
-      await fetch(`http://localhost:5000/api/projetos/${project.id}/processar`, { method: 'POST' });
-      setSimLogs(prev => [...prev, '⏳ Projeto aguardando liberação na fila do compilador...']);
-
-      // 3. Inicia polling de status
-      let attempts = 0;
-      const interval = setInterval(async () => {
-        attempts++;
-        try {
-          const statusRes = await fetch(`http://localhost:5000/api/projetos/${project.id}`);
-          if (statusRes.ok) {
-            const currentProj = await statusRes.json();
-            
-            if (currentProj.status === 'processando') {
-              setSimStep(4);
-              setSimLogs(prev => {
-                const logs = [...prev];
-                if (!logs.includes('⚙️ Agentes compiladores ativos: Construindo arquivos no workspace...')) {
-                  logs.push('⚙️ Agentes compiladores ativos: Construindo arquivos no workspace...');
-                  logs.push('✨ Agente Desenvolvedor: Injetando branding e cores de estilo...');
-                  logs.push('📂 Agente de Infra: Clonando templates ouro e aplicando dependências...');
-                }
-                return logs;
-              });
-            } else if (currentProj.status === 'concluido') {
-              clearInterval(interval);
-              setSimStep(8);
-              setSimLogs(prev => [
-                ...prev, 
-                '✅ Compilação e testes de QA finalizados com sucesso!', 
-                '🎉 O projeto está pronto e disponível na pasta workspace!'
-              ]);
-              fetchRecentProjects(); // Atualiza a lista de projetos recentes
-            } else if (currentProj.status === 'erro') {
-              clearInterval(interval);
-              setSimStep(8);
-              setSimLogs(prev => [
-                ...prev, 
-                '❌ Ocorreu um erro durante a compilação do projeto.', 
-                '⚠️ Por favor, revise as configurações e tente novamente.'
-              ]);
-              fetchRecentProjects(); // Atualiza a lista de projetos recentes
-            }
-          }
-        } catch (pollErr) {
-          console.error('Erro de polling:', pollErr);
-        }
-
-        // Timeout de segurança após 5 minutos (150 tentativas a cada 2s)
-        if (attempts > 150) {
-          clearInterval(interval);
-          setSimStep(8);
-          setSimLogs(prev => [...prev, '⚠️ Limite de tempo esgotado. Verifique os logs do servidor principal.']);
-        }
-      }, 2000);
-
+      
+      setSimLogs(prev => [
+        ...prev, 
+        `✅ Lead registrado com sucesso! Código de Fila: #${project.id}`,
+        '📩 Suas informações foram enviadas com sucesso para o nosso time de análise.',
+        '📞 Em breve entraremos em contato para apresentar sua proposta e iniciar a geração do seu sistema!'
+      ]);
+      
+      setSimStep(8);
+      fetchRecentProjects(); // Atualiza a lista de projetos recentes
     } catch (err) {
       console.error('Erro ao orquestrar build real:', err);
       setSimLogs(prev => [
@@ -467,14 +493,14 @@ ${linksDescription}`;
         </div>
         
         <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white max-w-4xl leading-tight">
-          Crie seu Ecossistema Digital com{' '}
+          Crie seu Agendador PWA com{' '}
           <span className="bg-gradient-to-r from-[rgb(var(--primary))] to-purple-400 bg-clip-text text-transparent transition-all duration-300">
             Inteligência Artificial
           </span>
         </h1>
 
         <p className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl">
-          Nossos agentes de IA orquestram e programam seu site, aplicativo mobile e integrações sob medida em minutos. Escolha seus módulos e veja a mágica acontecer.
+          Nossos agentes de IA orquestram e programam seu agendador Progressive Web App (PWA) e complementam com site, app mobile e WhatsApp sob medida.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
@@ -825,6 +851,136 @@ ${linksDescription}`;
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Step 3.5: Materiais e Textos Adicionais (RAG) */}
+            <div className="glass-panel rounded-2xl p-6 sm:p-8 border border-gray-800 shadow-xl space-y-6">
+              <div className="flex items-center gap-3 border-b border-gray-900 pb-4">
+                <span className="text-xs font-bold px-2 py-1 bg-[rgb(var(--primary))]/10 text-[rgb(var(--primary))] rounded-md">Passo 3.5</span>
+                <h3 className="text-lg font-bold text-white">Materiais e Conteúdo do App (RAG)</h3>
+              </div>
+
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Envie catálogos, tabelas de preços ou textos livres. Nossa IA processará esses dados no CRM para gerar o escopo detalhado.
+              </p>
+
+              {/* Free Text: Objetivo */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wider">Objetivo do Aplicativo / Negócio</label>
+                <textarea
+                  value={appObjective}
+                  onChange={(e) => setAppObjective(e.target.value)}
+                  rows={3}
+                  className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-xs text-white placeholder:text-gray-650 focus:outline-none focus:border-[rgb(var(--primary))] transition-colors resize-none"
+                  placeholder="Descreva o objetivo principal do aplicativo, público-alvo, problemas que resolve..."
+                />
+              </div>
+
+              {/* Free Text: Serviços */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wider">Lista de Serviços, Produtos e Preços</label>
+                <textarea
+                  value={servicesList}
+                  onChange={(e) => setServicesList(e.target.value)}
+                  rows={3}
+                  className="w-full bg-gray-950 border border-gray-850 rounded-xl px-4 py-3 text-xs text-white placeholder:text-gray-650 focus:outline-none focus:border-[rgb(var(--primary))] transition-colors resize-none"
+                  placeholder="Liste os serviços ou produtos oferecidos, tabelas de preço, pacotes..."
+                />
+              </div>
+
+              {/* Horários de Funcionamento */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wider">Horários de Funcionamento (Opcional)</label>
+                <input
+                  type="text"
+                  value={workingHours}
+                  onChange={(e) => setWorkingHours(e.target.value)}
+                  className="w-full bg-gray-950 border border-gray-850 rounded-xl px-4 py-3 text-xs text-white placeholder:text-gray-650 focus:outline-none focus:border-[rgb(var(--primary))] transition-colors"
+                  placeholder="Ex: Segunda a Sexta: 9h às 18h, Sábado: 9h às 13h"
+                />
+              </div>
+
+              {/* Profissionais / Colaboradores */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wider">Profissionais/Colaboradores (Opcional)</label>
+                <input
+                  type="text"
+                  value={professionals}
+                  onChange={(e) => setProfessionals(e.target.value)}
+                  className="w-full bg-gray-950 border border-gray-850 rounded-xl px-4 py-3 text-xs text-white placeholder:text-gray-650 focus:outline-none focus:border-[rgb(var(--primary))] transition-colors"
+                  placeholder="Ex: João Silva, Maria Costa, Pedro Souza"
+                />
+              </div>
+
+              {/* Duração Média dos Serviços */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wider">Duração Média dos Serviços (Opcional)</label>
+                <input
+                  type="text"
+                  value={avgDuration}
+                  onChange={(e) => setAvgDuration(e.target.value)}
+                  className="w-full bg-gray-950 border border-gray-850 rounded-xl px-4 py-3 text-xs text-white placeholder:text-gray-650 focus:outline-none focus:border-[rgb(var(--primary))] transition-colors"
+                  placeholder="Ex: 30 minutos, 1 hora, varia de acordo com o serviço"
+                />
+              </div>
+
+              {/* Campos adicionais personalizados */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wider">Informações Extras para o Agendamento (Opcional)</label>
+                <textarea
+                  value={customFields}
+                  onChange={(e) => setCustomFields(e.target.value)}
+                  rows={2}
+                  className="w-full bg-gray-950 border border-gray-850 rounded-xl px-4 py-3 text-xs text-white placeholder:text-gray-650 focus:outline-none focus:border-[rgb(var(--primary))] transition-colors resize-none"
+                  placeholder="Ex: Necessário coletar o porte do pet (pequeno, médio, grande) ou modelo/marca do carro..."
+                />
+              </div>
+
+              {/* File Upload: PDF or Images */}
+              <div className="space-y-3">
+                <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider">Arquivos de Apoio (Catálogo, Cardápio, Tabela - PDF/Imagem)</label>
+                
+                <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-850 rounded-xl bg-gray-950/20 hover:bg-gray-950/40 transition-colors relative cursor-pointer group">
+                  <input
+                    type="file"
+                    multiple
+                    accept="application/pdf,image/*"
+                    onChange={handleFileUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    disabled={isUploading}
+                  />
+                  <svg className="w-8 h-8 text-gray-500 group-hover:text-[rgb(var(--primary))] transition-colors mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  <span className="text-xs text-gray-400 group-hover:text-white transition-colors">
+                    {isUploading ? 'Fazendo upload...' : 'Arraste ou clique para selecionar arquivos PDF ou Imagens'}
+                  </span>
+                  <span className="text-[10px] text-gray-650 mt-1">Formatos aceitos: PDF, PNG, JPG, WEBP (Máx. 16MB)</span>
+                </div>
+
+                {/* Uploaded Files List */}
+                {uploadedFiles.length > 0 && (
+                  <div className="space-y-2 pt-2">
+                    {uploadedFiles.map((file, index) => (
+                      <div key={index} className="flex justify-between items-center p-2.5 rounded-lg bg-gray-950 border border-gray-850 text-xs">
+                        <div className="flex items-center gap-2 text-gray-300 truncate">
+                          <svg className="w-4 h-4 text-[rgb(var(--primary))] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span className="truncate">{file.name}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeUploadedFile(index)}
+                          className="text-gray-500 hover:text-red-400 text-xs font-semibold px-2"
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Step 4: Checkout Form */}

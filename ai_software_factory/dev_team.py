@@ -89,12 +89,13 @@ def obter_llm(model_openai="gpt-4o", model_gemini="gemini-2.5-flash", temperatur
 
 # Adiciona a importação das ferramentas do sistema de arquivos
 try:
-    from dev_tools import listar_arvore_arquivos, ler_arquivo_codigo, escrever_arquivo_codigo
+    from dev_tools import listar_arvore_arquivos, ler_arquivo_codigo, escrever_arquivo_codigo, obter_fotos_instagram
 except ImportError:
-    from ai_software_factory.dev_tools import listar_arvore_arquivos, ler_arquivo_codigo, escrever_arquivo_codigo
+    from ai_software_factory.dev_tools import listar_arvore_arquivos, ler_arquivo_codigo, escrever_arquivo_codigo, obter_fotos_instagram
 
-ferramentas_dev = [listar_arvore_arquivos, ler_arquivo_codigo, escrever_arquivo_codigo]
+ferramentas_dev = [listar_arvore_arquivos, ler_arquivo_codigo, escrever_arquivo_codigo, obter_fotos_instagram]
 ferramentas_map = {f.name: f for f in ferramentas_dev}
+
 
 def executar_agente_com_ferramentas(llm_com_ferramentas, prompt_sistema, state_messages):
     messages = [SystemMessage(content=prompt_sistema)] + list(state_messages)

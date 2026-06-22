@@ -60,21 +60,11 @@
   will-change: transform;
 }
 
-@keyframes pulse-glow {
-  0%, 100% {
-    opacity: 0.25;
-  }
-  50% {
-    opacity: 0.45;
-  }
-}
-
 .ambient-glow {
   filter: blur(80px);
-  animation: pulse-glow 10s infinite alternate;
+  opacity: 0.35;
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
-  will-change: opacity;
 }
 
 @keyframes fadeIn {

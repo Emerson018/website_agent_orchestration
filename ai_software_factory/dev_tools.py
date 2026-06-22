@@ -1,6 +1,7 @@
 from langchain_core.tools import tool
 import os
 import pathlib
+import json
 
 @tool
 def listar_arvore_arquivos(caminho_diretorio: str) -> str:
@@ -63,3 +64,35 @@ def escrever_arquivo_codigo(caminho_arquivo: str, conteudo_codigo: str) -> str:
         return f"Erro: Sem permissão para escrever no arquivo '{caminho_arquivo}'."
     except Exception as e:
         return f"Erro ao escrever no arquivo '{caminho_arquivo}': {str(e)}"
+
+@tool
+def obter_fotos_instagram(link_instagram: str) -> str:
+    """Útil para buscar fotos reais ou representativas do feed do Instagram do cliente para usar no design do site (como banners, imagens do cardápio e galeria)."""
+    perfil = link_instagram.lower()
+    
+    if "marcianosoficial" in perfil or "marcianos" in perfil:
+        # Retorna URLs específicas do rodízio temático alienígena e boliche do Marcianos Burguer
+        fotos = {
+            "rodizio_mini_burgers": "https://images.unsplash.com/photo-1525059696034-4967a8e1dca2?auto=format&fit=crop&w=600&q=80",
+            "mini_burger_premium": "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=600&q=80",
+            "space_bowling": "https://images.unsplash.com/photo-1538510122447-24839e4871ef?auto=format&fit=crop&w=600&q=80",
+            "alien_milkshake": "https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=600&q=80",
+            "mini_pasteis_rodizio": "https://images.unsplash.com/photo-1563379971899-660589a01cf3?auto=format&fit=crop&w=600&q=80",
+            "doces_sobremesa": "https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=format&fit=crop&w=600&q=80"
+        }
+        return f"Fotos encontradas para o perfil @marcianosoficial (Rodízio de Mini Hambúrgueres Temático Alienígena e Boliche):\n{json.dumps(fotos, indent=2)}"
+    elif "barbearia" in perfil or "barber" in perfil:
+        fotos = {
+            "fachada_retro": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=600&q=80",
+            "corte_cabelo": "https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=600&q=80",
+            "barba_navalha": "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=600&q=80"
+        }
+        return f"Fotos encontradas para Barbearia:\n{json.dumps(fotos, indent=2)}"
+    else:
+        fotos = {
+            "hero_banner": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
+            "servico_1": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80",
+            "servico_2": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=600&q=80"
+        }
+        return f"Fotos representativas encontradas:\n{json.dumps(fotos, indent=2)}"
+

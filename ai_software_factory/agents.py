@@ -63,11 +63,23 @@ def requirements_analyst_node(state: AgentState) -> Dict[str, Any]:
     lead_raw = state.get("lead_raw_json", {})
     print(f"Analisando lead_raw_json recebido: {lead_raw}")
     
-    # Verifica a existência de chaves de API para chamada da LLM
+    # Verifica a existência de chaves de API para chamada da LLM ou LLM local
     openai_key = os.environ.get("OPENAI_API_KEY")
     google_key = os.environ.get("GOOGLE_API_KEY")
+    use_local = os.environ.get("USE_LOCAL_LLM", "false").lower() == "true"
     
-    if openai_key:
+    if use_local:
+        local_url = os.environ.get("LOCAL_LLM_URL", "http://localhost:1234/v1")
+        local_model = os.environ.get("LOCAL_LLM_MODEL", "google/gemma-3-4b")
+        print(f"[Analista de Requisitos] USE_LOCAL_LLM é true. Invocando LLM local {local_model} em {local_url}...")
+        llm = ChatOpenAI(
+            model=local_model,
+            openai_api_key="lm-studio",
+            base_url=local_url,
+            temperature=0
+        )
+        use_llm = True
+    elif openai_key:
         print("[Analista de Requisitos] OPENAI_API_KEY configurada. Invocando LLM OpenAI real...")
         llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
         use_llm = True
@@ -217,7 +229,7 @@ import {{ Link }} from 'react-router-dom';
 export default function LandingPage() {{
   return (
     <div className="min-h-screen {visual_theme} flex flex-col font-sans">
-      {{"/* Hero Section */"}}
+      {{/* Hero Section */}}
       <section className="relative py-20 px-6 sm:px-12 flex flex-col items-center text-center max-w-5xl mx-auto">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-72 bg-primary/10 rounded-full filter blur-3xl pointer-events-none"></div>
         <span className="text-xs font-bold text-primary uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
@@ -242,7 +254,7 @@ export default function LandingPage() {{
         </div>
       </section>
 
-      {{"/* Serviços Section */"}}
+      {{/* Serviços Section */}}
       <section className="py-20 border-t border-gray-900/10 dark:border-gray-800/80 px-6 sm:px-12 max-w-6xl mx-auto w-full">
         <div className="text-center mb-12">
           <h2 className="text-2xl sm:text-3xl font-extrabold">Nossos Serviços</h2>
@@ -253,7 +265,7 @@ export default function LandingPage() {{
         </div>
       </section>
 
-      {{"/* Call to Action Section */"}}
+      {{/* Call to Action Section */}}
       <section className="py-16 px-6 sm:px-12 bg-primary/5 border border-primary/10 rounded-3xl max-w-5xl mx-auto w-full my-10 text-center flex flex-col items-center">
         <h3 className="text-2xl font-bold">Pronto para ter uma experiência incrível?</h3>
         <p className="text-sm opacity-80 mt-3 max-w-md">Escolha o melhor dia, horário e o profissional da sua preferência diretamente no nosso sistema.</p>
@@ -279,9 +291,21 @@ def generate_landing_page(target_path: str, reqs: Dict[str, Any], lead_raw: Dict
     
     openai_key = os.environ.get("OPENAI_API_KEY")
     google_key = os.environ.get("GOOGLE_API_KEY")
+    use_local = os.environ.get("USE_LOCAL_LLM", "false").lower() == "true"
     
     use_llm = False
-    if openai_key:
+    if use_local:
+        local_url = os.environ.get("LOCAL_LLM_URL", "http://localhost:1234/v1")
+        local_model = os.environ.get("LOCAL_LLM_MODEL", "google/gemma-3-4b")
+        print(f"[Desenvolvedor] USE_LOCAL_LLM é true. Invocando LLM local {local_model} em {local_url} para gerar a Landing Page...")
+        llm = ChatOpenAI(
+            model=local_model,
+            openai_api_key="lm-studio",
+            base_url=local_url,
+            temperature=0
+        )
+        use_llm = True
+    elif openai_key:
         llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
         use_llm = True
     elif google_key:
@@ -308,6 +332,7 @@ Ele deve:
 4. O design deve se adequar perfeitamente ao setor do negócio (Ex: Barbearia deve ter visual rústico/premium com tons de couro/madeira/escuros; Odontologia deve ser clean, confiável e corporativo; Estética deve ser elegante, rosa/bege, etc.).
 5. Usar as variáveis de cor de tailwind 'bg-primary' e 'text-primary' ou 'bg-secondary' e 'text-secondary' nos botões e destaques que devem herdar as cores da marca.
 6. Retornar APENAS o código do arquivo LandingPage.jsx, sem explicações adicionais e sem blocos de código markdown (como ```jsx ou ```). Comece direto com o código.
+7. Use apenas comentários válidos do JSX (como {/* comentário */}) e NUNCA string literals com barra de comentários (como {"/* comentário */"}) ou comentários HTML, pois eles são renderizados incorretamente como texto na tela.
 """),
                 ("user", "Informações e análises do lead:\n{mensagem}\n\nNome comercial: {app_name}\nCor Primária: {primary_color}\nCor Secundária: {secondary_color}")
             ])
