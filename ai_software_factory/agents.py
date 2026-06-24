@@ -284,6 +284,23 @@ export default function LandingPage() {{
 
 
 def generate_landing_page(target_path: str, reqs: Dict[str, Any], lead_raw: Dict[str, Any]):
+    # Se for um projeto Next.js, não geramos LandingPage.jsx (Vite)
+    is_nextjs = os.path.exists(os.path.join(target_path, "frontend", "src", "app", "layout.tsx"))
+    if is_nextjs:
+        print("[Desenvolvedor] Projeto Next.js detectado. Ignorando a geração do arquivo LandingPage.jsx legado (Vite).")
+        # Remove arquivo legado se existir de tentativas anteriores
+        legacy_path = os.path.join(target_path, "frontend", "src", "pages", "LandingPage.jsx")
+        if os.path.exists(legacy_path):
+            try:
+                os.remove(legacy_path)
+                print(f"[Desenvolvedor] Arquivo legado removido: {legacy_path}")
+                # Tenta remover a pasta se estiver vazia
+                os.rmdir(os.path.dirname(legacy_path))
+                print(f"[Desenvolvedor] Pasta legada vazia removida: {os.path.dirname(legacy_path)}")
+            except Exception as rm_err:
+                pass
+        return
+
     app_name = reqs.get("app_name", "AppCustomizado")
     primary_color = reqs.get("primary_color", "#D4AF37")
     secondary_color = reqs.get("secondary_color", "#1A1A1A")
@@ -363,6 +380,110 @@ Ele deve:
     print(f"LandingPage.jsx gerada com sucesso em: {landing_page_path}")
 
 
+def generate_niche_database_schema(target_path: str, lead_raw: Dict[str, Any]):
+    mensagem = lead_raw.get("mensagem", "")
+    
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    google_key = os.environ.get("GOOGLE_API_KEY")
+    use_local = os.environ.get("USE_LOCAL_LLM", "false").lower() == "true"
+    
+    use_llm = False
+    if use_local:
+        local_url = os.environ.get("LOCAL_LLM_URL", "http://localhost:1234/v1")
+        local_model = os.environ.get("LOCAL_LLM_MODEL", "google/gemma-3-4b")
+        llm = ChatOpenAI(
+            model=local_model,
+            openai_api_key="lm-studio",
+            base_url=local_url,
+            temperature=0
+        )
+        use_llm = True
+    elif openai_key:
+        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        use_llm = True
+    elif google_key:
+        llm = ChatOpenAI(
+            model="gemini-1.5-flash",
+            openai_api_key=google_key,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+        )
+        use_llm = True
+        
+    sql_code = None
+    if use_llm:
+        try:
+            print("[Desenvolvedor] Gerando ai_extension_schema.sql customizado via LLM...")
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", """Você é um Engenheiro de Banco de Dados PostgreSQL e Arquiteto de Software especialista.
+Sua tarefa é ler e analisar as especificações e o relatório de design enviados (especialmente os serviços, produtos e a Seção 2 sobre o Nicho do Negócio).
+Com base nessa análise, gere um código PostgreSQL puro (SQL) contendo tabelas específicas para o nicho de agendamento do cliente (ex: para Barbearia: colaboradores/barbeiros, serviços detalhados; para Clínica: médicos, especialidades, salas; para Petshop: pets, raças, portes).
+
+SEGURANÇA E REGRAS ESTRITAS:
+1. Conecte as tabelas do nicho criadas (via Foreign Key / Chave Estrangeira) à tabela genérica 'agendamentos_base(id)'. Por exemplo, você pode criar uma tabela 'detalhes_agendamento_nicho' que referencia 'agendamentos_base(id)'.
+2. Use a cláusula 'CREATE TABLE IF NOT EXISTS' para todas as tabelas.
+3. Retorne APENAS o código SQL puro, sem explicações adicionais e sem blocos de código markdown (como ```sql ou ```). Comece direto com a primeira linha de SQL.
+4. Escreva em português, usando nomenclatura clara e coerente.
+"""),
+                ("user", "Informações e relatório do lead:\n{mensagem}")
+            ])
+            chain = prompt | llm
+            res = chain.invoke({"mensagem": mensagem})
+            sql_code = res.content
+            # Remove markdown code fences if LLM accidentally added them
+            sql_code = re.sub(r"^```[a-zA-Z0-9]*\n", "", sql_code)
+            sql_code = re.sub(r"\n```$", "", sql_code)
+            sql_code = sql_code.strip()
+        except Exception as e:
+            print(f"[Desenvolvedor] Falha ao chamar LLM para gerar banco ({str(e)}). Usando fallback local...")
+            sql_code = None
+            
+    if not sql_code:
+        # Fallback estático simples para caso o LLM esteja fora
+        sql_code = """-- Fallback: Estrutura adicional de serviços e profissionais para o agendador
+CREATE TABLE IF NOT EXISTS profissionais (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nome VARCHAR(255) NOT NULL,
+    especialidade VARCHAR(255),
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS servicos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nome VARCHAR(255) NOT NULL,
+    preco DECIMAL(10, 2) NOT NULL,
+    duracao INT NOT NULL, -- em minutos
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS agendamentos_detalhes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    agendamento_id UUID REFERENCES agendamentos_base(id) ON DELETE CASCADE,
+    profissional_id UUID REFERENCES profissionais(id) ON DELETE SET NULL,
+    servico_id UUID REFERENCES servicos(id) ON DELETE SET NULL,
+    observacoes TEXT
+);
+"""
+        
+    # 2. Salva o resultado gerado em ai_extension_schema.sql dentro de workspace/{nome_do_projeto}/database/
+    db_dir = os.path.join(target_path, "database")
+    os.makedirs(db_dir, exist_ok=True)
+    
+    extension_schema_path = os.path.join(db_dir, "ai_extension_schema.sql")
+    with open(extension_schema_path, 'w', encoding='utf-8') as f:
+        f.write(sql_code)
+    print(f"Esquema estendido 'ai_extension_schema.sql' gravado com sucesso em: {extension_schema_path}")
+    
+    # 3. Copia o arquivo base_schema.sql do template padrão para a mesma pasta
+    base_template_schema = "gold_templates/template_base_app/supabase_schema/base_schema.sql"
+    base_dest_schema = os.path.join(db_dir, "base_schema.sql")
+    
+    if os.path.exists(base_template_schema):
+        shutil.copy2(base_template_schema, base_dest_schema)
+        print(f"Esquema base '{base_template_schema}' copiado com sucesso para: {base_dest_schema}")
+    else:
+        print(f"AVISO: Esquema base '{base_template_schema}' não encontrado para cópia.")
+
+
 def code_injector_node(state: AgentState) -> Dict[str, Any]:
     """
     Agente Desenvolvedor / Injetor de Código (Real):
@@ -404,11 +525,32 @@ def code_injector_node(state: AgentState) -> Dict[str, Any]:
         
     print(f"Arquivo de parametrização '{config_file_path}' atualizado com sucesso.")
     
+    # Grava as variáveis do Supabase no .env do frontend clonado (Single-Tenant)
+    supabase_url = lead_raw.get("supabase_url") or ""
+    supabase_anon_key = lead_raw.get("supabase_anon_key") or ""
+    
+    env_file_path = os.path.join(target_path, "frontend", ".env")
+    try:
+        with open(env_file_path, 'w', encoding='utf-8') as f:
+            f.write(f"VITE_SUPABASE_URL={supabase_url}\n")
+            f.write(f"VITE_SUPABASE_ANON_KEY={supabase_anon_key}\n")
+            f.write(f"NEXT_PUBLIC_SUPABASE_URL={supabase_url}\n")
+            f.write(f"NEXT_PUBLIC_SUPABASE_ANON_KEY={supabase_anon_key}\n")
+        print(f"Arquivo .env '{env_file_path}' gravado com credenciais Supabase Single-Tenant e Next.js.")
+    except Exception as env_err:
+        print(f"Erro ao gravar arquivo .env customizado: {env_err}")
+    
     # Geração do código customizado da LandingPage baseada no lead_raw e na análise da IA
     try:
         generate_landing_page(target_path, reqs, lead_raw)
     except Exception as page_err:
         print(f"Erro ao gerar a LandingPage customizada: {page_err}")
+
+    # Geração do esquema SQL customizado para o nicho (Single-Tenant) baseado no lead_raw e no RAG
+    try:
+        generate_niche_database_schema(target_path, lead_raw)
+    except Exception as db_err:
+        print(f"Erro ao gerar o esquema SQL customizado: {db_err}")
 
     # Geração do contexto de arquitetura (Project Ledger) para orientar futuras manutenções
     app_name = reqs.get("app_name", "AppCustomizado")

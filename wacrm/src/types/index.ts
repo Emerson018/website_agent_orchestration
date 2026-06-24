@@ -105,6 +105,9 @@ export interface Contact {
   } | null;
   rag_report?: string | null;
   rag_status?: 'idle' | 'processing' | 'completed' | 'failed' | null;
+  supabase_url?: string | null;
+  supabase_anon_key?: string | null;
+  supabase_service_role_key?: string | null;
   created_at: string;
   updated_at: string;
 }

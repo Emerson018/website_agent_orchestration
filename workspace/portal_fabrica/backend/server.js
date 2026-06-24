@@ -84,7 +84,7 @@ app.post('/api/upload', async (req, res) => {
 // 1. Criar novo projeto (Lead) no Supabase e integrar com o CRM
 app.post('/api/projetos', async (req, res) => {
   try {
-    const { project_name, branding, modules, reference_links, client_info, summary, ai_analysis, additional_data } = req.body;
+    const { project_name, branding, modules, reference_links, client_info, summary, ai_analysis, additional_data, supabase_url, supabase_anon_key } = req.body;
 
     if (!project_name) {
       return res.status(400).json({ error: 'O nome do projeto (project_name) é obrigatório.' });
@@ -140,7 +140,9 @@ Informações do cliente:
         {
           mensagem_lead,
           status: 'pendente',
-          resultado_json: null
+          resultado_json: null,
+          supabase_url: supabase_url || null,
+          supabase_anon_key: supabase_anon_key || null
         }
       ])
       .select();
@@ -381,23 +383,44 @@ app.post('/api/projetos/:id/processar', async (req, res) => {
   const { id } = req.params;
   console.log(`Recebida solicitação de compilação para o projeto ID: ${id}`);
   
-  // Executa o processamento em segundo plano para liberar o cliente Express imediatamente
-  // e permitir o acompanhamento por polling
-  res.json({ status: 'processando', mensagem: 'Compilação iniciada no orquestrador da Fábrica de IA.' });
-
   try {
-    // Faz a chamada ao endpoint FastAPI da Fábrica de Software
+    // 1. Busca os metadados do projeto na fila para validar
+    const { data: projeto, error: fetchErr } = await supabase
+      .from('fila_projetos')
+      .select('supabase_url, supabase_anon_key')
+      .eq('id', id)
+      .single();
+
+    if (fetchErr || !projeto) {
+      return res.status(404).json({ error: 'Projeto não encontrado na fila.' });
+    }
+
+    if (!projeto.supabase_url || !projeto.supabase_anon_key || !projeto.supabase_url.trim() || !projeto.supabase_anon_key.trim()) {
+      return res.status(400).json({ 
+        error: 'Credenciais do Supabase ausentes.', 
+        details: 'Os campos supabase_url e supabase_anon_key são obrigatórios para a geração do PWA (Single-Tenant).' 
+      });
+    }
+
+    // 2. Libera o cliente Express com sucesso
+    res.json({ status: 'processando', mensagem: 'Compilação iniciada no orquestrador da Fábrica de IA.' });
+
+    // 3. Executa o processamento no orquestrador
     const response = await fetch(`${SOFTWARE_FACTORY_API_URL}/processar-fila`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
-      }
+      },
+      body: JSON.stringify({ project_id: parseInt(id) })
     });
 
     const result = await response.json();
     console.log(`Resultado do processamento da fila disparado pelo projeto ${id}:`, result);
   } catch (err) {
     console.error(`Erro ao disparar processamento da fábrica para projeto ${id}:`, err.message);
+    if (!res.headersSent) {
+      res.status(550).json({ error: 'Erro ao disparar processamento da fábrica de IA.', details: err.message });
+    }
   }
 });
 

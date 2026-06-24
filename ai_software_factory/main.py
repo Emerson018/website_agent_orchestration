@@ -12,6 +12,7 @@ if hasattr(sys.stderr, 'reconfigure'):
         sys.stderr.reconfigure(encoding='utf-8')
     except Exception:
         pass
+from typing import Optional
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -148,8 +149,11 @@ async def gerar_site(payload: WebhookPayload):
             detail=f"Erro interno do servidor ao gerar site: {str(e)}"
         )
 
+class ProcessarFilaRequest(BaseModel):
+    project_id: Optional[int] = None
+
 @app_api.post("/processar-fila")
-async def processar_fila():
+async def processar_fila(req_data: Optional[ProcessarFilaRequest] = None):
     """
     Processa o próximo projeto pendente na fila do Supabase.
     """
@@ -161,13 +165,11 @@ async def processar_fila():
         
     project_id = None
     try:
-        # Busca o projeto pendente mais antigo (ordenado por created_at)
-        response = supabase_client.table("fila_projetos")\
-            .select("*")\
-            .eq("status", "pendente")\
-            .order("created_at", desc=False)\
-            .limit(1)\
-            .execute()
+        query = supabase_client.table("fila_projetos").select("*")
+        if req_data and req_data.project_id is not None:
+            response = query.eq("id", req_data.project_id).execute()
+        else:
+            response = query.eq("status", "pendente").order("created_at", desc=False).limit(1).execute()
             
         projetos = response.data
         if not projetos:
@@ -176,7 +178,20 @@ async def processar_fila():
         projeto_encontrado = projetos[0]
         project_id = projeto_encontrado["id"]
         mensagem_lead = projeto_encontrado.get("mensagem_lead", "")
-        
+        supabase_url = projeto_encontrado.get("supabase_url")
+        supabase_anon_key = projeto_encontrado.get("supabase_anon_key")
+
+        # Validação obrigatória das credenciais do Supabase Single-Tenant
+        if not supabase_url or not supabase_anon_key or not supabase_url.strip() or not supabase_anon_key.strip():
+            supabase_client.table("fila_projetos")\
+                .update({"status": "erro"})\
+                .eq("id", project_id)\
+                .execute()
+            raise HTTPException(
+                status_code=400,
+                detail="Credenciais do Supabase ausentes. Os campos supabase_url e supabase_anon_key são obrigatórios para a geração do PWA."
+            )
+            
         # Muda imediatamente o status para 'processando'
         supabase_client.table("fila_projetos")\
             .update({"status": "processando"})\
@@ -185,7 +200,11 @@ async def processar_fila():
             
         # Prepara o estado inicial para execução do LangGraph
         estado_inicial = {
-            "lead_raw_json": {"mensagem": mensagem_lead},
+            "lead_raw_json": {
+                "mensagem": mensagem_lead,
+                "supabase_url": supabase_url.strip(),
+                "supabase_anon_key": supabase_anon_key.strip()
+            },
             "customization_requirements": {},
             "template_path": "",
             "target_project_path": "",
@@ -224,6 +243,8 @@ async def processar_fila():
             "detalhes": custom_reqs
         }
         
+    except HTTPException as http_err:
+        raise http_err
     except Exception as e:
         print(f"Erro crítico durante o processamento do site da fila: {str(e)}")
         # Garante que o status do projeto seja atualizado para 'erro' em caso de exceção no fluxo, se o ID já for conhecido

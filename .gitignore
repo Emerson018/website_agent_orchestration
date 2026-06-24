@@ -59,6 +59,9 @@ ENV/
 # Node/Frontend dependencies
 node_modules/
 .npm
+.next/
+dist/
+out/
 /workspace/Sorriso_perfeito/frontend/node_modules/
 /workspace/Sorriso_perfeito/frontend/dist/
 

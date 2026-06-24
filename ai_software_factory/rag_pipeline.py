@@ -155,6 +155,8 @@ O foco principal deste projeto é criar um **Agendador no estilo PWA (Progressiv
 
 Seu objetivo é analisar todo o material enviado pelo cliente '{contact_name}' (arquivos, textos, links raspados) e estruturar um relatório de especificações e diretrizes conceituais do agendador. Esse relatório será exibido para o administrador do CRM revisar, editar e validar a coerência com a ideia principal e nicho de negócio ("sentido da loja") antes de iniciarmos a geração de código.
 
+⚠️ INSTRUÇÃO IMPORTANTE DE ANÁLISE: Como removemos a coleta manual direta de dados de serviços, preços, profissionais, horários de funcionamento e duração média dos serviços no formulário do lead, você DEVE analisar minuciosamente os links de referência raspados e o conteúdo de texto extraído dos arquivos de apoio enviados pelo cliente (catálogos, cardápios, tabelas, etc.) para identificar e extrair essas informações. Caso esses dados não estejam explícitos nos materiais enviados, você deve deduzir e propor sugestões profissionais altamente coerentes e prontas para o nicho de mercado do estabelecimento.
+
 Abaixo está todo o contexto extraído dos materiais do cliente:
 {context}
 

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import type { Contact, Deal, ContactNote, Tag } from "@/types";
 import {
   Phone,
@@ -46,18 +47,35 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
   const [ragReport, setRagReport] = useState<string | null>(null);
   const [isEditingReport, setIsEditingReport] = useState(false);
   const [editedReport, setEditedReport] = useState("");
+  const [generatingAI, setGeneratingAI] = useState(false);
+  const [sidebarSupabaseUrl, setSidebarSupabaseUrl] = useState("");
+  const [sidebarSupabaseAnonKey, setSidebarSupabaseAnonKey] = useState("");
+  const [isConnectionValidated, setIsConnectionValidated] = useState(false);
+  const [validatingConnection, setValidatingConnection] = useState(false);
+
+  const lastContactIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (contact) {
-      setRagStatus(contact.rag_status || "idle");
-      setRagReport(contact.rag_report || null);
-      setEditedReport(contact.rag_report || "");
-      setIsEditingReport(false);
-    } else {
-      setRagStatus(null);
-      setRagReport(null);
-      setEditedReport("");
-      setIsEditingReport(false);
+    const currentId = contact?.id || null;
+    if (currentId !== lastContactIdRef.current) {
+      lastContactIdRef.current = currentId;
+      if (contact) {
+        setRagStatus(contact.rag_status || "idle");
+        setRagReport(contact.rag_report || null);
+        setEditedReport(contact.rag_report || "");
+        setSidebarSupabaseUrl(contact.supabase_url || "");
+        setSidebarSupabaseAnonKey(contact.supabase_anon_key || "");
+        setIsConnectionValidated(false);
+        setIsEditingReport(false);
+      } else {
+        setRagStatus(null);
+        setRagReport(null);
+        setEditedReport("");
+        setSidebarSupabaseUrl("");
+        setSidebarSupabaseAnonKey("");
+        setIsConnectionValidated(false);
+        setIsEditingReport(false);
+      }
     }
   }, [contact]);
 
@@ -153,6 +171,131 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
       alert("Erro ao salvar o relatório: " + error.message);
     }
   }, [contact, editedReport, onContactUpdate]);
+
+  const handleValidateConnection = useCallback(async () => {
+    if (!sidebarSupabaseUrl.trim() || !sidebarSupabaseAnonKey.trim()) {
+      toast.error("Por favor, preencha a URL e a Anon Key.");
+      return;
+    }
+
+    setValidatingConnection(true);
+    try {
+      let rawUrl = sidebarSupabaseUrl.trim();
+      if (rawUrl && !rawUrl.startsWith("http://") && !rawUrl.startsWith("https://")) {
+        rawUrl = `https://${rawUrl}.supabase.co`;
+      }
+      const cleanUrl = rawUrl.replace(/\/$/, "");
+      setSidebarSupabaseUrl(cleanUrl);
+
+      const res = await fetch(`${cleanUrl}/rest/v1/`, {
+        headers: {
+          apikey: sidebarSupabaseAnonKey.trim(),
+          Authorization: `Bearer ${sidebarSupabaseAnonKey.trim()}`
+        }
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || `Erro de autenticação (Status: ${res.status})`);
+      }
+
+      if (contact) {
+        const supabase = createClient();
+        const { error } = await supabase
+          .from("contacts")
+          .update({
+            supabase_url: cleanUrl,
+            supabase_anon_key: sidebarSupabaseAnonKey.trim()
+          })
+          .eq("id", contact.id);
+
+        if (error) {
+          console.warn("Erro ao salvar chaves validadas no banco do CRM:", error.message);
+        } else if (onContactUpdate) {
+          onContactUpdate({
+            ...contact,
+            supabase_url: cleanUrl,
+            supabase_anon_key: sidebarSupabaseAnonKey.trim()
+          });
+        }
+      }
+
+      setIsConnectionValidated(true);
+      toast.success("Conexão com o Supabase validada com sucesso!");
+    } catch (err: any) {
+      console.error(err);
+      setIsConnectionValidated(false);
+      toast.error(err.message || "Erro ao conectar com o Supabase. Verifique a URL e Anon Key.");
+    } finally {
+      setValidatingConnection(false);
+    }
+  }, [contact, sidebarSupabaseUrl, sidebarSupabaseAnonKey, onContactUpdate]);
+
+  const handleGenerateAISiteFromSidebar = useCallback(async () => {
+    if (!contact) return;
+
+    if (!isConnectionValidated || !sidebarSupabaseUrl.trim() || !sidebarSupabaseAnonKey.trim()) {
+      toast.error("Por favor, valide a conexão com o Supabase antes de gerar o PWA.");
+      return;
+    }
+
+    setGeneratingAI(true);
+
+    try {
+      const payload = {
+        project_name: contact.name || "Projeto Sem Nome",
+        branding: {
+          palette_name: "Neon Indigo",
+          primary_color_hex: "#6366f1",
+          primary_color_rgb: "99, 102, 241"
+        },
+        modules: ["agendador_pwa"],
+        reference_links: contact.additional_data?.links?.map(l => ({ url: l.url, type: "site", notes: l.label })) || [],
+        client_info: {
+          email: contact.email || "",
+          phone: contact.phone || ""
+        },
+        supabase_url: sidebarSupabaseUrl.trim(),
+        supabase_anon_key: sidebarSupabaseAnonKey.trim(),
+        supabase_service_role_key: contact.supabase_service_role_key?.trim() || "",
+        ai_analysis: ragReport || "",
+        additional_data: contact.additional_data || { files: [], links: [], texts: [] }
+      };
+
+      const createRes = await fetch("http://localhost:5000/api/projetos", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!createRes.ok) {
+        throw new Error("Erro ao registrar o projeto na fila.");
+      }
+
+      const newProject = await createRes.json();
+      const projectId = newProject.id;
+
+      const processRes = await fetch(`http://localhost:5000/api/projetos/${projectId}/processar`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!processRes.ok) {
+        throw new Error("Erro ao iniciar a geração do site.");
+      }
+
+      toast.success("Geração de site por IA iniciada com sucesso!");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Erro na integração com a Fábrica de IA.");
+    } finally {
+      setGeneratingAI(false);
+    }
+  }, [contact, ragReport, isConnectionValidated, sidebarSupabaseUrl, sidebarSupabaseAnonKey]);
 
   const fetchContactData = useCallback(async () => {
     if (!contact) return;
@@ -524,9 +667,94 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
                     className="w-full resize-y rounded-lg border border-border bg-muted px-2.5 py-2 text-xs text-foreground outline-none focus:border-primary/50"
                   />
                 ) : (
-                  <div className="rounded-md bg-muted/40 p-2.5 text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed border border-border/40">
-                    {ragReport}
-                  </div>
+                  <>
+                    <div className="rounded-md bg-muted/40 p-2.5 text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed border border-border/40">
+                      {ragReport}
+                    </div>
+
+                    <div className="pt-3 border-t border-border/60 space-y-2.5 text-left">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                        Configuração do Supabase (Obrigatório)
+                      </span>
+                      
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-foreground block">Supabase URL</label>
+                        <input
+                          type="text"
+                          value={sidebarSupabaseUrl}
+                          onChange={(e) => {
+                            setSidebarSupabaseUrl(e.target.value);
+                            setIsConnectionValidated(false);
+                          }}
+                          placeholder="https://your-project.supabase.co"
+                          className="w-full rounded border border-border bg-muted px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-primary/50"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-foreground block">Supabase Anon Key</label>
+                        <input
+                          type="password"
+                          value={sidebarSupabaseAnonKey}
+                          onChange={(e) => {
+                            setSidebarSupabaseAnonKey(e.target.value);
+                            setIsConnectionValidated(false);
+                          }}
+                          placeholder="Chave Anon Key"
+                          className="w-full rounded border border-border bg-muted px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-primary/50"
+                        />
+                      </div>
+
+                      <Button
+                        type="button"
+                        onClick={handleValidateConnection}
+                        disabled={validatingConnection || !sidebarSupabaseUrl.trim() || !sidebarSupabaseAnonKey.trim()}
+                        variant={isConnectionValidated ? "outline" : "secondary"}
+                        size="sm"
+                        className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold"
+                      >
+                        {validatingConnection ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <span>Validando Conexão...</span>
+                          </>
+                        ) : isConnectionValidated ? (
+                          <>
+                            <Check className="h-3.5 w-3.5 text-emerald-500" />
+                            <span className="text-emerald-700">Conexão Válida!</span>
+                          </>
+                        ) : (
+                          <span>Validar Conexão</span>
+                        )}
+                      </Button>
+                    </div>
+
+                    <div className="pt-3 border-t border-border/60">
+                      <Button
+                        onClick={handleGenerateAISiteFromSidebar}
+                        disabled={generatingAI || !isConnectionValidated}
+                        size="sm"
+                        className="w-full bg-primary hover:bg-primary/95 text-primary-foreground flex items-center justify-center gap-1.5 font-bold"
+                      >
+                        {generatingAI ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <span>Processando Cópia & Geração...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-3.5 w-3.5" />
+                            <span>Iniciar Geração do PWA (IA)</span>
+                          </>
+                        )}
+                      </Button>
+                      {!isConnectionValidated && (
+                        <p className="text-[10px] text-muted-foreground mt-1 text-center font-medium">
+                          Valide a conexão acima para liberar a geração do app.
+                        </p>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             )}

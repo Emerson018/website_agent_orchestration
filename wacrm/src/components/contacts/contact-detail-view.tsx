@@ -34,6 +34,7 @@ import {
   X,
   DollarSign,
   Sparkles,
+  Database,
 } from 'lucide-react';
 
 interface ContactDetailViewProps {
@@ -61,8 +62,24 @@ export function ContactDetailView({
   const [editPhone, setEditPhone] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editCompany, setEditCompany] = useState('');
+  const [supabaseUrl, setSupabaseUrl] = useState('');
+  const [supabaseAnonKey, setSupabaseAnonKey] = useState('');
+  const [supabaseServiceRoleKey, setSupabaseServiceRoleKey] = useState('');
   const [savingDetails, setSavingDetails] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
+
+  // Database Deploy tab states
+  const [baseSql, setBaseSql] = useState<string | null>(null);
+  const [extensionSql, setExtensionSql] = useState<string | null>(null);
+  const [loadingSql, setLoadingSql] = useState(false);
+  const [sqlError, setSqlError] = useState<string | null>(null);
+  const [projectFolder, setProjectFolder] = useState<string | null>(null);
+  
+  const [deployingDb, setDeployingDb] = useState(false);
+  const [deployError, setDeployError] = useState<string | null>(null);
+  const [showSetupInstruction, setShowSetupInstruction] = useState(false);
+  const [setupSql, setSetupSql] = useState('');
+  const [copiedSqlType, setCopiedSqlType] = useState<'base' | 'extension' | 'setup' | null>(null);
 
   // Tags tab
   const [allTags, setAllTags] = useState<Tag[]>([]);
@@ -101,6 +118,9 @@ export function ContactDetailView({
       setEditPhone(data.phone);
       setEditEmail(data.email ?? '');
       setEditCompany(data.company ?? '');
+      setSupabaseUrl(data.supabase_url ?? '');
+      setSupabaseAnonKey(data.supabase_anon_key ?? '');
+      setSupabaseServiceRoleKey(data.supabase_service_role_key ?? '');
     }
     setLoading(false);
   }, [contactId, supabase]);
@@ -175,6 +195,12 @@ export function ContactDetailView({
       fetchNotes();
       fetchCustomFields();
       fetchDeals();
+      setBaseSql(null);
+      setExtensionSql(null);
+      setSqlError(null);
+      setProjectFolder(null);
+      setDeployError(null);
+      setShowSetupInstruction(false);
     }
   }, [open, contactId, fetchContact, fetchTags, fetchNotes, fetchCustomFields, fetchDeals]);
 
@@ -185,6 +211,73 @@ export function ContactDetailView({
     setTimeout(() => setCopiedPhone(false), 2000);
   }
 
+  const fetchSqlSchemas = useCallback(async () => {
+    if (!contactId) return;
+    setLoadingSql(true);
+    setSqlError(null);
+    try {
+      const res = await fetch(`/api/contacts/${contactId}/deploy-db`);
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setSqlError(data.error || 'Erro ao carregar esquemas SQL');
+        setBaseSql(null);
+        setExtensionSql(null);
+      } else {
+        setBaseSql(data.base_schema);
+        setExtensionSql(data.ai_extension_schema);
+        setProjectFolder(data.project_folder);
+      }
+    } catch (err) {
+      setSqlError('Erro de conexão ao carregar esquemas SQL');
+    } finally {
+      setLoadingSql(false);
+    }
+  }, [contactId]);
+
+  async function handleDeployDatabase() {
+    if (!contactId || !contact) return;
+    
+    let normUrl = supabaseUrl.trim();
+    if (normUrl && !normUrl.startsWith('http://') && !normUrl.startsWith('https://')) {
+      normUrl = `https://${normUrl}.supabase.co`;
+    }
+    setSupabaseUrl(normUrl);
+
+    if (!normUrl || !supabaseServiceRoleKey.trim()) {
+      toast.error('Supabase URL e Service Role Key são necessários para realizar o deploy.');
+      return;
+    }
+
+    setDeployingDb(true);
+    setDeployError(null);
+    setShowSetupInstruction(false);
+
+    try {
+      const res = await fetch(`/api/contacts/${contactId}/deploy-db`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      
+      if (!res.ok || !data.success) {
+        setDeployError(data.error || 'Erro ao realizar o deploy.');
+        if (data.isFunctionMissing) {
+          setShowSetupInstruction(true);
+          setSetupSql(data.setup_sql);
+          toast.error('Erro: Função auxiliar exec_sql ausente no banco do cliente.');
+        } else {
+          toast.error(data.error || 'Erro ao realizar o deploy.');
+        }
+      } else {
+        toast.success('Banco de dados implantado com sucesso no inquilino do cliente!');
+      }
+    } catch (err) {
+      setDeployError('Erro de conexão ao realizar o deploy.');
+      toast.error('Erro de conexão ao realizar o deploy.');
+    } finally {
+      setDeployingDb(false);
+    }
+  }
+
   async function saveDetails() {
     if (!contactId || !editPhone.trim()) {
       toast.error('Phone number is required');
@@ -192,6 +285,12 @@ export function ContactDetailView({
     }
 
     setSavingDetails(true);
+    let normUrl = supabaseUrl.trim();
+    if (normUrl && !normUrl.startsWith('http://') && !normUrl.startsWith('https://')) {
+      normUrl = `https://${normUrl}.supabase.co`;
+    }
+    setSupabaseUrl(normUrl);
+
     const { error } = await supabase
       .from('contacts')
       .update({
@@ -199,6 +298,9 @@ export function ContactDetailView({
         phone: editPhone.trim(),
         email: editEmail.trim() || null,
         company: editCompany.trim() || null,
+        supabase_url: normUrl || null,
+        supabase_anon_key: supabaseAnonKey.trim() || null,
+        supabase_service_role_key: supabaseServiceRoleKey.trim() || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', contactId);
@@ -215,6 +317,19 @@ export function ContactDetailView({
 
   async function handleGenerateAISite() {
     if (!contactId || !contact) return;
+
+    let normUrl = supabaseUrl.trim();
+    if (normUrl && !normUrl.startsWith('http://') && !normUrl.startsWith('https://')) {
+      normUrl = `https://${normUrl}.supabase.co`;
+    }
+    setSupabaseUrl(normUrl);
+
+    // Validação Single-Tenant obrigatória
+    if (!normUrl || !supabaseAnonKey.trim()) {
+      toast.error('Os campos Supabase URL e Supabase Anon Key são obrigatórios para a geração do PWA (Single-Tenant).');
+      return;
+    }
+
     setGeneratingAI(true);
 
     try {
@@ -246,6 +361,9 @@ export function ContactDetailView({
           email: editEmail || contact.email || "",
           phone: editPhone || contact.phone || ""
         },
+        supabase_url: normUrl,
+        supabase_anon_key: supabaseAnonKey.trim(),
+        supabase_service_role_key: supabaseServiceRoleKey.trim(),
         ai_analysis: aiAnalysis
       };
 
@@ -460,7 +578,15 @@ export function ContactDetailView({
             </SheetHeader>
 
             {/* Tabs */}
-            <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0">
+            <Tabs 
+              defaultValue="details" 
+              className="flex-1 flex flex-col min-h-0"
+              onValueChange={(val) => {
+                if (val === 'deploy') {
+                  fetchSqlSchemas();
+                }
+              }}
+            >
               <TabsList className="bg-muted/50 border-b border-border mx-4 mt-3">
                 <TabsTrigger
                   value="details"
@@ -491,6 +617,12 @@ export function ContactDetailView({
                   className="data-active:bg-muted data-active:text-primary text-muted-foreground"
                 >
                   Deals
+                </TabsTrigger>
+                <TabsTrigger
+                  value="deploy"
+                  className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+                >
+                  Deploy DB
                 </TabsTrigger>
               </TabsList>
 
@@ -528,6 +660,43 @@ export function ContactDetailView({
                     <Input
                       value={editCompany}
                       onChange={(e) => setEditCompany(e.target.value)}
+                      className="bg-muted border-border text-foreground h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground text-xs flex items-center gap-1">
+                      <span>Supabase Tenant URL</span>
+                      <span className="text-[10px] opacity-60 font-normal">(Single-Tenant)</span>
+                    </Label>
+                    <Input
+                      value={supabaseUrl}
+                      onChange={(e) => setSupabaseUrl(e.target.value)}
+                      placeholder="https://seu-projeto.supabase.co"
+                      className="bg-muted border-border text-foreground h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground text-xs flex items-center gap-1">
+                      <span>Supabase Anon Key</span>
+                      <span className="text-[10px] opacity-60 font-normal">(Single-Tenant)</span>
+                    </Label>
+                    <Input
+                      value={supabaseAnonKey}
+                      onChange={(e) => setSupabaseAnonKey(e.target.value)}
+                      placeholder="eyJhbGciOi..."
+                      className="bg-muted border-border text-foreground h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground text-xs flex items-center gap-1">
+                      <span>Supabase Service Role Key</span>
+                      <span className="text-[10px] opacity-60 font-normal">(Single-Tenant)</span>
+                    </Label>
+                    <Input
+                      type="password"
+                      value={supabaseServiceRoleKey}
+                      onChange={(e) => setSupabaseServiceRoleKey(e.target.value)}
+                      placeholder="eyJhbGciOi..."
                       className="bg-muted border-border text-foreground h-8 text-sm"
                     />
                   </div>
@@ -766,6 +935,163 @@ export function ContactDetailView({
                     ))}
                   </div>
                 )}
+              </TabsContent>
+
+              {/* Deploy DB Tab */}
+              <TabsContent value="deploy" className="flex-1 overflow-y-auto px-4 py-3">
+                <div className="space-y-4">
+                  {loadingSql ? (
+                    <div className="flex flex-col items-center justify-center py-12 space-y-2">
+                      <Loader2 className="size-6 animate-spin text-primary" />
+                      <p className="text-xs text-muted-foreground">Carregando esquemas SQL...</p>
+                    </div>
+                  ) : sqlError ? (
+                    <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
+                      <p className="font-semibold mb-1">Erro ao obter arquivos SQL</p>
+                      <p className="text-xs opacity-90">{sqlError}</p>
+                    </div>
+                  ) : (
+                    <>
+                      {projectFolder && (
+                        <div className="flex items-center justify-between rounded-lg bg-muted/50 border border-border p-2">
+                          <span className="text-xs text-muted-foreground font-medium">Projeto:</span>
+                          <Badge variant="outline" className="font-mono text-[10px] bg-background">
+                            {projectFolder}
+                          </Badge>
+                        </div>
+                      )}
+
+                      {/* SQL Code Blocks */}
+                      <div className="space-y-3">
+                        {/* Base Schema */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-foreground">Esquema Base (base_schema.sql)</span>
+                            {baseSql && (
+                              <button
+                                onClick={async () => {
+                                  await navigator.clipboard.writeText(baseSql);
+                                  setCopiedSqlType('base');
+                                  setTimeout(() => setCopiedSqlType(null), 2000);
+                                }}
+                                className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors cursor-pointer"
+                              >
+                                {copiedSqlType === 'base' ? (
+                                  <>
+                                    <Check className="size-3 text-emerald-400" />
+                                    <span>Copiado</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="size-3" />
+                                    <span>Copiar</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                          <ScrollArea className="h-36 rounded-md border border-border bg-zinc-950 p-2 font-mono text-[10px] text-zinc-300">
+                            {baseSql ? (
+                              <pre className="whitespace-pre">{baseSql}</pre>
+                            ) : (
+                              <span className="text-zinc-500 italic">Arquivo vazio ou não gerado.</span>
+                            )}
+                          </ScrollArea>
+                        </div>
+
+                        {/* AI Schema */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-foreground">Esquema Personalizado (ai_extension_schema.sql)</span>
+                            {extensionSql && (
+                              <button
+                                onClick={async () => {
+                                  await navigator.clipboard.writeText(extensionSql);
+                                  setCopiedSqlType('extension');
+                                  setTimeout(() => setCopiedSqlType(null), 2000);
+                                }}
+                                className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors cursor-pointer"
+                              >
+                                {copiedSqlType === 'extension' ? (
+                                  <>
+                                    <Check className="size-3 text-emerald-400" />
+                                    <span>Copiado</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="size-3" />
+                                    <span>Copiar</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                          <ScrollArea className="h-36 rounded-md border border-border bg-zinc-950 p-2 font-mono text-[10px] text-zinc-300">
+                            {extensionSql ? (
+                              <pre className="whitespace-pre">{extensionSql}</pre>
+                            ) : (
+                              <span className="text-zinc-500 italic">Arquivo vazio ou não gerado.</span>
+                            )}
+                          </ScrollArea>
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      <Button
+                        onClick={handleDeployDatabase}
+                        disabled={deployingDb || (!baseSql && !extensionSql)}
+                        className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium gap-2 shadow-sm"
+                        size="sm"
+                      >
+                        {deployingDb ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <Database className="size-3.5" />
+                        )}
+                        Executar Deploy no Banco do Cliente
+                      </Button>
+
+                      {/* Instructions for Missing exec_sql helper */}
+                      {showSetupInstruction && (
+                        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 space-y-2">
+                          <h4 className="text-xs font-bold text-amber-500 flex items-center gap-1">
+                            ⚠️ Ação Necessária no Supabase
+                          </h4>
+                          <p className="text-[10px] text-amber-400 leading-normal">
+                            Para implantar remotamente, crie a função de execução SQL. Acesse o **SQL Editor** no painel do Supabase do cliente e execute o seguinte comando:
+                          </p>
+                          <div className="relative">
+                            <ScrollArea className="h-24 rounded-md border border-amber-500/20 bg-zinc-950/80 p-2 font-mono text-[9px] text-zinc-300">
+                              <pre className="whitespace-pre">{setupSql}</pre>
+                            </ScrollArea>
+                            <button
+                              onClick={async () => {
+                                await navigator.clipboard.writeText(setupSql);
+                                setCopiedSqlType('setup');
+                                setTimeout(() => setCopiedSqlType(null), 2000);
+                              }}
+                              className="absolute top-1 right-1 p-1 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-[9px] flex items-center gap-1 transition-all cursor-pointer"
+                            >
+                              {copiedSqlType === 'setup' ? (
+                                <Check className="size-2 text-emerald-400" />
+                              ) : (
+                                <Copy className="size-2" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* General deploy feedback error */}
+                      {deployError && !showSetupInstruction && (
+                        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400">
+                          <p className="font-semibold mb-1">Falha no Deploy:</p>
+                          <p className="opacity-90">{deployError}</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </TabsContent>
             </Tabs>
           </div>
