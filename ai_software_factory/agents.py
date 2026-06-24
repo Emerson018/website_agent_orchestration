@@ -163,7 +163,7 @@ def infra_cloner_node(state: AgentState) -> Dict[str, Any]:
         "execution_logs": current_logs
     }
 
-def generate_fallback_landing_page_code(app_name: str, primary_color: str, secondary_color: str, mensagem: str) -> str:
+def generate_fallback_landing_page_code(app_name: str, primary_color: str, secondary_color: str, mensagem: str, is_nextjs: bool = False) -> str:
     # Identifica o tipo de negócio na mensagem
     is_barber = any(x in app_name.lower() or x in mensagem.lower() for x in ["barbearia", "barba", "corte", "navalha", "pampas", "barber"])
     is_dental = any(x in app_name.lower() or x in mensagem.lower() for x in ["odont", "sorriso", "dentist", "dente", "clinic"])
@@ -175,7 +175,7 @@ def generate_fallback_landing_page_code(app_name: str, primary_color: str, secon
         services = [
             {"name": "Corte de Cabelo", "desc": "Corte moderno ou clássico com lavagem e finalização premium.", "price": "R$ 60"},
             {"name": "Barba e Toalha Quente", "desc": "Barba feita na navalha com hidratação, óleo e toalha quente relaxante.", "price": "R$ 50"},
-            {"name": "Combo Pampas Premium", "desc": "Corte + Barba + Sobrancelha com cerveja inclusa como cortesia.", "price": "R$ 100"}
+            {"name": "Combo Premium", "desc": "Corte + Barba + Sobrancelha com cerveja inclusa como cortesia.", "price": "R$ 100"}
         ]
         visual_theme = "bg-gray-950 text-gray-100"
         card_theme = "bg-gray-900 border-gray-800"
@@ -223,8 +223,11 @@ def generate_fallback_landing_page_code(app_name: str, primary_color: str, secon
         </div>
         """
 
+    link_import = "import Link from 'next/link';" if is_nextjs else "import { Link } from 'react-router-dom';"
+    link_attr = "href" if is_nextjs else "to"
+
     code = f"""import React from 'react';
-import {{ Link }} from 'react-router-dom';
+{link_import}
 
 export default function LandingPage() {{
   return (
@@ -243,7 +246,7 @@ export default function LandingPage() {{
         </p>
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
           <Link 
-            to="/agendar"
+            {link_attr}="/agendar"
             className="w-full sm:w-auto px-8 py-4 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/25 hover:brightness-110 hover:shadow-primary/35 transition-all flex items-center justify-center gap-2 group cursor-pointer"
           >
             <span>Agendar Horário</span>
@@ -270,7 +273,7 @@ export default function LandingPage() {{
         <h3 className="text-2xl font-bold">Pronto para ter uma experiência incrível?</h3>
         <p className="text-sm opacity-80 mt-3 max-w-md">Escolha o melhor dia, horário e o profissional da sua preferência diretamente no nosso sistema.</p>
         <Link 
-          to="/agendar"
+          {link_attr}="/agendar"
           className="mt-8 px-6 py-3 rounded-lg bg-primary text-white font-bold shadow-md hover:brightness-105 transition-all"
         >
           Iniciar Agendamento Online
@@ -284,23 +287,8 @@ export default function LandingPage() {{
 
 
 def generate_landing_page(target_path: str, reqs: Dict[str, Any], lead_raw: Dict[str, Any]):
-    # Se for um projeto Next.js, não geramos LandingPage.jsx (Vite)
     is_nextjs = os.path.exists(os.path.join(target_path, "frontend", "src", "app", "layout.tsx"))
-    if is_nextjs:
-        print("[Desenvolvedor] Projeto Next.js detectado. Ignorando a geração do arquivo LandingPage.jsx legado (Vite).")
-        # Remove arquivo legado se existir de tentativas anteriores
-        legacy_path = os.path.join(target_path, "frontend", "src", "pages", "LandingPage.jsx")
-        if os.path.exists(legacy_path):
-            try:
-                os.remove(legacy_path)
-                print(f"[Desenvolvedor] Arquivo legado removido: {legacy_path}")
-                # Tenta remover a pasta se estiver vazia
-                os.rmdir(os.path.dirname(legacy_path))
-                print(f"[Desenvolvedor] Pasta legada vazia removida: {os.path.dirname(legacy_path)}")
-            except Exception as rm_err:
-                pass
-        return
-
+    
     app_name = reqs.get("app_name", "AppCustomizado")
     primary_color = reqs.get("primary_color", "#D4AF37")
     secondary_color = reqs.get("secondary_color", "#1A1A1A")
@@ -336,9 +324,25 @@ def generate_landing_page(target_path: str, reqs: Dict[str, Any], lead_raw: Dict
     code = None
     if use_llm:
         try:
-            print("[Desenvolvedor] Gerando LandingPage.jsx customizada via LLM...")
-            prompt = ChatPromptTemplate.from_messages([
-                ("system", """Você é um Engenheiro Frontend especialista em React e Tailwind CSS.
+            print(f"[Desenvolvedor] Gerando Landing Page customizada via LLM (Next.js: {is_nextjs})...")
+            
+            if is_nextjs:
+                system_prompt = """Você é um Engenheiro Frontend especialista em React, Next.js (App Router) e Tailwind CSS.
+Sua tarefa é criar um componente funcional React (Server Component de preferência, sem hooks de cliente a menos que estritamente necessário) e estilizado com Tailwind CSS para a página inicial (Home/LandingPage) do novo negócio do cliente.
+
+O código gerado deve ser um arquivo page.tsx React completo e autocontido (export default function LandingPage() { ... }).
+Ele deve:
+1. Seguir exatamente as diretrizes e seções propostas na análise de design da IA enviada pelo usuário.
+2. Utilizar as classes do Tailwind CSS para uma estilização premium, moderna e limpa (use sombras, gradientes, transições e micro-animações).
+3. Importar Link de 'next/link' para a ação de agendamento (use <Link href="/agendar" className="..."> para o CTA de agendamento).
+4. O design deve se adequar perfeitamente ao setor do negócio (Ex: Barbearia deve ter visual rústico/premium com tons de couro/madeira/escuros; Odontologia deve ser clean, confiável e corporativo; Estética deve ser elegante, rosa/bege, etc.).
+5. Usar as variáveis de cor de tailwind 'bg-primary' e 'text-primary' ou 'bg-secondary' e 'text-secondary' nos botões e destaques que devem herdar as cores da marca.
+6. Retornar APENAS o código do arquivo page.tsx, sem explicações adicionais e sem blocos de código markdown (como ```tsx ou ```). Comece direto com o código.
+7. Use apenas comentários válidos do JSX (como {/* comentário */}) e NUNCA string literals com barra de comentários (como {"/* comentário */"}) ou comentários HTML, pois eles são renderizados incorretamente como texto na tela.
+8. Para aplicar as cores customizadas da marca de forma dinâmica, você pode ler o arquivo de configuração ai_config.json na raiz do projeto Next.js no próprio servidor, usando fs do Node.js, ou você pode injetar as cores inline usando style={{ backgroundColor: primary_color }} etc. Recomendamos injetar as cores diretamente no JSX usando as variáveis dinâmicas de cores passadas no prompt para maior robustez (ex: style={{{{ backgroundColor: "{primary_color}" }}}}).
+"""
+            else:
+                system_prompt = """Você é um Engenheiro Frontend especialista em React e Tailwind CSS.
 Sua tarefa é criar um componente funcional React e estilizado com Tailwind CSS para a página de destino (LandingPage) do novo negócio do cliente.
 
 O código gerado deve ser um arquivo LandingPage.jsx React completo e autocontido (export default function LandingPage() { ... }).
@@ -350,7 +354,10 @@ Ele deve:
 5. Usar as variáveis de cor de tailwind 'bg-primary' e 'text-primary' ou 'bg-secondary' e 'text-secondary' nos botões e destaques que devem herdar as cores da marca.
 6. Retornar APENAS o código do arquivo LandingPage.jsx, sem explicações adicionais e sem blocos de código markdown (como ```jsx ou ```). Comece direto com o código.
 7. Use apenas comentários válidos do JSX (como {/* comentário */}) e NUNCA string literals com barra de comentários (como {"/* comentário */"}) ou comentários HTML, pois eles são renderizados incorretamente como texto na tela.
-"""),
+"""
+            
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", system_prompt),
                 ("user", "Informações e análises do lead:\n{mensagem}\n\nNome comercial: {app_name}\nCor Primária: {primary_color}\nCor Secundária: {secondary_color}")
             ])
             chain = prompt | llm
@@ -370,14 +377,28 @@ Ele deve:
             code = None
             
     if not code:
-        print("[Desenvolvedor] Utilizando gerador local de fallback para LandingPage.jsx...")
-        code = generate_fallback_landing_page_code(app_name, primary_color, secondary_color, mensagem)
+        print(f"[Desenvolvedor] Utilizando gerador local de fallback para LandingPage (Next.js: {is_nextjs})...")
+        code = generate_fallback_landing_page_code(app_name, primary_color, secondary_color, mensagem, is_nextjs)
         
-    landing_page_path = os.path.join(target_path, "frontend", "src", "pages", "LandingPage.jsx")
+    if is_nextjs:
+        landing_page_path = os.path.join(target_path, "frontend", "src", "app", "page.tsx")
+        # Remove arquivo legado se existir de tentativas anteriores
+        legacy_path = os.path.join(target_path, "frontend", "src", "pages", "LandingPage.jsx")
+        if os.path.exists(legacy_path):
+            try:
+                os.remove(legacy_path)
+                print(f"[Desenvolvedor] Arquivo legado removido: {legacy_path}")
+                os.rmdir(os.path.dirname(legacy_path))
+                print(f"[Desenvolvedor] Pasta legada vazia removida: {os.path.dirname(legacy_path)}")
+            except Exception as rm_err:
+                pass
+    else:
+        landing_page_path = os.path.join(target_path, "frontend", "src", "pages", "LandingPage.jsx")
+        
     os.makedirs(os.path.dirname(landing_page_path), exist_ok=True)
     with open(landing_page_path, 'w', encoding='utf-8') as f:
         f.write(code)
-    print(f"LandingPage.jsx gerada com sucesso em: {landing_page_path}")
+    print(f"Landing Page gerada com sucesso em: {landing_page_path}")
 
 
 def generate_niche_database_schema(target_path: str, lead_raw: Dict[str, Any]):
