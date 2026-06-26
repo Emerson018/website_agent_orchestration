@@ -31,7 +31,7 @@ function MainLayout() {
         </nav>
       </header>
 
-      <main style={{ maxWidth: '1200px', margin: '2rem auto', padding: '0 1rem' }}>
+      <main style={{ width: '100%', minHeight: 'calc(100vh - 80px)' }}>
         <Outlet />
       </main>
     </div>
