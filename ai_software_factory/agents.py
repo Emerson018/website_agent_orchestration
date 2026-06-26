@@ -143,9 +143,10 @@ def infra_cloner_node(state: AgentState) -> Dict[str, Any]:
     reqs = state.get("customization_requirements", {})
     app_name = reqs.get("app_name", "AppCustomizado")
     
-    # Limpa o app_name para criar um nome de pasta seguro em snake_case/sem espaços
+    # Limpa o app_name para criar um nome de pasta seguro em snake_case/sem espaços/letra minúscula
     app_name_limpo = re.sub(r'\s+', '_', app_name)
     app_name_limpo = re.sub(r'[^a-zA-Z0-9_]', '', app_name_limpo)
+    app_name_limpo = app_name_limpo.lower()
     
     target_project = f"workspace/{app_name_limpo}"
     
