@@ -46,11 +46,35 @@ def parse_fallback_requirements(lead_raw: Dict[str, Any]) -> Dict[str, Any]:
     # Tenta extrair a cor secundária por regex
     match_secondary = re.search(r"Cor secundária:\s*(#[a-fA-F0-9]{6})", mensagem)
     secondary_color = match_secondary.group(1) if match_secondary else "#1A1A1A"
+
+    # Tenta extrair logo_url de URL de imagem nos arquivos ou links
+    logo_match = re.search(r"https?://[^\s\"']+\.(?:png|jpg|jpeg|webp)", mensagem)
+    logo_url = logo_match.group(0) if logo_match else "/logo.png"
+
+    # Tenta extrair telefone do padrão
+    phone_match = re.search(r"Telefone:\s*([^\n\r]+)", mensagem, re.IGNORECASE)
+    if not phone_match:
+        phone_match = re.search(r"Telefone\s*de\s*Contato:\s*([^\n\r]+)", mensagem, re.IGNORECASE)
+    phone = phone_match.group(1).strip() if phone_match else "(51) 99999-9999"
+
+    # Tenta extrair endereço
+    address_match = re.search(r"Endereço:\s*([^\n\r]+)", mensagem, re.IGNORECASE)
+    address = address_match.group(1).strip() if address_match else "Av. Principal, 1000 - Centro - Porto Alegre/RS"
+
+    # Tenta extrair horário
+    hours_match = re.search(r"Funcionamento:\s*([^\n\r]+)", mensagem, re.IGNORECASE)
+    if not hours_match:
+        hours_match = re.search(r"Horários?:\s*([^\n\r]+)", mensagem, re.IGNORECASE)
+    working_hours = hours_match.group(1).strip() if hours_match else "Segunda a Sábado das 9h às 18h"
     
     return {
         "app_name": app_name,
         "primary_color": primary_color,
-        "secondary_color": secondary_color
+        "secondary_color": secondary_color,
+        "logo_url": logo_url,
+        "address": address,
+        "working_hours": working_hours,
+        "phone": phone
     }
 
 def requirements_analyst_node(state: AgentState) -> Dict[str, Any]:
@@ -104,7 +128,7 @@ def requirements_analyst_node(state: AgentState) -> Dict[str, Any]:
             structured_llm = llm.with_structured_output(ClientConfig)
             
             prompt = ChatPromptTemplate.from_messages([
-                ("system", "Você é um Analista de Requisitos especialista. Analise os dados de entrada do cliente e infira as configurações de personalização do app React (nome comercial, cor primária e secundária) de acordo com o esquema ClientConfig definido."),
+                ("system", "Você é um Analista de Requisitos especialista. Analise os dados de entrada do cliente (incluindo links de referências e arquivos anexos) e infira as configurações de personalização do app React (nome comercial, cor primária, cor secundária, URL do logo nos anexos se disponível, endereço físico, horário de funcionamento e telefone/WhatsApp de contato) de acordo com o esquema ClientConfig definido."),
                 ("user", "Dados brutos do lead:\n{lead_raw_json}")
             ])
             
@@ -338,9 +362,10 @@ Ele deve:
 3. Importar Link de 'next/link' para a ação de agendamento (use <Link href="/agendar" className="..."> para o CTA de agendamento).
 4. O design deve se adequar perfeitamente ao setor do negócio (Ex: Barbearia deve ter visual rústico/premium com tons de couro/madeira/escuros; Odontologia deve ser clean, confiável e corporativo; Estética deve ser elegante, rosa/bege, etc.).
 5. Usar as variáveis de cor de tailwind 'bg-primary' e 'text-primary' ou 'bg-secondary' e 'text-secondary' nos botões e destaques que devem herdar as cores da marca.
-6. Retornar APENAS o código do arquivo page.tsx, sem explicações adicionais e sem blocos de código markdown (como ```tsx ou ```). Comece direto com o código.
-7. Use apenas comentários válidos do JSX (como {/* comentário */}) e NUNCA string literals com barra de comentários (como {"/* comentário */"}) ou comentários HTML, pois eles são renderizados incorretamente como texto na tela.
-8. Para aplicar as cores customizadas da marca de forma dinâmica, você pode ler o arquivo de configuração ai_config.json na raiz do projeto Next.js no próprio servidor, usando fs do Node.js, ou você pode injetar as cores inline usando style={{ backgroundColor: primary_color }} etc. Recomendamos injetar as cores diretamente no JSX usando as variáveis dinâmicas de cores passadas no prompt para maior robustez (ex: style={{{{ backgroundColor: "{primary_color}" }}}}).
+6. Importar e renderizar os componentes `@/components/Header` no topo e `@/components/Footer` na parte inferior da página. Você deve ler o arquivo de configuração `ai_config.json` para obter os dados do estabelecimento (`app_name`, `primary_color`, `logo_url`, `address`, `phone`, `working_hours`) e passá-los aos componentes.
+7. Retornar APENAS o código do arquivo page.tsx, sem explicações adicionais e sem blocos de código markdown (como ```tsx ou ```). Comece direto com o código.
+8. Use apenas comentários válidos do JSX (como {/* comentário */}) e NUNCA string literals com barra de comentários (como {"/* comentário */"}) ou comentários HTML, pois eles são renderizados incorretamente como texto na tela.
+9. Para aplicar as cores customizadas da marca de forma dinâmica, você pode ler o arquivo de configuração ai_config.json na raiz do projeto Next.js no próprio servidor, usando fs do Node.js, ou você pode injetar as cores inline usando style={{ backgroundColor: primary_color }} etc. Recomendamos injetar as cores diretamente no JSX usando as variáveis dinâmicas de cores passadas no prompt para maior robustez (ex: style={{{{ backgroundColor: "{primary_color}" }}}}).
 """
             else:
                 system_prompt = """Você é um Engenheiro Frontend especialista em React e Tailwind CSS.

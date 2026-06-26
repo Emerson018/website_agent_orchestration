@@ -3,5 +3,9 @@
   "primary_color": "#4F46E5",
   "secondary_color": "#10B981",
   "supabase_url": "https://your-project.supabase.co",
-  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "logo_url": "/logo.png",
+  "address": "Av. Principal, 1000 - Centro - Porto Alegre/RS",
+  "phone": "(51) 99999-9999",
+  "working_hours": "Segunda a Sábado das 9h às 18h"
 }

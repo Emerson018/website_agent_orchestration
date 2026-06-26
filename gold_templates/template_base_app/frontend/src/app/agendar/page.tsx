@@ -4,11 +4,16 @@ import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import { Calendar, User, Phone, CheckCircle2 } from 'lucide-react';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 export default function BookingPage() {
   const [appName, setAppName] = useState('Agendador PWA');
   const [primaryColor, setPrimaryColor] = useState('#4F46E5');
   const [secondaryColor, setSecondaryColor] = useState('#10B981');
+  const [logoUrl, setLogoUrl] = useState('/logo.png');
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
+  const [workingHours, setWorkingHours] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -30,6 +35,10 @@ export default function BookingPage() {
         if (config?.app_name) setAppName(config.app_name);
         if (config?.primary_color) setPrimaryColor(config.primary_color);
         if (config?.secondary_color) setSecondaryColor(config.secondary_color);
+        if (config?.logo_url) setLogoUrl(config.logo_url);
+        if (config?.address) setAddress(config.address);
+        if (config?.phone) setPhone(config.phone);
+        if (config?.working_hours) setWorkingHours(config.working_hours);
       } catch (err) {
         // Fallbacks are already set
       }
@@ -72,9 +81,11 @@ export default function BookingPage() {
 
   const todayStr = new Date().toISOString().split('T')[0];
 
+  const theme = appName.toLowerCase().includes('marcianos') ? 'dark' : 'light';
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header appName={appName} primaryColor={primaryColor} />
+    <div className="min-h-screen flex flex-col">
+      <Header appName={appName} primaryColor={primaryColor} logoUrl={logoUrl} theme={theme} />
 
       {/* Main Container */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 my-6">
@@ -266,6 +277,14 @@ export default function BookingPage() {
           
         </div>
       </main>
+      <Footer 
+        appName={appName}
+        address={address}
+        phone={phone}
+        workingHours={workingHours}
+        primaryColor={primaryColor}
+        theme={theme}
+      />
     </div>
   );
 }

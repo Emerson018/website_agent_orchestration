@@ -14,6 +14,10 @@ function App() {
     if (config) {
       document.documentElement.style.setProperty('--primary-color', config.primary_color);
       document.documentElement.style.setProperty('--secondary-color', config.secondary_color);
+      
+      const isMarcianos = config.app_name?.toLowerCase().includes('marcianos');
+      const bgColor = isMarcianos ? '#020617' : (config.secondary_color || '#f9fafb');
+      document.body.style.backgroundColor = bgColor;
     }
   }, []);
 

@@ -12,7 +12,8 @@ interface HeaderProps {
 
 export default function Header({ appName, primaryColor, logoUrl = '/logo.png', theme = 'light' }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [hasError, setHasError] = useState(false);
+  const [currentLogo, setCurrentLogo] = useState(logoUrl || '/logo.png');
+  const [fallbackLevel, setFallbackLevel] = useState(0); // 0 = custom/provided logo, 1 = default local logo, 2 = text fallback
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,7 +23,21 @@ export default function Header({ appName, primaryColor, logoUrl = '/logo.png', t
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const isDark = theme === 'dark';
+  useEffect(() => {
+    setCurrentLogo(logoUrl || '/logo.png');
+    setFallbackLevel(0);
+  }, [logoUrl]);
+
+  const handleError = () => {
+    if (fallbackLevel === 0 && logoUrl && logoUrl !== '/logo.png') {
+      setCurrentLogo('/logo.png');
+      setFallbackLevel(1);
+    } else {
+      setFallbackLevel(2);
+    }
+  };
+
+  const isDark = theme === 'dark' || appName.toLowerCase().includes('marcianos');
 
   return (
     <header 
@@ -43,12 +58,12 @@ export default function Header({ appName, primaryColor, logoUrl = '/logo.png', t
       }}
     >
       <Link href="/" className="flex items-center gap-2">
-        {!hasError ? (
+        {fallbackLevel < 2 ? (
           <img 
-            src={logoUrl} 
+            src={currentLogo} 
             alt={appName} 
             className={`object-contain transition-all duration-300 ${isScrolled ? 'h-8' : 'h-11'}`} 
-            onError={() => setHasError(true)}
+            onError={handleError}
           />
         ) : (
           <span className="text-xl font-bold tracking-tight">

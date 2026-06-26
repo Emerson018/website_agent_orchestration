@@ -3,6 +3,7 @@ import React from 'react';
 import { promises as fs } from 'fs';
 import path from 'path';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 async function getConfig() {
   try {
@@ -14,23 +15,28 @@ async function getConfig() {
       app_name: 'Agendador PWA',
       primary_color: '#4F46E5',
       secondary_color: '#10B981',
+      logo_url: '/logo.png',
+      address: 'Av. Principal, 1000 - Centro - Porto Alegre/RS',
+      phone: '(51) 99999-9999',
+      working_hours: 'Segunda a Sábado das 9h às 18h'
     };
   }
 }
 
 export default async function LandingPage() {
   const config = await getConfig();
+  const theme = config.app_name?.toLowerCase().includes('marcianos') ? 'dark' : 'light';
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header appName={config.app_name} primaryColor={config.primary_color} />
+    <div className="min-h-screen flex flex-col">
+      <Header appName={config.app_name} primaryColor={config.primary_color} logoUrl={config.logo_url} theme={theme} />
 
       <main className="flex-1 flex flex-col items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white shadow-xl rounded-3xl p-8 border border-gray-100 flex flex-col items-center text-center">
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl">
+        <div className="max-w-md w-full bg-white dark:bg-slate-900 shadow-xl rounded-3xl p-8 border border-gray-100 dark:border-slate-800 flex flex-col items-center text-center">
+          <h2 className="text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight sm:text-4xl">
             Vitrine do Negócio
           </h2>
-          <p className="mt-4 text-sm text-gray-500 leading-relaxed">
+          <p className="mt-4 text-sm text-gray-500 dark:text-slate-400 leading-relaxed">
             Bem-vindo ao {config.app_name}. Conheça nossos profissionais, serviços e agende o seu horário online com facilidade e conforto.
           </p>
           <Link 
@@ -42,6 +48,15 @@ export default async function LandingPage() {
           </Link>
         </div>
       </main>
+
+      <Footer 
+        appName={config.app_name}
+        address={config.address}
+        phone={config.phone}
+        workingHours={config.working_hours}
+        primaryColor={config.primary_color}
+        theme={theme}
+      />
     </div>
   );
 }

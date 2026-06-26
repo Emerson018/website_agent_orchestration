@@ -3,5 +3,9 @@
   "primary_color": "#D4AF37",
   "secondary_color": "#1A1A1A",
   "supabase_url": "https://xyzcompany.supabase.co",
-  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5c..."
+  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5c...",
+  "logo_url": "/logo.png",
+  "address": "Av. Principal, 1000 - Centro - Porto Alegre/RS",
+  "phone": "(51) 99999-9999",
+  "working_hours": "Segunda a Sábado das 9h às 18h"
 }

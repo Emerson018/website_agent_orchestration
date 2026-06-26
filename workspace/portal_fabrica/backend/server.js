@@ -110,6 +110,14 @@ app.post('/api/projetos', async (req, res) => {
         .join('\n');
     }
 
+    // Formata os arquivos de apoio (anexos do lead) de forma amigável
+    let arquivosStr = 'Nenhum arquivo de apoio fornecido.';
+    if (additional_data && additional_data.files && additional_data.files.length > 0) {
+      arquivosStr = additional_data.files
+        .map((f, i) => `${i + 1}. Nome: ${f.name} - URL: ${f.url}`)
+        .join('\n');
+    }
+
     // Cria a mensagem estruturada do lead, incluindo a análise de referências e UX da IA
     const mensagem_lead = `Olá! Quero criar um site/app para meu negócio chamado '${project_name}'.
 Identidade visual recomendada:
@@ -121,6 +129,9 @@ Módulos solicitados: [${modulosStr}]
 
 Especificações e Textos Adicionais (RAG/Agendador):
 ${textosStr}
+
+Arquivos de apoio (Anexos do Lead):
+${arquivosStr}
 
 Análise de Referências e Proposta de Design da IA:
 ${ai_analysis || 'Nenhuma análise de referência disponível.'}
