@@ -2,6 +2,7 @@ import Link from 'next/link';
 import React from 'react';
 import { promises as fs } from 'fs';
 import path from 'path';
+import Header from '@/components/Header';
 
 async function getConfig() {
   try {
@@ -22,25 +23,7 @@ export default async function LandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <header 
-        className="px-6 py-4 flex items-center justify-between shadow-sm border-b border-gray-150"
-        style={{ backgroundColor: config.primary_color }}
-      >
-        <h1 className="text-xl font-bold tracking-tight text-white">
-          {config.app_name}
-        </h1>
-        <nav className="flex items-center gap-6">
-          <Link href="/" className="text-sm font-semibold text-white/90 hover:text-white transition-colors">
-            Início
-          </Link>
-          <Link href="/agendar" className="text-sm font-semibold text-white/90 hover:text-white transition-colors">
-            Agendar
-          </Link>
-          <Link href="/admin/dashboard" className="text-sm font-semibold text-white/90 hover:text-white transition-colors">
-            Painel
-          </Link>
-        </nav>
-      </header>
+      <Header appName={config.app_name} primaryColor={config.primary_color} />
 
       <main className="flex-1 flex flex-col items-center justify-center p-6">
         <div className="max-w-md w-full bg-white shadow-xl rounded-3xl p-8 border border-gray-100 flex flex-col items-center text-center">

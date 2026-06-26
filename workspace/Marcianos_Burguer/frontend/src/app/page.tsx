@@ -2,6 +2,7 @@ import Link from 'next/link';
 import React from 'react';
 import { promises as fs } from 'fs';
 import path from 'path';
+import Header from '@/components/Header';
 
 async function getConfig() {
   try {
@@ -64,23 +65,7 @@ export default async function LandingPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      {/* Header */}
-      <header className="px-6 py-4 flex items-center justify-between border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
-        <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-          <span>🛸</span> {config.app_name}
-        </h1>
-        <nav className="flex items-center gap-6">
-          <Link href="/" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">
-            Início
-          </Link>
-          <Link href="/agendar" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">
-            Agendar
-          </Link>
-          <Link href="/admin/dashboard" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">
-            Painel
-          </Link>
-        </nav>
-      </header>
+      <Header appName={config.app_name} primaryColor={config.primary_color} theme="dark" />
 
       {/* Hero Section */}
       <section className="relative py-20 px-6 sm:px-12 flex flex-col md:flex-row items-center justify-between max-w-6xl mx-auto w-full gap-12">

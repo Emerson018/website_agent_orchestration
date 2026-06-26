@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import { Calendar, User, Phone, CheckCircle2 } from 'lucide-react';
+import Header from '@/components/Header';
 
 export default function BookingPage() {
   const [appName, setAppName] = useState('Agendador PWA');
@@ -73,26 +74,7 @@ export default function BookingPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <header 
-        className="px-6 py-4 flex items-center justify-between shadow-sm border-b border-gray-150 text-white"
-        style={{ backgroundColor: primaryColor }}
-      >
-        <h1 className="text-xl font-bold tracking-tight">
-          {appName}
-        </h1>
-        <nav className="flex items-center gap-6">
-          <Link href="/" className="text-sm font-semibold text-white/90 hover:text-white transition-colors">
-            Início
-          </Link>
-          <Link href="/agendar" className="text-sm font-semibold text-white/90 hover:text-white transition-colors">
-            Agendar
-          </Link>
-          <Link href="/admin/dashboard" className="text-sm font-semibold text-white/90 hover:text-white transition-colors">
-            Painel
-          </Link>
-        </nav>
-      </header>
+      <Header appName={appName} primaryColor={primaryColor} />
 
       {/* Main Container */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 my-6">

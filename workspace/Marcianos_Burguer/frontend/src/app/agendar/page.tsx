@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import { Calendar, User, Phone, CheckCircle2 } from 'lucide-react';
+import Header from '@/components/Header';
 
 export default function BookingPage() {
   const [appName, setAppName] = useState('Marcianos Burguer');
@@ -73,23 +74,7 @@ export default function BookingPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans">
-      {/* Header */}
-      <header className="px-6 py-4 flex items-center justify-between border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
-        <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-          <span>🛸</span> {appName}
-        </h1>
-        <nav className="flex items-center gap-6">
-          <Link href="/" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">
-            Início
-          </Link>
-          <Link href="/agendar" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">
-            Agendar
-          </Link>
-          <Link href="/admin/dashboard" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">
-            Painel
-          </Link>
-        </nav>
-      </header>
+      <Header appName={appName} primaryColor={primaryColor} theme="dark" />
 
       {/* Main Container */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 my-6 z-10 relative">
