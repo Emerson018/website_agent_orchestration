@@ -250,7 +250,7 @@ export default function LandingPage() {{
             {link_attr}="/agendar"
             className="w-full sm:w-auto px-8 py-4 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/25 hover:brightness-110 hover:shadow-primary/35 transition-all flex items-center justify-center gap-2 group cursor-pointer"
           >
-            <span>Agendar Horário</span>
+            <span>Realizar reserva</span>
             <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
@@ -277,7 +277,7 @@ export default function LandingPage() {{
           {link_attr}="/agendar"
           className="mt-8 px-6 py-3 rounded-lg bg-primary text-white font-bold shadow-md hover:brightness-105 transition-all"
         >
-          Iniciar Agendamento Online
+          Realizar reserva
         </Link>
       </section>
     </div>

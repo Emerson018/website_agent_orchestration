@@ -6,7 +6,6 @@ function BookingPage() {
     name: '',
     phone: '',
     guests: '2',
-    type: 'local', // local or pickup
     date: '',
     time: '',
     notes: ''
@@ -17,7 +16,12 @@ function BookingPage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'phone') {
+      const sanitized = value.replace(/[^0-9()+\-\s]/g, '');
+      setFormData(prev => ({ ...prev, [name]: sanitized }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const selectTime = (time) => {
@@ -33,6 +37,8 @@ function BookingPage() {
     setIsSubmitted(true);
   };
 
+  const todayStr = new Date().toISOString().split('T')[0];
+
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center py-10 px-4 font-sans bg-slate-950 text-slate-100">
       <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl relative">
@@ -45,7 +51,7 @@ function BookingPage() {
                 Agendamento 🛸
               </span>
               <h2 className="text-3xl font-black mt-4">Garanta seu Horário</h2>
-              <p className="text-sm opacity-75 mt-2">Escolha se prefere reservar uma mesa ou apenas programar a sua retirada de forma rápida e prática.</p>
+              <p className="text-sm opacity-75 mt-2">Preencha seus dados para reservar a sua mesa e ter uma experiência incrível.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -56,6 +62,7 @@ function BookingPage() {
                     type="text" 
                     name="name"
                     required
+                    maxLength={80}
                     placeholder="Seu nome"
                     value={formData.name}
                     onChange={handleInputChange}
@@ -68,6 +75,7 @@ function BookingPage() {
                     type="tel" 
                     name="phone"
                     required
+                    maxLength={20}
                     placeholder="(51) 99999-9999"
                     value={formData.phone}
                     onChange={handleInputChange}
@@ -78,46 +86,33 @@ function BookingPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Tipo de Agendamento</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Número de Pessoas *</label>
                   <select 
-                    name="type"
-                    value={formData.type}
+                    name="guests"
+                    value={formData.guests}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100"
                   >
-                    <option value="local">Comer na Lanchonete</option>
-                    <option value="pickup">Retirar no Balcão</option>
+                    <option value="1">1 Pessoa</option>
+                    <option value="2">2 Pessoas</option>
+                    <option value="3">3 Pessoas</option>
+                    <option value="4">4 Pessoas</option>
+                    <option value="5+">5 ou mais Pessoas</option>
                   </select>
                 </div>
-                {formData.type === 'local' && (
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Número de Pessoas</label>
-                    <select 
-                      name="guests"
-                      value={formData.guests}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100"
-                    >
-                      <option value="1">1 Pessoa</option>
-                      <option value="2">2 Pessoas</option>
-                      <option value="3">3 Pessoas</option>
-                      <option value="4">4 Pessoas</option>
-                      <option value="5+">5 ou mais Pessoas</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Selecione o Dia *</label>
-                <input 
-                  type="date" 
-                  name="date"
-                  required
-                  value={formData.date}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100"
-                />
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Selecione o Dia *</label>
+                  <input 
+                    type="date" 
+                    name="date"
+                    required
+                    min={todayStr}
+                    value={formData.date}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100 cursor-pointer"
+                    style={{ colorScheme: 'dark' }}
+                  />
+                </div>
               </div>
 
               <div>
@@ -141,11 +136,15 @@ function BookingPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Observações Especiais (Ex: Alergias, Mesa de Preferência)</label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Observações Especiais (Mesa de Preferência, Alergias)</label>
+                  <span className="text-[10px] text-slate-500 font-mono">{formData.notes.length}/100</span>
+                </div>
                 <textarea 
                   name="notes"
                   rows="3"
-                  placeholder="Algum pedido especial para nós?"
+                  maxLength={100}
+                  placeholder="Algum pedido especial para nós? (Máx. 100 caracteres)"
                   value={formData.notes}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100 resize-none"
@@ -169,7 +168,7 @@ function BookingPage() {
             </div>
             <h3 className="text-3xl font-black text-slate-100">Agendamento Confirmado!</h3>
             <p className="text-sm opacity-85 mt-4 max-w-md">
-              Obrigado, <strong className="text-primary">{formData.name}</strong>! Seu horário para o dia <strong>{formData.date}</strong> às <strong>{formData.time}</strong> foi agendado com sucesso para a modalidade <strong>{formData.type === 'local' ? `Mesa para ${formData.guests} pessoas` : 'Retirada no Balcão'}</strong>.
+              Obrigado, <strong className="text-primary">{formData.name}</strong>! Seu horário para o dia <strong>{formData.date}</strong> às <strong>{formData.time}</strong> foi agendado com sucesso para uma mesa de <strong>{formData.guests} {parseInt(formData.guests) === 1 ? 'pessoa' : 'pessoas'}</strong>.
             </p>
             <div className="mt-8 flex gap-4">
               <button 
