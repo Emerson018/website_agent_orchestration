@@ -17,8 +17,18 @@ function BookingPage() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name === 'phone') {
-      const sanitized = value.replace(/[^0-9()+\-\s]/g, '');
-      setFormData(prev => ({ ...prev, [name]: sanitized }));
+      const digits = value.replace(/\D/g, '').slice(0, 11);
+      let formatted = '';
+      if (digits.length > 0) {
+        formatted += `(${digits.slice(0, 2)}`;
+      }
+      if (digits.length > 2) {
+        formatted += `) ${digits.slice(2, 7)}`;
+      }
+      if (digits.length > 7) {
+        formatted += `-${digits.slice(7, 11)}`;
+      }
+      setFormData(prev => ({ ...prev, [name]: formatted }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -58,29 +68,46 @@ function BookingPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nome Completo *</label>
-                  <input 
-                    type="text" 
-                    name="name"
-                    required
-                    maxLength={80}
-                    placeholder="Seu nome"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100"
-                  />
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 pointer-events-none">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </span>
+                    <input 
+                      type="text" 
+                      name="name"
+                      required
+                      maxLength={30}
+                      placeholder="Seu nome completo"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Telefone de Contato *</label>
-                  <input 
-                    type="tel" 
-                    name="phone"
-                    required
-                    maxLength={20}
-                    placeholder="(51) 99999-9999"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100"
-                  />
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 pointer-events-none">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                    </span>
+                    <input 
+                      type="tel" 
+                      name="phone"
+                      required
+                      maxLength={15}
+                      minLength={15}
+                      inputMode="tel"
+                      pattern="\([0-9]{2}\) [0-9]{5}-[0-9]{4}"
+                      placeholder="(51) 99999-9999"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -91,7 +118,7 @@ function BookingPage() {
                     name="guests"
                     value={formData.guests}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100 cursor-pointer"
                   >
                     <option value="1">1 Pessoa</option>
                     <option value="2">2 Pessoas</option>
@@ -102,16 +129,24 @@ function BookingPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Selecione o Dia *</label>
-                  <input 
-                    type="date" 
-                    name="date"
-                    required
-                    min={todayStr}
-                    value={formData.date}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100 cursor-pointer"
-                    style={{ colorScheme: 'dark' }}
-                  />
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 pointer-events-none">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </span>
+                    <input 
+                      type="date" 
+                      name="date"
+                      required
+                      min={todayStr}
+                      value={formData.date}
+                      onChange={handleInputChange}
+                      onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
+                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100 cursor-pointer"
+                      style={{ colorScheme: 'dark' }}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -155,7 +190,7 @@ function BookingPage() {
                 type="submit"
                 className="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/25 hover:brightness-110 transition-all cursor-pointer text-center"
               >
-                Confirmar Agendamento
+                Realizar reserva
               </button>
             </form>
           </>

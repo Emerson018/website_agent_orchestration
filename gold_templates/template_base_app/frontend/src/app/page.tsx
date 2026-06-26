@@ -55,7 +55,7 @@ export default async function LandingPage() {
             className="w-full py-3 mt-6 text-white text-center font-bold rounded-2xl shadow-md transition-all hover:opacity-90 active:scale-[0.98]"
             style={{ backgroundColor: config.primary_color }}
           >
-            Iniciar Agendamento
+            Realizar reserva
           </Link>
         </div>
       </main>

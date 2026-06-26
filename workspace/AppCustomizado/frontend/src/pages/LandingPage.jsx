@@ -14,7 +14,7 @@ function LandingPage() {
         to="/agendar" 
         className="px-8 py-3 mt-6 text-white bg-primary rounded-lg shadow-lg hover:opacity-90 font-bold transition-all text-center"
       >
-        Iniciar Agendamento
+        Realizar reserva
       </Link>
     </div>
   );

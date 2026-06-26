@@ -39,8 +39,18 @@ export default function BookingPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === 'phone') {
-      const sanitized = value.replace(/[^0-9()+\-\s]/g, '');
-      setFormData(prev => ({ ...prev, [name]: sanitized }));
+      const digits = value.replace(/\D/g, '').slice(0, 11);
+      let formatted = '';
+      if (digits.length > 0) {
+        formatted += `(${digits.slice(0, 2)}`;
+      }
+      if (digits.length > 2) {
+        formatted += `) ${digits.slice(2, 7)}`;
+      }
+      if (digits.length > 7) {
+        formatted += `-${digits.slice(7, 11)}`;
+      }
+      setFormData(prev => ({ ...prev, [name]: formatted }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -117,7 +127,7 @@ export default function BookingPage() {
                         type="text" 
                         name="name"
                         required
-                        maxLength={80}
+                        maxLength={30}
                         placeholder="Seu nome completo"
                         value={formData.name}
                         onChange={handleInputChange}
@@ -136,7 +146,10 @@ export default function BookingPage() {
                         type="tel" 
                         name="phone"
                         required
-                        maxLength={20}
+                        maxLength={15}
+                        minLength={15}
+                        inputMode="tel"
+                        pattern="\([0-9]{2}\) [0-9]{5}-[0-9]{4}"
                         placeholder="(51) 99999-9999"
                         value={formData.phone}
                         onChange={handleInputChange}
@@ -167,6 +180,9 @@ export default function BookingPage() {
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-2">Selecione o Dia *</label>
                     <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400 pointer-events-none">
+                        <Calendar className="size-4" />
+                      </span>
                       <input 
                         type="date" 
                         name="date"
@@ -174,7 +190,8 @@ export default function BookingPage() {
                         min={todayStr}
                         value={formData.date}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 border border-gray-250 rounded-2xl text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-gray-955 cursor-pointer"
+                        onClick={(e) => { try { (e.target as any).showPicker(); } catch (err) {} }}
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-250 rounded-2xl text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-gray-955 cursor-pointer"
                         style={{ '--tw-ring-color': `${primaryColor}30`, focusBorderColor: primaryColor } as any}
                       />
                     </div>
