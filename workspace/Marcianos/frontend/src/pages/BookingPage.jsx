@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { getAgendaConfig, getAgendamentos, createAgendamento } from '../services/api';
 
 function BookingPage() {
   const [formData, setFormData] = useState({
@@ -11,8 +12,29 @@ function BookingPage() {
     notes: ''
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [config, setConfig] = useState({
+    dias_funcionamento: [2, 3, 4, 5, 6, 0],
+    horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
+    vagas_padrao: 5,
+    limites_customizados: {}
+  });
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const timeSlots = ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"];
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [cfg, bks] = await Promise.all([getAgendaConfig(), getAgendamentos()]);
+        setConfig(cfg);
+        setBookings(bks);
+      } catch (err) {
+        console.error("Erro ao carregar configurações de agendamento:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -29,6 +51,16 @@ function BookingPage() {
         formatted += `-${digits.slice(7, 11)}`;
       }
       setFormData(prev => ({ ...prev, [name]: formatted }));
+    } else if (name === 'date' && value) {
+      // Valida dia de funcionamento
+      const selectedDate = new Date(value + 'T00:00:00');
+      const weekday = selectedDate.getDay();
+      if (!config.dias_funcionamento.includes(weekday)) {
+        alert("O estabelecimento não funciona no dia da semana selecionado.");
+        setFormData(prev => ({ ...prev, date: '', time: '' }));
+      } else {
+        setFormData(prev => ({ ...prev, [name]: value, time: '' }));
+      }
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -38,16 +70,61 @@ function BookingPage() {
     setFormData(prev => ({ ...prev, time }));
   };
 
-  const handleSubmit = (e) => {
+  const getSlotAvailability = (timeSlot) => {
+    if (!formData.date) return { available: true, remaining: config.vagas_padrao };
+
+    // Verifica capacidade para a data e slot
+    const limit = config.limites_customizados?.[formData.date]?.[timeSlot] ?? config.vagas_padrao;
+
+    // Filtra agendamentos na mesma data e slot
+    const bookingsInSlot = bookings.filter(b => b.data === formData.date && b.horario === timeSlot);
+    const sumPessoas = bookingsInSlot.reduce((sum, b) => sum + (parseInt(b.pessoas) || 1), 0);
+
+    const remaining = Math.max(0, limit - sumPessoas);
+    const available = remaining >= (parseInt(formData.guests) || 1);
+
+    return { available, remaining, limit };
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.phone || !formData.date || !formData.time) {
       alert("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
-    setIsSubmitted(true);
+
+    const { available } = getSlotAvailability(formData.time);
+    if (!available) {
+      alert("Desculpe, o horário selecionado não possui vagas suficientes para a quantidade de pessoas solicitada.");
+      return;
+    }
+
+    try {
+      const res = await createAgendamento(formData);
+      if (res.success) {
+        setIsSubmitted(true);
+      }
+    } catch (err) {
+      alert("Ocorreu um erro ao salvar o agendamento.");
+      console.error(err);
+    }
   };
 
   const todayStr = new Date().toISOString().split('T')[0];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] bg-slate-950 text-slate-100 font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <svg className="w-8 h-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span className="text-sm font-semibold opacity-75">Carregando horários...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center py-10 px-4 font-sans bg-slate-950 text-slate-100">
@@ -124,7 +201,7 @@ function BookingPage() {
                     <option value="2">2 Pessoas</option>
                     <option value="3">3 Pessoas</option>
                     <option value="4">4 Pessoas</option>
-                    <option value="5+">5 ou mais Pessoas</option>
+                    <option value="5">5 Pessoas</option>
                   </select>
                 </div>
                 <div>
@@ -152,21 +229,31 @@ function BookingPage() {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Selecione o Horário *</label>
-                <div className="grid grid-cols-4 gap-3">
-                  {timeSlots.map((time) => (
-                    <button
-                      type="button"
-                      key={time}
-                      onClick={() => selectTime(time)}
-                      className={`py-2 px-3 text-xs sm:text-sm font-bold rounded-xl border transition-all cursor-pointer ${
-                        formData.time === time 
-                          ? 'bg-primary text-white border-primary shadow-md shadow-primary/20' 
-                          : 'bg-slate-950 border-slate-800 text-slate-350 hover:border-primary/50'
-                      }`}
-                    >
-                      {time}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {config.horarios_disponiveis.map((time) => {
+                    const { available, remaining } = getSlotAvailability(time);
+                    const isSelected = formData.time === time;
+                    return (
+                      <button
+                        type="button"
+                        key={time}
+                        disabled={!available}
+                        onClick={() => selectTime(time)}
+                        className={`py-2 px-3 text-xs sm:text-sm font-bold rounded-xl border transition-all cursor-pointer flex flex-col items-center justify-center ${
+                          isSelected 
+                            ? 'bg-primary text-white border-primary shadow-md shadow-primary/20' 
+                            : !available
+                            ? 'bg-slate-950/40 border-slate-900 text-slate-600 cursor-not-allowed opacity-50'
+                            : 'bg-slate-950 border-slate-800 text-slate-350 hover:border-primary/50'
+                        }`}
+                      >
+                        <span>{time}</span>
+                        <span className={`text-[9px] font-medium mt-0.5 ${isSelected ? 'text-white/80' : 'text-slate-500'}`}>
+                          {remaining > 0 ? `${remaining} vagas` : 'Esgotado'}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

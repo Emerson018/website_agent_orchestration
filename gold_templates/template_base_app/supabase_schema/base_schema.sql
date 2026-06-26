@@ -1,87 +1,84 @@
 -- Habilitar a extensão pgcrypto para gen_random_uuid() se necessário
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 1. Tabela de Configurações da Loja
-CREATE TABLE IF NOT EXISTS configuracoes_loja (
+-- 1. Tabela de Configurações da Agenda
+CREATE TABLE IF NOT EXISTS configuracao_agenda (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     chave VARCHAR(255) UNIQUE NOT NULL,
     valor JSONB NOT NULL,
     atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Tabela de Clientes
-CREATE TABLE IF NOT EXISTS clientes (
+-- 2. Tabela de Agendamentos
+CREATE TABLE IF NOT EXISTS agendamentos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    nome VARCHAR(255) NOT NULL,
-    telefone VARCHAR(50),
-    email VARCHAR(255),
-    criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    cliente_nome VARCHAR(255) NOT NULL,
+    cliente_telefone VARCHAR(50) NOT NULL,
+    data DATE NOT NULL,
+    horario VARCHAR(10) NOT NULL,
+    pessoas INTEGER NOT NULL DEFAULT 1,
+    observacoes TEXT,
+    status VARCHAR(20) DEFAULT 'Confirmado',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Tabela de Agendamentos Base
-CREATE TABLE IF NOT EXISTS agendamentos_base (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    cliente_id UUID REFERENCES clientes(id) ON DELETE CASCADE,
-    inicio TIMESTAMP WITH TIME ZONE NOT NULL,
-    fim TIMESTAMP WITH TIME ZONE NOT NULL,
-    status VARCHAR(50) DEFAULT 'confirmado', -- ex: pendente, confirmado, cancelado, concluido
-    referencia_recurso_id UUID, -- Referência flexível (serviço, profissional, vaga, etc.)
-    valor_total DECIMAL(10, 2) DEFAULT 0.00,
-    criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+-- Inserir dados padrão de funcionamento e horários
+INSERT INTO configuracao_agenda (chave, valor)
+VALUES 
+('dias_funcionamento', '[2, 3, 4, 5, 6, 0]')
+ON CONFLICT (chave) DO NOTHING;
 
--- Habilitar Row Level Security (RLS) nas tabelas
-ALTER TABLE configuracoes_loja ENABLE ROW LEVEL SECURITY;
-ALTER TABLE clientes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agendamentos_base ENABLE ROW LEVEL SECURITY;
+INSERT INTO configuracao_agenda (chave, valor)
+VALUES 
+('horarios_disponiveis', '["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"]')
+ON CONFLICT (chave) DO NOTHING;
+
+INSERT INTO configuracao_agenda (chave, valor)
+VALUES 
+('vagas_padrao', '5')
+ON CONFLICT (chave) DO NOTHING;
+
+INSERT INTO configuracao_agenda (chave, valor)
+VALUES 
+('limites_customizados', '{}')
+ON CONFLICT (chave) DO NOTHING;
+
+-- Habilitar Row Level Security (RLS)
+ALTER TABLE configuracao_agenda ENABLE ROW LEVEL SECURITY;
+ALTER TABLE agendamentos ENABLE ROW LEVEL SECURITY;
 
 -- =====================================================================
--- Políticas para configuracoes_loja
+-- Políticas para configuracao_agenda
 -- =====================================================================
--- Administrador autenticado tem controle total
-CREATE POLICY "Admin total configuracoes_loja" 
-ON configuracoes_loja 
+CREATE POLICY "Admin total configuracao_agenda" 
+ON configuracao_agenda 
 TO authenticated 
 USING (true) 
 WITH CHECK (true);
 
--- Leitura pública das configurações (necessário para carregar horários, logo, cores no PWA)
-CREATE POLICY "Leitura publica configuracoes_loja" 
-ON configuracoes_loja 
+CREATE POLICY "Leitura publica configuracao_agenda" 
+ON configuracao_agenda 
 FOR SELECT 
 TO anon, authenticated 
 USING (true);
 
 -- =====================================================================
--- Políticas para clientes
+-- Políticas para agendamentos
 -- =====================================================================
--- Administrador autenticado tem controle total
-CREATE POLICY "Admin total clientes" 
-ON clientes 
+CREATE POLICY "Admin total agendamentos" 
+ON agendamentos 
 TO authenticated 
 USING (true) 
 WITH CHECK (true);
 
--- Clientes públicos (não autenticados) podem cadastrar seus próprios dados ao fazer agendamento
-CREATE POLICY "Insercao publica clientes" 
-ON clientes 
+CREATE POLICY "Insercao publica agendamentos" 
+ON agendamentos 
 FOR INSERT 
 TO anon, authenticated 
 WITH CHECK (true);
 
--- =====================================================================
--- Políticas para agendamentos_base
--- =====================================================================
--- Administrador autenticado tem controle total
-CREATE POLICY "Admin total agendamentos_base" 
-ON agendamentos_base 
-TO authenticated 
-USING (true) 
-WITH CHECK (true);
-
--- Clientes públicos (não autenticados) podem realizar novos agendamentos no sistema
-CREATE POLICY "Insercao publica agendamentos_base" 
-ON agendamentos_base 
-FOR INSERT 
+CREATE POLICY "Leitura publica agendamentos" 
+ON agendamentos 
+FOR SELECT 
 TO anon, authenticated 
-WITH CHECK (true);
+USING (true);
