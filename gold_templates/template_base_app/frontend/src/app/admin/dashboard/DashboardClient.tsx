@@ -32,6 +32,7 @@ interface DashboardClientProps {
 export default function DashboardClient({ user, config }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<'agenda' | 'config'>('agenda');
   const [bookings, setBookings] = useState<any[]>([]);
+  const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
   const [agendaConfig, setAgendaConfig] = useState({
     dias_funcionamento: [2, 3, 4, 5, 6, 0],
     horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
@@ -352,19 +353,19 @@ export default function DashboardClient({ user, config }: DashboardClientProps) 
 
             {/* Google Calendar-Style Weekly Table Grid */}
             <div className="overflow-x-auto bg-white border border-gray-150 rounded-3xl shadow-sm">
-              <table className="w-full min-w-[900px] border-collapse table-fixed text-left">
+              <table className="w-full min-w-[1200px] border-collapse table-fixed text-left">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-150">
-                    <th className="w-24 p-3 text-xs font-bold uppercase tracking-wider text-gray-400 text-center">Horário</th>
+                  <tr className="bg-gray-50 border-b border-gray-150 text-gray-750">
+                    <th className="w-24 p-4 text-xs font-bold uppercase tracking-wider text-gray-400 text-center bg-gray-50/80">Horário</th>
                     {weekDates.map((date, idx) => {
                       const isToday = new Date().toDateString() === date.toDateString();
                       return (
-                        <th key={idx} className={`p-3 border-l border-gray-150 ${isToday ? 'bg-indigo-50/30' : ''}`}>
+                        <th key={idx} className={`p-4 border-l border-gray-150 ${isToday ? 'bg-indigo-50/20' : 'bg-gray-50/30'}`}>
                           <div className="flex flex-col">
-                            <span className={`text-[9px] uppercase font-bold tracking-wider ${isToday ? 'text-indigo-600 font-extrabold' : 'text-gray-400'}`}>
+                            <span className={`text-[10px] uppercase font-bold tracking-widest ${isToday ? 'text-indigo-650 font-black' : 'text-gray-400'}`}>
                               {weekDaysLabels[idx]}
                             </span>
-                            <span className={`text-sm font-extrabold ${isToday ? 'text-indigo-600 font-black' : 'text-gray-800'}`}>
+                            <span className={`text-lg font-black mt-0.5 ${isToday ? 'text-indigo-600' : 'text-gray-800'}`}>
                               {date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'numeric' })}
                             </span>
                           </div>
@@ -375,8 +376,8 @@ export default function DashboardClient({ user, config }: DashboardClientProps) 
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {agendaConfig.horarios_disponiveis.map((time) => (
-                    <tr key={time} className="hover:bg-gray-50/30">
-                      <td className="p-3 text-xs font-bold text-gray-500 text-center bg-gray-50/50 border-r border-gray-150">
+                    <tr key={time} className="hover:bg-gray-50/20 group/row">
+                      <td className="p-4 text-xs font-extrabold text-gray-550 text-center bg-gray-50/30 border-r border-gray-150">
                         {time}
                       </td>
                       {weekDates.map((date, dayIdx) => {
@@ -391,17 +392,19 @@ export default function DashboardClient({ user, config }: DashboardClientProps) 
                         return (
                           <td 
                             key={dayIdx} 
-                            className={`p-2 border-l border-gray-100 align-top relative min-h-[110px] ${
-                              !isWorkingDay ? 'bg-gray-100/50 opacity-40' : ''
+                            className={`p-3 border-l border-gray-100 align-top relative min-h-[120px] transition-colors ${
+                              !isWorkingDay 
+                                ? 'bg-gray-100/50 opacity-30 select-none' 
+                                : 'bg-white hover:bg-gray-50/10'
                             }`}
                           >
                             {isWorkingDay ? (
-                              <div className="space-y-1.5">
-                                {/* Occupancy Bar */}
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className={`text-[8px] font-mono px-1 py-0.5 rounded font-extrabold ${
+                              <div className="space-y-2">
+                                {/* Slot Capacity indicator */}
+                                <div className="flex justify-between items-center">
+                                  <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold tracking-wide shadow-2xs ${
                                     sumPessoas >= limit 
-                                      ? 'bg-red-100 text-red-700' 
+                                      ? 'bg-red-100 text-red-700 border border-red-200' 
                                       : hasException 
                                       ? 'bg-amber-100 text-amber-700 border border-amber-200'
                                       : 'bg-gray-100 text-gray-500'
@@ -411,35 +414,59 @@ export default function DashboardClient({ user, config }: DashboardClientProps) 
                                 </div>
 
                                 {/* Bookings Cards */}
-                                {bookingsInSlot.map((b) => (
-                                  <div 
-                                    key={b.id} 
-                                    className="p-2 bg-white border border-gray-200 hover:border-gray-300 rounded-xl flex flex-col justify-between shadow-xs transition-all gap-1.5 text-[10px] leading-tight"
-                                  >
-                                    <div>
-                                      <p className="font-extrabold text-gray-800 truncate pr-3">{b.cliente_nome}</p>
-                                      <p className="text-[9px] text-gray-550 truncate mt-0.5">{b.cliente_telefone}</p>
-                                      {b.observacoes && (
-                                        <p className="text-[8px] text-gray-400 italic mt-1 truncate" title={b.observacoes}>
-                                          "{b.observacoes}"
-                                        </p>
-                                      )}
-                                    </div>
-                                    <div className="flex justify-between items-center pt-1 border-t border-gray-100 mt-1">
-                                      <span className="text-[8px] font-bold text-indigo-600 font-mono">{b.pessoas}p</span>
-                                      <button
-                                        onClick={() => handleDelete(b.id)}
-                                        className="p-0.5 rounded hover:bg-red-50 text-red-500 transition-colors cursor-pointer"
-                                        title="Cancelar reserva"
+                                <div className="space-y-1.5">
+                                  {bookingsInSlot.map((b) => {
+                                    const name = b.cliente_nome || b.name || (b.clientes && (b.clientes.nome || b.clientes.cliente_nome)) || 'Sem nome';
+                                    const phone = b.cliente_telefone || b.phone || (b.clientes && b.clientes.telefone) || 'Sem telefone';
+                                    
+                                    return (
+                                      <div 
+                                        key={b.id} 
+                                        onClick={() => setSelectedBooking(b)}
+                                        className="group/card relative p-2.5 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 rounded-xl flex flex-col justify-between shadow-xs hover:shadow-sm transition-all duration-200 cursor-pointer select-none text-[11px] leading-tight"
+                                        style={{ borderLeft: `3.5px solid ${config.primary_color}` }}
                                       >
-                                        <Trash2 className="size-3" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
+                                        <div>
+                                          <div className="flex items-center justify-between gap-1">
+                                            <p className="font-extrabold text-gray-800 truncate pr-1 text-xs">
+                                              {name}
+                                            </p>
+                                            <span 
+                                              className="text-[9px] font-black text-white px-1.5 py-0.2 rounded-sm shrink-0"
+                                              style={{ backgroundColor: config.primary_color }}
+                                            >
+                                              {b.pessoas}p
+                                            </span>
+                                          </div>
+                                          <p className="text-[10px] text-gray-500 truncate mt-1">
+                                            {phone}
+                                          </p>
+                                          {b.observacoes && (
+                                            <p className="text-[9px] text-gray-400 italic mt-1.5 truncate max-w-full block">
+                                              "{b.observacoes}"
+                                            </p>
+                                          )}
+                                        </div>
+                                        
+                                        <div className="flex justify-end items-center mt-2 pt-1.5 border-t border-gray-100 opacity-60 group-hover/card:opacity-100 transition-opacity">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDelete(b.id);
+                                            }}
+                                            className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                                            title="Cancelar reserva"
+                                          >
+                                            <Trash2 className="size-3.5" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             ) : (
-                              <div className="flex items-center justify-center min-h-[60px] text-[9px] text-gray-400 font-bold uppercase tracking-wider">
+                              <div className="flex items-center justify-center min-h-[70px] text-[9px] text-gray-400 font-bold uppercase tracking-widest select-none">
                                 Fechado
                               </div>
                             )}
@@ -613,6 +640,96 @@ export default function DashboardClient({ user, config }: DashboardClientProps) 
           </div>
         )}
       </main>
+      {/* Modal de Detalhes da Reserva (Google Calendar Style) */}
+      {selectedBooking && (
+        <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in text-gray-800">
+          <div className="bg-white border border-gray-150 rounded-3xl p-6 max-w-md w-full shadow-2xl relative space-y-5">
+            <button 
+              onClick={() => setSelectedBooking(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-655 text-xl font-bold transition-colors cursor-pointer"
+            >
+              &times;
+            </button>
+            <div>
+              <h3 className="text-lg font-black text-gray-900 border-b border-gray-100 pb-2">Detalhes do Agendamento</h3>
+            </div>
+            
+            <div className="space-y-4 text-sm text-gray-700">
+              <div>
+                <span className="text-[10px] uppercase text-gray-400 block font-bold tracking-wider mb-1">Cliente</span>
+                <span className="text-base font-extrabold text-gray-900">
+                  {selectedBooking.cliente_nome || selectedBooking.name || (selectedBooking.clientes && (selectedBooking.clientes.nome || selectedBooking.clientes.cliente_nome)) || 'Sem nome'}
+                </span>
+              </div>
+              
+              <div>
+                <span className="text-[10px] uppercase text-gray-400 block font-bold tracking-wider mb-1">Telefone</span>
+                <span className="text-gray-800 font-semibold">
+                  {selectedBooking.cliente_telefone || selectedBooking.phone || (selectedBooking.clientes && selectedBooking.clientes.telefone) || 'Sem telefone'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-[10px] uppercase text-gray-400 block font-bold tracking-wider mb-1">Data</span>
+                  <span className="text-gray-800 font-semibold">
+                    {new Date(selectedBooking.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase text-gray-400 block font-bold tracking-wider mb-1">Horário</span>
+                  <span className="text-gray-800 font-semibold">{selectedBooking.horario}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-[10px] uppercase text-gray-400 block font-bold tracking-wider mb-1">Pessoas</span>
+                  <span className="text-gray-800 font-bold">{selectedBooking.pessoas} pessoas</span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase text-gray-400 block font-bold tracking-wider mb-1">Status</span>
+                  <span 
+                    className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white inline-block"
+                    style={{ backgroundColor: config.primary_color }}
+                  >
+                    {selectedBooking.status || 'Confirmado'}
+                  </span>
+                </div>
+              </div>
+
+              {selectedBooking.observacoes && (
+                <div>
+                  <span className="text-[10px] uppercase text-gray-400 block font-bold tracking-wider mb-1">Observações</span>
+                  <p className="text-gray-600 bg-gray-50 p-3.5 rounded-2xl border border-gray-150 italic text-xs leading-relaxed">
+                    "{selectedBooking.observacoes}"
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-3">
+              <button
+                onClick={() => {
+                  if (selectedBooking) {
+                    handleDelete(selectedBooking.id);
+                  }
+                  setSelectedBooking(null);
+                }}
+                className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-lg transition-all cursor-pointer text-center"
+              >
+                Cancelar Reserva
+              </button>
+              <button
+                onClick={() => setSelectedBooking(null)}
+                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all cursor-pointer text-center"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

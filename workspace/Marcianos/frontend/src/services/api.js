@@ -7,9 +7,9 @@ let isChecked = false;
 async function checkDb() {
   if (isChecked) return;
   try {
-    const { error } = await supabase.from('agendamentos').select('id').limit(1);
+    const { error } = await supabase.from('agendamentos_base').select('id').limit(1);
     if (error && (error.message?.includes("Could not find the table") || error.code === 'PGRST205')) {
-      console.warn("[API Service] Tabela 'agendamentos' não encontrada. Rodando em modo de simulação com localStorage.");
+      console.warn("[API Service] Tabela 'agendamentos_base' não encontrada. Rodando em modo de simulação com localStorage.");
       useDatabase = false;
     } else if (error) {
       console.error("[API Service] Erro ao testar Supabase:", error);
@@ -32,23 +32,23 @@ function initMockData() {
     localStorage.setItem('mock_agendamentos', JSON.stringify([
       {
         id: '1',
-        cliente_nome: 'Carlos Silva',
-        cliente_telefone: '(51) 99888-7766',
+        clienteNome: 'Carlos Silva',
+        dataHora: `${today}T19:30:00`,
         data: today,
         horario: '19:30',
         pessoas: 3,
-        observacoes: 'Mesa perto do boliche, por favor.',
+        servicoNome: 'Reserva de Mesa',
         status: 'Confirmado',
         created_at: new Date().toISOString()
       },
       {
         id: '2',
-        cliente_nome: 'Mariana Souza',
-        cliente_telefone: '(51) 99777-6655',
+        clienteNome: 'Mariana Souza',
+        dataHora: `${today}T20:30:00`,
         data: today,
         horario: '20:30',
         pessoas: 2,
-        observacoes: 'Aniversariante do dia.',
+        servicoNome: 'Reserva de Mesa',
         status: 'Pendente',
         created_at: new Date().toISOString()
       }
@@ -60,7 +60,7 @@ function initMockData() {
       dias_funcionamento: [2, 3, 4, 5, 6, 0], // Terça a Domingo
       horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
       vagas_padrao: 5,
-      limites_customizados: {} // { "2026-06-29": { "19:00": 2 } }
+      limites_customizados: {}
     }));
   }
 }
@@ -81,12 +81,61 @@ export async function getAgendamentos() {
   await checkDb();
   if (useDatabase) {
     const { data, error } = await supabase
-      .from('agendamentos')
-      .select('*')
-      .order('data', { ascending: true })
-      .order('horario', { ascending: true });
-    
-    if (!error) return data || [];
+      .from('agendamentos_base')
+      .select(`
+        id,
+        inicio,
+        status,
+        clientes (
+          nome,
+          telefone
+        ),
+        detalhes_agendamento_nicho (
+          tipo_servico,
+          num_pessoas,
+          observacoes
+        )
+      `)
+      .order('inicio', { ascending: false });
+
+    if (!error && data) {
+      return data.map(item => {
+        const nichoDet = Array.isArray(item.detalhes_agendamento_nicho)
+          ? item.detalhes_agendamento_nicho[0]
+          : item.detalhes_agendamento_nicho;
+
+        // Extrai data (YYYY-MM-DD) e horário (HH:MM) a partir de inicio
+        let datePart = '';
+        let timePart = '';
+        if (item.inicio) {
+          try {
+            const d = new Date(item.inicio);
+            const pad = (n) => String(n).padStart(2, '0');
+            datePart = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+            timePart = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+          } catch (e) {
+            const parts = item.inicio.split('T');
+            datePart = parts[0] || '';
+            timePart = parts[1] ? parts[1].slice(0, 5) : '';
+          }
+        }
+
+        return {
+          id: item.id,
+          clienteNome: item.clientes?.nome || 'Cliente Desconhecido',
+          cliente_nome: item.clientes?.nome || 'Cliente Desconhecido',
+          clienteTelefone: item.clientes?.telefone || 'Sem telefone',
+          cliente_telefone: item.clientes?.telefone || 'Sem telefone',
+          observacoes: nichoDet?.observacoes || '',
+          dataHora: item.inicio,
+          data: datePart,
+          horario: timePart,
+          pessoas: nichoDet?.num_pessoas || 1,
+          servicoNome: nichoDet?.tipo_servico || 'Reserva de Mesa',
+          status: item.status || 'Confirmado'
+        };
+      });
+    }
     console.error("Erro ao buscar agendamentos do Supabase:", error);
   }
   
@@ -99,32 +148,98 @@ export async function getAgendamentos() {
 export async function createAgendamento(bookingData) {
   await checkDb();
   
-  const payload = {
-    cliente_nome: bookingData.name,
-    cliente_telefone: bookingData.phone,
-    data: bookingData.date,
-    horario: bookingData.time,
-    pessoas: parseInt(bookingData.guests) || 1,
-    observacoes: bookingData.notes || '',
-    status: 'Confirmado'
-  };
-
   if (useDatabase) {
-    const { data, error } = await supabase
-      .from('agendamentos')
-      .insert([payload])
-      .select();
-    
-    if (!error) return { success: true, data: data[0] };
-    console.error("Erro ao inserir agendamento no Supabase:", error);
+    try {
+      // Converte data e horário para timestamp
+      const startDate = new Date(`${bookingData.date}T${bookingData.time}:00`);
+      const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hora
+      const inicio = startDate.toISOString();
+      const fim = endDate.toISOString();
+
+      let clienteId;
+
+      // Busca se o cliente já existe pelo telefone
+      const { data: clienteExistente, error: clientFindError } = await supabase
+        .from('clientes')
+        .select('id')
+        .eq('telefone', bookingData.phone)
+        .maybeSingle();
+
+      if (clientFindError) {
+        console.error('[API Service] Erro ao buscar cliente:', clientFindError);
+      }
+
+      if (clienteExistente) {
+        clienteId = clienteExistente.id;
+      } else {
+        // Cria novo cliente
+        const { data: novoCliente, error: clientInsertError } = await supabase
+          .from('clientes')
+          .insert({
+            nome: bookingData.name,
+            telefone: bookingData.phone,
+          })
+          .select('id')
+          .single();
+
+        if (clientInsertError) {
+          throw clientInsertError;
+        }
+        clienteId = novoCliente.id;
+      }
+
+      // Cria o agendamento base
+      const { data: novoAgendamento, error: bookingInsertError } = await supabase
+        .from('agendamentos_base')
+        .insert({
+          cliente_id: clienteId,
+          inicio: inicio,
+          fim: fim,
+          status: 'Confirmado',
+          valor_total: 0.00
+        })
+        .select('id')
+        .single();
+
+      if (bookingInsertError) {
+        throw bookingInsertError;
+      }
+
+      // Cria os detalhes do nicho
+      const { error: nichoInsertError } = await supabase
+        .from('detalhes_agendamento_nicho')
+        .insert({
+          id_agendamento_base: novoAgendamento.id,
+          tipo_servico: 'Reserva de Mesa',
+          preco: 0.00,
+          num_pessoas: parseInt(bookingData.guests) || 2,
+          observacoes: bookingData.notes || ''
+        });
+
+      if (nichoInsertError) {
+        throw nichoInsertError;
+      }
+
+      return { success: true };
+    } catch (err) {
+      console.error("Erro ao salvar agendamento no Supabase:", err);
+      throw err;
+    }
   }
 
   // Fallback Local
   const localList = JSON.parse(localStorage.getItem('mock_agendamentos') || '[]');
+  const today = new Date().toISOString();
   const newBooking = {
     id: String(Date.now()),
-    ...payload,
-    created_at: new Date().toISOString()
+    clienteNome: bookingData.name,
+    dataHora: `${bookingData.date}T${bookingData.time}:00`,
+    data: bookingData.date,
+    horario: bookingData.time,
+    pessoas: parseInt(bookingData.guests) || 2,
+    servicoNome: 'Reserva de Mesa',
+    status: 'Confirmado',
+    created_at: today
   };
   localList.push(newBooking);
   localStorage.setItem('mock_agendamentos', JSON.stringify(localList));
@@ -138,7 +253,7 @@ export async function deleteAgendamento(id) {
   await checkDb();
   if (useDatabase) {
     const { error } = await supabase
-      .from('agendamentos')
+      .from('agendamentos_base')
       .delete()
       .eq('id', id);
     if (!error) return { success: true };
@@ -162,13 +277,11 @@ export async function getAgendaConfig() {
       .select('chave, valor');
     
     if (!error && data && data.length > 0) {
-      // Mapeia chaves para um objeto central
       const configs = {};
       data.forEach(item => {
         configs[item.chave] = item.valor;
       });
       
-      // Garante fallbacks para chaves ausentes
       const defaultConfigs = JSON.parse(localStorage.getItem('mock_configuracao_agenda'));
       return {
         dias_funcionamento: configs.dias_funcionamento ?? defaultConfigs.dias_funcionamento,

@@ -11,6 +11,7 @@ function AdminDashboard() {
     limites_customizados: {}
   });
   const [loading, setLoading] = useState(true);
+  const [selectedBooking, setSelectedBooking] = useState(null);
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const d = new Date();
     const day = d.getDay();
@@ -277,20 +278,20 @@ function AdminDashboard() {
           </div>
 
           {/* Grid Semanal */}
-          <div className="overflow-x-auto border border-slate-900 rounded-2xl">
-            <table className="w-full min-w-[900px] border-collapse table-fixed text-left">
+          <div className="overflow-x-auto border border-slate-900 rounded-3xl shadow-2xl">
+            <table className="w-full min-w-[1200px] border-collapse table-fixed text-left">
               <thead>
-                <tr className="bg-slate-900 border-b border-slate-850">
-                  <th className="w-20 p-3 text-xs font-bold uppercase tracking-wider text-slate-400 text-center">Horário</th>
+                <tr className="bg-slate-900 border-b border-slate-850 text-slate-300">
+                  <th className="w-24 p-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-center bg-slate-900/80">Horário</th>
                   {weekDates.map((date, idx) => {
                     const isToday = new Date().toDateString() === date.toDateString();
                     return (
-                      <th key={idx} className={`p-3 border-l border-slate-850 ${isToday ? 'bg-primary/5' : ''}`}>
+                      <th key={idx} className={`p-4 border-l border-slate-850 ${isToday ? 'bg-primary/5' : 'bg-slate-900/40'}`}>
                         <div className="flex flex-col">
-                          <span className={`text-[10px] uppercase font-bold tracking-wider ${isToday ? 'text-primary' : 'text-slate-400'}`}>
+                          <span className={`text-[10px] uppercase font-bold tracking-widest ${isToday ? 'text-primary font-black' : 'text-slate-400'}`}>
                             {weekDaysLabels[idx]}
                           </span>
-                          <span className={`text-base font-black ${isToday ? 'text-primary' : 'text-white'}`}>
+                          <span className={`text-lg font-black mt-0.5 ${isToday ? 'text-primary' : 'text-white'}`}>
                             {date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'numeric' })}
                           </span>
                         </div>
@@ -301,8 +302,8 @@ function AdminDashboard() {
               </thead>
               <tbody className="divide-y divide-slate-850 bg-slate-900/10">
                 {config.horarios_disponiveis.map((time) => (
-                  <tr key={time} className="hover:bg-slate-900/10">
-                    <td className="p-3 text-sm font-bold text-slate-400 text-center bg-slate-900/30 border-r border-slate-850">
+                  <tr key={time} className="hover:bg-slate-950/20 group/row">
+                    <td className="p-4 text-sm font-extrabold text-slate-400 text-center bg-slate-900/30 border-r border-slate-850">
                       {time}
                     </td>
                     {weekDates.map((date, dayIdx) => {
@@ -317,57 +318,80 @@ function AdminDashboard() {
                       return (
                         <td 
                           key={dayIdx} 
-                          className={`p-2 border-l border-slate-850 align-top relative min-h-[100px] ${
-                            !isWorkingDay ? 'bg-slate-950/70 pattern-dots opacity-40' : ''
+                          className={`p-3 border-l border-slate-850 align-top relative min-h-[120px] transition-colors ${
+                            !isWorkingDay 
+                              ? 'bg-slate-950/70 pattern-dots opacity-30 select-none' 
+                              : 'bg-slate-900/5 group-hover/row:bg-slate-900/20'
                           }`}
                         >
                           {isWorkingDay ? (
-                            <div className="space-y-1">
+                            <div className="space-y-2">
                               {/* Slot Capacity indicator */}
-                              <div className="flex justify-between items-center mb-1.5">
-                                <span className={`text-[8px] font-mono px-1 rounded font-bold ${
+                              <div className="flex justify-between items-center">
+                                <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold tracking-wide shadow-xs ${
                                   sumPessoas >= limit 
-                                    ? 'bg-red-500/15 text-red-400' 
+                                    ? 'bg-red-500/15 text-red-400 border border-red-500/20' 
                                     : hasException 
                                     ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
-                                    : 'bg-slate-800 text-slate-500'
+                                    : 'bg-slate-800/80 text-slate-400'
                                 }`}>
                                   {sumPessoas}/{limit} vagas {hasException && '⚡'}
                                 </span>
                               </div>
 
                               {/* Cartões dos Agendamentos */}
-                              {bookingsInSlot.map((b) => (
-                                <div 
-                                  key={b.id} 
-                                  className="group relative p-2 bg-slate-900 border border-slate-800 hover:border-primary/50 rounded-xl flex flex-col justify-between shadow transition-all gap-1.5 text-[11px] leading-tight"
-                                >
-                                  <div>
-                                    <p className="font-bold text-slate-100 truncate pr-3">{b.cliente_nome}</p>
-                                    <p className="text-[10px] text-slate-500 truncate mt-0.5">{b.cliente_telefone}</p>
-                                    {b.observacoes && (
-                                      <p className="text-[9px] text-slate-500 italic mt-1 truncate max-w-full" title={b.observacoes}>
-                                        "{b.observacoes}"
-                                      </p>
-                                    )}
-                                  </div>
-                                  <div className="flex justify-between items-center pt-1 border-t border-slate-850 mt-1">
-                                    <span className="text-[9px] font-bold text-primary font-mono">{b.pessoas}p</span>
-                                    <button
-                                      onClick={() => handleDelete(b.id)}
-                                      className="p-1 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors cursor-pointer"
-                                      title="Cancelar reserva"
+                              <div className="space-y-1.5">
+                                {bookingsInSlot.map((b) => {
+                                  const name = b.cliente_nome || b.name || (b.clientes && (b.clientes.nome || b.clientes.cliente_nome)) || 'Sem nome';
+                                  const phone = b.cliente_telefone || b.phone || (b.clientes && b.clientes.telefone) || 'Sem telefone';
+                                  
+                                  return (
+                                    <div 
+                                      key={b.id} 
+                                      onClick={() => setSelectedBooking(b)}
+                                      className="group/card relative p-2.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-xl flex flex-col justify-between shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer select-none text-[11px] leading-tight"
+                                      style={{ borderLeft: '3.5px solid var(--primary-color, #6366f1)' }}
                                     >
-                                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
+                                      <div>
+                                        <div className="flex items-center justify-between gap-1">
+                                          <p className="font-extrabold text-slate-100 truncate pr-1 text-xs">
+                                            {name}
+                                          </p>
+                                          <span className="text-[9px] font-black text-primary bg-primary/10 px-1 rounded-sm shrink-0">
+                                            {b.pessoas}p
+                                          </span>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 truncate mt-1">
+                                          {phone}
+                                        </p>
+                                        {b.observacoes && (
+                                          <p className="text-[9px] text-slate-550 italic mt-1.5 truncate max-w-full block">
+                                            "{b.observacoes}"
+                                          </p>
+                                        )}
+                                      </div>
+                                      
+                                      <div className="flex justify-end items-center mt-2 pt-1.5 border-t border-slate-850/80 opacity-60 group-hover/card:opacity-100 transition-opacity">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDelete(b.id);
+                                          }}
+                                          className="p-1 rounded hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
+                                          title="Cancelar reserva"
+                                        >
+                                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
                           ) : (
-                            <div className="flex items-center justify-center min-h-[60px] text-[10px] text-slate-650 font-bold uppercase tracking-wider">
+                            <div className="flex items-center justify-center min-h-[70px] text-[9px] text-slate-650 font-extrabold uppercase tracking-widest select-none">
                               Fechado
                             </div>
                           )}
@@ -530,6 +554,91 @@ function AdminDashboard() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal de Detalhes da Reserva (Google Calendar Style) */}
+      {selectedBooking && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl relative space-y-5 text-slate-100">
+            <button 
+              onClick={() => setSelectedBooking(null)}
+              className="absolute top-4 right-4 text-slate-450 hover:text-white text-xl font-bold transition-colors"
+            >
+              &times;
+            </button>
+            <div>
+              <h3 className="text-lg font-black text-white border-b border-slate-800 pb-2">Detalhes do Agendamento</h3>
+            </div>
+            
+            <div className="space-y-4 text-sm">
+              <div>
+                <span className="text-[10px] uppercase text-slate-400 block font-bold tracking-wider mb-1">Cliente</span>
+                <span className="text-base font-extrabold text-primary">
+                  {selectedBooking.cliente_nome || selectedBooking.name || (selectedBooking.clientes && (selectedBooking.clientes.nome || selectedBooking.clientes.cliente_nome)) || 'Sem nome'}
+                </span>
+              </div>
+              
+              <div>
+                <span className="text-[10px] uppercase text-slate-400 block font-bold tracking-wider mb-1">Telefone</span>
+                <span className="text-slate-200 font-semibold">
+                  {selectedBooking.cliente_telefone || selectedBooking.phone || (selectedBooking.clientes && selectedBooking.clientes.telefone) || 'Sem telefone'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-[10px] uppercase text-slate-400 block font-bold tracking-wider mb-1">Data</span>
+                  <span className="text-slate-200 font-semibold">
+                    {new Date(selectedBooking.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase text-slate-400 block font-bold tracking-wider mb-1">Horário</span>
+                  <span className="text-slate-200 font-semibold">{selectedBooking.horario}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-[10px] uppercase text-slate-400 block font-bold tracking-wider mb-1">Pessoas</span>
+                  <span className="text-slate-200 font-bold">{selectedBooking.pessoas} pessoas</span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase text-slate-400 block font-bold tracking-wider mb-1">Status</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20 inline-block">
+                    {selectedBooking.status || 'Confirmado'}
+                  </span>
+                </div>
+              </div>
+
+              {selectedBooking.observacoes && (
+                <div>
+                  <span className="text-[10px] uppercase text-slate-400 block font-bold tracking-wider mb-1">Observações</span>
+                  <p className="text-slate-350 bg-slate-950/50 p-3.5 rounded-2xl border border-slate-850 italic text-xs leading-relaxed">
+                    "{selectedBooking.observacoes}"
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-3">
+              <button
+                onClick={() => {
+                  handleDelete(selectedBooking.id);
+                  setSelectedBooking(null);
+                }}
+                className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-lg transition-all cursor-pointer text-center"
+              >
+                Cancelar Reserva
+              </button>
+              <button
+                onClick={() => setSelectedBooking(null)}
+                className="flex-1 py-3 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold rounded-xl transition-all cursor-pointer text-center"
+              >
+                Fechar
+              </button>
             </div>
           </div>
         </div>
