@@ -23,6 +23,11 @@ import { createClient } from '@/lib/supabase/client';
 
 const supabase = createClient();
 
+const getLocalDateString = (date: Date): string => {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
 interface DashboardClientProps {
   user: any;
   config: {
@@ -475,7 +480,7 @@ export default function DashboardClient({ user, config }: DashboardClientProps) 
                         {time}
                       </td>
                       {weekDates.map((date, dayIdx) => {
-                        const dateStr = date.toISOString().split('T')[0];
+                        const dateStr = getLocalDateString(date);
                         const bookingsInSlot = bookings.filter(b => b.data === dateStr && b.horario === time);
                         const occupiedSlots = bookingsInSlot.length;
                         const limit = agendaConfig.limites_customizados?.[dateStr]?.[time] ?? agendaConfig.vagas_padrao;

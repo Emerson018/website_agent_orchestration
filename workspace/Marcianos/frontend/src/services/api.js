@@ -104,19 +104,14 @@ export async function getAgendamentos() {
           ? item.detalhes_agendamento_nicho[0]
           : item.detalhes_agendamento_nicho;
 
-        // Extrai data (YYYY-MM-DD) e horário (HH:MM) a partir de inicio
+        // Extrai data (YYYY-MM-DD) e horário (HH:MM) a partir de inicio de forma direta para evitar desvios de fuso horário
         let datePart = '';
         let timePart = '';
         if (item.inicio) {
-          try {
-            const d = new Date(item.inicio);
-            const pad = (n) => String(n).padStart(2, '0');
-            datePart = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-            timePart = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-          } catch (e) {
-            const parts = item.inicio.split('T');
-            datePart = parts[0] || '';
-            timePart = parts[1] ? parts[1].slice(0, 5) : '';
+          const parts = item.inicio.split(/T|\s/);
+          datePart = parts[0] || '';
+          if (parts[1]) {
+            timePart = parts[1].slice(0, 5);
           }
         }
 
@@ -127,7 +122,7 @@ export async function getAgendamentos() {
           clienteTelefone: item.clientes?.telefone || 'Sem telefone',
           cliente_telefone: item.clientes?.telefone || 'Sem telefone',
           observacoes: nichoDet?.observacoes || '',
-          dataHora: item.inicio,
+          dataHora: `${datePart}T${timePart}:00`,
           data: datePart,
           horario: timePart,
           pessoas: nichoDet?.num_pessoas || 1,
@@ -150,11 +145,13 @@ export async function createAgendamento(bookingData) {
   
   if (useDatabase) {
     try {
-      // Converte data e horário para timestamp
-      const startDate = new Date(`${bookingData.date}T${bookingData.time}:00`);
-      const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hora
-      const inicio = startDate.toISOString();
-      const fim = endDate.toISOString();
+      // Salva data e horário local diretamente sem conversão de fuso horário para evitar desvios
+      const inicio = `${bookingData.date}T${bookingData.time}:00`;
+      
+      let [h, m] = bookingData.time.split(':').map(Number);
+      h = (h + 1) % 24;
+      const pad = (n) => String(n).padStart(2, '0');
+      const fim = `${bookingData.date}T${pad(h)}:${pad(m)}:00`;
 
       let clienteId;
 

@@ -2,6 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { getAgendamentos, getAgendaConfig, saveAgendaConfig, deleteAgendamento, isUsingDatabase } from '../services/api';
 import { supabase } from '../lib/supabase';
 
+const getLocalDateString = (date) => {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('agenda'); // 'agenda' | 'config'
   const [bookings, setBookings] = useState([]);
@@ -400,7 +405,7 @@ function AdminDashboard() {
                       {time}
                     </td>
                     {weekDates.map((date, dayIdx) => {
-                      const dateStr = date.toISOString().split('T')[0];
+                      const dateStr = getLocalDateString(date);
                       const bookingsInSlot = bookings.filter(b => b.data === dateStr && b.horario === time);
                       const occupiedSlots = bookingsInSlot.length;
                       const limit = config.limites_customizados?.[dateStr]?.[time] ?? config.vagas_padrao;
