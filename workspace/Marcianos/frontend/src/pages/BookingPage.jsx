@@ -78,10 +78,10 @@ function BookingPage() {
 
     // Filtra agendamentos na mesma data e slot
     const bookingsInSlot = bookings.filter(b => b.data === formData.date && b.horario === timeSlot);
-    const sumPessoas = bookingsInSlot.reduce((sum, b) => sum + (parseInt(b.pessoas) || 1), 0);
+    const occupiedSlots = bookingsInSlot.length;
 
-    const remaining = Math.max(0, limit - sumPessoas);
-    const available = remaining >= (parseInt(formData.guests) || 1);
+    const remaining = Math.max(0, limit - occupiedSlots);
+    const available = remaining >= 1;
 
     return { available, remaining, limit };
   };
@@ -95,7 +95,7 @@ function BookingPage() {
 
     const { available } = getSlotAvailability(formData.time);
     if (!available) {
-      alert("Desculpe, o horário selecionado não possui vagas suficientes para a quantidade de pessoas solicitada.");
+      alert("Desculpe, o horário selecionado já atingiu o limite de agendamentos.");
       return;
     }
 

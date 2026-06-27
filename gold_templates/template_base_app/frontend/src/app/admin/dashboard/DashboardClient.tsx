@@ -383,7 +383,7 @@ export default function DashboardClient({ user, config }: DashboardClientProps) 
                       {weekDates.map((date, dayIdx) => {
                         const dateStr = date.toISOString().split('T')[0];
                         const bookingsInSlot = bookings.filter(b => b.data === dateStr && b.horario === time);
-                        const sumPessoas = bookingsInSlot.reduce((sum, b) => sum + (Number(b.pessoas) || 1), 0);
+                        const occupiedSlots = bookingsInSlot.length;
                         const limit = agendaConfig.limites_customizados?.[dateStr]?.[time] ?? agendaConfig.vagas_padrao;
                         const hasException = agendaConfig.limites_customizados?.[dateStr]?.[time] !== undefined;
 
@@ -403,13 +403,13 @@ export default function DashboardClient({ user, config }: DashboardClientProps) 
                                 {/* Slot Capacity indicator */}
                                 <div className="flex justify-between items-center">
                                   <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold tracking-wide shadow-2xs ${
-                                    sumPessoas >= limit 
+                                    occupiedSlots >= limit 
                                       ? 'bg-red-100 text-red-700 border border-red-200' 
                                       : hasException 
                                       ? 'bg-amber-100 text-amber-700 border border-amber-200'
                                       : 'bg-gray-100 text-gray-500'
                                   }`}>
-                                    {sumPessoas}/{limit} vagas {hasException && '⚡'}
+                                    {occupiedSlots}/{limit} vagas {hasException && '⚡'}
                                   </span>
                                 </div>
 
@@ -441,11 +441,6 @@ export default function DashboardClient({ user, config }: DashboardClientProps) 
                                           <p className="text-[10px] text-gray-500 truncate mt-1">
                                             {phone}
                                           </p>
-                                          {b.observacoes && (
-                                            <p className="text-[9px] text-gray-400 italic mt-1.5 truncate max-w-full block">
-                                              "{b.observacoes}"
-                                            </p>
-                                          )}
                                         </div>
                                         
                                         <div className="flex justify-end items-center mt-2 pt-1.5 border-t border-gray-100 opacity-60 group-hover/card:opacity-100 transition-opacity">
@@ -701,7 +696,7 @@ export default function DashboardClient({ user, config }: DashboardClientProps) 
               {selectedBooking.observacoes && (
                 <div>
                   <span className="text-[10px] uppercase text-gray-400 block font-bold tracking-wider mb-1">Observações</span>
-                  <p className="text-gray-600 bg-gray-50 p-3.5 rounded-2xl border border-gray-150 italic text-xs leading-relaxed">
+                  <p className="text-gray-600 bg-gray-50 p-3.5 rounded-2xl border border-gray-150 italic text-xs leading-relaxed break-words break-all whitespace-pre-wrap">
                     "{selectedBooking.observacoes}"
                   </p>
                 </div>

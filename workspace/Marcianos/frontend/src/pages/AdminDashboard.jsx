@@ -309,7 +309,7 @@ function AdminDashboard() {
                     {weekDates.map((date, dayIdx) => {
                       const dateStr = date.toISOString().split('T')[0];
                       const bookingsInSlot = bookings.filter(b => b.data === dateStr && b.horario === time);
-                      const sumPessoas = bookingsInSlot.reduce((sum, b) => sum + (parseInt(b.pessoas) || 1), 0);
+                      const occupiedSlots = bookingsInSlot.length;
                       const limit = config.limites_customizados?.[dateStr]?.[time] ?? config.vagas_padrao;
                       const hasException = config.limites_customizados?.[dateStr]?.[time] !== undefined;
 
@@ -329,13 +329,13 @@ function AdminDashboard() {
                               {/* Slot Capacity indicator */}
                               <div className="flex justify-between items-center">
                                 <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold tracking-wide shadow-xs ${
-                                  sumPessoas >= limit 
+                                  occupiedSlots >= limit 
                                     ? 'bg-red-500/15 text-red-400 border border-red-500/20' 
                                     : hasException 
                                     ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
                                     : 'bg-slate-800/80 text-slate-400'
                                 }`}>
-                                  {sumPessoas}/{limit} vagas {hasException && '⚡'}
+                                  {occupiedSlots}/{limit} vagas {hasException && '⚡'}
                                 </span>
                               </div>
 
@@ -364,11 +364,6 @@ function AdminDashboard() {
                                         <p className="text-[10px] text-slate-400 truncate mt-1">
                                           {phone}
                                         </p>
-                                        {b.observacoes && (
-                                          <p className="text-[9px] text-slate-550 italic mt-1.5 truncate max-w-full block">
-                                            "{b.observacoes}"
-                                          </p>
-                                        )}
                                       </div>
                                       
                                       <div className="flex justify-end items-center mt-2 pt-1.5 border-t border-slate-850/80 opacity-60 group-hover/card:opacity-100 transition-opacity">
@@ -616,7 +611,7 @@ function AdminDashboard() {
               {selectedBooking.observacoes && (
                 <div>
                   <span className="text-[10px] uppercase text-slate-400 block font-bold tracking-wider mb-1">Observações</span>
-                  <p className="text-slate-350 bg-slate-950/50 p-3.5 rounded-2xl border border-slate-850 italic text-xs leading-relaxed">
+                  <p className="text-slate-350 bg-slate-950/50 p-3.5 rounded-2xl border border-slate-850 italic text-xs leading-relaxed break-words break-all whitespace-pre-wrap">
                     "{selectedBooking.observacoes}"
                   </p>
                 </div>
