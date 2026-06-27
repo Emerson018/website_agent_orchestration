@@ -39,3 +39,7 @@ INSERT INTO configuracao_agenda (chave, valor)
 VALUES 
 ('limites_customizados', '{}') -- Mapeamento de exceções
 ON CONFLICT (chave) DO NOTHING;
+
+-- Habilitar replicação realtime para a tabela de agendamentos
+alter publication supabase_realtime add table agendamentos;
+

@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { getAgendamentos, getAgendaConfig, saveAgendaConfig, deleteAgendamento, isUsingDatabase } from '../services/api';
+import { supabase } from '../lib/supabase';
 
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('agenda'); // 'agenda' | 'config'
   const [bookings, setBookings] = useState([]);
+  const [toasts, setToasts] = useState([]);
   const [config, setConfig] = useState({
     dias_funcionamento: [2, 3, 4, 5, 6, 0],
     horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
@@ -28,6 +30,36 @@ function AdminDashboard() {
 
   const usingDb = isUsingDatabase();
 
+  const playChime = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const playNote = (freq, startTime, duration) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, startTime);
+        gain.gain.setValueAtTime(0.1, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      };
+      playNote(587.33, audioCtx.currentTime, 0.4); // D5
+      playNote(880.00, audioCtx.currentTime + 0.15, 0.6); // A5
+    } catch (err) {
+      console.warn("Audio context failed to play chime:", err);
+    }
+  };
+
+  const addToast = (booking) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, booking }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 6000);
+  };
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -43,7 +75,68 @@ function AdminDashboard() {
       }
     }
     loadData();
-  }, []);
+
+    let channel;
+    if (usingDb) {
+      channel = supabase
+        .channel('admin-bookings-realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'agendamentos_base'
+          },
+          async (payload) => {
+            console.log("Novo agendamento recebido em tempo real!", payload);
+            
+            // Recarrega lista
+            const updatedBookings = await getAgendamentos();
+            setBookings(updatedBookings);
+            
+            // Toca sinal
+            playChime();
+            
+            const freshBooking = updatedBookings.find(b => b.id === payload.new.id);
+            if (freshBooking) {
+              addToast(freshBooking);
+            } else {
+              addToast({
+                cliente_nome: 'Novo Cliente',
+                horario: payload.new.inicio ? new Date(payload.new.inicio).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : '',
+                data: payload.new.inicio ? new Date(payload.new.inicio).toISOString().split('T')[0] : ''
+              });
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    const handleStorageChange = async (e) => {
+      if (e.key === 'mock_agendamentos') {
+        const updatedBookings = await getAgendamentos();
+        setBookings(updatedBookings);
+        
+        playChime();
+        
+        try {
+          const localList = JSON.parse(e.newValue || '[]');
+          if (localList.length > 0) {
+            const last = localList[localList.length - 1];
+            addToast(last);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [usingDb]);
 
   const handleRefresh = async () => {
     try {
@@ -638,6 +731,47 @@ function AdminDashboard() {
           </div>
         </div>
       )}
+      {/* Container de Notificações Toast em Tempo Real */}
+      <div className="fixed bottom-6 right-6 z-[100] space-y-3 max-w-sm w-full">
+        {toasts.map(t => (
+          <div 
+            key={t.id} 
+            className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-2xl flex gap-3.5 items-start animate-slide-in text-left text-slate-100"
+            style={{ borderLeft: '4px solid var(--primary-color, #6366f1)' }}
+          >
+            <div className="bg-primary/10 p-2 rounded-xl text-primary shrink-0">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-primary">Nova Reserva Recebida!</h4>
+              <p className="text-sm font-extrabold text-white truncate mt-0.5">
+                {t.booking.cliente_nome || t.booking.name || 'Cliente'}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Dia: <strong className="text-slate-200">{t.booking.data ? new Date(t.booking.data + 'T00:00:00').toLocaleDateString('pt-BR') : ''}</strong> às <strong className="text-slate-200">{t.booking.horario}</strong>
+              </p>
+            </div>
+            <button 
+              onClick={() => setToasts(prev => prev.filter(item => item.id !== t.id))}
+              className="text-slate-500 hover:text-slate-300 text-sm font-bold shrink-0 cursor-pointer"
+            >
+              &times;
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes slideIn {
+          from { transform: translateX(120%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-slide-in {
+          animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+      `}</style>
     </div>
   );
 }
