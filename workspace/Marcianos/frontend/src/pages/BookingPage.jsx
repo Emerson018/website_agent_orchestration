@@ -12,13 +12,32 @@ function BookingPage() {
     notes: ''
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [config, setConfig] = useState({
-    dias_funcionamento: [2, 3, 4, 5, 6, 0],
-    horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
-    vagas_padrao: 5,
-    limites_customizados: {}
+  const [config, setConfig] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cached_agenda_config');
+      return saved ? JSON.parse(saved) : {
+        dias_funcionamento: [2, 3, 4, 5, 6, 0],
+        horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
+        vagas_padrao: 5,
+        limites_customizados: {}
+      };
+    } catch (e) {
+      return {
+        dias_funcionamento: [2, 3, 4, 5, 6, 0],
+        horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
+        vagas_padrao: 5,
+        limites_customizados: {}
+      };
+    }
   });
-  const [bookings, setBookings] = useState([]);
+  const [bookings, setBookings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cached_bookings');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,6 +46,8 @@ function BookingPage() {
         const [cfg, bks] = await Promise.all([getAgendaConfig(), getAgendamentos()]);
         setConfig(cfg);
         setBookings(bks);
+        localStorage.setItem('cached_agenda_config', JSON.stringify(cfg));
+        localStorage.setItem('cached_bookings', JSON.stringify(bks));
       } catch (err) {
         console.error("Erro ao carregar configurações de agendamento:", err);
       } finally {
@@ -111,20 +132,6 @@ function BookingPage() {
   };
 
   const todayStr = new Date().toISOString().split('T')[0];
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh] bg-slate-950 text-slate-100 font-sans">
-        <div className="flex flex-col items-center gap-3">
-          <svg className="w-8 h-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span className="text-sm font-semibold opacity-75">Carregando horários...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center py-10 px-4 font-sans bg-slate-950 text-slate-100">
@@ -228,7 +235,18 @@ function BookingPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Selecione o Horário *</label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Selecione o Horário *</label>
+                  {loading && formData.date && (
+                    <span className="flex items-center gap-1.5 text-[10px] text-slate-500 animate-pulse">
+                      <svg className="w-3.5 h-3.5 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Atualizando...
+                    </span>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {config.horarios_disponiveis.map((time) => {
                     const { available, remaining } = getSlotAvailability(time);

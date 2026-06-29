@@ -33,7 +33,7 @@ function AdminDashboard() {
   const [exHorario, setExHorario] = useState('19:00');
   const [exVagas, setExVagas] = useState(5);
 
-  const usingDb = isUsingDatabase();
+  const [usingDb, setUsingDb] = useState(false);
 
   const playChime = () => {
     try {
@@ -73,6 +73,8 @@ function AdminDashboard() {
         setConfig(cfg);
         setVagasPadraoInput(cfg.vagas_padrao);
         setDiasFuncionamentoSelected(cfg.dias_funcionamento);
+        // Atualiza o estado da conexão para sincronizar o realtime
+        setUsingDb(isUsingDatabase());
       } catch (err) {
         console.error("Erro ao carregar dados do admin:", err);
       } finally {
@@ -88,29 +90,31 @@ function AdminDashboard() {
         .on(
           'postgres_changes',
           {
-            event: 'INSERT',
+            event: '*',
             schema: 'public',
             table: 'agendamentos_base'
           },
           async (payload) => {
-            console.log("Novo agendamento recebido em tempo real!", payload);
+            console.log("Alteração recebida em tempo real no Supabase!", payload);
             
-            // Recarrega lista
+            // Recarrega a lista completa
             const updatedBookings = await getAgendamentos();
             setBookings(updatedBookings);
             
-            // Toca sinal
-            playChime();
-            
-            const freshBooking = updatedBookings.find(b => b.id === payload.new.id);
-            if (freshBooking) {
-              addToast(freshBooking);
-            } else {
-              addToast({
-                cliente_nome: 'Novo Cliente',
-                horario: payload.new.inicio ? new Date(payload.new.inicio).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : '',
-                data: payload.new.inicio ? new Date(payload.new.inicio).toISOString().split('T')[0] : ''
-              });
+            // Toca sinal apenas em novas inserções
+            if (payload.eventType === 'INSERT') {
+              playChime();
+              
+              const freshBooking = updatedBookings.find(b => b.id === payload.new.id);
+              if (freshBooking) {
+                addToast(freshBooking);
+              } else {
+                addToast({
+                  cliente_nome: 'Novo Cliente',
+                  horario: payload.new.inicio ? new Date(payload.new.inicio).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : '',
+                  data: payload.new.inicio ? new Date(payload.new.inicio).toISOString().split('T')[0] : ''
+                });
+              }
             }
           }
         )

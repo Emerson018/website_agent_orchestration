@@ -2,27 +2,53 @@ import { supabase } from '../lib/supabase';
 
 let useDatabase = true;
 let isChecked = false;
+let dbCheckPromise = null;
 
-// Helper para verificar se as tabelas existem no Supabase
-async function checkDb() {
-  if (isChecked) return;
+// Tenta carregar status do banco pré-verificado do localStorage para carregamento instantâneo
+if (typeof window !== 'undefined') {
+  const cachedStatus = localStorage.getItem('supabase_db_status');
+  if (cachedStatus) {
+    useDatabase = cachedStatus === 'connected';
+    isChecked = true;
+  }
+}
+
+async function performDbCheck() {
   try {
     const { error } = await supabase.from('agendamentos_base').select('id').limit(1);
     if (error && (error.message?.includes("Could not find the table") || error.code === 'PGRST205')) {
-      console.warn("[API Service] Tabela 'agendamentos_base' não encontrada. Rodando em modo de simulação com localStorage.");
+      console.warn("[API Service] Tabela 'agendamentos_base' não encontrada. Rodando em modo de simulação.");
       useDatabase = false;
+      localStorage.setItem('supabase_db_status', 'mock');
     } else if (error) {
       console.error("[API Service] Erro ao testar Supabase:", error);
       useDatabase = false;
     } else {
-      console.log("[API Service] Conectado ao Supabase com sucesso.");
       useDatabase = true;
+      localStorage.setItem('supabase_db_status', 'connected');
     }
   } catch (err) {
-    console.warn("[API Service] Falha na conexão com Supabase. Usando localStorage de fallback.", err);
+    console.warn("[API Service] Falha na rede com Supabase. Usando localStorage.", err);
     useDatabase = false;
+  } finally {
+    isChecked = true;
   }
-  isChecked = true;
+}
+
+// Helper para verificar se as tabelas existem no Supabase (Deduplicado e Cacheado)
+async function checkDb() {
+  if (isChecked) {
+    // Se já checado, atualiza em background silenciosamente se ainda não houver promise ativa
+    if (!dbCheckPromise) {
+      dbCheckPromise = performDbCheck();
+    }
+    return;
+  }
+  
+  if (!dbCheckPromise) {
+    dbCheckPromise = performDbCheck();
+  }
+  return dbCheckPromise;
 }
 
 // Inicializa dados de simulação no localStorage se vazios

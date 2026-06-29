@@ -25,13 +25,38 @@ export default function BookingPage() {
     notes: ''
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [config, setConfig] = useState({
-    dias_funcionamento: [2, 3, 4, 5, 6, 0],
-    horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
-    vagas_padrao: 5,
-    limites_customizados: {} as Record<string, Record<string, number>>
+  const [config, setConfig] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('cached_agenda_config');
+        return saved ? JSON.parse(saved) : {
+          dias_funcionamento: [2, 3, 4, 5, 6, 0],
+          horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
+          vagas_padrao: 5,
+          limites_customizados: {} as Record<string, Record<string, number>>
+        };
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return {
+      dias_funcionamento: [2, 3, 4, 5, 6, 0],
+      horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
+      vagas_padrao: 5,
+      limites_customizados: {} as Record<string, Record<string, number>>
+    };
   });
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('cached_bookings');
+        return saved ? JSON.parse(saved) : [];
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return [];
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -50,6 +75,11 @@ export default function BookingPage() {
         const [cfg, bks] = await Promise.all([getAgendaConfig(), getAgendamentos()]);
         setConfig(cfg);
         setBookings(bks);
+        
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('cached_agenda_config', JSON.stringify(cfg));
+          localStorage.setItem('cached_bookings', JSON.stringify(bks));
+        }
       } catch (err) {
         // Fallbacks are already set
       } finally {
@@ -134,20 +164,6 @@ export default function BookingPage() {
 
   const todayStr = new Date().toISOString().split('T')[0];
   const theme = appName.toLowerCase().includes('marcianos') ? 'dark' : 'light';
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950 font-sans">
-        <div className="flex flex-col items-center gap-3">
-          <svg className="w-8 h-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span className="text-sm font-semibold opacity-75">Carregando horários...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -258,9 +274,20 @@ export default function BookingPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Selecione o Horário *</label>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">Selecione o Horário *</label>
+                    {loading && formData.date && (
+                      <span className="flex items-center gap-1.5 text-[10px] text-gray-550 dark:text-slate-400 animate-pulse">
+                        <svg className="w-3.5 h-3.5 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Atualizando...
+                      </span>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {config.horarios_disponiveis.map((time) => {
+                    {config.horarios_disponiveis.map((time: string) => {
                       const { available, remaining } = getSlotAvailability(time);
                       const isSelected = formData.time === time;
                       return (
