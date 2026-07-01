@@ -19,14 +19,16 @@ function BookingPage() {
         dias_funcionamento: [2, 3, 4, 5, 6, 0],
         horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
         vagas_padrao: 5,
-        limites_customizados: {}
+        limites_customizados: {},
+        campo_observacoes_ativo: true
       };
     } catch (e) {
       return {
         dias_funcionamento: [2, 3, 4, 5, 6, 0],
         horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
         vagas_padrao: 5,
-        limites_customizados: {}
+        limites_customizados: {},
+        campo_observacoes_ativo: true
       };
     }
   });
@@ -142,10 +144,10 @@ function BookingPage() {
           <>
             <div className="text-center mb-8">
               <span className="text-xs font-bold text-primary uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
-                Agendamento 🛸
+                Agendamento
               </span>
               <h2 className="text-3xl font-black mt-4">Garanta seu Horário</h2>
-              <p className="text-sm opacity-75 mt-2">Preencha seus dados para reservar a sua mesa e ter uma experiência incrível.</p>
+              <p className="text-sm opacity-75 mt-2">Preencha seus dados para reservar a sua mesa</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -248,7 +250,7 @@ function BookingPage() {
                   )}
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {config.horarios_disponiveis.map((time) => {
+                  {[...config.horarios_disponiveis].sort().map((time) => {
                     const { available, remaining } = getSlotAvailability(time);
                     const isSelected = formData.time === time;
                     return (
@@ -275,21 +277,23 @@ function BookingPage() {
                 </div>
               </div>
 
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Observações Especiais (Mesa de Preferência, Alergias)</label>
-                  <span className="text-[10px] text-slate-500 font-mono">{formData.notes.length}/100</span>
+              {config.campo_observacoes_ativo !== false && (
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Observações</label>
+                    <span className="text-[10px] text-slate-500 font-mono">{formData.notes.length}/50</span>
+                  </div>
+                  <textarea 
+                    name="notes"
+                    rows="3"
+                    maxLength={50}
+                    placeholder="Algum pedido especial para nós? (Máx. 50 caracteres)"
+                    value={formData.notes}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100 resize-none"
+                  ></textarea>
                 </div>
-                <textarea 
-                  name="notes"
-                  rows="3"
-                  maxLength={100}
-                  placeholder="Algum pedido especial para nós? (Máx. 100 caracteres)"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100 resize-none"
-                ></textarea>
-              </div>
+              )}
 
               <button
                 type="submit"

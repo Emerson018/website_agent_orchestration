@@ -15,7 +15,8 @@ function AdminDashboard() {
     dias_funcionamento: [2, 3, 4, 5, 6, 0],
     horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
     vagas_padrao: 5,
-    limites_customizados: {}
+    limites_customizados: {},
+    campo_observacoes_ativo: true
   });
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -32,6 +33,12 @@ function AdminDashboard() {
   const [exData, setExData] = useState('');
   const [exHorario, setExHorario] = useState('19:00');
   const [exVagas, setExVagas] = useState(5);
+  const [campoObservacoesAtivoInput, setCampoObservacoesAtivoInput] = useState(true);
+  const [horariosDisponiveisSelected, setHorariosDisponiveisSelected] = useState([]);
+  const [newTimeInput, setNewTimeInput] = useState('');
+  const [bulkStart, setBulkStart] = useState('18:00');
+  const [bulkEnd, setBulkEnd] = useState('22:00');
+  const [bulkInterval, setBulkInterval] = useState('30');
 
   const [usingDb, setUsingDb] = useState(false);
 
@@ -73,6 +80,8 @@ function AdminDashboard() {
         setConfig(cfg);
         setVagasPadraoInput(cfg.vagas_padrao);
         setDiasFuncionamentoSelected(cfg.dias_funcionamento);
+        setCampoObservacoesAtivoInput(cfg.campo_observacoes_ativo ?? true);
+        setHorariosDisponiveisSelected(cfg.horarios_disponiveis || []);
         // Atualiza o estado da conexão para sincronizar o realtime
         setUsingDb(isUsingDatabase());
       } catch (err) {
@@ -166,15 +175,19 @@ function AdminDashboard() {
   };
 
   const handleSaveConfigs = async () => {
+    const sortedHours = [...horariosDisponiveisSelected].sort((a, b) => a.localeCompare(b));
     const updated = {
       ...config,
       vagas_padrao: parseInt(vagasPadraoInput) || 5,
-      dias_funcionamento: diasFuncionamentoSelected
+      dias_funcionamento: diasFuncionamentoSelected,
+      campo_observacoes_ativo: campoObservacoesAtivoInput,
+      horarios_disponiveis: sortedHours
     };
 
     const res = await saveAgendaConfig(updated);
     if (res.success) {
       setConfig(updated);
+      setHorariosDisponiveisSelected(sortedHours);
       alert("Configurações salvas com sucesso!");
     } else {
       alert("Erro ao salvar configurações.");
@@ -228,6 +241,58 @@ function AdminDashboard() {
     if (res.success) {
       setConfig(updated);
     }
+  };
+
+  const handleAddHorario = () => {
+    if (!newTimeInput) return;
+    if (horariosDisponiveisSelected.includes(newTimeInput)) {
+      alert("Este horário já está na lista.");
+      return;
+    }
+    setHorariosDisponiveisSelected(prev => [...prev, newTimeInput].sort((a, b) => a.localeCompare(b)));
+    setNewTimeInput('');
+  };
+
+  const handleRemoveHorario = (timeToRemove) => {
+    if (window.confirm(`Deseja realmente remover o horário ${timeToRemove}?`)) {
+      setHorariosDisponiveisSelected(prev => prev.filter(t => t !== timeToRemove));
+    }
+  };
+
+  const handleGenerateBulkHorarios = () => {
+    if (!bulkStart || !bulkEnd || !bulkInterval) {
+      alert("Por favor, preencha todos os campos do gerador.");
+      return;
+    }
+
+    const [startH, startM] = bulkStart.split(':').map(Number);
+    const [endH, endM] = bulkEnd.split(':').map(Number);
+    
+    let startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+    const step = parseInt(bulkInterval);
+    
+    if (startMinutes >= endMinutes) {
+      alert("A hora de início deve ser menor que a hora de término.");
+      return;
+    }
+
+    const generated = [];
+    while (startMinutes <= endMinutes) {
+      const h = Math.floor(startMinutes / 60) % 24;
+      const m = startMinutes % 60;
+      const pad = (n) => String(n).padStart(2, '0');
+      generated.push(`${pad(h)}:${pad(m)}`);
+      startMinutes += step;
+    }
+
+    // Merge generated hours with current ones, ensuring uniqueness
+    setHorariosDisponiveisSelected(prev => {
+      const merged = new Set([...prev, ...generated]);
+      return Array.from(merged).sort((a, b) => a.localeCompare(b));
+    });
+
+    alert(`${generated.length} horários foram gerados com sucesso! Não esqueça de clicar em "Salvar Regras Principais" abaixo/acima para gravar permanentemente.`);
   };
 
   // Funções de manipulação de data para a Agenda Semanal
@@ -356,148 +421,149 @@ function AdminDashboard() {
         <div className="space-y-4">
           {/* Navigation bar */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3 bg-slate-900 border border-slate-850 p-4 rounded-2xl">
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => changeWeek(-1)}
-                className="p-2 rounded-lg bg-slate-950 border border-slate-800 hover:bg-slate-850 text-slate-350 cursor-pointer"
-              >
-                &larr;
-              </button>
-              <button 
-                onClick={setTodayWeek}
-                className="px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 hover:bg-slate-850 text-xs font-bold cursor-pointer"
-              >
-                Hoje
-              </button>
-              <button 
-                onClick={() => changeWeek(1)}
-                className="p-2 rounded-lg bg-slate-950 border border-slate-800 hover:bg-slate-850 text-slate-350 cursor-pointer"
-              >
-                &rarr;
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => changeWeek(-1)}
+                  className="p-2 rounded-lg bg-slate-950 border border-slate-800 hover:bg-slate-850 text-slate-350 cursor-pointer"
+                >
+                  &larr;
+                </button>
+                <button 
+                  onClick={setTodayWeek}
+                  className="px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 hover:bg-slate-850 text-xs font-bold cursor-pointer"
+                >
+                  Hoje
+                </button>
+                <button 
+                  onClick={() => changeWeek(1)}
+                  className="p-2 rounded-lg bg-slate-950 border border-slate-800 hover:bg-slate-850 text-slate-350 cursor-pointer"
+                >
+                  &rarr;
+                </button>
+              </div>
+              <span className="text-sm font-bold text-white tracking-wide">{formatWeekRange()}</span>
             </div>
-            <span className="text-sm font-bold text-white tracking-wide">{formatWeekRange()}</span>
-          </div>
 
           {/* Grid Semanal */}
-          <div className="overflow-x-auto border border-slate-900 rounded-3xl shadow-2xl">
-            <table className="w-full min-w-[1200px] border-collapse table-fixed text-left">
-              <thead>
-                <tr className="bg-slate-900 border-b border-slate-850 text-slate-300">
-                  <th className="w-24 p-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-center bg-slate-900/80">Horário</th>
+          <div className="overflow-auto max-h-[85vh] border border-slate-900 rounded-3xl shadow-2xl" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <table className="w-full min-w-[1600px] border-collapse table-fixed text-left">
+              <thead className="sticky top-0 z-20 bg-slate-900 shadow-md">
+                <tr className="border-b border-slate-850 text-slate-300">
+                  <th className="w-24 p-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-center bg-slate-900">Horário</th>
                   {weekDates.map((date, idx) => {
                     const isToday = new Date().toDateString() === date.toDateString();
                     return (
-                      <th key={idx} className={`p-4 border-l border-slate-850 ${isToday ? 'bg-primary/5' : 'bg-slate-900/40'}`}>
-                        <div className="flex flex-col">
-                          <span className={`text-[10px] uppercase font-bold tracking-widest ${isToday ? 'text-primary font-black' : 'text-slate-400'}`}>
-                            {weekDaysLabels[idx]}
-                          </span>
-                          <span className={`text-lg font-black mt-0.5 ${isToday ? 'text-primary' : 'text-white'}`}>
-                            {date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'numeric' })}
-                          </span>
-                        </div>
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-850 bg-slate-900/10">
-                {config.horarios_disponiveis.map((time) => (
-                  <tr key={time} className="hover:bg-slate-950/20 group/row">
-                    <td className="p-4 text-sm font-extrabold text-slate-400 text-center bg-slate-900/30 border-r border-slate-850">
-                      {time}
-                    </td>
-                    {weekDates.map((date, dayIdx) => {
-                      const dateStr = getLocalDateString(date);
-                      const bookingsInSlot = bookings.filter(b => b.data === dateStr && b.horario === time);
-                      const occupiedSlots = bookingsInSlot.length;
-                      const limit = config.limites_customizados?.[dateStr]?.[time] ?? config.vagas_padrao;
-                      const hasException = config.limites_customizados?.[dateStr]?.[time] !== undefined;
-
-                      const isWorkingDay = config.dias_funcionamento.includes(date.getDay());
-
-                      return (
-                        <td 
-                          key={dayIdx} 
-                          className={`p-3 border-l border-slate-850 align-top relative min-h-[120px] transition-colors ${
-                            !isWorkingDay 
-                              ? 'bg-slate-950/70 pattern-dots opacity-30 select-none' 
-                              : 'bg-slate-900/5 group-hover/row:bg-slate-900/20'
-                          }`}
-                        >
-                          {isWorkingDay ? (
-                            <div className="space-y-2">
-                              {/* Slot Capacity indicator */}
-                              <div className="flex justify-between items-center">
-                                <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold tracking-wide shadow-xs ${
-                                  occupiedSlots >= limit 
-                                    ? 'bg-red-500/15 text-red-400 border border-red-500/20' 
-                                    : hasException 
-                                    ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
-                                    : 'bg-slate-800/80 text-slate-400'
-                                }`}>
-                                  {occupiedSlots}/{limit} vagas {hasException && '⚡'}
-                                </span>
-                              </div>
-
-                              {/* Cartões dos Agendamentos */}
-                              <div className="space-y-1.5">
-                                {bookingsInSlot.map((b) => {
-                                  const name = b.cliente_nome || b.name || (b.clientes && (b.clientes.nome || b.clientes.cliente_nome)) || 'Sem nome';
-                                  const phone = b.cliente_telefone || b.phone || (b.clientes && b.clientes.telefone) || 'Sem telefone';
-                                  
-                                  return (
-                                    <div 
-                                      key={b.id} 
-                                      onClick={() => setSelectedBooking(b)}
-                                      className="group/card relative p-2.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-xl flex flex-col justify-between shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer select-none text-[11px] leading-tight"
-                                      style={{ borderLeft: '3.5px solid var(--primary-color, #6366f1)' }}
-                                    >
-                                      <div>
-                                        <div className="flex items-center justify-between gap-1">
-                                          <p className="font-extrabold text-slate-100 truncate pr-1 text-xs">
-                                            {name}
-                                          </p>
-                                          <span className="text-[9px] font-black text-primary bg-primary/10 px-1 rounded-sm shrink-0">
-                                            {b.pessoas}p
-                                          </span>
-                                        </div>
-                                        <p className="text-[10px] text-slate-400 truncate mt-1">
-                                          {phone}
-                                        </p>
-                                      </div>
-                                      
-                                      <div className="flex justify-end items-center mt-2 pt-1.5 border-t border-slate-850/80 opacity-60 group-hover/card:opacity-100 transition-opacity">
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDelete(b.id);
-                                          }}
-                                          className="p-1 rounded hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
-                                          title="Cancelar reserva"
-                                        >
-                                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                          </svg>
-                                        </button>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-center min-h-[70px] text-[9px] text-slate-650 font-extrabold uppercase tracking-widest select-none">
-                              Fechado
-                            </div>
-                          )}
-                        </td>
+                      <th key={idx} className={`p-4 border-l border-slate-850 bg-slate-900 ${isToday ? 'text-primary' : ''}`}>
+                          <div className="flex flex-col">
+                            <span className={`text-[10px] uppercase font-bold tracking-widest ${isToday ? 'text-primary font-black' : 'text-slate-400'}`}>
+                              {weekDaysLabels[idx]}
+                            </span>
+                            <span className={`text-lg font-black mt-0.5 ${isToday ? 'text-primary' : 'text-white'}`}>
+                              {date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'numeric' })}
+                            </span>
+                          </div>
+                        </th>
                       );
                     })}
                   </tr>
-                ))}
-              </tbody>
+                </thead>
+                <tbody className="divide-y divide-slate-850 bg-slate-900/10">
+                  {config.horarios_disponiveis.map((time) => (
+                    <tr key={time} className="hover:bg-slate-950/20 group/row">
+                      <td className="p-4 text-sm font-extrabold text-slate-400 text-center bg-slate-900/30 border-r border-slate-850">
+                        {time}
+                      </td>
+                      {weekDates.map((date, dayIdx) => {
+                        const dateStr = getLocalDateString(date);
+                        const bookingsInSlot = bookings.filter(b => b.data === dateStr && b.horario === time);
+                        const occupiedSlots = bookingsInSlot.length;
+                        const limit = config.limites_customizados?.[dateStr]?.[time] ?? config.vagas_padrao;
+                        const hasException = config.limites_customizados?.[dateStr]?.[time] !== undefined;
+
+                        const isWorkingDay = config.dias_funcionamento.includes(date.getDay());
+
+                        return (
+                          <td 
+                            key={dayIdx} 
+                            className={`p-2 border-l border-slate-850 align-top relative transition-colors ${
+                              !isWorkingDay 
+                                ? 'bg-slate-950/70 pattern-dots opacity-30 select-none' 
+                                : 'bg-slate-900/5 group-hover/row:bg-slate-900/20'
+                            }`}
+                            style={{ height: '90px' }}
+                          >
+                            {isWorkingDay ? (
+                              <div className="space-y-2">
+                                {/* Slot Capacity indicator */}
+                                <div className="flex justify-between items-center">
+                                  <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold tracking-wide shadow-xs ${
+                                    occupiedSlots >= limit 
+                                      ? 'bg-red-500/15 text-red-400 border border-red-500/20' 
+                                      : hasException 
+                                      ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
+                                      : 'bg-slate-800/80 text-slate-400'
+                                  }`}>
+                                    {occupiedSlots}/{limit} vagas {hasException && '⚡'}
+                                  </span>
+                                </div>
+
+                                {/* Cartões dos Agendamentos */}
+                                <div className="space-y-1.5">
+                                  {bookingsInSlot.map((b) => {
+                                    const name = b.cliente_nome || b.name || (b.clientes && (b.clientes.nome || b.clientes.cliente_nome)) || 'Sem nome';
+                                    const phone = b.cliente_telefone || b.phone || (b.clientes && b.clientes.telefone) || 'Sem telefone';
+                                    
+                                    return (
+                                      <div 
+                                        key={b.id} 
+                                        onClick={() => setSelectedBooking(b)}
+                                        className="group/card relative p-2.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-xl flex flex-col justify-between shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer select-none text-[11px] leading-tight"
+                                        style={{ borderLeft: '3.5px solid var(--primary-color, #6366f1)' }}
+                                      >
+                                        <div>
+                                          <div className="flex items-center justify-between gap-1">
+                                            <p className="font-extrabold text-slate-100 truncate pr-1 text-xs">
+                                              {name}
+                                            </p>
+                                            <span className="text-[9px] font-black text-primary bg-primary/10 px-1 rounded-sm shrink-0">
+                                              {b.pessoas}p
+                                            </span>
+                                          </div>
+                                          <p className="text-[10px] text-slate-400 truncate mt-1">
+                                            {phone}
+                                          </p>
+                                        </div>
+                                        
+                                        <div className="flex justify-end items-center mt-2 pt-1.5 border-t border-slate-855/80 opacity-60 group-hover/card:opacity-100 transition-opacity">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDelete(b.id);
+                                            }}
+                                            className="p-1 rounded hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
+                                            title="Cancelar reserva"
+                                          >
+                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center min-h-[70px] text-[9px] text-slate-650 font-extrabold uppercase tracking-widest select-none">
+                                Fechado
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
             </table>
           </div>
         </div>
@@ -556,6 +622,20 @@ function AdminDashboard() {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Campo de Observações Ativo */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Campo de Observações</label>
+              <label className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-800 hover:border-primary/20 bg-slate-950/50 cursor-pointer select-none">
+                <input 
+                  type="checkbox"
+                  checked={campoObservacoesAtivoInput}
+                  onChange={(e) => setCampoObservacoesAtivoInput(e.target.checked)}
+                  className="accent-primary size-4"
+                />
+                <span className="text-xs font-semibold">Exibir campo de observações no formulário de reserva</span>
+              </label>
             </div>
 
             <button
@@ -651,6 +731,123 @@ function AdminDashboard() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Card de Gerenciamento de Horários */}
+          <div className="md:col-span-2 bg-slate-900 border border-slate-850 p-6 rounded-2xl shadow-lg space-y-6">
+            <div className="border-b border-slate-850 pb-2">
+              <h3 className="text-xl font-bold text-white">Gerenciar Horários da Agenda</h3>
+              <p className="text-xs text-slate-400 mt-1">Configure os slots de horário disponíveis para agendamento dos clientes.</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Lado Esquerdo: Chips de Horários Ativos */}
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Horários Ativos ({horariosDisponiveisSelected.length})</h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Estes são os horários atualmente oferecidos aos clientes no formulário.</p>
+                </div>
+                {horariosDisponiveisSelected.length === 0 ? (
+                  <div className="p-6 border border-dashed border-slate-800 rounded-xl text-center">
+                    <p className="text-xs text-slate-500 italic">Nenhum horário cadastrado. Adicione horários abaixo ou use o gerador.</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2 max-h-[220px] overflow-y-auto pr-1">
+                    {horariosDisponiveisSelected.map((time) => (
+                      <div 
+                        key={time} 
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-950 border border-slate-800 hover:border-red-500/30 rounded-xl group transition-all text-xs font-mono font-bold"
+                      >
+                        <span className="text-slate-200">{time}</span>
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveHorario(time)}
+                          className="text-slate-500 hover:text-red-400 font-extrabold transition-colors cursor-pointer text-sm leading-none"
+                          title={`Remover ${time}`}
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Adicionar Individual */}
+                <div className="pt-4 border-t border-slate-850/50 space-y-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Adicionar Horário Individual</h4>
+                  <div className="flex gap-2">
+                    <input 
+                      type="time"
+                      value={newTimeInput}
+                      onChange={(e) => setNewTimeInput(e.target.value)}
+                      className="px-3 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 flex-1 focus:border-primary focus:outline-none"
+                      style={{ colorScheme: 'dark' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddHorario}
+                      className="px-4 py-2.5 bg-slate-950 border border-slate-800 hover:border-primary/50 text-white hover:text-primary font-bold rounded-xl text-xs transition-all cursor-pointer"
+                    >
+                      + Adicionar
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lado Direito: Gerador em Massa */}
+              <div className="bg-slate-950/40 border border-slate-850/50 p-4 rounded-xl space-y-4">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-350">Gerador de Horários em Massa</h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Preencha um intervalo de horas de forma automática.</p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-bold uppercase text-slate-400">Hora Início</label>
+                    <input 
+                      type="time"
+                      value={bulkStart}
+                      onChange={(e) => setBulkStart(e.target.value)}
+                      className="w-full px-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none"
+                      style={{ colorScheme: 'dark' }}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-bold uppercase text-slate-400">Hora Fim</label>
+                    <input 
+                      type="time"
+                      value={bulkEnd}
+                      onChange={(e) => setBulkEnd(e.target.value)}
+                      className="w-full px-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none"
+                      style={{ colorScheme: 'dark' }}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-bold uppercase text-slate-400">Intervalo</label>
+                    <select
+                      value={bulkInterval}
+                      onChange={(e) => setBulkInterval(e.target.value)}
+                      className="w-full px-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none cursor-pointer"
+                    >
+                      <option value="15">15 min</option>
+                      <option value="30">30 min</option>
+                      <option value="45">45 min</option>
+                      <option value="60">60 min (1h)</option>
+                      <option value="90">90 min</option>
+                      <option value="120">120 min (2h)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleGenerateBulkHorarios}
+                  className="w-full py-2.5 bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-sm"
+                >
+                  Gerar Horários
+                </button>
+              </div>
             </div>
           </div>
         </div>

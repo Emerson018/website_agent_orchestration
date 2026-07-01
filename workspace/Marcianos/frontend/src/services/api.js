@@ -86,7 +86,8 @@ function initMockData() {
       dias_funcionamento: [2, 3, 4, 5, 6, 0], // Terça a Domingo
       horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
       vagas_padrao: 5,
-      limites_customizados: {}
+      limites_customizados: {},
+      campo_observacoes_ativo: true
     }));
   }
 }
@@ -305,17 +306,25 @@ export async function getAgendaConfig() {
         configs[item.chave] = item.valor;
       });
       
-      const defaultConfigs = JSON.parse(localStorage.getItem('mock_configuracao_agenda'));
+      const defaultConfigs = JSON.parse(localStorage.getItem('mock_configuracao_agenda') || '{}');
       return {
-        dias_funcionamento: configs.dias_funcionamento ?? defaultConfigs.dias_funcionamento,
-        horarios_disponiveis: configs.horarios_disponiveis ?? defaultConfigs.horarios_disponiveis,
-        vagas_padrao: configs.vagas_padrao ?? defaultConfigs.vagas_padrao,
-        limites_customizados: configs.limites_customizados ?? defaultConfigs.limites_customizados,
+        dias_funcionamento: configs.dias_funcionamento ?? defaultConfigs.dias_funcionamento ?? [2, 3, 4, 5, 6, 0],
+        horarios_disponiveis: configs.horarios_disponiveis ?? defaultConfigs.horarios_disponiveis ?? ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
+        vagas_padrao: configs.vagas_padrao ?? defaultConfigs.vagas_padrao ?? 5,
+        limites_customizados: configs.limites_customizados ?? defaultConfigs.limites_customizados ?? {},
+        campo_observacoes_ativo: configs.campo_observacoes_ativo ?? defaultConfigs.campo_observacoes_ativo ?? true,
       };
     }
   }
 
-  return JSON.parse(localStorage.getItem('mock_configuracao_agenda'));
+  const defaultConfigs = JSON.parse(localStorage.getItem('mock_configuracao_agenda') || '{}');
+  return {
+    dias_funcionamento: defaultConfigs.dias_funcionamento ?? [2, 3, 4, 5, 6, 0],
+    horarios_disponiveis: defaultConfigs.horarios_disponiveis ?? ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
+    vagas_padrao: defaultConfigs.vagas_padrao ?? 5,
+    limites_customizados: defaultConfigs.limites_customizados ?? {},
+    campo_observacoes_ativo: defaultConfigs.campo_observacoes_ativo ?? true,
+  };
 }
 
 /**

@@ -5,29 +5,45 @@ import logo from '../logo.png';
 
 function MainLayout() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [isLockedHidden, setIsLockedHidden] = useState(false);
 
   useEffect(() => {
+    if (isLockedHidden) return;
+
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      const currentScrollY = window.scrollY;
+      setIsScrolled(currentScrollY > 50);
+
+      // Oculta a barra ao rolar para baixo e exibe ao rolar para cima
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+      setLastScrollY(currentScrollY);
     };
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [lastScrollY, isLockedHidden]);
 
   const headerStyle = {
     backgroundColor: config.primary_color ? `${config.primary_color}dd` : '#6366f1dd',
     backdropFilter: 'blur(12px)',
     WebkitBackdropFilter: 'blur(12px)',
-    padding: isScrolled ? '0.6rem 2rem' : '1.2rem 2rem',
+    padding: '0.6rem 2rem',
     color: '#ffffff',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    boxShadow: isScrolled ? '0 10px 15px -3px rgba(0, 0, 0, 0.3)' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
     position: 'sticky',
     top: 0,
     zIndex: 50,
-    transition: 'all 0.3s ease',
+    transform: (isLockedHidden || !isVisible) ? 'translateY(-100%)' : 'translateY(0)',
+    transition: 'transform 0.3s ease',
   };
 
   const navLinkStyle = {
@@ -72,6 +88,45 @@ function MainLayout() {
 
   return (
     <div style={containerStyle}>
+      {isLockedHidden && (
+        <button
+          type="button"
+          onClick={() => {
+            setIsLockedHidden(false);
+            setIsVisible(true);
+          }}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 100,
+            backgroundColor: config.primary_color ? `${config.primary_color}dd` : '#6366f1dd',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            color: '#ffffff',
+            border: 'none',
+            borderBottomLeftRadius: '1rem',
+            borderBottomRightRadius: '1rem',
+            padding: '0.5rem 1.5rem',
+            fontSize: '0.75rem',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            transition: 'all 0.2s ease',
+          }}
+          className="hover:brightness-110"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+          </svg>
+          Expandir Menu
+        </button>
+      )}
+
       <header style={headerStyle}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
           <img 
@@ -83,17 +138,42 @@ function MainLayout() {
               }
             }}
             style={{ 
-              height: isScrolled ? '2.4rem' : '3.2rem', 
+              height: '2.4rem', 
               width: 'auto', 
-              objectFit: 'contain',
-              transition: 'all 0.3s ease' 
+              objectFit: 'contain'
             }} 
           />
         </Link>
-        <nav>
+        <nav style={{ display: 'flex', alignItems: 'center' }}>
           <Link to="/" style={navLinkStyle} className="hover:opacity-100">Início</Link>
           <Link to="/agendar" style={navLinkStyle} className="hover:opacity-100">Agendar</Link>
           <Link to="/admin" style={navLinkStyle} className="hover:opacity-100">Painel</Link>
+          <button 
+            type="button"
+            onClick={() => setIsLockedHidden(true)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#ffffff',
+              cursor: 'pointer',
+              opacity: 0.8,
+              marginLeft: '1.5rem',
+              fontWeight: '600',
+              fontSize: '0.95rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+              transition: 'opacity 0.2s',
+              padding: 0
+            }}
+            className="hover:opacity-100"
+            title="Recolher e fixar menu oculto"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 15l7-7 7 7" />
+            </svg>
+            <span className="hidden sm:inline">Recolher</span>
+          </button>
         </nav>
       </header>
 
