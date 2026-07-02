@@ -30,9 +30,7 @@ function AdminDashboard() {
   // States de configuração
   const [vagasPadraoInput, setVagasPadraoInput] = useState(5);
   const [diasFuncionamentoSelected, setDiasFuncionamentoSelected] = useState([2, 3, 4, 5, 6, 0]);
-  const [exData, setExData] = useState('');
-  const [exHorario, setExHorario] = useState('19:00');
-  const [exVagas, setExVagas] = useState(5);
+  const [exData, setExData] = useState(() => getLocalDateString(new Date()));
   const [campoObservacoesAtivoInput, setCampoObservacoesAtivoInput] = useState(true);
   const [horariosDisponiveisSelected, setHorariosDisponiveisSelected] = useState([]);
   const [newTimeInput, setNewTimeInput] = useState('');
@@ -169,6 +167,8 @@ function AdminDashboard() {
     if (window.confirm("Deseja realmente cancelar este agendamento?")) {
       const res = await deleteAgendamento(id);
       if (res.success) {
+        // Atualiza o estado local imediatamente para refletir nos KPIs e no painel
+        setBookings(prev => prev.filter(b => b.id !== id));
         handleRefresh();
       }
     }
@@ -194,32 +194,45 @@ function AdminDashboard() {
     }
   };
 
-  const handleAddException = async () => {
-    if (!exData || !exHorario) {
-      alert("Por favor, selecione a data e o horário para a exceção.");
-      return;
-    }
-
+  const handleUpdateSlotLimit = async (time, newLimit) => {
+    if (!exData) return;
+    
     const updatedOverrides = {
       ...(config.limites_customizados || {})
     };
 
-    if (!updatedOverrides[exData]) {
-      updatedOverrides[exData] = {};
+    if (newLimit === config.vagas_padrao) {
+      if (updatedOverrides[exData]) {
+        delete updatedOverrides[exData][time];
+        if (Object.keys(updatedOverrides[exData]).length === 0) {
+          delete updatedOverrides[exData];
+        }
+      }
+    } else {
+      if (!updatedOverrides[exData]) {
+        updatedOverrides[exData] = {};
+      }
+      updatedOverrides[exData][time] = Math.max(0, parseInt(newLimit));
     }
-    updatedOverrides[exData][exHorario] = parseInt(exVagas);
 
     const updated = {
       ...config,
       limites_customizados: updatedOverrides
     };
 
-    const res = await saveAgendaConfig(updated);
-    if (res.success) {
-      setConfig(updated);
-      alert(`Exceção adicionada para ${exData} às ${exHorario}: ${exVagas} vagas.`);
-    } else {
-      alert("Erro ao salvar exceção.");
+    // Atualização otimista da UI para resposta instantânea
+    setConfig(updated);
+
+    try {
+      const res = await saveAgendaConfig(updated);
+      if (!res || !res.success) {
+        throw new Error("Erro ao salvar no banco");
+      }
+    } catch (err) {
+      console.error("Erro ao salvar limite de vagas:", err);
+      alert("Falha de rede com o servidor. Revertendo alterações...");
+      const originalCfg = await getAgendaConfig();
+      setConfig(originalCfg);
     }
   };
 
@@ -237,9 +250,19 @@ function AdminDashboard() {
       limites_customizados: updatedOverrides
     };
 
-    const res = await saveAgendaConfig(updated);
-    if (res.success) {
-      setConfig(updated);
+    // Atualização otimista da UI para resposta instantânea
+    setConfig(updated);
+
+    try {
+      const res = await saveAgendaConfig(updated);
+      if (!res || !res.success) {
+        throw new Error("Erro ao remover no banco");
+      }
+    } catch (err) {
+      console.error("Erro ao remover exceção:", err);
+      alert("Falha de rede com o servidor. Revertendo alterações...");
+      const originalCfg = await getAgendaConfig();
+      setConfig(originalCfg);
     }
   };
 
@@ -338,10 +361,38 @@ function AdminDashboard() {
     );
   }
 
-  // KPIs
-  const totalAgendamentos = bookings.length;
-  const totalConfirmados = bookings.filter(b => b.status === 'Confirmado').length;
-  const totalPessoas = bookings.reduce((sum, b) => sum + (parseInt(b.pessoas) || 1), 0);
+  // KPIs (Filtrados para o dia de hoje)
+  const todayStr = getLocalDateString(new Date());
+  const bookingsHoje = bookings.filter(b => b.data === todayStr);
+  const totalAgendamentos = bookingsHoje.length;
+  const totalConfirmados = bookingsHoje.filter(b => b.status === 'Confirmado').length;
+  const totalPessoas = bookingsHoje.reduce((sum, b) => sum + (parseInt(b.pessoas) || 1), 0);
+  const taxaConfirmacao = totalAgendamentos > 0 ? Math.round((totalConfirmados / totalAgendamentos) * 100) : 0;
+
+  // Verificação de alterações não salvas
+  const checkUnsavedChanges = () => {
+    if (vagasPadraoInput !== config.vagas_padrao) return true;
+    if (campoObservacoesAtivoInput !== (config.campo_observacoes_ativo ?? true)) return true;
+    
+    // Compara dias de funcionamento
+    if (diasFuncionamentoSelected.length !== config.dias_funcionamento.length) return true;
+    const sortedSelectedDays = [...diasFuncionamentoSelected].sort();
+    const sortedConfigDays = [...config.dias_funcionamento].sort();
+    for (let i = 0; i < sortedSelectedDays.length; i++) {
+      if (sortedSelectedDays[i] !== sortedConfigDays[i]) return true;
+    }
+
+    // Compara horários disponíveis
+    if (horariosDisponiveisSelected.length !== (config.horarios_disponiveis || []).length) return true;
+    const sortedSelectedHours = [...horariosDisponiveisSelected].sort();
+    const sortedConfigHours = [...(config.horarios_disponiveis || [])].sort();
+    for (let i = 0; i < sortedSelectedHours.length; i++) {
+      if (sortedSelectedHours[i] !== sortedConfigHours[i]) return true;
+    }
+
+    return false;
+  };
+  const hasUnsavedChanges = checkUnsavedChanges();
 
   return (
     <div className="space-y-6 font-sans text-slate-100 bg-slate-950 min-h-screen px-4 sm:px-6 py-6">
@@ -369,18 +420,89 @@ function AdminDashboard() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="bg-slate-900 border border-slate-850 rounded-2xl p-5 flex flex-col justify-between shadow-lg">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Reservas</span>
-          <span className="mt-2 text-3xl font-extrabold text-white">{totalAgendamentos}</span>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Total Reservas Card */}
+        <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/60 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 hover:translate-y-[-2px] group">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Reservas (Hoje)</span>
+              <p className="text-[10px] text-slate-500 font-medium">Agendamentos para hoje</p>
+            </div>
+            <div className="p-2.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-black text-white tracking-tight">{totalAgendamentos}</span>
+            <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full">Hoje</span>
+          </div>
         </div>
-        <div className="bg-slate-900 border border-slate-850 rounded-2xl p-5 flex flex-col justify-between shadow-lg">
-          <span className="text-xs font-bold text-green-400 uppercase tracking-wider">Status Confirmados</span>
-          <span className="mt-2 text-3xl font-extrabold text-green-400">{totalConfirmados}</span>
+
+        {/* Confirmados Card */}
+        <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/60 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 hover:translate-y-[-2px] group">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Confirmados (Hoje)</span>
+              <p className="text-[10px] text-slate-500 font-medium">Garantidos para hoje</p>
+            </div>
+            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-black text-emerald-400 tracking-tight">{totalConfirmados}</span>
+            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Hoje</span>
+          </div>
         </div>
-        <div className="bg-slate-900 border border-slate-850 rounded-2xl p-5 flex flex-col justify-between shadow-lg">
-          <span className="text-xs font-bold text-primary uppercase tracking-wider">Total Clientes (Pessoas)</span>
-          <span className="mt-2 text-3xl font-extrabold text-white">{totalPessoas}</span>
+
+        {/* Total Clientes Card */}
+        <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/60 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:shadow-xl hover:shadow-sky-500/5 transition-all duration-300 hover:translate-y-[-2px] group">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Clientes (Hoje)</span>
+              <p className="text-[10px] text-slate-500 font-medium">Presença estimada hoje</p>
+            </div>
+            <div className="p-2.5 bg-sky-500/10 border border-sky-500/20 text-sky-400 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+          </div>
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-black text-white tracking-tight">{totalPessoas}</span>
+            <span className="text-[10px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full">Pessoas</span>
+          </div>
+        </div>
+
+        {/* Taxa de Confirmação Card */}
+        <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/60 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 hover:translate-y-[-2px] group">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">Confirmações (Hoje)</span>
+              <p className="text-[10px] text-slate-500 font-medium">Mapeamento de hoje</p>
+            </div>
+            <div className="p-2.5 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+          </div>
+          <div className="mt-4 space-y-2">
+            <div className="flex justify-between items-end">
+              <span className="text-3xl font-black text-white tracking-tight">{taxaConfirmacao}%</span>
+              <span className="text-[10px] font-medium text-slate-400">{totalConfirmados} de {totalAgendamentos}</span>
+            </div>
+            <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-purple-500 to-indigo-500 h-1.5 rounded-full transition-all duration-500" 
+                style={{ width: `${taxaConfirmacao}%` }}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -396,11 +518,14 @@ function AdminDashboard() {
         </button>
         <button
           onClick={() => setActiveTab('config')}
-          className={`px-6 py-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+          className={`px-6 py-3 text-sm font-bold border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'config' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-200'
           }`}
         >
-          Configurações
+          <span>Configurações</span>
+          {hasUnsavedChanges && (
+            <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_6px_#f59e0b] shrink-0 animate-pulse" title="Alterações não salvas" />
+          )}
         </button>
       </div>
 
@@ -512,29 +637,53 @@ function AdminDashboard() {
                                   {bookingsInSlot.map((b) => {
                                     const name = b.cliente_nome || b.name || (b.clientes && (b.clientes.nome || b.clientes.cliente_nome)) || 'Sem nome';
                                     const phone = b.cliente_telefone || b.phone || (b.clientes && b.clientes.telefone) || 'Sem telefone';
+                                    const isConfirmed = (b.status || 'Confirmado') === 'Confirmado';
                                     
                                     return (
                                       <div 
                                         key={b.id} 
                                         onClick={() => setSelectedBooking(b)}
-                                        className="group/card relative p-2.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-xl flex flex-col justify-between shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer select-none text-[11px] leading-tight"
-                                        style={{ borderLeft: '3.5px solid var(--primary-color, #6366f1)' }}
+                                        className="group/card relative p-3 bg-gradient-to-br from-slate-900 to-slate-950/70 hover:from-slate-850 hover:to-slate-900 border border-slate-800/85 hover:border-slate-750/90 rounded-xl flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer select-none text-[11px] leading-tight"
                                       >
-                                        <div>
-                                          <div className="flex items-center justify-between gap-1">
-                                            <p className="font-extrabold text-slate-100 truncate pr-1 text-xs">
-                                              {name}
-                                            </p>
-                                            <span className="text-[9px] font-black text-primary bg-primary/10 px-1 rounded-sm shrink-0">
+                                        <div className="space-y-2">
+                                          {/* Card Top: Status Dot and Pessoas Badge */}
+                                          <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-1.5">
+                                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                                isConfirmed 
+                                                  ? 'bg-emerald-500 shadow-[0_0_6px_#10b981]' 
+                                                  : 'bg-amber-500 shadow-[0_0_6px_#f59e0b]'
+                                              }`} />
+                                              <span className={`text-[9px] uppercase font-black tracking-wider ${
+                                                isConfirmed ? 'text-emerald-450' : 'text-amber-450'
+                                              }`}>
+                                                {isConfirmed ? 'Confirmado' : 'Pendente'}
+                                              </span>
+                                            </div>
+                                            <span className="text-[9px] font-black text-slate-350 bg-slate-800/80 border border-slate-750 px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-0.5">
+                                              <svg className="w-2.5 h-2.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                              </svg>
                                               {b.pessoas}p
                                             </span>
                                           </div>
-                                          <p className="text-[10px] text-slate-400 truncate mt-1">
-                                            {phone}
-                                          </p>
+                                          
+                                          {/* Cliente Name and Contact Info */}
+                                          <div className="space-y-1">
+                                            <p className="font-extrabold text-slate-100 truncate pr-1 text-xs tracking-wide">
+                                              {name}
+                                            </p>
+                                            <p className="text-[10px] text-slate-450 truncate flex items-center gap-1">
+                                              <svg className="w-2.5 h-2.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                              </svg>
+                                              {phone}
+                                            </p>
+                                          </div>
                                         </div>
                                         
-                                        <div className="flex justify-end items-center mt-2 pt-1.5 border-t border-slate-855/80 opacity-60 group-hover/card:opacity-100 transition-opacity">
+                                        {/* Card Footer: Action */}
+                                        <div className="flex justify-end items-center mt-2.5 pt-1.5 border-t border-slate-800/40 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
@@ -637,98 +786,167 @@ function AdminDashboard() {
                 <span className="text-xs font-semibold">Exibir campo de observações no formulário de reserva</span>
               </label>
             </div>
-
-            <button
-              onClick={handleSaveConfigs}
-              className="w-full py-3 bg-primary text-white font-bold rounded-xl shadow hover:brightness-110 transition-all cursor-pointer"
-            >
-              Salvar Regras Principais
-            </button>
           </div>
 
           {/* Exceções e Bloqueio de Vagas */}
           <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl shadow-lg space-y-6">
-            <h3 className="text-xl font-bold border-b border-slate-850 pb-2">Exceções e Ajustes de Vagas</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Use este painel para alterar a quantidade de vagas disponíveis para um dia e horário específico. Defina <strong>0</strong> vagas para fechar totalmente o horário.
-            </p>
+            <div>
+              <h3 className="text-xl font-bold text-white">Bloqueio & Ajustes de Vagas</h3>
+              <p className="text-xs text-slate-400 mt-1">Defina a capacidade ou feche horários específicos (0 vagas) para uma data.</p>
+            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Selecionar Dia</label>
+            <div className="space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Selecionar Dia para Ajuste</label>
+              <div className="relative">
                 <input 
                   type="date"
                   value={exData}
                   onChange={(e) => setExData(e.target.value)}
-                  className="w-full px-3 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100"
+                  className="w-full pl-10 pr-4 py-3 text-sm rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none transition-all cursor-pointer font-semibold"
                   style={{ colorScheme: 'dark' }}
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Selecionar Horário</label>
-                <select
-                  value={exHorario}
-                  onChange={(e) => setExHorario(e.target.value)}
-                  className="w-full px-3 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100"
-                >
-                  {config.horarios_disponiveis.map(h => (
-                    <option key={h} value={h}>{h}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Vagas Disponíveis</label>
-                <input 
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={exVagas}
-                  onChange={(e) => setExVagas(e.target.value)}
-                  className="w-full px-3 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100"
-                />
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-500">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
               </div>
             </div>
 
-            <button
-              onClick={handleAddException}
-              className="w-full py-3 bg-slate-950 border border-slate-800 hover:border-primary/50 text-white font-bold rounded-xl transition-all cursor-pointer"
-            >
-              Aplicar Ajuste de Vaga
-            </button>
+            {/* Slots Grid Editor */}
+            <div className="space-y-3 pt-2">
+              <div className="flex justify-between items-center">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Slots para {exData ? new Date(exData + 'T00:00:00').toLocaleDateString('pt-BR') : ''}
+                </h4>
+                <span className="text-[10px] text-slate-500">Ajuste de capacidade</span>
+              </div>
+              
+              {config.horarios_disponiveis.length === 0 ? (
+                <p className="text-xs text-slate-500 italic text-center py-4">Nenhum horário cadastrado nas regras.</p>
+              ) : (
+                <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+                  {[...config.horarios_disponiveis].sort().map(time => {
+                    const customLimit = config.limites_customizados?.[exData]?.[time];
+                    const currentLimit = customLimit !== undefined ? customLimit : config.vagas_padrao;
+                    const isCustomized = customLimit !== undefined;
+
+                    return (
+                      <div 
+                        key={time} 
+                        className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                          isCustomized 
+                            ? 'bg-amber-500/5 border-amber-500/35' 
+                            : 'bg-slate-950/40 border-slate-800 hover:border-slate-750'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono font-black text-slate-100">{time}</span>
+                          {isCustomized ? (
+                            <span className="text-[8px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                              {currentLimit}v ⚡
+                            </span>
+                          ) : (
+                            <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-slate-800 text-slate-450">
+                              {config.vagas_padrao}v
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg overflow-hidden shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateSlotLimit(time, Math.max(0, currentLimit - 1))}
+                              className="px-2.5 py-1 text-slate-400 hover:text-white hover:bg-slate-900 font-extrabold transition-all cursor-pointer select-none"
+                            >
+                              -
+                            </button>
+                            <span className="w-8 text-center text-xs font-mono font-bold text-white">
+                              {currentLimit}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateSlotLimit(time, currentLimit + 1)}
+                              className="px-2.5 py-1 text-slate-400 hover:text-white hover:bg-slate-900 font-extrabold transition-all cursor-pointer select-none"
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          {currentLimit > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateSlotLimit(time, 0)}
+                              className="px-2 py-1 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/20 hover:border-transparent rounded-lg text-[9px] font-bold transition-all cursor-pointer"
+                            >
+                              Bloquear
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateSlotLimit(time, config.vagas_padrao)}
+                              className="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/20 hover:border-transparent rounded-lg text-[9px] font-bold transition-all cursor-pointer"
+                            >
+                              Liberar
+                            </button>
+                          )}
+
+                          {isCustomized && (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateSlotLimit(time, config.vagas_padrao)}
+                              className="p-1 text-slate-500 hover:text-slate-350 hover:bg-slate-800 rounded-md transition-all cursor-pointer"
+                              title="Restaurar capacidade padrão"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 19l-1.954-1.955" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             {/* Lista de exceções salvas */}
             <div className="space-y-3 pt-4 border-t border-slate-850">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Limites Customizados Ativos</h4>
-              {Object.keys(config.limites_customizados || {}).length === 0 ? (
-                <p className="text-[11px] text-slate-500 italic">Nenhuma exceção cadastrada. Todos os horários seguem a capacidade padrão.</p>
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ajustes Ativos em Outras Datas</h4>
+              {Object.keys(config.limites_customizados || {}).filter(date => date !== exData).length === 0 ? (
+                <p className="text-[10px] text-slate-550 italic">Sem limites customizados em outros dias.</p>
               ) : (
-                <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
-                  {Object.entries(config.limites_customizados).map(([date, timesObj]) => (
-                    Object.entries(timesObj).map(([time, limit]) => (
-                      <div 
-                        key={`${date}-${time}`} 
-                        className="flex justify-between items-center p-2.5 bg-slate-950 rounded-xl border border-slate-855 text-xs"
-                      >
-                        <div className="space-y-0.5">
-                          <span className="font-semibold text-slate-200">
-                            {new Date(date + 'T00:00:00').toLocaleDateString('pt-BR')} às {time}
-                          </span>
-                          <span className="text-[10px] text-slate-500 block">
-                            Limite alterado para: <strong>{limit} vagas</strong>
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => handleRemoveException(date, time)}
-                          className="p-1 rounded hover:bg-red-500/10 text-red-400 transition-colors cursor-pointer"
-                          title="Remover limite customizado"
+                <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
+                  {Object.entries(config.limites_customizados)
+                    .filter(([date]) => date !== exData)
+                    .map(([date, timesObj]) => (
+                      Object.entries(timesObj).map(([time, limit]) => (
+                        <div 
+                          key={`${date}-${time}`} 
+                          className="flex justify-between items-center p-2 bg-slate-950 border border-slate-855 rounded-xl text-[10px]"
                         >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))
-                  ))}
+                          <div className="space-y-0.5">
+                            <span className="font-semibold text-slate-200">
+                              {new Date(date + 'T00:00:00').toLocaleDateString('pt-BR')} às {time}
+                            </span>
+                            <span className="text-[9px] text-slate-500 block">
+                              Capacidade alterada para: <strong>{limit} vagas</strong>
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveException(date, time)}
+                            className="p-1 rounded hover:bg-red-500/10 text-red-400 transition-colors cursor-pointer"
+                            title="Remover limite customizado"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))
+                    ))}
                 </div>
               )}
             </div>
@@ -777,13 +995,20 @@ function AdminDashboard() {
                 <div className="pt-4 border-t border-slate-850/50 space-y-2">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Adicionar Horário Individual</h4>
                   <div className="flex gap-2">
-                    <input 
-                      type="time"
-                      value={newTimeInput}
-                      onChange={(e) => setNewTimeInput(e.target.value)}
-                      className="px-3 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 flex-1 focus:border-primary focus:outline-none"
-                      style={{ colorScheme: 'dark' }}
-                    />
+                    <div className="relative flex-1">
+                      <input 
+                        type="time"
+                        value={newTimeInput}
+                        onChange={(e) => setNewTimeInput(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none cursor-pointer font-semibold"
+                        style={{ colorScheme: 'dark' }}
+                      />
+                      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-500">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    </div>
                     <button
                       type="button"
                       onClick={handleAddHorario}
@@ -805,23 +1030,37 @@ function AdminDashboard() {
                 <div className="grid grid-cols-3 gap-2">
                   <div className="space-y-1">
                     <label className="block text-[9px] font-bold uppercase text-slate-400">Hora Início</label>
-                    <input 
-                      type="time"
-                      value={bulkStart}
-                      onChange={(e) => setBulkStart(e.target.value)}
-                      className="w-full px-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none"
-                      style={{ colorScheme: 'dark' }}
-                    />
+                    <div className="relative">
+                      <input 
+                        type="time"
+                        value={bulkStart}
+                        onChange={(e) => setBulkStart(e.target.value)}
+                        className="w-full pl-8 pr-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none font-semibold"
+                        style={{ colorScheme: 'dark' }}
+                      />
+                      <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-slate-500">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <label className="block text-[9px] font-bold uppercase text-slate-400">Hora Fim</label>
-                    <input 
-                      type="time"
-                      value={bulkEnd}
-                      onChange={(e) => setBulkEnd(e.target.value)}
-                      className="w-full px-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none"
-                      style={{ colorScheme: 'dark' }}
-                    />
+                    <div className="relative">
+                      <input 
+                        type="time"
+                        value={bulkEnd}
+                        onChange={(e) => setBulkEnd(e.target.value)}
+                        className="w-full pl-8 pr-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none font-semibold"
+                        style={{ colorScheme: 'dark' }}
+                      />
+                      <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-slate-500">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <label className="block text-[9px] font-bold uppercase text-slate-400">Intervalo</label>
@@ -849,6 +1088,31 @@ function AdminDashboard() {
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* Botão unificado para salvar todas as alterações no rodapé */}
+          <div className="md:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-900 mt-4">
+            {hasUnsavedChanges ? (
+              <div className="flex items-center gap-2 text-xs font-semibold text-amber-450 bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 rounded-xl animate-pulse w-full sm:w-auto">
+                <svg className="w-4 h-4 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>Alterações pendentes de gravação. Não se esqueça de salvar!</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 px-4 py-2.5 w-full sm:w-auto">
+                <svg className="w-4.5 h-4.5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Configurações sincronizadas</span>
+              </div>
+            )}
+            <button
+              onClick={handleSaveConfigs}
+              className="w-full md:w-auto px-10 py-4 bg-primary hover:brightness-110 text-white font-black rounded-2xl shadow-lg hover:shadow-primary/20 transition-all cursor-pointer text-xs uppercase tracking-wider shrink-0"
+            >
+              Salvar Todas as Alterações
+            </button>
           </div>
         </div>
       )}

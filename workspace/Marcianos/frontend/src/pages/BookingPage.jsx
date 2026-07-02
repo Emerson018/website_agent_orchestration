@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getAgendaConfig, getAgendamentos, createAgendamento } from '../services/api';
 
+const getLocalDateString = (date) => {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
 function BookingPage() {
   const [formData, setFormData] = useState({
     name: '',
@@ -109,6 +114,21 @@ function BookingPage() {
     return { available, remaining, limit };
   };
 
+  const getNext7Days = () => {
+    const days = [];
+    let current = new Date();
+    
+    for (let i = 0; i < 30; i++) {
+      const dayOfWeek = current.getDay();
+      if (config.dias_funcionamento.includes(dayOfWeek)) {
+        days.push(new Date(current));
+      }
+      current.setDate(current.getDate() + 1);
+      if (days.length >= 7) break;
+    }
+    return days;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.phone || !formData.date || !formData.time) {
@@ -198,13 +218,13 @@ function BookingPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
+                <div className="sm:col-span-2">
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Número de Pessoas *</label>
                   <select 
                     name="guests"
                     value={formData.guests}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100 cursor-pointer"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100 cursor-pointer font-semibold"
                   >
                     <option value="1">1 Pessoa</option>
                     <option value="2">2 Pessoas</option>
@@ -213,8 +233,41 @@ function BookingPage() {
                     <option value="5">5 Pessoas</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Selecione o Dia *</label>
+                
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Selecione o Dia *</label>
+                  
+                  {/* Atalhos Rápidos de Datas */}
+                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 mb-3">
+                    {getNext7Days().map((d) => {
+                      const dateStr = getLocalDateString(d);
+                      const isSelected = formData.date === dateStr;
+                      const weekdayLabel = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+                      const dayMonth = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                      
+                      return (
+                        <button
+                          key={dateStr}
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, date: dateStr, time: '' }));
+                          }}
+                          className={`py-2.5 px-1 rounded-xl border text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-primary text-white border-primary shadow-md shadow-primary/20 scale-105'
+                              : 'bg-slate-950 border-slate-800 text-slate-350 hover:border-primary/50'
+                          }`}
+                        >
+                          <span className={`text-[9px] uppercase tracking-wide ${isSelected ? 'text-white/80' : 'text-slate-500'}`}>
+                            {weekdayLabel}
+                          </span>
+                          <span className="font-mono text-[11px]">{dayMonth}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Campo de Data customizado como fallback */}
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 pointer-events-none">
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -229,7 +282,7 @@ function BookingPage() {
                       value={formData.date}
                       onChange={handleInputChange}
                       onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
-                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100 cursor-pointer"
+                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100 cursor-pointer font-semibold text-xs sm:text-sm"
                       style={{ colorScheme: 'dark' }}
                     />
                   </div>
