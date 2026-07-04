@@ -114,3 +114,6 @@ Para rodar todo o ecossistema localmente, você deve iniciar os servidores corre
    ```
 
 *Nota: O site gerado inclui suporte para ngrok no arquivo `vite.config.js` via `allowedHosts: true`, facilitando o acesso instantâneo e responsivo de seu smartphone local durante o desenvolvimento.*
+
+
+no terminal digita: ngrok http 5173

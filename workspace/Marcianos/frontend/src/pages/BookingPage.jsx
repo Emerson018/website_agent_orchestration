@@ -156,28 +156,33 @@ function BookingPage() {
   const todayStr = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center py-10 px-4 font-sans bg-slate-950 text-slate-100">
-      <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl relative">
+    <div className="min-h-[85vh] flex flex-col items-center justify-center py-12 px-4 font-sans bg-slate-950 text-slate-100 relative overflow-hidden">
+      {/* Background glow effects */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-3xl pointer-events-none -z-10"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-indigo-500/5 rounded-full filter blur-3xl pointer-events-none -z-10"></div>
+
+      <div className="w-full max-w-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800/80 rounded-3xl p-6 sm:p-10 shadow-2xl relative">
         <div className="absolute top-0 right-1/4 w-40 h-40 bg-primary/10 rounded-full filter blur-2xl pointer-events-none"></div>
         
         {!isSubmitted ? (
           <>
             <div className="text-center mb-8">
-              <span className="text-xs font-bold text-primary uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
-                Agendamento
+              <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
+                Agendamento Online
               </span>
-              <h2 className="text-3xl font-black mt-4">Garanta seu Horário</h2>
-              <p className="text-sm opacity-75 mt-2">Preencha seus dados para reservar a sua mesa</p>
+              <h2 className="text-3xl font-black mt-4 tracking-tight">Garanta seu Horário</h2>
+              <p className="text-xs text-slate-400 mt-2">Preencha seus dados para reservar a sua mesa de forma rápida e segura</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* Nome e Telefone */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nome Completo *</label>
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 pointer-events-none">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </span>
                     <input 
@@ -188,7 +193,7 @@ function BookingPage() {
                       placeholder="Seu nome completo"
                       value={formData.name}
                       onChange={handleInputChange}
-                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100"
+                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 focus:outline-none transition-all text-slate-100 placeholder-slate-600 font-medium text-sm"
                     />
                   </div>
                 </div>
@@ -196,8 +201,8 @@ function BookingPage() {
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Telefone de Contato *</label>
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 pointer-events-none">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                       </svg>
                     </span>
                     <input 
@@ -211,97 +216,121 @@ function BookingPage() {
                       placeholder="(51) 99999-9999"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100"
+                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 focus:outline-none transition-all text-slate-100 placeholder-slate-600 font-mono text-sm"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Número de Pessoas *</label>
-                  <select 
-                    name="guests"
-                    value={formData.guests}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100 cursor-pointer font-semibold"
-                  >
-                    <option value="1">1 Pessoa</option>
-                    <option value="2">2 Pessoas</option>
-                    <option value="3">3 Pessoas</option>
-                    <option value="4">4 Pessoas</option>
-                    <option value="5">5 Pessoas</option>
-                  </select>
+              {/* Número de Pessoas com Seletor Customizado */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Número de Pessoas *</label>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {['1', '2', '3', '4', '5', '6+'].map((num) => {
+                    const isSelected = formData.guests === num;
+                    return (
+                      <button
+                        key={num}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, guests: num }))}
+                        className={`py-3 rounded-xl border text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer active:scale-95 flex items-center justify-center gap-1 ${
+                          isSelected
+                            ? 'bg-gradient-to-br from-indigo-600 to-primary text-white border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.25)] font-black'
+                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-750'
+                        }`}
+                      >
+                        <span>{num}</span>
+                        <span className="hidden sm:inline text-[10px] font-medium">{num === '6+' ? 'Pessoas' : parseInt(num) === 1 ? 'Pessoa' : 'Pessoas'}</span>
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {/* Mensagem informativa para mais de 5 pessoas */}
+                {formData.guests === '6+' && (
+                  <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 p-3.5 rounded-xl text-xs flex gap-2.5 items-start animate-fade-in mt-3">
+                    <svg className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div className="text-left">
+                      <span className="font-extrabold block mb-0.5">Aviso sobre reservas de grandes grupos</span>
+                      Para mesas acima de 5 pessoas, prosseguiremos com a sua pré-reserva de 6 lugares e nosso time entrará em contato para alinhar os detalhes e a disposição das mesas.
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Seleção do Dia */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Selecione o Dia *</label>
                 
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Selecione o Dia *</label>
-                  
-                  {/* Atalhos Rápidos de Datas */}
-                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 mb-3">
-                    {getNext7Days().map((d) => {
-                      const dateStr = getLocalDateString(d);
-                      const isSelected = formData.date === dateStr;
-                      const weekdayLabel = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
-                      const dayMonth = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-                      
-                      return (
-                        <button
-                          key={dateStr}
-                          type="button"
-                          onClick={() => {
-                            setFormData(prev => ({ ...prev, date: dateStr, time: '' }));
-                          }}
-                          className={`py-2.5 px-1 rounded-xl border text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-primary text-white border-primary shadow-md shadow-primary/20 scale-105'
-                              : 'bg-slate-950 border-slate-800 text-slate-350 hover:border-primary/50'
-                          }`}
-                        >
-                          <span className={`text-[9px] uppercase tracking-wide ${isSelected ? 'text-white/80' : 'text-slate-500'}`}>
-                            {weekdayLabel}
-                          </span>
-                          <span className="font-mono text-[11px]">{dayMonth}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                {/* Atalhos Rápidos de Datas */}
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                  {getNext7Days().map((d) => {
+                    const dateStr = getLocalDateString(d);
+                    const isSelected = formData.date === dateStr;
+                    const weekdayLabel = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+                    const dayMonth = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                    
+                    return (
+                      <button
+                        key={dateStr}
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, date: dateStr, time: '' }));
+                        }}
+                        className={`py-2.5 px-1 rounded-xl border text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all duration-300 cursor-pointer active:scale-95 ${
+                          isSelected
+                            ? 'bg-gradient-to-br from-indigo-600 to-primary text-white border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.25)] scale-102 font-black'
+                            : 'bg-gradient-to-b from-slate-900/80 to-slate-950/90 border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-indigo-500/50'
+                        }`}
+                      >
+                        <span className={`text-[8px] uppercase tracking-wider font-extrabold ${isSelected ? 'text-white/80' : 'text-slate-500'}`}>
+                          {weekdayLabel}
+                        </span>
+                        <span className="font-mono text-[10px] sm:text-[11px]">{dayMonth}</span>
+                      </button>
+                    );
+                  })}
+                </div>
 
-                  {/* Campo de Data customizado como fallback */}
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 pointer-events-none">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </span>
-                    <input 
-                      type="date" 
-                      name="date"
-                      required
-                      min={todayStr}
-                      value={formData.date}
-                      onChange={handleInputChange}
-                      onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
-                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100 cursor-pointer font-semibold text-xs sm:text-sm"
-                      style={{ colorScheme: 'dark' }}
-                    />
-                  </div>
+                {/* Escolher outra data */}
+                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-2 mt-3.5">Ou escolha uma data específica:</p>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 pointer-events-none">
+                    <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </span>
+                  <input 
+                    type="date" 
+                    name="date"
+                    required
+                    min={todayStr}
+                    value={formData.date}
+                    onChange={handleInputChange}
+                    onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
+                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 focus:outline-none transition-all text-slate-100 cursor-pointer font-bold text-xs sm:text-sm"
+                    style={{ colorScheme: 'dark' }}
+                  />
                 </div>
               </div>
 
+              {/* Seleção do Horário */}
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Selecione o Horário *</label>
                   {loading && formData.date && (
                     <span className="flex items-center gap-1.5 text-[10px] text-slate-500 animate-pulse">
-                      <svg className="w-3.5 h-3.5 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Atualizando...
+                      Buscando vagas...
                     </span>
                   )}
                 </div>
+                
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[...config.horarios_disponiveis].sort().map((time) => {
                     const { available, remaining } = getSlotAvailability(time);
@@ -312,16 +341,36 @@ function BookingPage() {
                         key={time}
                         disabled={!available}
                         onClick={() => selectTime(time)}
-                        className={`py-2 px-3 text-xs sm:text-sm font-bold rounded-xl border transition-all cursor-pointer flex flex-col items-center justify-center ${
+                        className={`relative overflow-hidden py-3 px-4 rounded-xl border transition-all duration-300 flex flex-col items-center justify-center gap-1 cursor-pointer select-none active:scale-95 ${
                           isSelected 
-                            ? 'bg-primary text-white border-primary shadow-md shadow-primary/20' 
+                            ? 'bg-gradient-to-br from-indigo-600 to-primary text-white border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.3)] scale-102 font-extrabold' 
                             : !available
-                            ? 'bg-slate-950/40 border-slate-900 text-slate-600 cursor-not-allowed opacity-50'
-                            : 'bg-slate-950 border-slate-800 text-slate-350 hover:border-primary/50'
+                            ? 'bg-slate-950/20 border-slate-900/60 text-slate-650 cursor-not-allowed opacity-40 line-through'
+                            : 'bg-gradient-to-b from-slate-900/80 to-slate-950/90 border-slate-800/80 text-slate-200 shadow-sm hover:border-indigo-500/50 hover:from-slate-850 hover:to-slate-900'
                         }`}
                       >
-                        <span>{time}</span>
-                        <span className={`text-[9px] font-medium mt-0.5 ${isSelected ? 'text-white/80' : 'text-slate-500'}`}>
+                        {isSelected && (
+                          <div className="absolute top-1 right-1 w-4 h-4 bg-indigo-555 rounded-full flex items-center justify-center text-[8px] font-black text-white shadow-sm">
+                            ✓
+                          </div>
+                        )}
+
+                        <span className="text-sm font-mono tracking-wide font-black flex items-center gap-1">
+                          <svg className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {time}
+                        </span>
+                        
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold tracking-wide uppercase mt-0.5 ${
+                          isSelected 
+                            ? 'bg-white/20 text-white' 
+                            : !available
+                            ? 'bg-red-500/10 text-red-550'
+                            : remaining <= 2
+                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                        }`}>
                           {remaining > 0 ? `${remaining} vagas` : 'Esgotado'}
                         </span>
                       </button>
@@ -330,55 +379,68 @@ function BookingPage() {
                 </div>
               </div>
 
+              {/* Observações */}
               {config.campo_observacoes_ativo !== false && (
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Observações</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Observações Especiais</label>
                     <span className="text-[10px] text-slate-500 font-mono">{formData.notes.length}/50</span>
                   </div>
                   <textarea 
                     name="notes"
-                    rows="3"
+                    rows="2"
                     maxLength={50}
-                    placeholder="Algum pedido especial para nós? (Máx. 50 caracteres)"
+                    placeholder="Pedidos especiais (ex: mesa perto da janela, restrições alimentares...)"
                     value={formData.notes}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all text-slate-100 resize-none"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-955 border border-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 focus:outline-none transition-all text-slate-100 placeholder-slate-650 resize-none text-sm font-medium"
                   ></textarea>
                 </div>
               )}
 
+              {/* Botão de Envio */}
               <button
                 type="submit"
-                className="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/25 hover:brightness-110 transition-all cursor-pointer text-center"
+                className="w-full py-4 bg-gradient-to-r from-indigo-650 to-primary hover:brightness-110 active:scale-99 text-white font-black rounded-xl shadow-xl shadow-indigo-600/15 hover:shadow-indigo-600/25 transition-all duration-300 cursor-pointer text-center uppercase tracking-widest text-xs sm:text-sm border-0"
               >
-                Realizar reserva
+                Confirmar Reserva e Agendar
               </button>
             </form>
           </>
         ) : (
-          <div className="text-center py-10 flex flex-col items-center">
-            <div className="w-16 h-16 bg-green-500/10 text-green-500 rounded-full border border-green-500/20 flex items-center justify-center mb-6">
+          /* Tela de Sucesso */
+          <div className="text-center py-10 flex flex-col items-center animate-fade-in">
+            <div className="w-16 h-16 bg-emerald-500/15 text-emerald-400 rounded-full border border-emerald-550/20 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(16,185,129,0.15)] animate-bounce">
               <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-3xl font-black text-slate-100">Agendamento Confirmado!</h3>
-            <p className="text-sm opacity-85 mt-4 max-w-md">
-              Obrigado, <strong className="text-primary">{formData.name}</strong>! Seu horário para o dia <strong>{formData.date}</strong> às <strong>{formData.time}</strong> foi agendado com sucesso para uma mesa de <strong>{formData.guests} {parseInt(formData.guests) === 1 ? 'pessoa' : 'pessoas'}</strong>.
+            <h3 className="text-3xl font-black text-white tracking-tight">Agendamento Confirmado!</h3>
+            <p className="text-sm text-slate-400 mt-4 max-w-md leading-relaxed">
+              Obrigado, <strong className="text-primary font-extrabold">{formData.name}</strong>! Seu horário para o dia <strong>{new Date(formData.date + 'T00:00:00').toLocaleDateString('pt-BR')}</strong> às <strong className="text-slate-100 font-extrabold">{formData.time}</strong> foi agendado com sucesso para uma mesa de <strong className="text-slate-100 font-extrabold">{formData.guests} {parseInt(formData.guests) === 1 ? 'pessoa' : 'pessoas'}</strong>.
             </p>
-            <div className="mt-8 flex gap-4">
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <button 
-                onClick={() => setIsSubmitted(false)}
-                className="px-6 py-3 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold hover:border-primary/50 transition-all cursor-pointer"
+                onClick={() => {
+                  setFormData({
+                    name: '',
+                    phone: '',
+                    guests: '2',
+                    date: '',
+                    time: '',
+                    notes: ''
+                  });
+                  setIsSubmitted(false);
+                }}
+                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold hover:border-primary/50 hover:text-primary transition-all cursor-pointer uppercase tracking-wider"
               >
                 Novo Agendamento
               </button>
               <Link 
                 to="/"
-                className="px-6 py-3 rounded-xl bg-primary text-white text-xs font-bold shadow-md hover:brightness-105 transition-all cursor-pointer flex items-center"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-650 to-primary text-white text-xs font-black shadow-md hover:brightness-110 transition-all cursor-pointer flex items-center justify-center uppercase tracking-wider border-0"
               >
-                Voltar ao Menu Principal
+                Voltar ao Menu
               </Link>
             </div>
           </div>

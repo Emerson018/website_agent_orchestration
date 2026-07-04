@@ -113,6 +113,7 @@ export async function getAgendamentos() {
         id,
         inicio,
         status,
+        criado_em,
         clientes (
           nome,
           telefone
@@ -154,7 +155,8 @@ export async function getAgendamentos() {
           horario: timePart,
           pessoas: nichoDet?.num_pessoas || 1,
           servicoNome: nichoDet?.tipo_servico || 'Reserva de Mesa',
-          status: item.status || 'Confirmado'
+          status: item.status || 'Confirmado',
+          created_at: item.criado_em || `${datePart}T${timePart}:00`
         };
       });
     }
