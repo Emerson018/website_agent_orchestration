@@ -1,0 +1,670 @@
+{
+  "name": "Notificação de Agendamentos (Marcianos)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        100,
+        200
+      ],
+      "id": "d921d71e-eafd-43c8-adfd-ab7b5975dea4",
+      "name": "Webhook",
+      "webhookId": "40315f55-b4f4-40ad-9995-54777d0e0e52"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dc5008d5-d4c1-4175-80b0-053a4817758c",
+              "name": "session",
+              "value": "={{ $json.body.session }}",
+              "type": "string"
+            },
+            {
+              "id": "1d6e37c1-de04-4ccf-aeec-80558501b913",
+              "name": "chatId",
+              "value": "={{ $json.body.payload.from }}",
+              "type": "string"
+            },
+            {
+              "id": "5817bc72-05f3-4617-8676-33024bd9c103",
+              "name": "pushName",
+              "value": "={{ $json.body.payload._data.Info.PushName }}",
+              "type": "string"
+            },
+            {
+              "id": "00ae1d5e-7542-48c6-a19f-10ed9f01d137",
+              "name": "payload_id",
+              "value": "={{ $json.body.payload.id }}",
+              "type": "string"
+            },
+            {
+              "id": "867b102b-c232-454c-ac1f-7bcef69a4141",
+              "name": "event",
+              "value": "={{ $json.body.event }}",
+              "type": "string"
+            },
+            {
+              "id": "b7ca532f-64a0-4e71-8f4f-2fb30a57682f",
+              "name": "message",
+              "value": "={{ $json.body.payload.body }}",
+              "type": "string"
+            },
+            {
+              "id": "2d2d48d5-d806-4355-a017-b432770ae380",
+              "name": "fromMe",
+              "value": "={{ $json.body.payload.fromMe }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        280,
+        200
+      ],
+      "id": "e62fb9c8-5b9a-4bd2-a882-54e5fe13c2a2",
+      "name": "Dados"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.event }}",
+                    "rightValue": "message",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "leftValue": "={{ $json.fromMe }}",
+                    "rightValue": false,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        460,
+        200
+      ],
+      "id": "5f9fdc85-61e0-4591-a8dd-aef0fa15bc23",
+      "name": "Switch Event"
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        640,
+        200
+      ],
+      "id": "wait-chatbot-3s",
+      "name": "Aguardar 3 Segundos"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Seen",
+        "session": "={{ $('Dados').item.json.session }}",
+        "chatId": "={{ $('Dados').item.json.chatId }}",
+        "messageId": "={{ $('Dados').item.json.payload_id }}",
+        "participant": "",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        820,
+        200
+      ],
+      "id": "8dc5143a-2afd-41b0-96be-3d860beebbdb",
+      "name": "Marcar Como Lido",
+      "credentials": {
+        "wahaApi": {
+          "id": "7dEWP8lqAufzutB1",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.trim() }}",
+                    "rightValue": "1",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.trim() }}",
+                    "rightValue": "2",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.trim() }}",
+                    "rightValue": "3",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.trim() }}",
+                    "rightValue": "4",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.trim() }}",
+                    "rightValue": "5",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.trim() }}",
+                    "rightValue": "6",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1000,
+        200
+      ],
+      "id": "switch-menu-options",
+      "name": "Switch Menu"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('Dados').item.json.session }}",
+        "chatId": "={{ $('Dados').item.json.chatId }}",
+        "text": "=Para realizar o agendamento de seu horário, basta clicar no link abaixo e selecionar a melhor data e horário para você:\n\n🔗 http://localhost:5173/agendar",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        1300,
+        -150
+      ],
+      "id": "waha-opt-1",
+      "name": "1 - Agendar Horário",
+      "credentials": {
+        "wahaApi": {
+          "id": "7dEWP8lqAufzutB1",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('Dados').item.json.session }}",
+        "chatId": "={{ $('Dados').item.json.chatId }}",
+        "text": "=Para consultar ou verificar seus agendamentos ativos, você pode acessar a nossa página de agendamentos no site, ou aguardar um instante que nosso atendente irá consultar no sistema para você. Se preferir conversar diretamente com ele, basta digitar *6*!",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        1300,
+        -50
+      ],
+      "id": "waha-opt-2",
+      "name": "2 - Ver Agendamento",
+      "credentials": {
+        "wahaApi": {
+          "id": "7dEWP8lqAufzutB1",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('Dados').item.json.session }}",
+        "chatId": "={{ $('Dados').item.json.chatId }}",
+        "text": "=🗓️ *Dias de Funcionamento:* Terça a Domingo\n⏰ *Horários de Agendamento:* 17:00 às 23:00\n\nConsulte as vagas e horários livres em tempo real em nossa página:\n🔗 http://localhost:5173/agendar",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        1300,
+        50
+      ],
+      "id": "waha-opt-3",
+      "name": "3 - Ver Dias/Horas",
+      "credentials": {
+        "wahaApi": {
+          "id": "7dEWP8lqAufzutB1",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('Dados').item.json.session }}",
+        "chatId": "={{ $('Dados').item.json.chatId }}",
+        "text": "=📍 *Localização do Estabelecimento:*\nAv. Padre Cacique, 580 - Menino Deus - Porto Alegre/RS\n\nTe esperamos lá! 🍕🚲",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        1300,
+        150
+      ],
+      "id": "waha-opt-4",
+      "name": "4 - Ver Local",
+      "credentials": {
+        "wahaApi": {
+          "id": "7dEWP8lqAufzutB1",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('Dados').item.json.session }}",
+        "chatId": "={{ $('Dados').item.json.chatId }}",
+        "text": "=Para cancelar um agendamento existente, por favor informe o seu *Nome* e a *Data/Hora* da reserva que deseja remover, e digite *6* para que o nosso atendente possa realizar o cancelamento no sistema para você.",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        1300,
+        250
+      ],
+      "id": "waha-opt-5",
+      "name": "5 - Cancelar Agendamento",
+      "credentials": {
+        "wahaApi": {
+          "id": "7dEWP8lqAufzutB1",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('Dados').item.json.session }}",
+        "chatId": "={{ $('Dados').item.json.chatId }}",
+        "text": "=Entendido! Notifiquei nossa equipe e em instantes um de nossos atendentes entrará em contato com você aqui mesmo nesta conversa. Por favor, aguarde um momento! 🙋‍♂️",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        1300,
+        350
+      ],
+      "id": "waha-opt-6",
+      "name": "6 - Falar com Atendente",
+      "credentials": {
+        "wahaApi": {
+          "id": "7dEWP8lqAufzutB1",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('Dados').item.json.session }}",
+        "chatId": "={{ $('Dados').item.json.chatId }}",
+        "text": "=Olá, *{{ $json.pushName || 'cliente' }}*! Seja muito bem-vindo ao Marcianos! 🚀\n\nComo posso ajudar você hoje? Digite o número correspondente à opção desejada:\n\n1️⃣ - Agendar Horário\n2️⃣ - Ver meu agendamento\n3️⃣ - Ver dias e horários disponíveis\n4️⃣ - Ver local do estabelecimento\n5️⃣ - Cancelar agendamento\n6️⃣ - Falar com o atendente",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        1300,
+        470
+      ],
+      "id": "waha-welcome",
+      "name": "Menu de Boas Vindas",
+      "credentials": {
+        "wahaApi": {
+          "id": "7dEWP8lqAufzutB1",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "booking",
+        "options": {
+          "cors": {
+            "allowedOrigins": "*"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        100,
+        800
+      ],
+      "id": "webhook-booking-notify-branch",
+      "name": "Webhook Recebe Booking"
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        400,
+        800
+      ],
+      "id": "wait-booking-3s",
+      "name": "Aguardar 3s Booking"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "default",
+        "chatId": "={{ $json.body.chatId }}",
+        "text": "=Olá, *{{ $json.body.name }}*! 🚀\n\nSua reserva foi confirmada com sucesso em nossa agenda!\n\n📍 *Local:* {{ $json.body.establishment_name }}\n📅 *Data:* {{ new Date($json.body.date + 'T00:00:00').toLocaleDateString('pt-BR') }}\n⏰ *Horário:* {{ $json.body.time }}\n👥 *Mesa para:* {{ $json.body.guests }} {{ parseInt($json.body.guests) === 1 ? 'pessoa' : 'pessoas' }}\n\n📍 *Endereço:* {{ $json.body.establishment_address }}\n📞 *Contato:* {{ $json.body.establishment_phone }}\n\nCaso precise alterar ou cancelar seu agendamento, entre em contato respondendo a esta mensagem. Te esperamos lá! 🍕🚲",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        700,
+        800
+      ],
+      "id": "77c3ad65-3520-423b-a914-e88b58ef104f",
+      "name": "Enviar Confirmação WhatsApp",
+      "credentials": {
+        "wahaApi": {
+          "id": "7dEWP8lqAufzutB1",
+          "name": "WAHA account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dados": {
+      "main": [
+        [
+          {
+            "node": "Switch Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Event": {
+      "main": [
+        [
+          {
+            "node": "Aguardar 3 Segundos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aguardar 3 Segundos": {
+      "main": [
+        [
+          {
+            "node": "Marcar Como Lido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Como Lido": {
+      "main": [
+        [
+          {
+            "node": "Switch Menu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Menu": {
+      "main": [
+        [
+          {
+            "node": "1 - Agendar Horário",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "2 - Ver Agendamento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "3 - Ver Dias/Horas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4 - Ver Local",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "5 - Cancelar Agendamento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "6 - Falar com Atendente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Menu de Boas Vindas",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
+    },
+    "Webhook Recebe Booking": {
+      "main": [
+        [
+          {
+            "node": "Aguardar 3s Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aguardar 3s Booking": {
+      "main": [
+        [
+          {
+            "node": "Enviar Confirmação WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -7,5 +7,7 @@
   "logo_url": "/logo.png",
   "address": "Av. Padre Cacique, 580 - Menino Deus - Porto Alegre/RS",
   "phone": "(51) 99523-9876",
-  "working_hours": "Terça a Domingo das 17h às 23h"
+  "working_hours": "Terça a Domingo das 17h às 23h",
+    "n8n_webhook_url": "http://localhost:5678/webhook-test/booking"
+
 }

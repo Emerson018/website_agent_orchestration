@@ -124,9 +124,9 @@ function AdminDashboard() {
 
   // Intercepta navegação por rotas do React Router
   const blocker = useBlocker(
-    ({ currentValue, nextLocation }) =>
+    ({ currentLocation, nextLocation }) =>
       hasUnsavedChanges &&
-      currentValue.location.pathname !== nextLocation.pathname
+      currentLocation.pathname !== nextLocation.pathname
   );
 
   useEffect(() => {
@@ -147,6 +147,13 @@ function AdminDashboard() {
 
   const handleConfirmLeave = () => {
     setShowConfirmLeaveModal(false);
+    
+    // Descarta alterações redefinindo os inputs locais para a configuração ativa salva
+    setDiasFuncionamentoSelected(config.dias_funcionamento);
+    setCampoObservacoesAtivoInput(config.campo_observacoes_ativo ?? true);
+    setHorariosDisponiveisSelected(config.horarios_disponiveis || []);
+    setLimitesCustomizadosSelected(config.limites_customizados || {});
+    
     if (blocker.state === 'blocked') {
       blocker.proceed();
     } else if (pendingTabChange) {

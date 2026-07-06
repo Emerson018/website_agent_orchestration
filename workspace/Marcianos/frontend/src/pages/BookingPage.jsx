@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getAgendaConfig, getAgendamentos, createAgendamento } from '../services/api';
+import aiConfig from '../../ai_config.json';
 
 const getLocalDateString = (date) => {
   const pad = (n) => String(n).padStart(2, '0');
@@ -69,14 +70,12 @@ function BookingPage() {
     if (name === 'phone') {
       const digits = value.replace(/\D/g, '').slice(0, 11);
       let formatted = '';
-      if (digits.length > 0) {
-        formatted += `(${digits.slice(0, 2)}`;
-      }
-      if (digits.length > 2) {
-        formatted += `) ${digits.slice(2, 7)}`;
-      }
-      if (digits.length > 7) {
-        formatted += `-${digits.slice(7, 11)}`;
+      if (digits.length <= 10) {
+        if (digits.length > 0) formatted += `(${digits.slice(0, 2)}`;
+        if (digits.length > 2) formatted += `) ${digits.slice(2, 6)}`;
+        if (digits.length > 6) formatted += `-${digits.slice(6, 10)}`;
+      } else {
+        formatted = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
       }
       setFormData(prev => ({ ...prev, [name]: formatted }));
     } else if (name === 'date' && value) {
@@ -146,6 +145,47 @@ function BookingPage() {
       const res = await createAgendamento(formData);
       if (res.success) {
         setIsSubmitted(true);
+        
+        // Dispara notificação via Webhook do n8n se configurado
+        if (aiConfig.n8n_webhook_url) {
+          try {
+            // Limpa o telefone para o formato WAHA (55 + DDD + Número + @c.us)
+            let digitsForWaha = formData.phone.replace(/\D/g, '');
+            if (!digitsForWaha.startsWith('55')) {
+              digitsForWaha = '55' + digitsForWaha;
+            }
+            if (digitsForWaha.length === 13) {
+              const ddd = parseInt(digitsForWaha.slice(2, 4));
+              if (ddd > 28) {
+                // Remove o dígito '9' extra logo após o DDD (index 4)
+                digitsForWaha = digitsForWaha.slice(0, 4) + digitsForWaha.slice(5);
+              }
+            }
+            const chatId = `${digitsForWaha}@c.us`;
+
+            const payload = new URLSearchParams();
+            payload.append('name', formData.name);
+            payload.append('phone', formData.phone);
+            payload.append('chatId', chatId);
+            payload.append('date', formData.date);
+            payload.append('time', formData.time);
+            payload.append('guests', formData.guests);
+            payload.append('notes', formData.notes || '');
+            payload.append('establishment_name', aiConfig.app_name || 'Marcianos');
+            payload.append('establishment_address', aiConfig.address || '');
+            payload.append('establishment_phone', aiConfig.phone || '');
+
+            fetch(aiConfig.n8n_webhook_url, {
+              method: 'POST',
+              mode: 'no-cors',
+              body: payload
+            }).catch(e => console.error("Erro assíncrono ao disparar webhook n8n:", e));
+            
+            console.log("Notificação de reserva enviada ao webhook do n8n.");
+          } catch (webhookErr) {
+            console.error("Erro ao preparar chamada de webhook n8n:", webhookErr);
+          }
+        }
       }
     } catch (err) {
       alert("Ocorreu um erro ao salvar o agendamento.");
@@ -210,9 +250,9 @@ function BookingPage() {
                       name="phone"
                       required
                       maxLength={15}
-                      minLength={15}
+                      minLength={14}
                       inputMode="tel"
-                      pattern="\([0-9]{2}\) [0-9]{5}-[0-9]{4}"
+                      pattern="\([0-9]{2}\) [0-9]{4,5}-[0-9]{4}"
                       placeholder="(51) 99999-9999"
                       value={formData.phone}
                       onChange={handleInputChange}
