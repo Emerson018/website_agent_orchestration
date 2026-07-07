@@ -10,6 +10,7 @@ const getLocalDateString = (date) => {
 
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('agenda'); // 'agenda' | 'config'
+  const [agendaViewMode, setAgendaViewMode] = useState('grid'); // 'grid' | 'table'
   const [bookings, setBookings] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [saveStatus, setSaveStatus] = useState(null); // null | { type: 'loading' | 'success' | 'error', message: string }
@@ -904,225 +905,384 @@ function AdminDashboard() {
           {/* Navigation bar */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3 bg-slate-900 border border-slate-850 p-4 rounded-2xl">
               <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => changeWeek(-1)}
-                  className="p-2 rounded-lg bg-slate-950 border border-slate-800 hover:bg-slate-850 text-slate-350 cursor-pointer"
+                {agendaViewMode === 'grid' ? (
+                  <>
+                    <button 
+                      onClick={() => changeWeek(-1)}
+                      className="p-2 rounded-lg bg-slate-950 border border-slate-800 hover:bg-slate-850 text-slate-350 cursor-pointer"
+                    >
+                      &larr;
+                    </button>
+                    <button 
+                      onClick={setTodayWeek}
+                      className="px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 hover:bg-slate-850 text-xs font-bold cursor-pointer"
+                    >
+                      Hoje
+                    </button>
+                    <button 
+                      onClick={() => changeWeek(1)}
+                      className="p-2 rounded-lg bg-slate-950 border border-slate-800 hover:bg-slate-850 text-slate-350 cursor-pointer"
+                    >
+                      &rarr;
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 px-1">
+                    <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-xs uppercase font-black tracking-wider text-indigo-400">Tabela de Reservas</span>
+                  </div>
+                )}
+              </div>
+              
+              <span className="text-sm font-bold text-white tracking-wide">
+                {agendaViewMode === 'grid' ? formatWeekRange() : `Total: ${bookings.length} agendamentos cadastrados`}
+              </span>
+
+              {/* Seletor de modo de visualização */}
+              <div className="flex items-center gap-1.5 bg-slate-950 p-1 border border-slate-800 rounded-xl shrink-0">
+                <button
+                  onClick={() => setAgendaViewMode('grid')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] uppercase font-black tracking-wider transition-all cursor-pointer ${
+                    agendaViewMode === 'grid'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10'
+                      : 'text-slate-450 hover:text-slate-200'
+                  }`}
                 >
-                  &larr;
+                  Grade Semanal
                 </button>
-                <button 
-                  onClick={setTodayWeek}
-                  className="px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 hover:bg-slate-850 text-xs font-bold cursor-pointer"
+                <button
+                  onClick={() => setAgendaViewMode('table')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] uppercase font-black tracking-wider transition-all cursor-pointer ${
+                    agendaViewMode === 'table'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10'
+                      : 'text-slate-450 hover:text-slate-200'
+                  }`}
                 >
-                  Hoje
-                </button>
-                <button 
-                  onClick={() => changeWeek(1)}
-                  className="p-2 rounded-lg bg-slate-950 border border-slate-800 hover:bg-slate-850 text-slate-350 cursor-pointer"
-                >
-                  &rarr;
+                  Tabela Geral
                 </button>
               </div>
-              <span className="text-sm font-bold text-white tracking-wide">{formatWeekRange()}</span>
             </div>
 
-          {/* Grid Semanal */}
-          <div 
-            ref={gridRef}
-            onMouseDown={handleMouseDown}
-            onMouseLeave={handleMouseLeave}
-            onMouseUp={handleMouseUp}
-            onMouseMove={handleMouseMove}
-            onWheel={handleWheel}
-            className={`overflow-auto max-h-[85vh] border border-slate-900 rounded-3xl shadow-2xl ${isMouseDown ? 'cursor-grabbing select-none' : 'cursor-grab'}`} 
-            style={{ WebkitOverflowScrolling: 'touch' }}
-          >
-            <table className="w-full min-w-[1600px] border-collapse table-fixed text-left">
-              <thead className="sticky top-0 z-20 bg-slate-900 shadow-md">
-                <tr className="border-b border-slate-850 text-slate-300">
-                  <th className="w-24 p-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-center bg-slate-900 sticky left-0 z-30 border-r border-slate-850 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">Horário</th>
-                  {weekDates.map((date, idx) => {
-                    const isToday = new Date().toDateString() === date.toDateString();
-                    return (
-                      <th key={idx} className={`p-4 border-l border-slate-850 bg-slate-900 ${isToday ? 'text-primary' : ''}`}>
-                          <div className="flex flex-col">
-                            <span className={`text-[10px] uppercase font-bold tracking-widest ${isToday ? 'text-primary font-black' : 'text-slate-400'}`}>
-                              {weekDaysLabels[idx]}
-                            </span>
-                            <span className={`text-lg font-black mt-0.5 ${isToday ? 'text-primary' : 'text-white'}`}>
-                              {date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'numeric' })}
-                            </span>
-                          </div>
-                        </th>
-                      );
-                    })}
+          {/* Conteúdo Dinâmico */}
+          {agendaViewMode === 'table' ? (
+            <div className="overflow-x-auto border border-slate-850 rounded-3xl shadow-2xl bg-slate-900/50 backdrop-blur-md">
+              <table className="w-full text-left border-collapse min-w-[900px]">
+                <thead>
+                  <tr className="border-b border-slate-850 text-slate-400 text-[10px] uppercase font-bold tracking-widest bg-slate-950/40">
+                    <th className="p-4 w-60">Data e Hora</th>
+                    <th className="p-4">Cliente</th>
+                    <th className="p-4">Telefone</th>
+                    <th className="p-4 text-center w-24">Pessoas</th>
+                    <th className="p-4">Observações</th>
+                    <th className="p-4 w-32">Status</th>
+                    <th className="p-4 text-center w-28">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-850 bg-slate-900/10">
-                  {config.horarios_disponiveis.map((time) => (
-                    <tr key={time} className="hover:bg-slate-950/20 group/row">
-                      <td className="p-4 text-sm font-extrabold text-slate-400 text-center bg-slate-900 sticky left-0 z-10 border-r border-slate-850 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
-                        {time}
-                      </td>
-                      {weekDates.map((date, dayIdx) => {
-                        const dateStr = getLocalDateString(date);
-                        const bookingsInSlot = bookings.filter(b => b.data === dateStr && b.horario === time);
-                        const occupiedSlots = bookingsInSlot.length;
-                        const limit = config.limites_customizados?.[dateStr]?.[time] ?? config.vagas_padrao;
-                        const hasException = config.limites_customizados?.[dateStr]?.[time] !== undefined;
+                <tbody className="divide-y divide-slate-850 text-slate-300 bg-slate-900/10">
+                  {(() => {
+                    const sortedBookings = [...bookings].sort((a, b) => {
+                      const dateA = new Date(`${a.data}T${a.horario}:00`);
+                      const dateB = new Date(`${b.data}T${b.horario}:00`);
+                      return dateA - dateB;
+                    });
 
-                        const isWorkingDay = config.dias_funcionamento.includes(date.getDay());
-
-                        return (
-                          <td 
-                            key={dayIdx} 
-                            className={`p-2 border-l border-slate-850 align-top relative transition-colors ${
-                              !isWorkingDay 
-                                ? 'bg-slate-950/70 pattern-dots opacity-30 select-none' 
-                                : 'bg-slate-900/5 group-hover/row:bg-slate-900/20'
-                            }`}
-                            style={{ height: '90px' }}
-                          >
-                            {isWorkingDay ? (
-                              <div className="space-y-2">
-                                {/* Slot Capacity indicator */}
-                                <div className="flex justify-between items-center">
-                                  <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold tracking-wide shadow-xs ${
-                                    occupiedSlots >= limit 
-                                      ? 'bg-red-500/15 text-red-400 border border-red-500/20' 
-                                      : hasException 
-                                      ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
-                                      : 'bg-slate-800/80 text-slate-400'
-                                  }`}>
-                                    {occupiedSlots}/{limit} vagas {hasException && '⚡'}
-                                  </span>
-                                </div>
-
-                                {/* Cartões dos Agendamentos */}
-                                <div className="space-y-1.5">
-                                  {(() => {
-                                    const slotKey = `${dateStr}_${time}`;
-                                    const isExpanded = expandedSlots[slotKey];
-                                    const shouldStack = bookingsInSlot.length > 3;
-                                    
-                                    const visibleBookings = shouldStack && !isExpanded 
-                                      ? bookingsInSlot.slice(0, 2) 
-                                      : bookingsInSlot;
-
-                                    return (
-                                      <>
-                                        {visibleBookings.map((b) => {
-                                          const name = b.cliente_nome || b.name || (b.clientes && (b.clientes.nome || b.clientes.cliente_nome)) || 'Sem nome';
-                                          const phone = b.cliente_telefone || b.phone || (b.clientes && b.clientes.telefone) || 'Sem telefone';
-                                          const isConfirmed = (b.status || 'Confirmado') === 'Confirmado';
-                                          
-                                          return (
-                                            <div 
-                                              key={b.id} 
-                                              onClick={() => setSelectedBooking(b)}
-                                              className="group/card relative p-3 bg-gradient-to-br from-slate-900 to-slate-950/70 hover:from-slate-850 hover:to-slate-900 border border-slate-800/85 hover:border-slate-750/90 rounded-xl flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer select-none text-[11px] leading-tight"
-                                            >
-                                              <div className="space-y-2">
-                                                {/* Card Top: Status Dot and Pessoas Badge */}
-                                                <div className="flex items-center justify-between">
-                                                  <div className="flex items-center gap-1.5">
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${
-                                                      isConfirmed 
-                                                        ? 'bg-emerald-500 shadow-[0_0_6px_#10b981]' 
-                                                        : 'bg-amber-500 shadow-[0_0_6px_#f59e0b]'
-                                                    }`} />
-                                                    <span className={`text-[9px] uppercase font-black tracking-wider ${
-                                                      isConfirmed ? 'text-emerald-450' : 'text-amber-450'
-                                                    }`}>
-                                                      {isConfirmed ? 'Confirmado' : 'Pendente'}
-                                                    </span>
-                                                  </div>
-                                                  <span className="text-[9px] font-black text-slate-350 bg-slate-800/80 border border-slate-750 px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-0.5">
-                                                    <svg className="w-2.5 h-2.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                    </svg>
-                                                    {b.pessoas}p
-                                                  </span>
-                                                </div>
-                                                
-                                                {/* Cliente Name and Contact Info */}
-                                                <div className="space-y-1">
-                                                  <p className="font-extrabold text-slate-100 truncate pr-1 text-xs tracking-wide">
-                                                    {name}
-                                                  </p>
-                                                  <p className="text-[10px] text-slate-450 truncate flex items-center gap-1">
-                                                    <svg className="w-2.5 h-2.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                                    </svg>
-                                                    {phone}
-                                                  </p>
-                                                </div>
-                                              </div>
-                                              
-                                              {/* Card Footer: Action */}
-                                              <div className="flex justify-end items-center mt-2.5 pt-1.5 border-t border-slate-800/40 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">
-                                                <button
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDelete(b.id);
-                                                  }}
-                                                  className="p-1 rounded hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
-                                                  title="Cancelar reserva"
-                                                >
-                                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                  </svg>
-                                                </button>
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-
-                                        {shouldStack && !isExpanded && (
-                                          <div 
-                                            onClick={() => setExpandedSlots(prev => ({ ...prev, [slotKey]: true }))}
-                                            className="relative p-3 bg-gradient-to-br from-indigo-950 to-slate-900 hover:from-indigo-900 border border-indigo-500/30 hover:border-indigo-400/50 rounded-xl flex flex-col justify-center items-center shadow-lg hover:shadow-indigo-500/5 transition-all duration-300 cursor-pointer select-none text-[11px] py-4 text-center group/stack mt-1.5"
-                                          >
-                                            {/* Efeito 3D de Cartas Empilhadas */}
-                                            <div className="absolute top-1 left-1 w-full h-full bg-slate-900/60 border border-slate-850 rounded-xl -z-10 translate-x-1 translate-y-1 scale-98 shadow-sm transition-transform group-hover/stack:translate-x-1.5 group-hover/stack:translate-y-1.5" />
-                                            <div className="absolute top-2 left-2 w-full h-full bg-slate-950/40 border border-slate-900 rounded-xl -z-20 translate-x-2 translate-y-2 scale-96 shadow-sm transition-transform group-hover/stack:translate-x-3 group-hover/stack:translate-y-3" />
-                                            
-                                            <div className="space-y-1 z-10">
-                                              <span className="text-xs font-black text-indigo-400 uppercase tracking-widest block">
-                                                +{bookingsInSlot.length - 2} reservas
-                                              </span>
-                                              <p className="text-[9px] text-slate-450 font-bold uppercase tracking-wider block">Clique para expandir</p>
-                                            </div>
-                                          </div>
-                                        )}
-
-                                        {shouldStack && isExpanded && (
-                                          <button
-                                            type="button"
-                                            onClick={() => setExpandedSlots(prev => ({ ...prev, [slotKey]: false }))}
-                                            className="w-full py-2 bg-slate-950/60 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-white text-[9px] font-extrabold rounded-xl tracking-wider transition-all cursor-pointer text-center uppercase mt-1.5"
-                                          >
-                                            Recolher reservas &uarr;
-                                          </button>
-                                        )}
-                                      </>
-                                    );
-                                  })()}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-center min-h-[70px] text-[9px] text-slate-650 font-extrabold uppercase tracking-widest select-none">
-                                Fechado
-                              </div>
-                            )}
+                    if (sortedBookings.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan="7" className="p-12 text-center text-slate-500 font-bold text-xs uppercase tracking-wider">
+                            Nenhum agendamento encontrado
                           </td>
+                        </tr>
+                      );
+                    }
+
+                    return sortedBookings.map((b) => {
+                      const name = b.cliente_nome || b.name || (b.clientes && (b.clientes.nome || b.clientes.cliente_nome)) || 'Sem nome';
+                      const phone = b.cliente_telefone || b.phone || (b.clientes && b.clientes.telefone) || 'Sem telefone';
+                      const isConfirmed = (b.status || 'Confirmado') === 'Confirmado';
+                      
+                      const bookingDate = new Date(`${b.data}T00:00:00`);
+                      const dateFormatted = bookingDate.toLocaleDateString('pt-BR', {
+                        weekday: 'long',
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      });
+                      const capitalizedDate = dateFormatted.charAt(0).toUpperCase() + dateFormatted.slice(1);
+
+                      return (
+                        <tr 
+                          key={b.id} 
+                          className="hover:bg-slate-950/20 transition-colors group/tr"
+                        >
+                          <td className="p-4 text-xs font-mono font-bold text-white">
+                            <div className="flex flex-col gap-0.5">
+                              <span>{capitalizedDate}</span>
+                              <span className="text-[10px] text-indigo-400 font-black tracking-wider uppercase">⏰ {b.horario}</span>
+                            </div>
+                          </td>
+                          <td className="p-4 text-xs font-extrabold text-slate-100">
+                            {name}
+                          </td>
+                          <td className="p-4 text-xs font-mono text-slate-450">
+                            <span className="flex items-center gap-1">
+                              <svg className="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                              </svg>
+                              {phone}
+                            </span>
+                          </td>
+                          <td className="p-4 text-xs font-mono text-center font-black">
+                            <span className="bg-slate-950/50 border border-slate-800 text-slate-350 px-2.5 py-1 rounded-lg">
+                              {b.pessoas}p
+                            </span>
+                          </td>
+                          <td className="p-4 text-[11px] text-slate-400 max-w-[200px] truncate" title={b.observacoes || 'Nenhuma'}>
+                            {b.observacoes || <span className="text-slate-650 font-mono italic">Sem observações</span>}
+                          </td>
+                          <td className="p-4 text-xs">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] uppercase font-black tracking-wider ${
+                              isConfirmed 
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            }`}>
+                              <span className={`w-1 h-1 rounded-full ${isConfirmed ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                              {isConfirmed ? 'Confirmado' : 'Pendente'}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <div className="flex justify-center gap-2">
+                              <button
+                                onClick={() => setSelectedBooking(b)}
+                                className="p-1.5 rounded bg-slate-950/50 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-450 hover:text-white transition-all cursor-pointer"
+                                title="Ver detalhes"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(b.id);
+                                }}
+                                className="p-1.5 rounded bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/25 text-slate-450 hover:text-red-400 transition-all cursor-pointer"
+                                title="Cancelar reserva"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div 
+              ref={gridRef}
+              onMouseDown={handleMouseDown}
+              onMouseLeave={handleMouseLeave}
+              onMouseUp={handleMouseUp}
+              onMouseMove={handleMouseMove}
+              onWheel={handleWheel}
+              className={`overflow-auto max-h-[85vh] border border-slate-900 rounded-3xl shadow-2xl ${isMouseDown ? 'cursor-grabbing select-none' : 'cursor-grab'}`} 
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
+              <table className="w-full min-w-[1600px] border-collapse table-fixed text-left">
+                <thead className="sticky top-0 z-20 bg-slate-900 shadow-md">
+                  <tr className="border-b border-slate-850 text-slate-300">
+                    <th className="w-24 p-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-center bg-slate-900 sticky left-0 z-30 border-r border-slate-850 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">Horário</th>
+                    {weekDates.map((date, idx) => {
+                      const isToday = new Date().toDateString() === date.toDateString();
+                      return (
+                        <th key={idx} className={`p-4 border-l border-slate-850 bg-slate-900 ${isToday ? 'text-primary' : ''}`}>
+                            <div className="flex flex-col">
+                              <span className={`text-[10px] uppercase font-bold tracking-widest ${isToday ? 'text-primary font-black' : 'text-slate-400'}`}>
+                                {weekDaysLabels[idx]}
+                              </span>
+                              <span className={`text-lg font-black mt-0.5 ${isToday ? 'text-primary' : 'text-white'}`}>
+                                {date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'numeric' })}
+                              </span>
+                            </div>
+                          </th>
                         );
                       })}
                     </tr>
-                  ))}
-                </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-850 bg-slate-900/10">
+                    {config.horarios_disponiveis.map((time) => (
+                      <tr key={time} className="hover:bg-slate-950/20 group/row">
+                        <td className="p-4 text-sm font-extrabold text-slate-400 text-center bg-slate-900 sticky left-0 z-10 border-r border-slate-850 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
+                          {time}
+                        </td>
+                        {weekDates.map((date, dayIdx) => {
+                          const dateStr = getLocalDateString(date);
+                          const bookingsInSlot = bookings.filter(b => b.data === dateStr && b.horario === time);
+                          const occupiedSlots = bookingsInSlot.length;
+                          const limit = config.limites_customizados?.[dateStr]?.[time] ?? config.vagas_padrao;
+                          const hasException = config.limites_customizados?.[dateStr]?.[time] !== undefined;
+
+                          const isWorkingDay = config.dias_funcionamento.includes(date.getDay());
+
+                          return (
+                            <td 
+                              key={dayIdx} 
+                              className={`p-2 border-l border-slate-850 align-top relative transition-colors ${
+                                !isWorkingDay 
+                                  ? 'bg-slate-950/70 pattern-dots opacity-30 select-none' 
+                                  : 'bg-slate-900/5 group-hover/row:bg-slate-900/20'
+                              }`}
+                              style={{ height: '90px' }}
+                            >
+                              {isWorkingDay ? (
+                                <div className="space-y-2">
+                                  {/* Slot Capacity indicator */}
+                                  <div className="flex justify-between items-center">
+                                    <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold tracking-wide shadow-xs ${
+                                      occupiedSlots >= limit 
+                                        ? 'bg-red-500/15 text-red-400 border border-red-500/20' 
+                                        : hasException 
+                                        ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
+                                        : 'bg-slate-800/80 text-slate-400'
+                                    }`}>
+                                      {occupiedSlots}/{limit} vagas {hasException && '⚡'}
+                                    </span>
+                                  </div>
+
+                                  {/* Cartões dos Agendamentos */}
+                                  <div className="space-y-1.5">
+                                    {(() => {
+                                      const slotKey = `${dateStr}_${time}`;
+                                      const isExpanded = expandedSlots[slotKey];
+                                      const shouldStack = bookingsInSlot.length > 3;
+                                      
+                                      const visibleBookings = shouldStack && !isExpanded 
+                                        ? bookingsInSlot.slice(0, 2) 
+                                        : bookingsInSlot;
+
+                                      return (
+                                        <>
+                                          {visibleBookings.map((b) => {
+                                            const name = b.cliente_nome || b.name || (b.clientes && (b.clientes.nome || b.clientes.cliente_nome)) || 'Sem nome';
+                                            const phone = b.cliente_telefone || b.phone || (b.clientes && b.clientes.telefone) || 'Sem telefone';
+                                            const isConfirmed = (b.status || 'Confirmado') === 'Confirmado';
+                                            
+                                            return (
+                                              <div 
+                                                key={b.id} 
+                                                onClick={() => setSelectedBooking(b)}
+                                                className="group/card relative p-3 bg-gradient-to-br from-slate-900 to-slate-950/70 hover:from-slate-850 hover:to-slate-900 border border-slate-800/85 hover:border-slate-750/90 rounded-xl flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer select-none text-[11px] leading-tight"
+                                              >
+                                                <div className="space-y-2">
+                                                  {/* Card Top: Status Dot and Pessoas Badge */}
+                                                  <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-1.5">
+                                                      <span className={`w-1.5 h-1.5 rounded-full ${
+                                                        isConfirmed 
+                                                          ? 'bg-emerald-500 shadow-[0_0_6px_#10b981]' 
+                                                          : 'bg-amber-500 shadow-[0_0_6px_#f59e0b]'
+                                                      }`} />
+                                                      <span className={`text-[9px] uppercase font-black tracking-wider ${
+                                                        isConfirmed ? 'text-emerald-450' : 'text-amber-450'
+                                                      }`}>
+                                                        {isConfirmed ? 'Confirmado' : 'Pendente'}
+                                                      </span>
+                                                    </div>
+                                                    <span className="text-[9px] font-black text-slate-350 bg-slate-800/80 border border-slate-750 px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-0.5">
+                                                      <svg className="w-2.5 h-2.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                      </svg>
+                                                      {b.pessoas}p
+                                                    </span>
+                                                  </div>
+                                                  
+                                                  {/* Cliente Name and Contact Info */}
+                                                  <div className="space-y-1">
+                                                    <p className="font-extrabold text-slate-100 truncate pr-1 text-xs tracking-wide">
+                                                      {name}
+                                                    </p>
+                                                    <p className="text-[10px] text-slate-450 truncate flex items-center gap-1">
+                                                      <svg className="w-2.5 h-2.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                                      </svg>
+                                                      {phone}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                                
+                                                {/* Card Footer: Action */}
+                                                <div className="flex justify-end items-center mt-2.5 pt-1.5 border-t border-slate-800/40 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleDelete(b.id);
+                                                    }}
+                                                    className="p-1 rounded hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
+                                                    title="Cancelar reserva"
+                                                  >
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+
+                                          {shouldStack && !isExpanded && (
+                                            <div 
+                                              onClick={() => setExpandedSlots(prev => ({ ...prev, [slotKey]: true }))}
+                                              className="relative p-3 bg-gradient-to-br from-indigo-950 to-slate-900 hover:from-indigo-900 border border-indigo-500/30 hover:border-indigo-400/50 rounded-xl flex flex-col justify-center items-center shadow-lg hover:shadow-indigo-500/5 transition-all duration-300 cursor-pointer select-none text-[11px] py-4 text-center group/stack mt-1.5"
+                                            >
+                                              {/* Efeito 3D de Cartas Empilhadas */}
+                                              <div className="absolute top-1 left-1 w-full h-full bg-slate-900/60 border border-slate-850 rounded-xl -z-10 translate-x-1 translate-y-1 scale-98 shadow-sm transition-transform group-hover/stack:translate-x-1.5 group-hover/stack:translate-y-1.5" />
+                                              <div className="absolute top-2 left-2 w-full h-full bg-slate-950/40 border border-slate-900 rounded-xl -z-20 translate-x-2 translate-y-2 scale-96 shadow-sm transition-transform group-hover/stack:translate-x-3 group-hover/stack:translate-y-3" />
+                                              
+                                              <div className="space-y-1 z-10">
+                                                <span className="text-xs font-black text-indigo-400 uppercase tracking-widest block">
+                                                  +{bookingsInSlot.length - 2} reservas
+                                                </span>
+                                                <p className="text-[9px] text-slate-450 font-bold uppercase tracking-wider block">Clique para expandir</p>
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {shouldStack && isExpanded && (
+                                            <button
+                                              type="button"
+                                              onClick={() => setExpandedSlots(prev => ({ ...prev, [slotKey]: false }))}
+                                              className="w-full py-2 bg-slate-950/60 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-white text-[9px] font-extrabold rounded-xl tracking-wider transition-all cursor-pointer text-center uppercase mt-1.5"
+                                            >
+                                              Recolher reservas &uarr;
+                                            </button>
+                                          )}
+                                        </>
+                                      );
+                                    })()}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-center min-h-[70px] text-[9px] text-slate-650 font-extrabold uppercase tracking-widest select-none">
+                                  Fechado
+                                </div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

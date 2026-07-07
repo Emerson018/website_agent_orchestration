@@ -34,9 +34,15 @@
               "type": "string"
             },
             {
+              "id": "e62fb9c8-5b9a-4bd2-a882-54e5fe13c2a3",
+              "name": "senderPhone",
+              "value": "={{ $json.body.payload._data && $json.body.payload._data.Info && $json.body.payload._data.Info.SenderAlt ? $json.body.payload._data.Info.SenderAlt : $json.body.payload.from }}",
+              "type": "string"
+            },
+            {
               "id": "5817bc72-05f3-4617-8676-33024bd9c103",
               "name": "pushName",
-              "value": "={{ $json.body.payload._data.Info.PushName }}",
+              "value": "={{ $json.body.payload._data && $json.body.payload._data.Info && $json.body.payload._data.Info.PushName ? $json.body.payload._data.Info.PushName : '' }}",
               "type": "string"
             },
             {
@@ -175,7 +181,7 @@
                 },
                 "conditions": [
                   {
-                    "leftValue": "={{ $json.message.trim() }}",
+                    "leftValue": "={{ $('Dados').item.json.message ? $('Dados').item.json.message.trim() : '' }}",
                     "rightValue": "1",
                     "operator": {
                       "type": "string",
@@ -196,7 +202,7 @@
                 },
                 "conditions": [
                   {
-                    "leftValue": "={{ $json.message.trim() }}",
+                    "leftValue": "={{ $('Dados').item.json.message ? $('Dados').item.json.message.trim() : '' }}",
                     "rightValue": "2",
                     "operator": {
                       "type": "string",
@@ -217,7 +223,7 @@
                 },
                 "conditions": [
                   {
-                    "leftValue": "={{ $json.message.trim() }}",
+                    "leftValue": "={{ $('Dados').item.json.message ? $('Dados').item.json.message.trim() : '' }}",
                     "rightValue": "3",
                     "operator": {
                       "type": "string",
@@ -238,7 +244,7 @@
                 },
                 "conditions": [
                   {
-                    "leftValue": "={{ $json.message.trim() }}",
+                    "leftValue": "={{ $('Dados').item.json.message ? $('Dados').item.json.message.trim() : '' }}",
                     "rightValue": "4",
                     "operator": {
                       "type": "string",
@@ -259,7 +265,7 @@
                 },
                 "conditions": [
                   {
-                    "leftValue": "={{ $json.message.trim() }}",
+                    "leftValue": "={{ $('Dados').item.json.message ? $('Dados').item.json.message.trim() : '' }}",
                     "rightValue": "5",
                     "operator": {
                       "type": "string",
@@ -280,7 +286,7 @@
                 },
                 "conditions": [
                   {
-                    "leftValue": "={{ $json.message.trim() }}",
+                    "leftValue": "={{ $('Dados').item.json.message ? $('Dados').item.json.message.trim() : '' }}",
                     "rightValue": "6",
                     "operator": {
                       "type": "string",
@@ -293,7 +299,8 @@
             }
           ]
         },
-        "options": {}
+        "options": {},
+        "fallbackOutput": "extra"
       },
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
@@ -317,7 +324,7 @@
       "typeVersion": 202411,
       "position": [
         1300,
-        -150
+        -250
       ],
       "id": "waha-opt-1",
       "name": "1 - Agendar Horário",
@@ -330,21 +337,121 @@
     },
     {
       "parameters": {
+        "jsCode": "const dados = $('Dados').item.json;\nconst clean = (dados.senderPhone || dados.chatId).replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', '');\nlet number = clean.startsWith('55') ? clean.slice(2) : clean;\nconst ddd = number.slice(0, 2);\nconst rest = number.slice(2);\n\nlet formatWith9 = '';\nlet formatWithout9 = '';\n\nif (rest.length === 9) {\n  formatWith9 = `(${ddd}) ${rest.slice(0, 5)}-${rest.slice(5)}`;\n  formatWithout9 = `(${ddd}) ${rest.slice(1, 5)}-${rest.slice(5)}`;\n} else {\n  formatWithout9 = `(${ddd}) ${rest.slice(0, 4)}-${rest.slice(4)}`;\n  formatWith9 = `(${ddd}) 9${rest.slice(0, 4)}-${rest.slice(4)}`;\n}\n\nreturn [\n  {\n    json: {\n      formatWith9,\n      formatWithout9\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        -100
+      ],
+      "id": "formatar-telefone-node",
+      "name": "Formatar Telefone"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co/rest/v1/clientes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "id,nome,agendamentos_base(inicio,status,detalhes_agendamento_nicho(num_pessoas))"
+            },
+            {
+              "name": "telefone",
+              "value": "=in.(\"{{ $json.formatWith9 }}\",\"{{ $json.formatWithout9 }}\")"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1500,
+        -100
+      ],
+      "id": "supabase-http-query-node",
+      "name": "Buscar no Supabase",
+      "settings": {
+        "alwaysOutputData": true
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const clients = $input.all();\nlet bookingFound = null;\nlet clientName = null;\n\nfor (const item of clients) {\n  const client = item.json;\n  if (client && client.agendamentos_base && client.agendamentos_base.length > 0) {\n    const activeBookings = client.agendamentos_base.filter(b => b.status !== 'Cancelado');\n    if (activeBookings.length > 0) {\n      activeBookings.sort((a, b) => new Date(a.inicio) - new Date(b.inicio));\n      const nearest = activeBookings[0];\n      if (!bookingFound || new Date(nearest.inicio) < new Date(bookingFound.inicio)) {\n        bookingFound = nearest;\n        clientName = client.nome;\n      }\n    }\n  }\n}\n\nif (!clientName && clients.length > 0) {\n  clientName = clients[0].json.nome || null;\n}\n\nreturn [\n  {\n    json: {\n      bookingFound,\n      clientName\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        -100
+      ],
+      "id": "filter-bookings-node",
+      "name": "Filtrar Agendamento"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.bookingFound }}",
+              "operator": {
+                "type": "object",
+                "operation": "notNull"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1900,
+        -100
+      ],
+      "id": "if-has-booking-node",
+      "name": "Tem Agendamento?"
+    },
+    {
+      "parameters": {
         "resource": "Chatting",
         "operation": "Send Text",
         "session": "={{ $('Dados').item.json.session }}",
         "chatId": "={{ $('Dados').item.json.chatId }}",
-        "text": "=Para consultar ou verificar seus agendamentos ativos, você pode acessar a nossa página de agendamentos no site, ou aguardar um instante que nosso atendente irá consultar no sistema para você. Se preferir conversar diretamente com ele, basta digitar *6*!",
+        "text": "=Olá, *{{ $json.clientName }}*! 🔍\n\nEncontrei um agendamento ativo para você:\n\n📅 *Data:* {{ new Date($json.bookingFound.inicio.split('T')[0] + 'T00:00:00').toLocaleDateString('pt-BR') }}\n⏰ *Horário:* {{ $json.bookingFound.inicio.split('T')[1].slice(0, 5) }}\n👥 *Mesa para:* {{ $json.bookingFound.detalhes_agendamento_nicho[0]?.num_pessoas || 1 }} {{ ($json.bookingFound.detalhes_agendamento_nicho[0]?.num_pessoas || 1) === 1 ? 'pessoa' : 'pessoas' }}\n📋 *Status:* {{ $json.bookingFound.status }}",
         "requestOptions": {}
       },
       "type": "n8n-nodes-waha.WAHA",
       "typeVersion": 202411,
       "position": [
-        1300,
-        -50
+        2150,
+        -200
       ],
-      "id": "waha-opt-2",
-      "name": "2 - Ver Agendamento",
+      "id": "waha-show-booking-node",
+      "name": "Exibir Agendamento",
       "credentials": {
         "wahaApi": {
           "id": "7dEWP8lqAufzutB1",
@@ -358,14 +465,139 @@
         "operation": "Send Text",
         "session": "={{ $('Dados').item.json.session }}",
         "chatId": "={{ $('Dados').item.json.chatId }}",
-        "text": "=🗓️ *Dias de Funcionamento:* Terça a Domingo\n⏰ *Horários de Agendamento:* 17:00 às 23:00\n\nConsulte as vagas e horários livres em tempo real em nossa página:\n🔗 http://localhost:5173/agendar",
+        "text": "=Não encontrei nenhum agendamento ativo para o seu número de telefone em nosso sistema. 🤷‍♂️\n\nSe quiser realizar um agendamento novo, digite *1*!",
         "requestOptions": {}
       },
       "type": "n8n-nodes-waha.WAHA",
       "typeVersion": 202411,
       "position": [
+        2150,
+        0
+      ],
+      "id": "waha-no-booking-node",
+      "name": "Sem Agendamento",
+      "credentials": {
+        "wahaApi": {
+          "id": "7dEWP8lqAufzutB1",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co/rest/v1/configuracao_agenda",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "chave,valor"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
         1300,
-        50
+        150
+      ],
+      "id": "buscar-configs-node",
+      "name": "Buscar Configs",
+      "settings": {
+        "alwaysOutputData": true
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co/rest/v1/agendamentos_base",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "inicio,status"
+            },
+            {
+              "name": "status",
+              "value": "neq.Cancelado"
+            },
+            {
+              "name": "inicio",
+              "value": "=gte.{{ new Date().toISOString().split('T')[0] }}T00:00:00"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1500,
+        150
+      ],
+      "id": "buscar-agendamentos-7d-node",
+      "name": "Buscar Agendamentos 7d",
+      "settings": {
+        "alwaysOutputData": true
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  const configData = $('Buscar Configs').all();\n  const bookings = $input.all();\n  \n  const configs = {};\n  for (const c of configData) {\n    configs[c.json.chave] = c.json.valor;\n  }\n  \n  const diasFuncionamento = configs.dias_funcionamento || [2, 3, 4, 5, 6, 0];\n  const horariosDisponiveis = configs.horarios_disponiveis || [\"18:30\", \"19:00\", \"19:30\", \"20:00\", \"20:30\", \"21:00\", \"21:30\", \"22:00\"];\n  const vagasPadrao = configs.vagas_padrao !== undefined ? configs.vagas_padrao : 5;\n  const limitesCustomizados = configs.limites_customizados || {};\n  \n  const weekdaysPT = [\"Dom\", \"Seg\", \"Ter\", \"Qua\", \"Qui\", \"Sex\", \"Sáb\"];\n  let resultText = \"📅 *VAGAS E HORÁRIOS DISPONÍVEIS*\\n*(Próximos 7 dias de funcionamento)*\\n\\n\";\n  \n  const current = new Date();\n  let daysCount = 0;\n  \n  for (let i = 0; i < 15; i++) {\n    const dateObj = new Date(current.getTime() + i * 24 * 60 * 60 * 1000);\n    const weekday = dateObj.getDay();\n    \n    if (!diasFuncionamento.includes(weekday)) continue;\n    \n    const weekdayLabel = weekdaysPT[weekday];\n    const dateStrStr = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });\n    const year = dateObj.getFullYear();\n    const month = String(dateObj.getMonth() + 1).padStart(2, '0');\n    const day = String(dateObj.getDate()).padStart(2, '0');\n    const dateKey = `${year}-${month}-${day}`;\n    \n    let dayAvailableSlots = [];\n    \n    for (const time of [...horariosDisponiveis].sort()) {\n      const limit = limitesCustomizados[dateKey]?.[time] !== undefined \n        ? limitesCustomizados[dateKey][time] \n        : vagasPadrao;\n      \n      const occupied = bookings.filter(b => {\n        if (!b.json.inicio) return false;\n        const parts = b.json.inicio.split('T');\n        const bDate = parts[0];\n        const bTime = parts[1]?.slice(0, 5);\n        return bDate === dateKey && bTime === time;\n      }).length;\n      \n      const remaining = Math.max(0, limit - occupied);\n      if (remaining > 0) {\n        dayAvailableSlots.push(`${time} (${remaining}v)`);\n      }\n    }\n    \n    if (dayAvailableSlots.length > 0) {\n      resultText += `*${weekdayLabel} (${dateStrStr}):*\\n👉 ${dayAvailableSlots.join(' | ')}\\n\\n`;\n    } else {\n      resultText += `*${weekdayLabel} (${dateStrStr}):*\\n❌ Esgotado\\n\\n`;\n    }\n    \n    daysCount++;\n    if (daysCount >= 7) break;\n  }\n  \n  resultText += \"Para reservar a sua mesa, basta digitar *1* ou acessar o link abaixo:\\n🔗 http://localhost:5173/agendar\";\n  \n  item.json.resultText = resultText;\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        150
+      ],
+      "id": "calcular-vagas-node",
+      "name": "Calcular Vagas"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('Dados').item.json.session }}",
+        "chatId": "={{ $('Dados').item.json.chatId }}",
+        "text": "={{ $json.resultText }}",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        1950,
+        150
       ],
       "id": "waha-opt-3",
       "name": "3 - Ver Dias/Horas",
@@ -389,7 +621,7 @@
       "typeVersion": 202411,
       "position": [
         1300,
-        150
+        300
       ],
       "id": "waha-opt-4",
       "name": "4 - Ver Local",
@@ -413,7 +645,7 @@
       "typeVersion": 202411,
       "position": [
         1300,
-        250
+        400
       ],
       "id": "waha-opt-5",
       "name": "5 - Cancelar Agendamento",
@@ -423,6 +655,103 @@
           "name": "WAHA account"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "const dados = $('Dados').item.json;\nconst clean = (dados.senderPhone || dados.chatId).replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', '');\nlet number = clean.startsWith('55') ? clean.slice(2) : clean;\nconst ddd = number.slice(0, 2);\nconst rest = number.slice(2);\n\nlet with9 = '';\nlet without9 = '';\nif (rest.length === 9) {\n  with9 = '55' + ddd + rest;\n  without9 = '55' + ddd + rest.slice(1);\n} else {\n  without9 = '55' + ddd + rest;\n  with9 = '55' + ddd + '9' + rest;\n}\n\nreturn [\n  {\n    json: {\n      phone9: with9,\n      phone8: without9\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        500
+      ],
+      "id": "formatar-telefone-opt6-node",
+      "name": "Formatar Telefone Atendente"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co/rest/v1/contacts",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "id"
+            },
+            {
+              "name": "phone_normalized",
+              "value": "=in.(\"{{ $json.phone9 }}\",\"{{ $json.phone8 }}\")"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1500,
+        500
+      ],
+      "id": "buscar-contato-opt6-node",
+      "name": "Buscar Contato CRM",
+      "settings": {
+        "alwaysOutputData": true
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co/rest/v1/conversations",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "contact_id",
+              "value": "=eq.{{ $json[0]?.id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"open\",\n  \"assigned_agent_id\": null\n}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1700,
+        500
+      ],
+      "id": "update-conversation-opt6-node",
+      "name": "Abrir Conversa CRM"
     },
     {
       "parameters": {
@@ -436,8 +765,8 @@
       "type": "n8n-nodes-waha.WAHA",
       "typeVersion": 202411,
       "position": [
-        1300,
-        350
+        1950,
+        500
       ],
       "id": "waha-opt-6",
       "name": "6 - Falar com Atendente",
@@ -454,14 +783,14 @@
         "operation": "Send Text",
         "session": "={{ $('Dados').item.json.session }}",
         "chatId": "={{ $('Dados').item.json.chatId }}",
-        "text": "=Olá, *{{ $json.pushName || 'cliente' }}*! Seja muito bem-vindo ao Marcianos! 🚀\n\nComo posso ajudar você hoje? Digite o número correspondente à opção desejada:\n\n1️⃣ - Agendar Horário\n2️⃣ - Ver meu agendamento\n3️⃣ - Ver dias e horários disponíveis\n4️⃣ - Ver local do estabelecimento\n5️⃣ - Cancelar agendamento\n6️⃣ - Falar com o atendente",
+        "text": "=Olá, *{{ $('Dados').item.json.pushName || 'cliente' }}*! Seja muito bem-vindo ao Marcianos! 🚀\n\nComo posso ajudar você hoje? Digite o número correspondente à opção desejada:\n\n1️⃣ - Agendar Horário\n2️⃣ - Ver meu agendamento\n3️⃣ - Ver dias e horários disponíveis\n4️⃣ - Ver local do estabelecimento\n5️⃣ - Cancelar agendamento\n6️⃣ - Falar com o atendente",
         "requestOptions": {}
       },
       "type": "n8n-nodes-waha.WAHA",
       "typeVersion": 202411,
       "position": [
         1300,
-        470
+        620
       ],
       "id": "waha-welcome",
       "name": "Menu de Boas Vindas",
@@ -565,6 +894,59 @@
         ]
       ]
     },
+    "Switch Menu": {
+      "main": [
+        [
+          {
+            "node": "1 - Agendar Horário",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Formatar Telefone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Configs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4 - Ver Local",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "5 - Cancelar Agendamento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Formatar Telefone Atendente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Menu de Boas Vindas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Aguardar 3 Segundos": {
       "main": [
         [
@@ -587,55 +969,119 @@
         ]
       ]
     },
-    "Switch Menu": {
+    "Formatar Telefone": {
       "main": [
         [
           {
-            "node": "1 - Agendar Horário",
+            "node": "Buscar no Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar no Supabase": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Agendamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Agendamento": {
+      "main": [
+        [
+          {
+            "node": "Tem Agendamento?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem Agendamento?": {
+      "main": [
+        [
+          {
+            "node": "Exibir Agendamento",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "2 - Ver Agendamento",
+            "node": "Sem Agendamento",
             "type": "main",
             "index": 0
           }
-        ],
+        ]
+      ]
+    },
+    "Buscar Configs": {
+      "main": [
+        [
+          {
+            "node": "Buscar Agendamentos 7d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Agendamentos 7d": {
+      "main": [
+        [
+          {
+            "node": "Calcular Vagas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular Vagas": {
+      "main": [
         [
           {
             "node": "3 - Ver Dias/Horas",
             "type": "main",
             "index": 0
           }
-        ],
+        ]
+      ]
+    },
+    "Formatar Telefone Atendente": {
+      "main": [
         [
           {
-            "node": "4 - Ver Local",
+            "node": "Buscar Contato CRM",
             "type": "main",
             "index": 0
           }
-        ],
+        ]
+      ]
+    },
+    "Buscar Contato CRM": {
+      "main": [
         [
           {
-            "node": "5 - Cancelar Agendamento",
+            "node": "Abrir Conversa CRM",
             "type": "main",
             "index": 0
           }
-        ],
+        ]
+      ]
+    },
+    "Abrir Conversa CRM": {
+      "main": [
         [
           {
             "node": "6 - Falar com Atendente",
             "type": "main",
             "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Menu de Boas Vindas",
-            "type": "main",
-            "index": 6
           }
         ]
       ]
