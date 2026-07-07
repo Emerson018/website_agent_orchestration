@@ -51,7 +51,8 @@ function AdminDashboard() {
     horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
     vagas_padrao: 5,
     limites_customizados: {},
-    campo_observacoes_ativo: true
+    campo_observacoes_ativo: true,
+    antecedencia_maxima_dias: 7
   });
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -69,6 +70,7 @@ function AdminDashboard() {
   const [exData, setExData] = useState(() => getLocalDateString(new Date()));
   const [campoObservacoesAtivoInput, setCampoObservacoesAtivoInput] = useState(true);
   const [horariosDisponiveisSelected, setHorariosDisponiveisSelected] = useState([]);
+  const [antecedenciaMaximaDiasInput, setAntecedenciaMaximaDiasInput] = useState(7);
   const [newTimeInput, setNewTimeInput] = useState('');
   const [bulkLimitInput, setBulkLimitInput] = useState(5); // Capacidade de ajuste em massa do dia
   const [bulkStart, setBulkStart] = useState('18:00');
@@ -89,6 +91,7 @@ function AdminDashboard() {
   // Verificação de alterações não salvas
   const checkUnsavedChanges = () => {
     if (campoObservacoesAtivoInput !== (config.campo_observacoes_ativo ?? true)) return true;
+    if (antecedenciaMaximaDiasInput !== (config.antecedencia_maxima_dias ?? 7)) return true;
     if (JSON.stringify(limitesCustomizadosSelected) !== JSON.stringify(config.limites_customizados || {})) return true;
     
     // Compara dias de funcionamento
@@ -154,6 +157,7 @@ function AdminDashboard() {
     setCampoObservacoesAtivoInput(config.campo_observacoes_ativo ?? true);
     setHorariosDisponiveisSelected(config.horarios_disponiveis || []);
     setLimitesCustomizadosSelected(config.limites_customizados || {});
+    setAntecedenciaMaximaDiasInput(config.antecedencia_maxima_dias ?? 7);
     
     if (blocker.state === 'blocked') {
       blocker.proceed();
@@ -314,6 +318,28 @@ function AdminDashboard() {
     async function loadData() {
       try {
         const [bks, cfg] = await Promise.all([getAgendamentos(), getAgendaConfig()]);
+        
+        // Finaliza automaticamente agendamentos anteriores ao dia de hoje
+        const todayStr = getLocalDateString(new Date());
+        const pastBookings = bks.filter(b => b.data < todayStr && b.status !== 'Finalizado' && b.status !== 'Cancelado');
+        if (pastBookings.length > 0) {
+          const idsToFinalize = pastBookings.map(b => b.id);
+          try {
+            await supabase
+              .from('agendamentos_base')
+              .update({ status: 'Finalizado' })
+              .in('id', idsToFinalize);
+            
+            bks.forEach(b => {
+              if (idsToFinalize.includes(b.id)) {
+                b.status = 'Finalizado';
+              }
+            });
+          } catch (updateErr) {
+            console.error("Erro ao finalizar agendamentos passados no Supabase:", updateErr);
+          }
+        }
+
         setBookings(bks);
         setConfig(cfg);
         setVagasPadraoInput(cfg.vagas_padrao);
@@ -321,6 +347,7 @@ function AdminDashboard() {
         setCampoObservacoesAtivoInput(cfg.campo_observacoes_ativo ?? true);
         setHorariosDisponiveisSelected(cfg.horarios_disponiveis || []);
         setLimitesCustomizadosSelected(cfg.limites_customizados || {});
+        setAntecedenciaMaximaDiasInput(cfg.antecedencia_maxima_dias ?? 7);
         // Atualiza o estado da conexão para sincronizar o realtime
         setUsingDb(isUsingDatabase());
 
@@ -363,6 +390,20 @@ function AdminDashboard() {
           async (payload) => {
             console.log("Alteração recebida em tempo real no Supabase!", payload);
             try {
+              // Registra o cancelamento no log de atividades se o status mudou para Cancelado via webhook
+              if (payload.eventType === 'UPDATE' && payload.new.status === 'Cancelado' && payload.old.status !== 'Cancelado') {
+                setBookings(prevBookings => {
+                  const oldBooking = prevBookings.find(b => b.id === payload.new.id);
+                  if (oldBooking) {
+                    const clientName = oldBooking.cliente_nome || 'Cliente';
+                    const dateStr = oldBooking.data ? new Date(oldBooking.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+                    const horario = oldBooking.horario || '';
+                    addActivityLog('cancel', `Reserva de ${clientName} (Data: ${dateStr} às ${horario}) foi cancelada via WhatsApp pelo cliente`);
+                  }
+                  return prevBookings;
+                });
+              }
+
               // Recarrega a lista completa
               const updatedBookings = await getAgendamentos();
               setBookings(updatedBookings);
@@ -470,7 +511,8 @@ function AdminDashboard() {
       dias_funcionamento: diasFuncionamentoSelected,
       campo_observacoes_ativo: campoObservacoesAtivoInput,
       horarios_disponiveis: sortedHours,
-      limites_customizados: limitesCustomizadosSelected
+      limites_customizados: limitesCustomizadosSelected,
+      antecedencia_maxima_dias: antecedenciaMaximaDiasInput
     };
 
     setSaveStatus({ type: 'loading', message: 'Salvando suas alterações...' });
@@ -496,6 +538,7 @@ function AdminDashboard() {
       setCampoObservacoesAtivoInput(config.campo_observacoes_ativo ?? true);
       setHorariosDisponiveisSelected(config.horarios_disponiveis || []);
       setLimitesCustomizadosSelected(config.limites_customizados || {});
+      setAntecedenciaMaximaDiasInput(config.antecedencia_maxima_dias ?? 7);
     }
   };
 
@@ -982,11 +1025,13 @@ function AdminDashboard() {
                 </thead>
                 <tbody className="divide-y divide-slate-850 text-slate-300 bg-slate-900/10">
                   {(() => {
-                    const sortedBookings = [...bookings].sort((a, b) => {
-                      const dateA = new Date(`${a.data}T${a.horario}:00`);
-                      const dateB = new Date(`${b.data}T${b.horario}:00`);
-                      return dateA - dateB;
-                    });
+                    const sortedBookings = [...bookings]
+                      .filter(b => b.status !== 'Cancelado' && b.status !== 'Finalizado')
+                      .sort((a, b) => {
+                        const dateA = new Date(`${a.data}T${a.horario}:00`);
+                        const dateB = new Date(`${b.data}T${b.horario}:00`);
+                        return dateA - dateB;
+                      });
 
                     if (sortedBookings.length === 0) {
                       return (
@@ -1125,7 +1170,7 @@ function AdminDashboard() {
                         </td>
                         {weekDates.map((date, dayIdx) => {
                           const dateStr = getLocalDateString(date);
-                          const bookingsInSlot = bookings.filter(b => b.data === dateStr && b.horario === time);
+                          const bookingsInSlot = bookings.filter(b => b.data === dateStr && b.horario === time && b.status !== 'Cancelado' && b.status !== 'Finalizado');
                           const occupiedSlots = bookingsInSlot.length;
                           const limit = config.limites_customizados?.[dateStr]?.[time] ?? config.vagas_padrao;
                           const hasException = config.limites_customizados?.[dateStr]?.[time] !== undefined;
@@ -1340,6 +1385,43 @@ function AdminDashboard() {
                 />
                 <span className="text-xs font-semibold">Exibir campo de observações no formulário de reserva</span>
               </label>
+            </div>
+
+            {/* Antecedência Máxima de Dias */}
+            <div className="space-y-2 pt-2 border-t border-slate-850">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                Limite de Dias para Agendamento Futuro
+              </label>
+              <p className="text-[10px] text-slate-500 mb-2">
+                Defina até quantos dias a partir da data atual o cliente poderá agendar uma mesa (Padrão: 7 dias).
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setAntecedenciaMaximaDiasInput(Math.max(1, antecedenciaMaximaDiasInput - 1))}
+                    className="px-3.5 py-1.5 text-slate-450 hover:text-white hover:bg-slate-900 font-black transition-all cursor-pointer select-none border-0 text-sm"
+                  >
+                    -
+                  </button>
+                  <input 
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={antecedenciaMaximaDiasInput}
+                    onChange={(e) => setAntecedenciaMaximaDiasInput(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-10 bg-transparent text-white font-mono font-extrabold text-center focus:outline-none border-0 text-xs py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setAntecedenciaMaximaDiasInput(Math.min(365, antecedenciaMaximaDiasInput + 1))}
+                    className="px-3.5 py-1.5 text-slate-450 hover:text-white hover:bg-slate-900 font-black transition-all cursor-pointer select-none border-0 text-sm"
+                  >
+                    +
+                  </button>
+                </div>
+                <span className="text-xs text-slate-400 font-semibold select-none">dias a partir de hoje</span>
+              </div>
             </div>
           </div>
 
@@ -1823,7 +1905,13 @@ function AdminDashboard() {
                 </div>
                 <div>
                   <span className="text-[10px] uppercase text-slate-400 block font-bold tracking-wider mb-1">Status</span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20 inline-block">
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border inline-block ${
+                    selectedBooking.status === 'Cancelado'
+                      ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                      : selectedBooking.status === 'Pendente'
+                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      : 'bg-green-500/10 text-green-400 border border-green-500/20'
+                  }`}>
                     {selectedBooking.status || 'Confirmado'}
                   </span>
                 </div>

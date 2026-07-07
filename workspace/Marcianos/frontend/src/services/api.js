@@ -315,6 +315,7 @@ export async function getAgendaConfig() {
         vagas_padrao: configs.vagas_padrao ?? defaultConfigs.vagas_padrao ?? 5,
         limites_customizados: configs.limites_customizados ?? defaultConfigs.limites_customizados ?? {},
         campo_observacoes_ativo: configs.campo_observacoes_ativo ?? defaultConfigs.campo_observacoes_ativo ?? true,
+        antecedencia_maxima_dias: configs.antecedencia_maxima_dias ?? defaultConfigs.antecedencia_maxima_dias ?? 7,
       };
     }
   }
@@ -326,6 +327,7 @@ export async function getAgendaConfig() {
     vagas_padrao: defaultConfigs.vagas_padrao ?? 5,
     limites_customizados: defaultConfigs.limites_customizados ?? {},
     campo_observacoes_ativo: defaultConfigs.campo_observacoes_ativo ?? true,
+    antecedencia_maxima_dias: defaultConfigs.antecedencia_maxima_dias ?? 7,
   };
 }
 

@@ -79,6 +79,18 @@ function BookingPage() {
       }
       setFormData(prev => ({ ...prev, [name]: formatted }));
     } else if (name === 'date' && value) {
+      // Valida antecedência máxima de dias
+      const maxDate = new Date();
+      const limitDays = config.antecedencia_maxima_dias ?? 7;
+      maxDate.setDate(maxDate.getDate() + limitDays - 1);
+      const maxDateStr = getLocalDateString(maxDate);
+
+      if (value > maxDateStr) {
+        alert(`Você só pode realizar agendamentos com até ${limitDays} dias de antecedência.`);
+        setFormData(prev => ({ ...prev, date: '', time: '' }));
+        return;
+      }
+
       // Valida dia de funcionamento
       const selectedDate = new Date(value + 'T00:00:00');
       const weekday = selectedDate.getDay();
@@ -116,14 +128,14 @@ function BookingPage() {
   const getNext7Days = () => {
     const days = [];
     let current = new Date();
+    const limitDays = config.antecedencia_maxima_dias ?? 7;
     
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < limitDays; i++) {
       const dayOfWeek = current.getDay();
       if (config.dias_funcionamento.includes(dayOfWeek)) {
         days.push(new Date(current));
       }
       current.setDate(current.getDate() + 1);
-      if (days.length >= 7) break;
     }
     return days;
   };
@@ -194,6 +206,12 @@ function BookingPage() {
   };
 
   const todayStr = new Date().toISOString().split('T')[0];
+  const maxDateStr = (() => {
+    const maxDate = new Date();
+    const limitDays = config.antecedencia_maxima_dias ?? 7;
+    maxDate.setDate(maxDate.getDate() + limitDays - 1);
+    return getLocalDateString(maxDate);
+  })();
 
   return (
     <div className="min-h-[85vh] flex flex-col items-center justify-center py-12 px-4 font-sans bg-slate-950 text-slate-100 relative overflow-hidden">
@@ -347,6 +365,7 @@ function BookingPage() {
                     name="date"
                     required
                     min={todayStr}
+                    max={maxDateStr}
                     value={formData.date}
                     onChange={handleInputChange}
                     onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
