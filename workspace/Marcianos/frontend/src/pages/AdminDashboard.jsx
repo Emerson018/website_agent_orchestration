@@ -10,6 +10,7 @@ const getLocalDateString = (date) => {
 
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('agenda'); // 'agenda' | 'config'
+  const [currentPage, setCurrentPage] = useState(1);
   const [agendaViewMode, setAgendaViewMode] = useState('grid'); // 'grid' | 'table'
   const [bookings, setBookings] = useState([]);
   const [toasts, setToasts] = useState([]);
@@ -146,6 +147,7 @@ function AdminDashboard() {
     } else {
       setActiveTab(newTab);
       setPendingTabChange(null);
+      setCurrentPage(1);
     }
   };
 
@@ -164,6 +166,7 @@ function AdminDashboard() {
     } else if (pendingTabChange) {
       setActiveTab(pendingTabChange);
       setPendingTabChange(null);
+      setCurrentPage(1);
     }
   };
 
@@ -1788,6 +1791,7 @@ function AdminDashboard() {
                 if (window.confirm("Deseja realmente limpar todo o histórico de ações?")) {
                   setActivityLogs([]);
                   localStorage.removeItem('admin_activity_logs');
+                  setCurrentPage(1);
                 }
               }}
               className="px-4 py-2 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/20 hover:border-transparent rounded-xl text-xs font-bold transition-all cursor-pointer border-0"
@@ -1796,66 +1800,129 @@ function AdminDashboard() {
             </button>
           </div>
 
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-            {activityLogs.length === 0 ? (
-              <p className="text-xs text-slate-500 italic text-center py-10">Nenhuma ação registrada no histórico de atividades.</p>
-            ) : (
-              <div className="relative border-l-2 border-slate-800 ml-4 pl-6 space-y-6">
-                {activityLogs.map(log => {
-                  const logDate = new Date(log.timestamp);
-                  const formattedDateTime = `${logDate.toLocaleDateString('pt-BR')} às ${logDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
-                  
-                  // Escolhe cores baseadas no tipo de ação
-                  let colorClass = 'bg-slate-800 border-slate-700 text-slate-400';
-                  let badgeText = 'Geral';
-                  
-                  if (log.actionType === 'create') {
-                    colorClass = 'bg-emerald-500/15 border-emerald-500/30 text-emerald-455';
-                    badgeText = 'Novo Agendamento';
-                  } else if (log.actionType === 'cancel') {
-                    colorClass = 'bg-red-500/15 border-red-500/30 text-red-455';
-                    badgeText = 'Cancelamento';
-                  } else if (log.actionType === 'config_save') {
-                    colorClass = 'bg-primary/15 border-primary/30 text-primary-400';
-                    badgeText = 'Configurações';
-                  } else if (log.actionType === 'override_limit' || log.actionType === 'remove_override') {
-                    colorClass = 'bg-amber-500/15 border-amber-500/30 text-amber-455';
-                    badgeText = 'Ajuste de Vagas';
-                  } else if (log.actionType === 'add_time' || log.actionType === 'remove_time') {
-                    colorClass = 'bg-sky-500/15 border-sky-500/30 text-sky-455';
-                    badgeText = 'Horários';
-                  }
+          {(() => {
+            const logsPerPage = 20;
+            const totalPages = Math.ceil(activityLogs.length / logsPerPage);
+            const startIndex = (currentPage - 1) * logsPerPage;
+            const endIndex = startIndex + logsPerPage;
+            const paginatedLogs = activityLogs.slice(startIndex, endIndex);
 
-                  return (
-                    <div key={log.id} className="relative group/log">
-                      {/* Ponto indicador da linha do tempo */}
-                      <span className={`absolute -left-[31px] top-1.5 w-4 h-4 rounded-full border-2 bg-slate-950 flex items-center justify-center transition-transform group-hover/log:scale-110 ${
-                        log.actionType === 'create' ? 'border-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' :
-                        log.actionType === 'cancel' ? 'border-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]' :
-                        log.actionType === 'config_save' ? 'border-primary shadow-[0_0_6px_rgba(99,102,241,0.5)]' :
-                        log.actionType === 'add_time' || log.actionType === 'remove_time' ? 'border-sky-500 shadow-[0_0_6px_rgba(14,165,233,0.5)]' :
-                        'border-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.5)]'
-                      }`} />
+            return (
+              <>
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                  {activityLogs.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic text-center py-10">Nenhuma ação registrada no histórico de atividades.</p>
+                  ) : (
+                    <div className="relative border-l-2 border-slate-800 ml-4 pl-6 space-y-6">
+                      {paginatedLogs.map(log => {
+                        const logDate = new Date(log.timestamp);
+                        const formattedDateTime = `${logDate.toLocaleDateString('pt-BR')} às ${logDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+                        
+                        // Escolhe cores baseadas no tipo de ação
+                        let colorClass = 'bg-slate-800 border-slate-700 text-slate-400';
+                        let badgeText = 'Geral';
+                        
+                        if (log.actionType === 'create') {
+                          colorClass = 'bg-emerald-500/15 border-emerald-500/30 text-emerald-455';
+                          badgeText = 'Novo Agendamento';
+                        } else if (log.actionType === 'cancel') {
+                          colorClass = 'bg-red-500/15 border-red-500/30 text-red-455';
+                          badgeText = 'Cancelamento';
+                        } else if (log.actionType === 'config_save') {
+                          colorClass = 'bg-primary/15 border-primary/30 text-primary-400';
+                          badgeText = 'Configurações';
+                        } else if (log.actionType === 'override_limit' || log.actionType === 'remove_override') {
+                          colorClass = 'bg-amber-500/15 border-amber-500/30 text-amber-455';
+                          badgeText = 'Ajuste de Vagas';
+                        } else if (log.actionType === 'add_time' || log.actionType === 'remove_time') {
+                          colorClass = 'bg-sky-500/15 border-sky-500/30 text-sky-455';
+                          badgeText = 'Horários';
+                        }
 
-                      <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-2xl space-y-2 hover:border-slate-800 transition-all">
-                        <div className="flex justify-between items-center flex-wrap gap-2">
-                          <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${colorClass}`}>
-                            {badgeText}
-                          </span>
-                          <span className="text-[10px] text-slate-500 font-mono">
-                            {formattedDateTime}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-350 leading-relaxed font-medium">
-                          {log.details}
-                        </p>
-                      </div>
+                        return (
+                          <div key={log.id} className="relative group/log">
+                            {/* Ponto indicador da linha do tempo */}
+                            <span className={`absolute -left-[31px] top-1.5 w-4 h-4 rounded-full border-2 bg-slate-950 flex items-center justify-center transition-transform group-hover/log:scale-110 ${
+                              log.actionType === 'create' ? 'border-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' :
+                              log.actionType === 'cancel' ? 'border-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]' :
+                              log.actionType === 'config_save' ? 'border-primary shadow-[0_0_6px_rgba(99,102,241,0.5)]' :
+                              log.actionType === 'add_time' || log.actionType === 'remove_time' ? 'border-sky-500 shadow-[0_0_6px_rgba(14,165,233,0.5)]' :
+                              'border-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.5)]'
+                            }`} />
+
+                            <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-2xl space-y-2 hover:border-slate-800 transition-all">
+                              <div className="flex justify-between items-center flex-wrap gap-2">
+                                <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${colorClass}`}>
+                                  {badgeText}
+                                </span>
+                                <span className="text-[10px] text-slate-500 font-mono">
+                                  {formattedDateTime}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-350 leading-relaxed font-medium">
+                                {log.details}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                  )}
+                </div>
+
+                {/* Paginação */}
+                {totalPages > 1 && (
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t border-slate-850 select-none">
+                    <span className="text-xs text-slate-500 font-medium">
+                      Exibindo {startIndex + 1} a {Math.min(endIndex, activityLogs.length)} de {activityLogs.length} atividades
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        className={`px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer select-none active:scale-95 border-slate-800/80 ${
+                          currentPage === 1
+                            ? 'bg-slate-900/40 text-slate-650 cursor-not-allowed opacity-50'
+                            : 'bg-slate-950 text-slate-300 hover:text-white hover:border-slate-700'
+                        }`}
+                      >
+                        ← Anterior
+                      </button>
+                      <div className="flex items-center gap-1.5">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                          <button
+                            key={pageNum}
+                            type="button"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`w-8 h-8 flex items-center justify-center text-xs font-bold rounded-xl border transition-all cursor-pointer select-none active:scale-95 ${
+                              currentPage === pageNum
+                                ? 'bg-gradient-to-br from-indigo-600 to-primary text-white border-indigo-500 shadow-md font-black'
+                                : 'bg-slate-950 border-slate-800/80 text-slate-450 hover:text-slate-200 hover:border-slate-700'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        className={`px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer select-none active:scale-95 border-slate-800/80 ${
+                          currentPage === totalPages
+                            ? 'bg-slate-900/40 text-slate-650 cursor-not-allowed opacity-50'
+                            : 'bg-slate-950 text-slate-300 hover:text-white hover:border-slate-700'
+                        }`}
+                      >
+                        Próxima →
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       )}
 
