@@ -115,6 +115,24 @@ function BookingPage() {
     // Verifica capacidade para a data e slot
     const limit = config.limites_customizados?.[formData.date]?.[timeSlot] ?? config.vagas_padrao;
 
+    // Se a data selecionada for no passado
+    const todayStr = getLocalDateString(new Date());
+    if (formData.date < todayStr) {
+      return { available: false, remaining: 0, limit };
+    }
+
+    // Se a data selecionada for hoje, verifica se o horário já passou
+    if (formData.date === todayStr) {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
+      
+      if (slotHour < currentHour || (slotHour === currentHour && slotMinute <= currentMinute)) {
+        return { available: false, remaining: 0, limit };
+      }
+    }
+
     // Filtra agendamentos na mesma data e slot
     const bookingsInSlot = bookings.filter(b => b.data === formData.date && b.horario === timeSlot);
     const occupiedSlots = bookingsInSlot.length;
@@ -205,7 +223,7 @@ function BookingPage() {
     }
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateString(new Date());
   const maxDateStr = (() => {
     const maxDate = new Date();
     const limitDays = config.antecedencia_maxima_dias ?? 7;

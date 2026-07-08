@@ -192,7 +192,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.all();\nlet redisValue = null;\nif (input.length > 0 && input[0].json) {\n  const keys = Object.keys(input[0].json);\n  for (const k of keys) {\n    if (k !== 'error' && input[0].json[k]) {\n      redisValue = input[0].json[k];\n      break;\n    }\n  }\n}\n\nlet isAwaitingCancellation = false;\nlet bookingId = null;\nlet clientName = null;\nlet bookingInicio = null;\n\nif (redisValue && typeof redisValue === 'string' && redisValue.startsWith('awaiting_cancellation')) {\n  const parts = redisValue.split('|');\n  isAwaitingCancellation = true;\n  bookingId = parts[1] || null;\n  clientName = parts[2] || null;\n  bookingInicio = parts[3] || null;\n}\n\nreturn [\n  {\n    json: {\n      isAwaitingCancellation,\n      bookingId,\n      clientName,\n      bookingInicio\n    }\n  }\n];"
+        "jsCode": "const input = $input.all();\nlet redisValue = null;\nif (input.length > 0 && input[0].json) {\n  const keys = Object.keys(input[0].json);\n  for (const k of keys) {\n    if (k !== 'error' && input[0].json[k]) {\n      redisValue = input[0].json[k];\n      break;\n    }\n  }\n}\n\nlet isAwaitingCancellation = false;\nlet isAwaiting1hConfirmation = false;\nlet bookingId = null;\nlet clientName = null;\nlet bookingInicio = null;\n\nif (redisValue && typeof redisValue === 'string') {\n  if (redisValue.startsWith('awaiting_cancellation')) {\n    const parts = redisValue.split('|');\n    isAwaitingCancellation = true;\n    bookingId = parts[1] || null;\n    clientName = parts[2] || null;\n    bookingInicio = parts[3] || null;\n  } else if (redisValue.startsWith('awaiting_1h_confirmation')) {\n    const parts = redisValue.split('|');\n    isAwaiting1hConfirmation = true;\n    bookingId = parts[1] || null;\n    clientName = parts[2] || null;\n    bookingInicio = parts[3] || null;\n  }\n}\n\nconst hasActiveState = isAwaitingCancellation || isAwaiting1hConfirmation;\n\nreturn [\n  {\n    json: {\n      isAwaitingCancellation,\n      isAwaiting1hConfirmation,\n      hasActiveState,\n      bookingId,\n      clientName,\n      bookingInicio\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -214,7 +214,7 @@
           },
           "conditions": [
             {
-              "leftValue": "={{ $json.isAwaitingCancellation }}",
+              "leftValue": "={{ $json.hasActiveState }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -233,6 +233,37 @@
       ],
       "id": "if-is-confirming-cancellation",
       "name": "Verificar Estado"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.isAwaiting1hConfirmation }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1520,
+        280
+      ],
+      "id": "if-state-type-1h",
+      "name": "Verificar Tipo Estado"
     },
     {
       "parameters": {
@@ -373,7 +404,7 @@
       "typeVersion": 3.4,
       "position": [
         1540,
-        100
+        50
       ],
       "id": "switch-menu-options",
       "name": "Switch Menu"
@@ -685,7 +716,7 @@
             },
             {
               "name": "inicio",
-              "value": "=gte.{{ new Date().toISOString().split('T')[0] }}T00:00:00"
+              "value": "=gte.{{ new Date(new Date().getTime() - 3*60*60*1000).toISOString().split('T')[0] }}T00:00:00"
             }
           ]
         },
@@ -961,7 +992,7 @@
         "operation": "Send Text",
         "session": "default",
         "chatId": "={{ $json.body.chatId }}",
-        "text": "=Olá, *{{ $json.body.name }}*! 🚀\n\nSua reserva foi confirmada com sucesso em nossa agenda!\n\n📍 *Local:* {{ $json.body.establishment_name }}\n📅 *Data:* {{ new Date($json.body.date + 'T00:00:00').toLocaleDateString('pt-BR') }}\n⏰ *Horário:* {{ $json.body.time }}\n👥 *Mesa para:* {{ $json.body.guests }} {{ parseInt($json.body.guests) === 1 ? 'pessoa' : 'pessoas' }}\n\n📍 *Endereço:* {{ $json.body.establishment_address }}\n📞 *Contato:* {{ $json.body.establishment_phone }}\n\nCaso precise alterar ou cancelar seu agendamento, entre em contato respondendo a esta mensagem. Te esperamos lá! 🍕🚲",
+        "text": "=Olá, *{{ $json.body.name }}*! 🚀\n\nSua reserva foi cadastrada em nossa agenda e está com status *Agendado*!\n\n📍 *Local:* {{ $json.body.establishment_name }}\n📅 *Data:* {{ new Date($json.body.date + 'T00:00:00').toLocaleDateString('pt-BR') }}\n⏰ *Horário:* {{ $json.body.time }}\n👥 *Mesa para:* {{ $json.body.guests }} {{ parseInt($json.body.guests) === 1 ? 'pessoa' : 'pessoas' }}\n\n📍 *Endereço:* {{ $json.body.establishment_address }}\n📞 *Contato:* {{ $json.body.establishment_phone }}\n\nFaremos uma confirmação via WhatsApp faltando 1 hora para a sua mesa! Caso precise alterar ou cancelar antes, basta responder a esta mensagem. Te esperamos lá! 🍕🚲",
         "requestOptions": {}
       },
       "type": "n8n-nodes-waha.WAHA",
@@ -1004,8 +1035,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1540,
-        320
+        1745,
+        180
       ],
       "id": "if-confirm-cancel-yes",
       "name": "Confirmou Cancelamento?"
@@ -1044,8 +1075,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1750,
-        260
+        1950,
+        120
       ],
       "id": "supabase-patch-cancel",
       "name": "Cancelar no Supabase"
@@ -1058,8 +1089,8 @@
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
-        1950,
-        260
+        2150,
+        120
       ],
       "id": "redis-delete-state-success",
       "name": "Limpar Estado Redis (Sucesso)",
@@ -1082,8 +1113,8 @@
       "type": "n8n-nodes-waha.WAHA",
       "typeVersion": 202411,
       "position": [
-        2150,
-        260
+        2350,
+        120
       ],
       "id": "waha-confirm-cancel-success",
       "name": "Confirmar Cancelamento WAHA",
@@ -1119,8 +1150,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1750,
-        420
+        1950,
+        240
       ],
       "id": "if-confirm-cancel-no",
       "name": "Desistiu Cancelamento?"
@@ -1133,8 +1164,8 @@
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
-        1950,
-        420
+        2150,
+        240
       ],
       "id": "redis-delete-state-cancel",
       "name": "Limpar Estado Redis (Desistiu)",
@@ -1157,8 +1188,8 @@
       "type": "n8n-nodes-waha.WAHA",
       "typeVersion": 202411,
       "position": [
-        2150,
-        420
+        2350,
+        240
       ],
       "id": "waha-cancel-abort",
       "name": "Desistir Cancelamento WAHA",
@@ -1181,11 +1212,450 @@
       "type": "n8n-nodes-waha.WAHA",
       "typeVersion": 202411,
       "position": [
-        1950,
-        560
+        2150,
+        360
       ],
       "id": "waha-cancel-invalid-option",
       "name": "Instrucoes Confirmacao WAHA",
+      "credentials": {
+        "wahaApi": {
+          "id": "7dEWP8lqAufzutB1",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Dados').item.json.message.trim() }}",
+              "rightValue": "1",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1745,
+        480
+      ],
+      "id": "if-confirm-booking-yes-1h",
+      "name": "Confirmou Comparecimento 1h?"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co/rest/v1/agendamentos_base",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "=eq.{{ $('Analisar Estado').item.json.bookingId }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"status\": \"Confirmado\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1950,
+        420
+      ],
+      "id": "supabase-patch-confirm-1h",
+      "name": "Confirmar no Supabase 1h"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=bot:state:{{ $('Dados').item.json.chatId }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2150,
+        420
+      ],
+      "id": "redis-delete-state-confirm-1h",
+      "name": "Limpar Estado Redis 1h (Confirmado)",
+      "credentials": {
+        "redis": {
+          "id": "ioxUl6ZvsT7Wd4iM",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('Dados').item.json.session }}",
+        "chatId": "={{ $('Dados').item.json.chatId }}",
+        "text": "=Excelente! Seu agendamento foi **CONFIRMADO**. Te esperamos lá! 🍕🚲",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        2350,
+        420
+      ],
+      "id": "waha-confirm-success-1h",
+      "name": "Confirmar Comparecimento WAHA",
+      "credentials": {
+        "wahaApi": {
+          "id": "7dEWP8lqAufzutB1",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Dados').item.json.message.trim() }}",
+              "rightValue": "2",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1950,
+        540
+      ],
+      "id": "if-confirm-booking-no-1h",
+      "name": "Cancelou Comparecimento 1h?"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co/rest/v1/agendamentos_base",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "=eq.{{ $('Analisar Estado').item.json.bookingId }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"status\": \"Cancelado\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2150,
+        540
+      ],
+      "id": "supabase-patch-cancel-1h",
+      "name": "Cancelar no Supabase 1h"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=bot:state:{{ $('Dados').item.json.chatId }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2350,
+        540
+      ],
+      "id": "redis-delete-state-cancel-1h",
+      "name": "Limpar Estado Redis 1h (Cancelado)",
+      "credentials": {
+        "redis": {
+          "id": "ioxUl6ZvsT7Wd4iM",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('Dados').item.json.session }}",
+        "chatId": "={{ $('Dados').item.json.chatId }}",
+        "text": "=Confirmado! Seu agendamento foi cancelado com sucesso. ❌\n\nCaso queira realizar um novo agendamento, digite *1*!",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        2550,
+        540
+      ],
+      "id": "waha-cancel-success-1h",
+      "name": "Cancelar Comparecimento WAHA",
+      "credentials": {
+        "wahaApi": {
+          "id": "7dEWP8lqAufzutB1",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('Dados').item.json.session }}",
+        "chatId": "={{ $('Dados').item.json.chatId }}",
+        "text": "=Por favor, responda se irá comparecer ao seu agendamento:\n\n1️⃣ - SIM, vou comparecer\n2️⃣ - NÃO, quero cancelar",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        2150,
+        660
+      ],
+      "id": "waha-invalid-option-1h",
+      "name": "Instrucoes Comparecimento WAHA",
+      "credentials": {
+        "wahaApi": {
+          "id": "7dEWP8lqAufzutB1",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        100,
+        1200
+      ],
+      "id": "schedule-trigger-1h",
+      "name": "Cron 1h Antes"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co/rest/v1/agendamentos_base",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "id,inicio,status,clientes(nome,telefone)"
+            },
+            {
+              "name": "status",
+              "value": "eq.Agendado"
+            },
+            {
+              "name": "inicio",
+              "value": "=gte.{{ new Date(new Date().getTime() - 3*60*60*1000).toISOString().split('T')[0] }}T00:00:00"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        1200
+      ],
+      "id": "supabase-query-scheduled-bookings-1h",
+      "name": "Buscar Agendamentos Agendados",
+      "settings": {
+        "alwaysOutputData": true
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const bookings = $input.all();\nconst results = [];\nconst now = new Date();\n\nfor (const item of bookings) {\n  const b = item.json;\n  if (b && b.inicio) {\n    // Ignora qualquer offset retornado pelo banco (ex: +00:00) extraindo apenas a data/hora e forçando o fuso do Brasil (-03:00)\n    const localPart = b.inicio.slice(0, 19);\n    const dateStr = localPart + '-03:00';\n    const bookingTime = new Date(dateStr);\n    const diffMs = bookingTime - now;\n    const diffMinutes = diffMs / (1000 * 60);\n    \n    // DESABILITADO TEMPORARIAMENTE PARA TESTES MANUAIS (Aceita qualquer horário)\n    if (true) {\n      const clientName = b.clientes?.nome || 'Cliente';\n      const phoneRaw = b.clientes?.telefone || '';\n      \n      let cleanPhone = phoneRaw.replace(/\\D/g, '');\n      if (cleanPhone.length > 0) {\n        if (!cleanPhone.startsWith('55')) {\n          cleanPhone = '55' + cleanPhone;\n        }\n        const chatId = `${cleanPhone}@c.us`;\n        results.push({\n          json: {\n            bookingId: b.id,\n            clientName,\n            inicio: b.inicio,\n            chatId,\n            horario: localPart.split('T')[1].slice(0, 5)\n          }\n        });\n      }\n    }\n  }\n}\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        1200
+      ],
+      "id": "filter-incoming-bookings-1h",
+      "name": "Filtrar Próximos 1h"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=bot:notified_1h:{{ $json.bookingId }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        700,
+        1200
+      ],
+      "id": "redis-check-notified-1h",
+      "name": "Verificar Notificação Enviada",
+      "credentials": {
+        "redis": {
+          "id": "ioxUl6ZvsT7Wd4iM",
+          "name": "Redis account"
+        }
+      },
+      "settings": {
+        "alwaysOutputData": true
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.all();\nconst results = [];\nfor (const item of input) {\n  if (!item.json.propertyName) {\n    results.push(item);\n  }\n}\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        1200
+      ],
+      "id": "if-notified-not-sent-1h",
+      "name": "Filtrar Não Enviados"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=bot:notified_1h:{{ $('Filtrar Próximos 1h').item.json.bookingId }}",
+        "value": "true",
+        "ttl": 7200
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        1100
+      ],
+      "id": "redis-save-notified-1h",
+      "name": "Salvar Notificado Redis",
+      "credentials": {
+        "redis": {
+          "id": "ioxUl6ZvsT7Wd4iM",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=bot:state:{{ $('Filtrar Próximos 1h').item.json.chatId }}",
+        "value": "=awaiting_1h_confirmation|{{ $('Filtrar Próximos 1h').item.json.bookingId }}|{{ $('Filtrar Próximos 1h').item.json.clientName }}|{{ $('Filtrar Próximos 1h').item.json.inicio }}",
+        "ttl": 3600
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        1100
+      ],
+      "id": "redis-save-state-1h",
+      "name": "Salvar Estado Conversa 1h",
+      "credentials": {
+        "redis": {
+          "id": "ioxUl6ZvsT7Wd4iM",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "default",
+        "chatId": "={{ $('Filtrar Próximos 1h').item.json.chatId }}",
+        "text": "=Olá, *{{ $('Filtrar Próximos 1h').item.json.clientName }}*! 🕒\n\nSeu agendamento para hoje às *{{ $('Filtrar Próximos 1h').item.json.horario }}* está chegando (falta cerca de 1 hora).\n\nPor favor, confirme se você comparecerá:\n\n1️⃣ - SIM, vou comparecer\n2️⃣ - NÃO, quero cancelar",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        1500,
+        1100
+      ],
+      "id": "waha-send-alert-1h",
+      "name": "Disparar Alerta 1h WAHA",
       "credentials": {
         "wahaApi": {
           "id": "7dEWP8lqAufzutB1",
@@ -1277,7 +1747,7 @@
       "main": [
         [
           {
-            "node": "Confirmou Cancelamento?",
+            "node": "Verificar Tipo Estado",
             "type": "main",
             "index": 0
           }
@@ -1285,6 +1755,24 @@
         [
           {
             "node": "Switch Menu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Tipo Estado": {
+      "main": [
+        [
+          {
+            "node": "Confirmou Comparecimento 1h?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Confirmou Cancelamento?",
             "type": "main",
             "index": 0
           }
@@ -1575,6 +2063,163 @@
         [
           {
             "node": "Desistir Cancelamento WAHA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmou Comparecimento 1h?": {
+      "main": [
+        [
+          {
+            "node": "Confirmar no Supabase 1h",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cancelou Comparecimento 1h?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmar no Supabase 1h": {
+      "main": [
+        [
+          {
+            "node": "Limpar Estado Redis 1h (Confirmado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar Estado Redis 1h (Confirmado)": {
+      "main": [
+        [
+          {
+            "node": "Confirmar Comparecimento WAHA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancelou Comparecimento 1h?": {
+      "main": [
+        [
+          {
+            "node": "Cancelar no Supabase 1h",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Instrucoes Comparecimento WAHA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancelar no Supabase 1h": {
+      "main": [
+        [
+          {
+            "node": "Limpar Estado Redis 1h (Cancelado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar Estado Redis 1h (Cancelado)": {
+      "main": [
+        [
+          {
+            "node": "Cancelar Comparecimento WAHA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron 1h Antes": {
+      "main": [
+        [
+          {
+            "node": "Buscar Agendamentos Agendados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Agendamentos Agendados": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Próximos 1h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Próximos 1h": {
+      "main": [
+        [
+          {
+            "node": "Verificar Notificação Enviada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Notificação Enviada": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Não Enviados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Não Enviados": {
+      "main": [
+        [
+          {
+            "node": "Salvar Notificado Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Notificado Redis": {
+      "main": [
+        [
+          {
+            "node": "Salvar Estado Conversa 1h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Estado Conversa 1h": {
+      "main": [
+        [
+          {
+            "node": "Disparar Alerta 1h WAHA",
             "type": "main",
             "index": 0
           }

@@ -1089,12 +1089,16 @@ function AdminDashboard() {
                           </td>
                           <td className="p-4 text-xs">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] uppercase font-black tracking-wider ${
-                              isConfirmed 
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                              b.status === 'Cancelado'
+                                ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                : b.status === 'Confirmado'
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                                 : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                             }`}>
-                              <span className={`w-1 h-1 rounded-full ${isConfirmed ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                              {isConfirmed ? 'Confirmado' : 'Pendente'}
+                              <span className={`w-1 h-1 rounded-full ${
+                                b.status === 'Cancelado' ? 'bg-red-500' : b.status === 'Confirmado' ? 'bg-emerald-500' : 'bg-amber-500'
+                              }`} />
+                              {b.status || 'Confirmado'}
                             </span>
                           </td>
                           <td className="p-4 text-center">
@@ -1231,14 +1235,20 @@ function AdminDashboard() {
                                                   <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-1.5">
                                                       <span className={`w-1.5 h-1.5 rounded-full ${
-                                                        isConfirmed 
-                                                          ? 'bg-emerald-500 shadow-[0_0_6px_#10b981]' 
+                                                        b.status === 'Cancelado'
+                                                          ? 'bg-red-500 shadow-[0_0_6px_#ef4444]'
+                                                          : b.status === 'Confirmado'
+                                                          ? 'bg-emerald-500 shadow-[0_0_6px_#10b981]'
                                                           : 'bg-amber-500 shadow-[0_0_6px_#f59e0b]'
                                                       }`} />
                                                       <span className={`text-[9px] uppercase font-black tracking-wider ${
-                                                        isConfirmed ? 'text-emerald-450' : 'text-amber-450'
+                                                        b.status === 'Cancelado'
+                                                          ? 'text-red-400'
+                                                          : b.status === 'Confirmado'
+                                                          ? 'text-emerald-450'
+                                                          : 'text-amber-450'
                                                       }`}>
-                                                        {isConfirmed ? 'Confirmado' : 'Pendente'}
+                                                        {b.status || 'Confirmado'}
                                                       </span>
                                                     </div>
                                                     <span className="text-[9px] font-black text-slate-350 bg-slate-800/80 border border-slate-750 px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-0.5">

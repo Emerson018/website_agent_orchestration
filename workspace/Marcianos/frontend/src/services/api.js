@@ -221,7 +221,7 @@ export async function createAgendamento(bookingData) {
           cliente_id: clienteId,
           inicio: inicio,
           fim: fim,
-          status: 'Confirmado',
+          status: 'Agendado',
           valor_total: 0.00
         })
         .select('id')
@@ -264,7 +264,7 @@ export async function createAgendamento(bookingData) {
     horario: bookingData.time,
     pessoas: parseInt(bookingData.guests) || 2,
     servicoNome: 'Reserva de Mesa',
-    status: 'Confirmado',
+    status: 'Agendado',
     created_at: today
   };
   localList.push(newBooking);
