@@ -1096,10 +1096,22 @@ function AdminDashboard() {
                                 ? 'bg-red-500/10 text-red-400 border border-red-500/20'
                                 : b.status === 'Confirmado'
                                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : b.status === 'Em andamento'
+                                ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20 animate-pulse'
+                                : b.status === 'Finalizado'
+                                ? 'bg-slate-500/10 text-slate-405 border border-slate-500/20'
                                 : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                             }`}>
                               <span className={`w-1 h-1 rounded-full ${
-                                b.status === 'Cancelado' ? 'bg-red-500' : b.status === 'Confirmado' ? 'bg-emerald-500' : 'bg-amber-500'
+                                b.status === 'Cancelado'
+                                  ? 'bg-red-500'
+                                  : b.status === 'Confirmado'
+                                  ? 'bg-emerald-500'
+                                  : b.status === 'Em andamento'
+                                  ? 'bg-purple-500'
+                                  : b.status === 'Finalizado'
+                                  ? 'bg-slate-400'
+                                  : 'bg-amber-500'
                               }`} />
                               {b.status || 'Confirmado'}
                             </span>
@@ -1242,6 +1254,10 @@ function AdminDashboard() {
                                                           ? 'bg-red-500 shadow-[0_0_6px_#ef4444]'
                                                           : b.status === 'Confirmado'
                                                           ? 'bg-emerald-500 shadow-[0_0_6px_#10b981]'
+                                                          : b.status === 'Em andamento'
+                                                          ? 'bg-purple-500 shadow-[0_0_6px_#a855f7] animate-pulse'
+                                                          : b.status === 'Finalizado'
+                                                          ? 'bg-slate-400 shadow-[0_0_6px_#94a3b8]'
                                                           : 'bg-amber-500 shadow-[0_0_6px_#f59e0b]'
                                                       }`} />
                                                       <span className={`text-[9px] uppercase font-black tracking-wider ${
@@ -1249,6 +1265,10 @@ function AdminDashboard() {
                                                           ? 'text-red-400'
                                                           : b.status === 'Confirmado'
                                                           ? 'text-emerald-450'
+                                                          : b.status === 'Em andamento'
+                                                          ? 'text-purple-400'
+                                                          : b.status === 'Finalizado'
+                                                          ? 'text-slate-400'
                                                           : 'text-amber-450'
                                                       }`}>
                                                         {b.status || 'Confirmado'}
@@ -1985,9 +2005,13 @@ function AdminDashboard() {
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border inline-block ${
                     selectedBooking.status === 'Cancelado'
                       ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                      : selectedBooking.status === 'Pendente'
-                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                      : 'bg-green-500/10 text-green-400 border border-green-500/20'
+                      : selectedBooking.status === 'Confirmado'
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : selectedBooking.status === 'Em andamento'
+                      ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20 animate-pulse'
+                      : selectedBooking.status === 'Finalizado'
+                      ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
+                      : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                   }`}>
                     {selectedBooking.status || 'Confirmado'}
                   </span>

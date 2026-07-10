@@ -145,8 +145,7 @@ function MainLayout() {
           />
         </Link>
         <nav style={{ display: 'flex', alignItems: 'center' }}>
-          <Link to="/" style={navLinkStyle} className="hover:opacity-100">Início</Link>
-          <Link to="/agendar" style={navLinkStyle} className="hover:opacity-100">Agendar</Link>
+          <Link to="/" style={navLinkStyle} className="hover:opacity-100">Agendar</Link>
           <Link to="/admin" style={navLinkStyle} className="hover:opacity-100">Painel</Link>
           <button 
             type="button"

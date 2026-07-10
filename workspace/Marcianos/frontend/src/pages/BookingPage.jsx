@@ -509,16 +509,10 @@ function BookingPage() {
                   });
                   setIsSubmitted(false);
                 }}
-                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold hover:border-primary/50 hover:text-primary transition-all cursor-pointer uppercase tracking-wider"
+                className="w-full sm:w-auto px-10 py-3.5 rounded-xl bg-gradient-to-r from-indigo-650 to-primary text-white text-xs font-black shadow-md hover:brightness-110 transition-all cursor-pointer flex items-center justify-center uppercase tracking-wider border-0"
               >
-                Novo Agendamento
+                Realizar Novo Agendamento
               </button>
-              <Link 
-                to="/"
-                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-650 to-primary text-white text-xs font-black shadow-md hover:brightness-110 transition-all cursor-pointer flex items-center justify-center uppercase tracking-wider border-0"
-              >
-                Voltar ao Menu
-              </Link>
             </div>
           </div>
         )}
