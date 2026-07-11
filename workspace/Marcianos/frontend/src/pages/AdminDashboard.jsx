@@ -17,6 +17,11 @@ function AdminDashboard() {
   const [saveStatus, setSaveStatus] = useState(null); // null | { type: 'loading' | 'success' | 'error', message: string }
   const [showConfirmLeaveModal, setShowConfirmLeaveModal] = useState(false);
   const [pendingTabChange, setPendingTabChange] = useState(null);
+  const [alertModal, setAlertModal] = useState({ show: false, title: '', message: '', type: 'info' });
+
+  const showAlert = (title, message, type = 'info') => {
+    setAlertModal({ show: true, title, message, type });
+  };
 
   const [notifications, setNotifications] = useState(() => {
     try {
@@ -599,7 +604,7 @@ function AdminDashboard() {
   const handleAddHorario = () => {
     if (!newTimeInput) return;
     if (horariosDisponiveisSelected.includes(newTimeInput)) {
-      alert("Este horário já está na lista.");
+      showAlert("Aviso", "Este horário já está na lista.", "warning");
       return;
     }
     setHorariosDisponiveisSelected(prev => [...prev, newTimeInput].sort((a, b) => a.localeCompare(b)));
@@ -608,15 +613,13 @@ function AdminDashboard() {
   };
 
   const handleRemoveHorario = (timeToRemove) => {
-    if (window.confirm(`Deseja realmente remover o horário ${timeToRemove}?`)) {
-      setHorariosDisponiveisSelected(prev => prev.filter(t => t !== timeToRemove));
-      addActivityLog('remove_time', `Horário ${timeToRemove} removido da lista de horários disponíveis`);
-    }
+    setHorariosDisponiveisSelected(prev => prev.filter(t => t !== timeToRemove));
+    addActivityLog('remove_time', `Horário ${timeToRemove} removido da lista de horários disponíveis`);
   };
 
   const handleGenerateBulkHorarios = () => {
     if (!bulkStart || !bulkEnd || !bulkInterval) {
-      alert("Por favor, preencha todos os campos do gerador.");
+      showAlert("Gerador de Horários", "Por favor, preencha todos os campos do gerador.", "warning");
       return;
     }
 
@@ -628,7 +631,7 @@ function AdminDashboard() {
     const step = parseInt(bulkInterval);
     
     if (startMinutes >= endMinutes) {
-      alert("A hora de início deve ser menor que a hora de término.");
+      showAlert("Gerador de Horários", "A hora de início deve ser menor que a hora de término.", "warning");
       return;
     }
 
@@ -647,7 +650,7 @@ function AdminDashboard() {
       return Array.from(merged).sort((a, b) => a.localeCompare(b));
     });
 
-    alert(`${generated.length} horários foram gerados com sucesso! Não esqueça de clicar em "Salvar Regras Principais" abaixo/acima para gravar permanentemente.`);
+    showAlert("Sucesso!", `${generated.length} horários foram gerados com sucesso! Não esqueça de clicar em "Salvar Todas as Alterações" para gravar permanentemente.`, "success");
   };
 
   // Funções de manipulação de data para a Agenda Semanal
@@ -855,22 +858,25 @@ function AdminDashboard() {
           </div>
         </div>
 
-        {/* Total Clientes Card */}
+        {/* Total Acessos Card */}
         <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/60 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:shadow-xl hover:shadow-sky-500/5 transition-all duration-300 hover:translate-y-[-2px] group">
           <div className="flex justify-between items-start">
             <div className="space-y-1">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Clientes (Hoje)</span>
-              <p className="text-[10px] text-slate-500 font-medium">Presença estimada hoje</p>
+              <span className="text-xs font-bold text-sky-400 uppercase tracking-wider">Acessos à Agenda</span>
+              <p className="text-[10px] text-slate-500 font-medium">Cliques/visitas na página de reserva</p>
             </div>
             <div className="p-2.5 bg-sky-500/10 border border-sky-500/20 text-sky-400 rounded-xl group-hover:scale-110 transition-transform duration-300">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
             </div>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black text-white tracking-tight">{totalPessoas}</span>
-            <span className="text-[10px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full">Pessoas</span>
+            <span className="text-3xl font-black text-white tracking-tight">
+              {config.acessos_pagina_agenda || 0}
+            </span>
+            <span className="text-[10px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full">Acessos</span>
           </div>
         </div>
 
@@ -2179,6 +2185,68 @@ function AdminDashboard() {
                 className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs transition-all cursor-pointer border-0"
               >
                 Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pop-up profissional de Alertas/Informações */}
+      {alertModal.show && (
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setAlertModal(prev => ({ ...prev, show: false }));
+            }
+          }}
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 z-[120] animate-fade-in"
+        >
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl relative space-y-4 text-center">
+            <button 
+              onClick={() => setAlertModal(prev => ({ ...prev, show: false }))}
+              className="absolute top-4 right-4 text-slate-450 hover:text-white text-xl font-bold transition-colors border-0 bg-transparent cursor-pointer"
+            >
+              &times;
+            </button>
+            <div className={`mx-auto w-12 h-12 flex items-center justify-center rounded-full border ${
+              alertModal.type === 'success' 
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                : alertModal.type === 'error'
+                ? 'bg-red-500/10 border-red-500/20 text-red-400'
+                : alertModal.type === 'warning'
+                ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                : 'bg-primary/10 border-primary/20 text-primary'
+            }`}>
+              {alertModal.type === 'success' ? (
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : alertModal.type === 'error' ? (
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : alertModal.type === 'warning' ? (
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-white">{alertModal.title}</h3>
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                {alertModal.message}
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                onClick={() => setAlertModal(prev => ({ ...prev, show: false }))}
+                className="w-full py-2.5 bg-primary hover:brightness-110 text-white font-bold rounded-xl text-xs transition-all cursor-pointer border-0"
+              >
+                Entendi
               </button>
             </div>
           </div>

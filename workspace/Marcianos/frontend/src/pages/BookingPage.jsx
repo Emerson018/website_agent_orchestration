@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getAgendaConfig, getAgendamentos, createAgendamento } from '../services/api';
+import { getAgendaConfig, getAgendamentos, createAgendamento, trackPageAccess } from '../services/api';
 import aiConfig from '../../ai_config.json';
 
 const getLocalDateString = (date) => {
@@ -56,6 +56,9 @@ function BookingPage() {
         setBookings(bks);
         localStorage.setItem('cached_agenda_config', JSON.stringify(cfg));
         localStorage.setItem('cached_bookings', JSON.stringify(bks));
+        
+        // Registra o acesso de forma assíncrona
+        trackPageAccess().catch(err => console.error(err));
       } catch (err) {
         console.error("Erro ao carregar configurações de agendamento:", err);
       } finally {

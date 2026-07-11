@@ -316,6 +316,7 @@ export async function getAgendaConfig() {
         limites_customizados: configs.limites_customizados ?? defaultConfigs.limites_customizados ?? {},
         campo_observacoes_ativo: configs.campo_observacoes_ativo ?? defaultConfigs.campo_observacoes_ativo ?? true,
         antecedencia_maxima_dias: configs.antecedencia_maxima_dias ?? defaultConfigs.antecedencia_maxima_dias ?? 7,
+        acessos_pagina_agenda: configs.acessos_pagina_agenda ?? defaultConfigs.acessos_pagina_agenda ?? 0,
       };
     }
   }
@@ -328,6 +329,7 @@ export async function getAgendaConfig() {
     limites_customizados: defaultConfigs.limites_customizados ?? {},
     campo_observacoes_ativo: defaultConfigs.campo_observacoes_ativo ?? true,
     antecedencia_maxima_dias: defaultConfigs.antecedencia_maxima_dias ?? 7,
+    acessos_pagina_agenda: defaultConfigs.acessos_pagina_agenda ?? (parseInt(localStorage.getItem('mock_acessos_pagina_agenda')) || 0),
   };
 }
 
@@ -340,6 +342,7 @@ export async function saveAgendaConfig(configs) {
   if (useDatabase) {
     let hasError = false;
     for (const [chave, valor] of Object.entries(configs)) {
+      if (chave === 'acessos_pagina_agenda') continue; // Do not overwrite accesses count
       const { error } = await supabase
         .from('configuracao_agenda')
         .upsert({ chave, valor }, { onConflict: 'chave' });
@@ -354,4 +357,44 @@ export async function saveAgendaConfig(configs) {
   // Fallback Local
   localStorage.setItem('mock_configuracao_agenda', JSON.stringify(configs));
   return { success: true };
+}
+
+/**
+ * Registra o acesso na página de agendamentos.
+ */
+export async function trackPageAccess() {
+  await checkDb();
+  if (useDatabase) {
+    try {
+      const { data, error } = await supabase
+        .from('configuracao_agenda')
+        .select('valor')
+        .eq('chave', 'acessos_pagina_agenda')
+        .maybeSingle();
+
+      let currentVal = 0;
+      if (data && data.valor !== undefined && data.valor !== null) {
+        currentVal = parseInt(data.valor) || 0;
+      }
+      
+      const newVal = currentVal + 1;
+      
+      await supabase
+        .from('configuracao_agenda')
+        .upsert({ 
+          chave: 'acessos_pagina_agenda', 
+          valor: newVal,
+          atualizado_em: new Date().toISOString()
+        });
+    } catch (err) {
+      console.error("Erro ao registrar acesso no banco de dados:", err);
+    }
+  } else {
+    try {
+      const mockAccesses = parseInt(localStorage.getItem('mock_acessos_pagina_agenda')) || 0;
+      localStorage.setItem('mock_acessos_pagina_agenda', String(mockAccesses + 1));
+    } catch (e) {
+      console.error(e);
+    }
+  }
 }
