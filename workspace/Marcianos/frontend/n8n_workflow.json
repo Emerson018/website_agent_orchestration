@@ -236,7 +236,7 @@
           "parameters": [
             {
               "name": "id",
-              "value": "=eq.{{ $('Analisar Estado').item.json.bookingId }}"
+              "value": "=eq.{{ $('Analisar Estado').first().json.bookingId }}"
             }
           ]
         },
@@ -271,22 +271,38 @@
       "parameters": {
         "conditions": {
           "options": {
-            "caseSensitive": true,
+            "caseSensitive": false,
             "leftValue": "",
             "typeValidation": "strict",
             "version": 3
           },
           "conditions": [
             {
-              "leftValue": "={{ [\"não\", \"nao\", \"n\"].includes($('Dados').item.json.message.trim().toLowerCase()) }}",
-              "rightValue": true,
+              "leftValue": "={{ $('Dados').item.json.message ? $('Dados').item.json.message.trim().toLowerCase() : '' }}",
+              "rightValue": "não",
               "operator": {
-                "type": "boolean",
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $('Dados').item.json.message ? $('Dados').item.json.message.trim().toLowerCase() : '' }}",
+              "rightValue": "nao",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $('Dados').item.json.message ? $('Dados').item.json.message.trim().toLowerCase() : '' }}",
+              "rightValue": "n",
+              "operator": {
+                "type": "string",
                 "operation": "equals"
               }
             }
           ],
-          "combinator": "and"
+          "combinator": "or"
         },
         "options": {}
       },
@@ -352,7 +368,7 @@
           "parameters": [
             {
               "name": "id",
-              "value": "=eq.{{ $('Analisar Estado').item.json.bookingId }}"
+              "value": "=eq.{{ $('Analisar Estado').first().json.bookingId }}"
             }
           ]
         },
@@ -387,22 +403,30 @@
       "parameters": {
         "conditions": {
           "options": {
-            "caseSensitive": true,
+            "caseSensitive": false,
             "leftValue": "",
             "typeValidation": "strict",
             "version": 3
           },
           "conditions": [
             {
-              "leftValue": "={{ [\"sim\", \"s\"].includes($('Dados').item.json.message.trim().toLowerCase()) }}",
-              "rightValue": true,
+              "leftValue": "={{ $('Dados').item.json.message ? $('Dados').item.json.message.trim().toLowerCase() : '' }}",
+              "rightValue": "sim",
               "operator": {
-                "type": "boolean",
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $('Dados').item.json.message ? $('Dados').item.json.message.trim().toLowerCase() : '' }}",
+              "rightValue": "s",
+              "operator": {
+                "type": "string",
                 "operation": "equals"
               }
             }
           ],
-          "combinator": "and"
+          "combinator": "or"
         },
         "options": {}
       },
@@ -564,7 +588,7 @@
           "parameters": [
             {
               "name": "id",
-              "value": "=eq.{{ $('Analisar Estado').item.json.bookingId }}"
+              "value": "=eq.{{ $('Analisar Estado').first().json.bookingId }}"
             }
           ]
         },

@@ -202,3 +202,5 @@ Para testar o fluxo enviando payloads de simulação (como se novos clientes est
    ```powershell
    python testando.py
    ```
+n8n: emerson.018M@nin1337
+M@nin

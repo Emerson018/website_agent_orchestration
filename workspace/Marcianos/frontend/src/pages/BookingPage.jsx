@@ -204,9 +204,9 @@ function BookingPage() {
             payload.append('time', formData.time);
             payload.append('guests', formData.guests);
             payload.append('notes', formData.notes || '');
-            payload.append('establishment_name', aiConfig.app_name || 'Marcianos');
-            payload.append('establishment_address', aiConfig.address || '');
-            payload.append('establishment_phone', aiConfig.phone || '');
+            payload.append('establishment_name', config.app_name || aiConfig.app_name || 'Marcianos');
+            payload.append('establishment_address', config.address || aiConfig.address || '');
+            payload.append('establishment_phone', config.phone || aiConfig.phone || '');
 
             fetch(aiConfig.n8n_webhook_url, {
               method: 'POST',
@@ -464,7 +464,6 @@ function BookingPage() {
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Observações Especiais</label>
-                    <span className="text-[10px] text-slate-500 font-mono">{formData.notes.length}/50</span>
                   </div>
                   <textarea 
                     name="notes"

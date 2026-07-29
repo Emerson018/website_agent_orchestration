@@ -87,7 +87,11 @@ function initMockData() {
       horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
       vagas_padrao: 5,
       limites_customizados: {},
-      campo_observacoes_ativo: true
+      campo_observacoes_ativo: true,
+      phone2: "",
+      emoji_app: "🛸",
+      emoji_address: "📍",
+      emoji_contact: "📞"
     }));
   }
 }
@@ -127,7 +131,10 @@ export async function getAgendamentos() {
       .order('inicio', { ascending: false });
 
     if (!error && data) {
-      return data.map(item => {
+      const now = new Date();
+      const updates = [];
+
+      const mapped = data.map(item => {
         const nichoDet = Array.isArray(item.detalhes_agendamento_nicho)
           ? item.detalhes_agendamento_nicho[0]
           : item.detalhes_agendamento_nicho;
@@ -143,6 +150,32 @@ export async function getAgendamentos() {
           }
         }
 
+        let currentStatus = item.status || 'Confirmado';
+        
+        if (currentStatus !== 'Cancelado' && currentStatus !== 'Finalizado') {
+          if (item.inicio) {
+            const localPart = item.inicio.slice(0, 19);
+            const bookingTime = new Date(localPart);
+            const diffMs = now - bookingTime; // Positivo se já iniciou
+            const diffMinutes = diffMs / (1000 * 60);
+
+            if (currentStatus === 'Agendado' || currentStatus === 'Confirmado') {
+              if (diffMinutes >= 0 && diffMinutes < 40) {
+                currentStatus = 'Em andamento';
+                updates.push({ id: item.id, status: 'Em andamento' });
+              } else if (diffMinutes >= 40) {
+                currentStatus = 'Finalizado';
+                updates.push({ id: item.id, status: 'Finalizado' });
+              }
+            } else if (currentStatus === 'Em andamento') {
+              if (diffMinutes >= 40) {
+                currentStatus = 'Finalizado';
+                updates.push({ id: item.id, status: 'Finalizado' });
+              }
+            }
+          }
+        }
+
         return {
           id: item.id,
           clienteNome: item.clientes?.nome || 'Cliente Desconhecido',
@@ -155,10 +188,37 @@ export async function getAgendamentos() {
           horario: timePart,
           pessoas: nichoDet?.num_pessoas || 1,
           servicoNome: nichoDet?.tipo_servico || 'Reserva de Mesa',
-          status: item.status || 'Confirmado',
+          status: currentStatus,
           created_at: item.criado_em || `${datePart}T${timePart}:00`
         };
       });
+
+      // Dispara as atualizações no Supabase de forma assíncrona
+      if (updates.length > 0) {
+        const finalizados = updates.filter(x => x.status === 'Finalizado').map(x => x.id);
+        const emAndamento = updates.filter(x => x.status === 'Em andamento').map(x => x.id);
+        
+        (async () => {
+          try {
+            const promises = [];
+            if (finalizados.length > 0) {
+              promises.push(
+                supabase.from('agendamentos_base').update({ status: 'Finalizado' }).in('id', finalizados)
+              );
+            }
+            if (emAndamento.length > 0) {
+              promises.push(
+                supabase.from('agendamentos_base').update({ status: 'Em andamento' }).in('id', emAndamento)
+              );
+            }
+            await Promise.all(promises);
+          } catch (err) {
+            console.error("Erro ao sincronizar status passados no Supabase:", err);
+          }
+        })();
+      }
+
+      return mapped;
     }
     console.error("Erro ao buscar agendamentos do Supabase:", error);
   }
@@ -317,6 +377,14 @@ export async function getAgendaConfig() {
         campo_observacoes_ativo: configs.campo_observacoes_ativo ?? defaultConfigs.campo_observacoes_ativo ?? true,
         antecedencia_maxima_dias: configs.antecedencia_maxima_dias ?? defaultConfigs.antecedencia_maxima_dias ?? 7,
         acessos_pagina_agenda: configs.acessos_pagina_agenda ?? defaultConfigs.acessos_pagina_agenda ?? 0,
+        app_name: configs.app_name ?? defaultConfigs.app_name ?? "Marcianos",
+        description: configs.description ?? defaultConfigs.description ?? "O maior rodízio de mini burgers do universo, com boliche e diversão garantida para toda a família!",
+        address: configs.address ?? defaultConfigs.address ?? "Av. Padre Cacique, 580 - Menino Deus - Porto Alegre/RS",
+        phone: configs.phone ?? defaultConfigs.phone ?? "(51) 99523-9876",
+        phone2: configs.phone2 ?? defaultConfigs.phone2 ?? "",
+        emoji_app: configs.emoji_app ?? defaultConfigs.emoji_app ?? "🛸",
+        emoji_address: configs.emoji_address ?? defaultConfigs.emoji_address ?? "📍",
+        emoji_contact: configs.emoji_contact ?? defaultConfigs.emoji_contact ?? "📞",
       };
     }
   }
@@ -330,6 +398,14 @@ export async function getAgendaConfig() {
     campo_observacoes_ativo: defaultConfigs.campo_observacoes_ativo ?? true,
     antecedencia_maxima_dias: defaultConfigs.antecedencia_maxima_dias ?? 7,
     acessos_pagina_agenda: defaultConfigs.acessos_pagina_agenda ?? (parseInt(localStorage.getItem('mock_acessos_pagina_agenda')) || 0),
+    app_name: defaultConfigs.app_name ?? "Marcianos",
+    description: defaultConfigs.description ?? "O maior rodízio de mini burgers do universo, com boliche e diversão garantida para toda a família!",
+    address: defaultConfigs.address ?? "Av. Padre Cacique, 580 - Menino Deus - Porto Alegre/RS",
+    phone: defaultConfigs.phone ?? "(51) 99523-9876",
+    phone2: defaultConfigs.phone2 ?? "",
+    emoji_app: defaultConfigs.emoji_app ?? "🛸",
+    emoji_address: defaultConfigs.emoji_address ?? "📍",
+    emoji_contact: defaultConfigs.emoji_contact ?? "📞",
   };
 }
 

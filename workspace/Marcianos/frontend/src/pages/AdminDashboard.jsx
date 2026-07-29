@@ -83,7 +83,73 @@ function AdminDashboard() {
   const [bulkEnd, setBulkEnd] = useState('22:00');
   const [bulkInterval, setBulkInterval] = useState('30');
 
+  const [appNameInput, setAppNameInput] = useState('');
+  const [descriptionInput, setDescriptionInput] = useState('');
+  const [addressInput, setAddressInput] = useState('');
+  const [phoneInput, setPhoneInput] = useState('');
+  const [phone2Input, setPhone2Input] = useState('');
+
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [isSearchingAddress, setIsSearchingAddress] = useState(false);
+  const [showAddressDropdown, setShowAddressDropdown] = useState(false);
+
   const [usingDb, setUsingDb] = useState(false);
+
+  const formatPhoneNumber = (val) => {
+    if (!val) return '';
+    const digits = val.replace(/\D/g, '').slice(0, 11);
+    if (digits.length === 0) return '';
+    if (digits.length <= 2) return `(${digits}`;
+    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+  };
+
+  useEffect(() => {
+    if (!addressInput || addressInput.trim().length < 2) {
+      setAddressSuggestions([]);
+      return;
+    }
+
+    const defaultPlaces = [
+      "Av. Padre Cacique, 580 - Menino Deus - Porto Alegre/RS",
+      "Rua dos Andradas, 1000 - Centro Histórico - Porto Alegre/RS",
+      "Av. Nilo Peçanha, 1500 - Boa Vista - Porto Alegre/RS",
+      "Av. Ipiranga, 6681 - Partenon - Porto Alegre/RS",
+      "Rua Fernando Machado, 400 - Centro - Porto Alegre/RS",
+      "Av. Carlos Gomes, 1100 - Auxiliadora - Porto Alegre/RS",
+      "Av. Borges de Medeiros, 2000 - Praia de Belas - Porto Alegre/RS",
+      "Av. Assis Brasil, 2611 - Cristo Redentor - Porto Alegre/RS",
+      "Av. Goethe, 200 - Moinhos de Vento - Porto Alegre/RS",
+      "Av. Paulista, 1000 - Bela Vista - São Paulo/SP",
+    ];
+
+    const queryLower = addressInput.toLowerCase();
+    const matchedLocal = defaultPlaces.filter(p => p.toLowerCase().includes(queryLower));
+
+    const timer = setTimeout(async () => {
+      setIsSearchingAddress(true);
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressInput)}&countrycodes=br&limit=5`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const apiSuggestions = data.map(item => item.display_name);
+          const combined = Array.from(new Set([...matchedLocal, ...apiSuggestions])).slice(0, 6);
+          setAddressSuggestions(combined);
+        } else {
+          setAddressSuggestions(matchedLocal.slice(0, 6));
+        }
+      } catch (e) {
+        setAddressSuggestions(matchedLocal.slice(0, 6));
+      } finally {
+        setIsSearchingAddress(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [addressInput]);
 
   // Sincroniza o bulkLimitInput com o limite do dia selecionado
   useEffect(() => {
@@ -94,16 +160,37 @@ function AdminDashboard() {
     }
   }, [exData, config]);
 
+  // Função utilitária para resetar todos os inputs locais para o valor salvo da configuração
+  const resetLocalInputsToSavedConfig = (targetConfig = config) => {
+    if (!targetConfig) return;
+    setDiasFuncionamentoSelected(targetConfig.dias_funcionamento || []);
+    setCampoObservacoesAtivoInput(targetConfig.campo_observacoes_ativo ?? true);
+    setHorariosDisponiveisSelected(targetConfig.horarios_disponiveis || []);
+    setLimitesCustomizadosSelected(targetConfig.limites_customizados || {});
+    setAntecedenciaMaximaDiasInput(targetConfig.antecedencia_maxima_dias ?? 7);
+    setAppNameInput(targetConfig.app_name || '');
+    setDescriptionInput(targetConfig.description || '');
+    setAddressInput(targetConfig.address || '');
+    setPhoneInput(targetConfig.phone ? formatPhoneNumber(targetConfig.phone) : '');
+    setPhone2Input(targetConfig.phone2 ? formatPhoneNumber(targetConfig.phone2) : '');
+  };
+
   // Verificação de alterações não salvas
   const checkUnsavedChanges = () => {
+    if (!config) return false;
     if (campoObservacoesAtivoInput !== (config.campo_observacoes_ativo ?? true)) return true;
     if (antecedenciaMaximaDiasInput !== (config.antecedencia_maxima_dias ?? 7)) return true;
+    if (appNameInput !== (config.app_name || '')) return true;
+    if (descriptionInput !== (config.description || '')) return true;
+    if (addressInput !== (config.address || '')) return true;
+    if (phoneInput !== (config.phone ? formatPhoneNumber(config.phone) : '')) return true;
+    if (phone2Input !== (config.phone2 ? formatPhoneNumber(config.phone2) : '')) return true;
     if (JSON.stringify(limitesCustomizadosSelected) !== JSON.stringify(config.limites_customizados || {})) return true;
     
     // Compara dias de funcionamento
-    if (diasFuncionamentoSelected.length !== config.dias_funcionamento.length) return true;
+    if (diasFuncionamentoSelected.length !== (config.dias_funcionamento || []).length) return true;
     const sortedSelectedDays = [...diasFuncionamentoSelected].sort();
-    const sortedConfigDays = [...config.dias_funcionamento].sort();
+    const sortedConfigDays = [...(config.dias_funcionamento || [])].sort();
     for (let i = 0; i < sortedSelectedDays.length; i++) {
       if (sortedSelectedDays[i] !== sortedConfigDays[i]) return true;
     }
@@ -159,12 +246,8 @@ function AdminDashboard() {
   const handleConfirmLeave = () => {
     setShowConfirmLeaveModal(false);
     
-    // Descarta alterações redefinindo os inputs locais para a configuração ativa salva
-    setDiasFuncionamentoSelected(config.dias_funcionamento);
-    setCampoObservacoesAtivoInput(config.campo_observacoes_ativo ?? true);
-    setHorariosDisponiveisSelected(config.horarios_disponiveis || []);
-    setLimitesCustomizadosSelected(config.limites_customizados || {});
-    setAntecedenciaMaximaDiasInput(config.antecedencia_maxima_dias ?? 7);
+    // Descarta todas as alterações redefinindo TODOS os inputs locais para a configuração ativa salva
+    resetLocalInputsToSavedConfig();
     
     if (blocker.state === 'blocked') {
       blocker.proceed();
@@ -327,26 +410,7 @@ function AdminDashboard() {
       try {
         const [bks, cfg] = await Promise.all([getAgendamentos(), getAgendaConfig()]);
         
-        // Finaliza automaticamente agendamentos anteriores ao dia de hoje
-        const todayStr = getLocalDateString(new Date());
-        const pastBookings = bks.filter(b => b.data < todayStr && b.status !== 'Finalizado' && b.status !== 'Cancelado');
-        if (pastBookings.length > 0) {
-          const idsToFinalize = pastBookings.map(b => b.id);
-          try {
-            await supabase
-              .from('agendamentos_base')
-              .update({ status: 'Finalizado' })
-              .in('id', idsToFinalize);
-            
-            bks.forEach(b => {
-              if (idsToFinalize.includes(b.id)) {
-                b.status = 'Finalizado';
-              }
-            });
-          } catch (updateErr) {
-            console.error("Erro ao finalizar agendamentos passados no Supabase:", updateErr);
-          }
-        }
+
 
         setBookings(bks);
         setConfig(cfg);
@@ -356,6 +420,11 @@ function AdminDashboard() {
         setHorariosDisponiveisSelected(cfg.horarios_disponiveis || []);
         setLimitesCustomizadosSelected(cfg.limites_customizados || {});
         setAntecedenciaMaximaDiasInput(cfg.antecedencia_maxima_dias ?? 7);
+        setAppNameInput(cfg.app_name || '');
+        setDescriptionInput(cfg.description || '');
+        setAddressInput(cfg.address || '');
+        setPhoneInput(cfg.phone ? formatPhoneNumber(cfg.phone) : '');
+        setPhone2Input(cfg.phone2 ? formatPhoneNumber(cfg.phone2) : '');
         // Atualiza o estado da conexão para sincronizar o realtime
         setUsingDb(isUsingDatabase());
 
@@ -520,7 +589,12 @@ function AdminDashboard() {
       campo_observacoes_ativo: campoObservacoesAtivoInput,
       horarios_disponiveis: sortedHours,
       limites_customizados: limitesCustomizadosSelected,
-      antecedencia_maxima_dias: antecedenciaMaximaDiasInput
+      antecedencia_maxima_dias: antecedenciaMaximaDiasInput,
+      app_name: appNameInput,
+      description: descriptionInput,
+      address: addressInput,
+      phone: phoneInput,
+      phone2: phone2Input
     };
 
     setSaveStatus({ type: 'loading', message: 'Salvando suas alterações...' });
@@ -542,11 +616,7 @@ function AdminDashboard() {
 
   const handleDiscardChanges = () => {
     if (window.confirm("Deseja realmente descartar todas as alterações não salvas?")) {
-      setDiasFuncionamentoSelected(config.dias_funcionamento);
-      setCampoObservacoesAtivoInput(config.campo_observacoes_ativo ?? true);
-      setHorariosDisponiveisSelected(config.horarios_disponiveis || []);
-      setLimitesCustomizadosSelected(config.limites_customizados || {});
-      setAntecedenciaMaximaDiasInput(config.antecedencia_maxima_dias ?? 7);
+      resetLocalInputsToSavedConfig();
     }
   };
 
@@ -715,14 +785,6 @@ function AdminDashboard() {
           <p className="text-xs text-slate-400 mt-1">Gerencie a agenda semanal, vagas, limites e dias de funcionamento.</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border ${
-            usingDb 
-              ? 'bg-green-500/10 text-green-400 border-green-500/20' 
-              : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-          }`}>
-            {usingDb ? 'Supabase Conectado' : 'Simulação Local ativa'}
-          </span>
-          
           {/* Botão e Menu de Notificações */}
           <div className="relative notifications-container">
             <button
@@ -808,13 +870,6 @@ function AdminDashboard() {
               </div>
             )}
           </div>
-
-          <button 
-            onClick={handleRefresh}
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
-          >
-            Atualizar
-          </button>
         </div>
       </div>
 
@@ -1372,99 +1427,149 @@ function AdminDashboard() {
 
       {/* Aba 2: Configurações */}
       {activeTab === 'config' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          {/* Configurações de Funcionamento */}
+        <div className="space-y-6">
+          {/* Card 1: Gerenciar Horários da Agenda */}
           <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl shadow-lg space-y-6">
-            <h3 className="text-xl font-bold border-b border-slate-850 pb-2">Regras de Funcionamento</h3>
-
-            {/* Dias de funcionamento */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Dias em que o Estabelecimento Abre</label>
-              <div className="grid grid-cols-2 gap-2.5">
-                {[
-                  { value: 1, label: "Segunda-feira" },
-                  { value: 2, label: "Terça-feira" },
-                  { value: 3, label: "Quarta-feira" },
-                  { value: 4, label: "Quinta-feira" },
-                  { value: 5, label: "Sexta-feira" },
-                  { value: 6, label: "Sábado" },
-                  { value: 0, label: "Domingo" }
-                ].map(day => {
-                  const isChecked = diasFuncionamentoSelected.includes(day.value);
-                  return (
-                    <label key={day.value} className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-800 hover:border-primary/20 bg-slate-950/50 cursor-pointer select-none">
-                      <input 
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => {
-                          if (isChecked) {
-                            setDiasFuncionamentoSelected(prev => prev.filter(v => v !== day.value));
-                          } else {
-                            setDiasFuncionamentoSelected(prev => [...prev, day.value]);
-                          }
-                        }}
-                        className="accent-primary size-4"
-                      />
-                      <span className="text-xs font-semibold">{day.label}</span>
-                    </label>
-                  );
-                })}
-              </div>
+            <div className="border-b border-slate-850 pb-2">
+              <h3 className="text-xl font-bold text-white">Gerenciar Horários da Agenda</h3>
+              <p className="text-xs text-slate-400 mt-1">Configure as vagas de horário disponíveis para agendamento dos clientes.</p>
             </div>
 
-            {/* Campo de Observações Ativo */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Campo de Observações</label>
-              <label className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-800 hover:border-primary/20 bg-slate-950/50 cursor-pointer select-none">
-                <input 
-                  type="checkbox"
-                  checked={campoObservacoesAtivoInput}
-                  onChange={(e) => setCampoObservacoesAtivoInput(e.target.checked)}
-                  className="accent-primary size-4"
-                />
-                <span className="text-xs font-semibold">Exibir campo de observações no formulário de reserva</span>
-              </label>
-            </div>
-
-            {/* Antecedência Máxima de Dias */}
-            <div className="space-y-2 pt-2 border-t border-slate-850">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-                Limite de Dias para Agendamento Futuro
-              </label>
-              <p className="text-[10px] text-slate-500 mb-2">
-                Defina até quantos dias a partir da data atual o cliente poderá agendar uma mesa (Padrão: 7 dias).
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setAntecedenciaMaximaDiasInput(Math.max(1, antecedenciaMaximaDiasInput - 1))}
-                    className="px-3.5 py-1.5 text-slate-450 hover:text-white hover:bg-slate-900 font-black transition-all cursor-pointer select-none border-0 text-sm"
-                  >
-                    -
-                  </button>
-                  <input 
-                    type="number"
-                    min="1"
-                    max="365"
-                    value={antecedenciaMaximaDiasInput}
-                    onChange={(e) => setAntecedenciaMaximaDiasInput(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-10 bg-transparent text-white font-mono font-extrabold text-center focus:outline-none border-0 text-xs py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setAntecedenciaMaximaDiasInput(Math.min(365, antecedenciaMaximaDiasInput + 1))}
-                    className="px-3.5 py-1.5 text-slate-450 hover:text-white hover:bg-slate-900 font-black transition-all cursor-pointer select-none border-0 text-sm"
-                  >
-                    +
-                  </button>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Lado Esquerdo: Chips de Horários Ativos */}
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Horários Ativos ({horariosDisponiveisSelected.length})</h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Estes são os horários atualmente oferecidos aos clientes no formulário.</p>
                 </div>
-                <span className="text-xs text-slate-400 font-semibold select-none">dias a partir de hoje</span>
+                {horariosDisponiveisSelected.length === 0 ? (
+                  <div className="p-6 border border-dashed border-slate-800 rounded-xl text-center">
+                    <p className="text-xs text-slate-500 italic">Nenhum horário cadastrado. Adicione horários abaixo ou use o gerador.</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2 max-h-[220px] overflow-y-auto pr-1">
+                    {horariosDisponiveisSelected.map((time) => (
+                      <div 
+                        key={time} 
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-950 border border-slate-800 hover:border-red-500/30 rounded-xl group transition-all text-xs font-mono font-bold"
+                      >
+                        <span className="text-slate-200">{time}</span>
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveHorario(time)}
+                          className="text-slate-500 hover:text-red-400 font-extrabold transition-colors cursor-pointer text-sm leading-none"
+                          title={`Remover ${time}`}
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Adicionar Individual */}
+                <div className="pt-4 border-t border-slate-850/50 space-y-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Adicionar Horário Individual</h4>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input 
+                        type="time"
+                        value={newTimeInput}
+                        onChange={(e) => setNewTimeInput(e.target.value)}
+                        onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
+                        className="w-full pl-9 pr-3 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none cursor-pointer font-semibold"
+                        style={{ colorScheme: 'dark' }}
+                      />
+                      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-500">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddHorario}
+                      className="px-4 py-2.5 bg-slate-950 border border-slate-800 hover:border-primary/50 text-white hover:text-primary font-bold rounded-xl text-xs transition-all cursor-pointer"
+                    >
+                      + Adicionar
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lado Direito: Gerador em Massa */}
+              <div className="bg-slate-950/40 border border-slate-850/50 p-4 rounded-xl space-y-4">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-350">Gerador de Horários em Massa</h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Preencha um intervalo de horas de forma automática.</p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-bold uppercase text-slate-400">Hora Início</label>
+                    <div className="relative">
+                      <input 
+                        type="time"
+                        value={bulkStart}
+                        onChange={(e) => setBulkStart(e.target.value)}
+                        onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
+                        className="w-full pl-8 pr-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none cursor-pointer font-semibold"
+                        style={{ colorScheme: 'dark' }}
+                      />
+                      <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-slate-500">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-bold uppercase text-slate-400">Hora Fim</label>
+                    <div className="relative">
+                      <input 
+                        type="time"
+                        value={bulkEnd}
+                        onChange={(e) => setBulkEnd(e.target.value)}
+                        onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
+                        className="w-full pl-8 pr-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none cursor-pointer font-semibold"
+                        style={{ colorScheme: 'dark' }}
+                      />
+                      <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-slate-500">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-bold uppercase text-slate-400">Intervalo</label>
+                    <select
+                      value={bulkInterval}
+                      onChange={(e) => setBulkInterval(e.target.value)}
+                      className="w-full px-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none cursor-pointer"
+                    >
+                      <option value="15">15 min</option>
+                      <option value="30">30 min</option>
+                      <option value="45">45 min</option>
+                      <option value="60">60 min (1h)</option>
+                      <option value="90">90 min</option>
+                      <option value="120">120 min (2h)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleGenerateBulkHorarios}
+                  className="w-full py-2.5 bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-sm"
+                >
+                  Gerar Horários
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Exceções e Bloqueio de Vagas */}
+          {/* Card 2: Exceções e Bloqueio de Vagas (ABAIXO DE GERENCIAR HORÁRIOS) */}
           <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl shadow-lg space-y-6">
             <div>
               <h3 className="text-xl font-bold text-white">Bloqueio & Ajustes de Vagas</h3>
@@ -1626,143 +1731,214 @@ function AdminDashboard() {
             </div>
           </div>
 
-          {/* Card de Gerenciamento de Horários */}
-          <div className="md:col-span-2 bg-slate-900 border border-slate-850 p-6 rounded-2xl shadow-lg space-y-6">
-            <div className="border-b border-slate-850 pb-2">
-              <h3 className="text-xl font-bold text-white">Gerenciar Horários da Agenda</h3>
-              <p className="text-xs text-slate-400 mt-1">Configure as vagas de horário disponíveis para agendamento dos clientes.</p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Lado Esquerdo: Chips de Horários Ativos */}
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Horários Ativos ({horariosDisponiveisSelected.length})</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Estes são os horários atualmente oferecidos aos clientes no formulário.</p>
+          {/* Cards de Cadastro e Regras no Mesmo Tamanho */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+            {/* Cadastro do Estabelecimento */}
+            <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl shadow-lg flex flex-col justify-between space-y-6 h-full">
+              <div className="space-y-6">
+                <div className="border-b border-slate-850 pb-2">
+                  <h3 className="text-xl font-bold text-white">Cadastro do Estabelecimento</h3>
+                  <p className="text-xs text-slate-400 mt-1">Configure o nome, descrição, endereço e telefones exibidos no rodapé do site.</p>
                 </div>
-                {horariosDisponiveisSelected.length === 0 ? (
-                  <div className="p-6 border border-dashed border-slate-800 rounded-xl text-center">
-                    <p className="text-xs text-slate-500 italic">Nenhum horário cadastrado. Adicione horários abaixo ou use o gerador.</p>
+
+                {/* Nome do Estabelecimento (Limite: 60 caracteres) */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Nome do Estabelecimento</label>
+                  <input 
+                    type="text"
+                    maxLength={60}
+                    value={appNameInput}
+                    onChange={(e) => setAppNameInput(e.target.value.slice(0, 60))}
+                    placeholder="Ex: Marcianos"
+                    className="w-full px-4 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none font-semibold"
+                  />
+                </div>
+
+                {/* Telefones de Contato (Formatados) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Telefone Principal</label>
+                    <input 
+                      type="text"
+                      value={phoneInput}
+                      onChange={(e) => setPhoneInput(formatPhoneNumber(e.target.value))}
+                      placeholder="Ex: (51) 99523-9876"
+                      maxLength={15}
+                      className="w-full px-4 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none font-mono font-semibold"
+                    />
                   </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2 max-h-[220px] overflow-y-auto pr-1">
-                    {horariosDisponiveisSelected.map((time) => (
-                      <div 
-                        key={time} 
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-950 border border-slate-800 hover:border-red-500/30 rounded-xl group transition-all text-xs font-mono font-bold"
-                      >
-                        <span className="text-slate-200">{time}</span>
-                        <button 
-                          type="button"
-                          onClick={() => handleRemoveHorario(time)}
-                          className="text-slate-500 hover:text-red-400 font-extrabold transition-colors cursor-pointer text-sm leading-none"
-                          title={`Remover ${time}`}
-                        >
-                          &times;
-                        </button>
-                      </div>
-                    ))}
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Telefone Adicional (Opcional)</label>
+                    <input 
+                      type="text"
+                      value={phone2Input}
+                      onChange={(e) => setPhone2Input(formatPhoneNumber(e.target.value))}
+                      placeholder="Ex: (51) 98888-7777"
+                      maxLength={15}
+                      className="w-full px-4 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none font-mono font-semibold"
+                    />
                   </div>
-                )}
-                
-                {/* Adicionar Individual */}
-                <div className="pt-4 border-t border-slate-850/50 space-y-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Adicionar Horário Individual</h4>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <input 
-                        type="time"
-                        value={newTimeInput}
-                        onChange={(e) => setNewTimeInput(e.target.value)}
-                        onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
-                        className="w-full pl-9 pr-3 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none cursor-pointer font-semibold"
-                        style={{ colorScheme: 'dark' }}
-                      />
-                      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-500">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </div>
+
+                {/* Endereço com Busca / Autocomplete */}
+                <div className="space-y-1.5 relative">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Endereço Completo</label>
+                  <div className="relative">
+                    <input 
+                      type="text"
+                      value={addressInput}
+                      onChange={(e) => {
+                        setAddressInput(e.target.value);
+                        setShowAddressDropdown(true);
+                      }}
+                      onFocus={() => setShowAddressDropdown(true)}
+                      placeholder="Comece a digitar o nome do lugar para escolher..."
+                      className="w-full px-4 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none font-semibold pr-10"
+                    />
+                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-500">
+                      {isSearchingAddress ? (
+                        <svg className="w-4 h-4 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                      </div>
+                      ) : (
+                        <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleAddHorario}
-                      className="px-4 py-2.5 bg-slate-950 border border-slate-800 hover:border-primary/50 text-white hover:text-primary font-bold rounded-xl text-xs transition-all cursor-pointer"
-                    >
-                      + Adicionar
-                    </button>
                   </div>
+
+                  {/* Dropdown de Sugestões */}
+                  {showAddressDropdown && addressSuggestions.length > 0 && (
+                    <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto">
+                      {addressSuggestions.map((sug, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setAddressInput(sug);
+                            setShowAddressDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-2.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-white border-b border-slate-800/50 last:border-0 transition-colors flex items-start gap-2 cursor-pointer"
+                        >
+                          <span className="shrink-0 text-slate-400 mt-0.5">📍</span>
+                          <span className="leading-tight">{sug}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Descrição (Slogan) - Formato 0/150 */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Descrição (Slogan)</label>
+                    <span className="text-[10px] font-mono text-slate-400 font-semibold">{descriptionInput.length}/150</span>
+                  </div>
+                  <textarea 
+                    rows="3"
+                    maxLength={150}
+                    value={descriptionInput}
+                    onChange={(e) => setDescriptionInput(e.target.value.slice(0, 150))}
+                    placeholder="Descrição curta que aparece no rodapé do site..."
+                    className="w-full px-4 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none font-semibold resize-none"
+                  />
                 </div>
               </div>
+            </div>
 
-              {/* Lado Direito: Gerador em Massa */}
-              <div className="bg-slate-950/40 border border-slate-850/50 p-4 rounded-xl space-y-4">
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-350">Gerador de Horários em Massa</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Preencha um intervalo de horas de forma automática.</p>
-                </div>
+            {/* Configurações de Funcionamento */}
+            <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl shadow-lg flex flex-col justify-between space-y-6 h-full">
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold border-b border-slate-850 pb-2">Regras de Funcionamento</h3>
 
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1">
-                    <label className="block text-[9px] font-bold uppercase text-slate-400">Hora Início</label>
-                    <div className="relative">
-                      <input 
-                        type="time"
-                        value={bulkStart}
-                        onChange={(e) => setBulkStart(e.target.value)}
-                        onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
-                        className="w-full pl-8 pr-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none cursor-pointer font-semibold"
-                        style={{ colorScheme: 'dark' }}
-                      />
-                      <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-slate-500">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[9px] font-bold uppercase text-slate-400">Hora Fim</label>
-                    <div className="relative">
-                      <input 
-                        type="time"
-                        value={bulkEnd}
-                        onChange={(e) => setBulkEnd(e.target.value)}
-                        onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
-                        className="w-full pl-8 pr-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none cursor-pointer font-semibold"
-                        style={{ colorScheme: 'dark' }}
-                      />
-                      <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-slate-500">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[9px] font-bold uppercase text-slate-400">Intervalo</label>
-                    <select
-                      value={bulkInterval}
-                      onChange={(e) => setBulkInterval(e.target.value)}
-                      className="w-full px-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none cursor-pointer"
-                    >
-                      <option value="15">15 min</option>
-                      <option value="30">30 min</option>
-                      <option value="45">45 min</option>
-                      <option value="60">60 min (1h)</option>
-                      <option value="90">90 min</option>
-                      <option value="120">120 min (2h)</option>
-                    </select>
+                {/* Dias de funcionamento */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Dias em que o Estabelecimento Abre</label>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {[
+                      { value: 1, label: "Segunda-feira" },
+                      { value: 2, label: "Terça-feira" },
+                      { value: 3, label: "Quarta-feira" },
+                      { value: 4, label: "Quinta-feira" },
+                      { value: 5, label: "Sexta-feira" },
+                      { value: 6, label: "Sábado" },
+                      { value: 0, label: "Domingo" }
+                    ].map(day => {
+                      const isChecked = diasFuncionamentoSelected.includes(day.value);
+                      return (
+                        <label key={day.value} className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-800 hover:border-primary/20 bg-slate-950/50 cursor-pointer select-none">
+                          <input 
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              if (isChecked) {
+                                setDiasFuncionamentoSelected(prev => prev.filter(v => v !== day.value));
+                              } else {
+                                setDiasFuncionamentoSelected(prev => [...prev, day.value]);
+                              }
+                            }}
+                            className="accent-primary size-4"
+                          />
+                          <span className="text-xs font-semibold">{day.label}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleGenerateBulkHorarios}
-                  className="w-full py-2.5 bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-sm"
-                >
-                  Gerar Horários
-                </button>
+                {/* Campo de Observações Ativo */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Campo de Observações</label>
+                  <label className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-800 hover:border-primary/20 bg-slate-950/50 cursor-pointer select-none">
+                    <input 
+                      type="checkbox"
+                      checked={campoObservacoesAtivoInput}
+                      onChange={(e) => setCampoObservacoesAtivoInput(e.target.checked)}
+                      className="accent-primary size-4"
+                    />
+                    <span className="text-xs font-semibold">Exibir campo de observações no formulário de reserva</span>
+                  </label>
+                </div>
+
+                {/* Antecedência Máxima de Dias */}
+                <div className="space-y-2 pt-2 border-t border-slate-850">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                    Limite de Dias para Agendamento Futuro
+                  </label>
+                  <p className="text-[10px] text-slate-500 mb-2">
+                    Defina até quantos dias a partir da data atual o cliente poderá agendar uma mesa (Padrão: 7 dias).
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setAntecedenciaMaximaDiasInput(Math.max(1, antecedenciaMaximaDiasInput - 1))}
+                        className="px-3.5 py-1.5 text-slate-450 hover:text-white hover:bg-slate-900 font-black transition-all cursor-pointer select-none border-0 text-sm"
+                      >
+                        -
+                      </button>
+                      <input 
+                        type="number"
+                        min="1"
+                        max="365"
+                        value={antecedenciaMaximaDiasInput}
+                        onChange={(e) => setAntecedenciaMaximaDiasInput(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-10 bg-transparent text-white font-mono font-extrabold text-center focus:outline-none border-0 text-xs py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setAntecedenciaMaximaDiasInput(Math.min(365, antecedenciaMaximaDiasInput + 1))}
+                        className="px-3.5 py-1.5 text-slate-450 hover:text-white hover:bg-slate-900 font-black transition-all cursor-pointer select-none border-0 text-sm"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <span className="text-xs text-slate-400 font-semibold select-none">dias a partir de hoje</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

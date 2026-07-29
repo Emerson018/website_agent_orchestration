@@ -1,9 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link } from 'react-router-dom';
-import config from '../../ai_config.json';
+import staticConfig from '../../ai_config.json';
 import logo from '../logo.png';
+import { getAgendaConfig } from '../services/api';
+
+const formatWorkingHours = (dias, horarios) => {
+  if (!dias || dias.length === 0) return 'Fechado';
+  
+  const weekdaysPT = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+  const sortedDays = [...dias].map(d => d === 0 ? 7 : d).sort((a, b) => a - b);
+  
+  let isConsecutive = true;
+  for (let i = 1; i < sortedDays.length; i++) {
+    if (sortedDays[i] !== sortedDays[i - 1] + 1) {
+      isConsecutive = false;
+      break;
+    }
+  }
+  
+  let daysText = '';
+  if (isConsecutive && sortedDays.length > 1) {
+    const firstDay = weekdaysPT[sortedDays[0] === 7 ? 0 : sortedDays[0]];
+    const lastDay = weekdaysPT[sortedDays[sortedDays.length - 1] === 7 ? 0 : sortedDays[sortedDays.length - 1]];
+    daysText = `${firstDay} a ${lastDay}`;
+  } else {
+    daysText = dias.map(d => weekdaysPT[d].slice(0, 3)).join(', ');
+  }
+
+  let hoursText = '';
+  if (horarios && horarios.length > 0) {
+    const sortedHours = [...horarios].sort();
+    const minHour = sortedHours[0];
+    const maxHour = sortedHours[sortedHours.length - 1];
+    hoursText = ` das ${minHour} às ${maxHour}`;
+  }
+  
+  return `${daysText}${hoursText}`;
+};
 
 function MainLayout() {
+  const [config, setConfig] = useState(staticConfig);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -28,6 +64,21 @@ function MainLayout() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY, isLockedHidden]);
+  useEffect(() => {
+    async function loadConfig() {
+      try {
+        const cfg = await getAgendaConfig();
+        setConfig(prev => ({
+          ...prev,
+          ...cfg,
+          working_hours: formatWorkingHours(cfg.dias_funcionamento, cfg.horarios_disponiveis)
+        }));
+      } catch (err) {
+        console.error("Erro ao carregar configurações dinâmicas no MainLayout:", err);
+      }
+    }
+    loadConfig();
+  }, []);
 
   const headerStyle = {
     backgroundColor: config.primary_color ? `${config.primary_color}dd` : '#6366f1dd',
@@ -184,25 +235,29 @@ function MainLayout() {
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
           <div>
             <h4 style={{ color: isMarcianos ? '#ffffff' : '#0f172a', fontWeight: '700', marginBottom: '1rem', fontSize: '1.1rem' }}>
-              {config.app_name} {isMarcianos && '🛸'}
+              {config.app_name}
             </h4>
             <p style={{ lineHeight: '1.6', fontSize: '0.85rem' }}>
-              {isMarcianos 
+              {config.description || (isMarcianos 
                 ? 'O maior rodízio de mini burgers do universo, com boliche e diversão garantida para toda a família!'
                 : 'Oferecemos uma experiência excepcional com agendamento online rápido, seguro e prático.'
-              }
+              )}
             </p>
           </div>
           <div>
-            <h4 style={{ color: isMarcianos ? '#ffffff' : '#0f172a', fontWeight: '700', marginBottom: '1rem', fontSize: '1.1rem' }}>Endereço 📍</h4>
+            <h4 style={{ color: isMarcianos ? '#ffffff' : '#0f172a', fontWeight: '700', marginBottom: '1rem', fontSize: '1.1rem' }}>
+              Endereço
+            </h4>
             <p style={{ lineHeight: '1.6', fontSize: '0.85rem' }}>
               {config.address || 'Av. Padre Cacique, 580 - Menino Deus - Porto Alegre/RS'}
             </p>
           </div>
           <div>
-            <h4 style={{ color: isMarcianos ? '#ffffff' : '#0f172a', fontWeight: '700', marginBottom: '1rem', fontSize: '1.1rem' }}>Contato & Horários 📞</h4>
+            <h4 style={{ color: isMarcianos ? '#ffffff' : '#0f172a', fontWeight: '700', marginBottom: '1rem', fontSize: '1.1rem' }}>
+              Contato & Horários
+            </h4>
             <p style={{ lineHeight: '1.6', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-              <strong>Telefone:</strong> {config.phone || '(51) 99523-9876'}
+              <strong>Telefone:</strong> {config.phone || '(51) 99523-9876'}{config.phone2 ? ` / ${config.phone2}` : ''}
             </p>
             <p style={{ lineHeight: '1.6', fontSize: '0.85rem' }}>
               <strong>Funcionamento:</strong> {config.working_hours || 'Terça a Domingo das 17h às 23h'}
