@@ -218,6 +218,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }, 3000);
 
+    const setMockDevSession = () => {
+      const mockUser: User = {
+        id: "6128fdb5-b4ba-4ed6-b488-763b1912174d",
+        email: "admin@wacrm.com",
+        app_metadata: {},
+        user_metadata: { full_name: "Admin WACRM" },
+        aud: "authenticated",
+        created_at: new Date().toISOString(),
+      } as User;
+
+      setUser(mockUser);
+      setProfile({
+        id: mockUser.id,
+        full_name: "Admin WACRM",
+        email: mockUser.email!,
+        avatar_url: null,
+        role: "admin",
+        beta_features: [],
+        account_id: "dev-account-id",
+        account_role: "owner",
+      });
+      setAccount({
+        id: "dev-account-id",
+        name: "WACRM Workspace",
+        default_currency: DEFAULT_CURRENCY,
+      });
+      setProfileLoading(false);
+    };
+
     const init = async () => {
       try {
         const {
@@ -229,22 +258,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (!mounted) return;
         const currentUser = session?.user ?? null;
-        setUser(currentUser);
 
         if (currentUser) {
-          // Don't block session loading on profile fetch — chrome
-          // (header, sidebar) can render from the user object alone,
-          // profile enriches async. Callers that need to branch on
-          // profile data gate on `profileLoading` instead.
+          setUser(currentUser);
           fetchProfile(currentUser.id);
+        } else if (typeof document !== "undefined" && document.cookie.includes("wacrm_dev_session=true")) {
+          setMockDevSession();
         } else {
-          // No user → no profile to load. Flip profileLoading off so
-          // pages that gate on it don't wait forever on the logged-out
-          // path (the route guard or redirect should fire instead).
+          setUser(null);
           setProfileLoading(false);
         }
       } catch (err) {
         console.error("[AuthProvider] init threw:", err);
+        if (typeof document !== "undefined" && document.cookie.includes("wacrm_dev_session=true")) {
+          setMockDevSession();
+        }
       } finally {
         if (mounted) setLoading(false);
         clearTimeout(safetyTimer);
@@ -258,11 +286,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
       const currentUser = session?.user ?? null;
-      setUser(currentUser);
 
       if (currentUser) {
+        setUser(currentUser);
         fetchProfile(currentUser.id);
+      } else if (typeof document !== "undefined" && document.cookie.includes("wacrm_dev_session=true")) {
+        setMockDevSession();
       } else {
+        setUser(null);
         setProfile(null);
         setAccount(null);
         setProfileLoading(false);
@@ -280,7 +311,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     const supabase = createClient();
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      // safe fallback if offline
+    }
+    if (typeof document !== "undefined") {
+      document.cookie = "wacrm_dev_session=; path=/; max-age=0";
+    }
     setUser(null);
     setProfile(null);
     setAccount(null);

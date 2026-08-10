@@ -170,7 +170,9 @@ def infra_cloner_node(state: AgentState) -> Dict[str, Any]:
     # Limpa o app_name para criar um nome de pasta seguro em snake_case/sem espaços/letra minúscula
     app_name_limpo = re.sub(r'\s+', '_', app_name)
     app_name_limpo = re.sub(r'[^a-zA-Z0-9_]', '', app_name_limpo)
-    app_name_limpo = app_name_limpo.lower()
+    app_name_limpo = app_name_limpo.lower().strip()
+    if not app_name_limpo:
+        app_name_limpo = "app_customizado"
     
     target_project = f"workspace/{app_name_limpo}"
     
@@ -312,8 +314,6 @@ export default function LandingPage() {{
 
 
 def generate_landing_page(target_path: str, reqs: Dict[str, Any], lead_raw: Dict[str, Any]):
-    is_nextjs = os.path.exists(os.path.join(target_path, "frontend", "src", "app", "layout.tsx"))
-    
     app_name = reqs.get("app_name", "AppCustomizado")
     primary_color = reqs.get("primary_color", "#D4AF37")
     secondary_color = reqs.get("secondary_color", "#1A1A1A")
@@ -349,26 +349,8 @@ def generate_landing_page(target_path: str, reqs: Dict[str, Any], lead_raw: Dict
     code = None
     if use_llm:
         try:
-            print(f"[Desenvolvedor] Gerando Landing Page customizada via LLM (Next.js: {is_nextjs})...")
-            
-            if is_nextjs:
-                system_prompt = """Você é um Engenheiro Frontend especialista em React, Next.js (App Router) e Tailwind CSS.
-Sua tarefa é criar um componente funcional React (Server Component de preferência, sem hooks de cliente a menos que estritamente necessário) e estilizado com Tailwind CSS para a página inicial (Home/LandingPage) do novo negócio do cliente.
-
-O código gerado deve ser um arquivo page.tsx React completo e autocontido (export default function LandingPage() { ... }).
-Ele deve:
-1. Seguir exatamente as diretrizes e seções propostas na análise de design da IA enviada pelo usuário.
-2. Utilizar as classes do Tailwind CSS para uma estilização premium, moderna e limpa (use sombras, gradientes, transições e micro-animações).
-3. Importar Link de 'next/link' para a ação de agendamento (use <Link href="/agendar" className="..."> para o CTA de agendamento).
-4. O design deve se adequar perfeitamente ao setor do negócio (Ex: Barbearia deve ter visual rústico/premium com tons de couro/madeira/escuros; Odontologia deve ser clean, confiável e corporativo; Estética deve ser elegante, rosa/bege, etc.).
-5. Usar as variáveis de cor de tailwind 'bg-primary' e 'text-primary' ou 'bg-secondary' e 'text-secondary' nos botões e destaques que devem herdar as cores da marca.
-6. Importar e renderizar os componentes `@/components/Header` no topo e `@/components/Footer` na parte inferior da página. Você deve ler o arquivo de configuração `ai_config.json` para obter os dados do estabelecimento (`app_name`, `primary_color`, `logo_url`, `address`, `phone`, `working_hours`) e passá-los aos componentes.
-7. Retornar APENAS o código do arquivo page.tsx, sem explicações adicionais e sem blocos de código markdown (como ```tsx ou ```). Comece direto com o código.
-8. Use apenas comentários válidos do JSX (como {/* comentário */}) e NUNCA string literals com barra de comentários (como {"/* comentário */"}) ou comentários HTML, pois eles são renderizados incorretamente como texto na tela.
-9. Para aplicar as cores customizadas da marca de forma dinâmica, você pode ler o arquivo de configuração ai_config.json na raiz do projeto Next.js no próprio servidor, usando fs do Node.js, ou você pode injetar as cores inline usando style={{ backgroundColor: primary_color }} etc. Recomendamos injetar as cores diretamente no JSX usando as variáveis dinâmicas de cores passadas no prompt para maior robustez (ex: style={{{{ backgroundColor: "{primary_color}" }}}}).
-"""
-            else:
-                system_prompt = """Você é um Engenheiro Frontend especialista em React e Tailwind CSS.
+            print("[Desenvolvedor] Gerando Landing Page customizada em React + Vite via LLM...")
+            system_prompt = """Você é um Engenheiro Frontend especialista em React (Vite) e Tailwind CSS.
 Sua tarefa é criar um componente funcional React e estilizado com Tailwind CSS para a página de destino (LandingPage) do novo negócio do cliente.
 
 O código gerado deve ser um arquivo LandingPage.jsx React completo e autocontido (export default function LandingPage() { ... }).
@@ -376,12 +358,11 @@ Ele deve:
 1. Seguir exatamente as diretrizes e seções propostas na análise de design da IA enviada pelo usuário.
 2. Utilizar as classes do Tailwind CSS para uma estilização premium, moderna e limpa (use sombras, gradientes, transições e micro-animações).
 3. Importar Link de 'react-router-dom' para a ação de agendamento (use <Link to="/agendar" className="..."> para o CTA de agendamento).
-4. O design deve se adequar perfeitamente ao setor do negócio (Ex: Barbearia deve ter visual rústico/premium com tons de couro/madeira/escuros; Odontologia deve ser clean, confiável e corporativo; Estética deve ser elegante, rosa/bege, etc.).
+4. O design deve se adequar perfeitamente ao setor do negócio (Ex: Barbearia deve ter visual rústico/premium; Odontologia clean e confiável; Estética elegante, etc.).
 5. Usar as variáveis de cor de tailwind 'bg-primary' e 'text-primary' ou 'bg-secondary' e 'text-secondary' nos botões e destaques que devem herdar as cores da marca.
 6. Retornar APENAS o código do arquivo LandingPage.jsx, sem explicações adicionais e sem blocos de código markdown (como ```jsx ou ```). Comece direto com o código.
-7. Use apenas comentários válidos do JSX (como {/* comentário */}) e NUNCA string literals com barra de comentários (como {"/* comentário */"}) ou comentários HTML, pois eles são renderizados incorretamente como texto na tela.
+7. Use apenas comentários válidos do JSX (como {/* comentário */}) e NUNCA string literals com barra de comentários ou comentários HTML.
 """
-            
             prompt = ChatPromptTemplate.from_messages([
                 ("system", system_prompt),
                 ("user", "Informações e análises do lead:\n{mensagem}\n\nNome comercial: {app_name}\nCor Primária: {primary_color}\nCor Secundária: {secondary_color}")
@@ -403,28 +384,78 @@ Ele deve:
             code = None
             
     if not code:
-        print(f"[Desenvolvedor] Utilizando gerador local de fallback para LandingPage (Next.js: {is_nextjs})...")
-        code = generate_fallback_landing_page_code(app_name, primary_color, secondary_color, mensagem, is_nextjs)
+        print("[Desenvolvedor] Utilizando gerador local de fallback para LandingPage em React + Vite...")
+        code = generate_fallback_landing_page_code(app_name, primary_color, secondary_color, mensagem, False)
         
-    if is_nextjs:
-        landing_page_path = os.path.join(target_path, "frontend", "src", "app", "page.tsx")
-        # Remove arquivo legado se existir de tentativas anteriores
-        legacy_path = os.path.join(target_path, "frontend", "src", "pages", "LandingPage.jsx")
-        if os.path.exists(legacy_path):
-            try:
-                os.remove(legacy_path)
-                print(f"[Desenvolvedor] Arquivo legado removido: {legacy_path}")
-                os.rmdir(os.path.dirname(legacy_path))
-                print(f"[Desenvolvedor] Pasta legada vazia removida: {os.path.dirname(legacy_path)}")
-            except Exception as rm_err:
-                pass
-    else:
-        landing_page_path = os.path.join(target_path, "frontend", "src", "pages", "LandingPage.jsx")
-        
+    landing_page_path = os.path.join(target_path, "frontend", "src", "pages", "LandingPage.jsx")
     os.makedirs(os.path.dirname(landing_page_path), exist_ok=True)
     with open(landing_page_path, 'w', encoding='utf-8') as f:
         f.write(code)
     print(f"Landing Page gerada com sucesso em: {landing_page_path}")
+
+
+def validate_and_sanitize_sql(sql_code: str) -> str:
+    if not sql_code or not sql_code.strip():
+        return ""
+        
+    blacklisted = [
+        "DROP DATABASE",
+        "DROP TABLE",
+        "TRUNCATE",
+        "ALTER ROLE",
+        "GRANT ALL",
+        "REVOKE"
+    ]
+    
+    sql_upper = sql_code.upper()
+    for item in blacklisted:
+        if item in sql_upper:
+            print(f"[Segurança SQL] ATENÇÃO: Instrução DDL proibida '{item}' detectada no SQL gerado pela IA. Descartando SQL dinâmico.")
+            return f"-- SQL descartado por violar regras de segurança DDL ({item})\n"
+            
+    return sql_code
+
+
+def provision_client_database(target_path: str, lead_raw: Dict[str, Any]):
+    supabase_url = (lead_raw.get("supabase_url") or "").strip()
+    supabase_key = (lead_raw.get("supabase_service_role_key") or lead_raw.get("supabase_anon_key") or "").strip()
+    
+    db_dir = os.path.join(target_path, "database")
+    base_sql_path = os.path.join(db_dir, "base_schema.sql")
+    ext_sql_path = os.path.join(db_dir, "ai_extension_schema.sql")
+    
+    if not supabase_url or not supabase_key:
+        print(f"\n[Supabase Single-Tenant] Nenhuma credencial de banco de dados enviada no lead. Os arquivos de schema SQL foram salvos em '{db_dir}' para execução manual.")
+        return
+        
+    print(f"\n[Supabase Single-Tenant] Credenciais detectadas. Tentando provisionar tabelas no banco: {supabase_url}...")
+    
+    try:
+        from supabase import create_client
+        client = create_client(supabase_url, supabase_key)
+        
+        sqls_to_run = []
+        if os.path.exists(base_sql_path):
+            with open(base_sql_path, 'r', encoding='utf-8') as f:
+                sqls_to_run.append(("base_schema.sql", f.read()))
+                
+        if os.path.exists(ext_sql_path):
+            with open(ext_sql_path, 'r', encoding='utf-8') as f:
+                sqls_to_run.append(("ai_extension_schema.sql", f.read()))
+                
+        for filename, sql_content in sqls_to_run:
+            if not sql_content.strip():
+                continue
+            print(f"[Supabase Single-Tenant] Aplicando {filename} no Supabase...")
+            try:
+                # Tenta executar via RPC exec_sql se configurado no Supabase
+                client.rpc("exec_sql", {"query": sql_content}).execute()
+                print(f" -> Tabela e schema de {filename} provisionados com sucesso!")
+            except Exception as rpc_err:
+                print(f" -> Conexão autenticada. (RPC exec_sql não ativo ou chave sem DDL: {rpc_err}). Arquivo {filename} salvo em 'database/' para execução no Supabase SQL Editor.")
+                
+    except Exception as e:
+        print(f"[Supabase Single-Tenant] Aviso ao conectar ao Supabase do cliente: {e}")
 
 
 def generate_niche_database_schema(target_path: str, lead_raw: Dict[str, Any]):
@@ -510,6 +541,9 @@ CREATE TABLE IF NOT EXISTS agendamentos_detalhes (
     observacoes TEXT
 );
 """
+
+    # Valida e sanitiza o código SQL gerado
+    sql_code = validate_and_sanitize_sql(sql_code)
         
     # 2. Salva o resultado gerado em ai_extension_schema.sql dentro de workspace/{nome_do_projeto}/database/
     db_dir = os.path.join(target_path, "database")
@@ -596,8 +630,9 @@ def code_injector_node(state: AgentState) -> Dict[str, Any]:
     # Geração do esquema SQL customizado para o nicho (Single-Tenant) baseado no lead_raw e no RAG
     try:
         generate_niche_database_schema(target_path, lead_raw)
+        provision_client_database(target_path, lead_raw)
     except Exception as db_err:
-        print(f"Erro ao gerar o esquema SQL customizado: {db_err}")
+        print(f"Erro ao gerar/provisionar o esquema SQL customizado: {db_err}")
 
     # Geração do contexto de arquitetura (Project Ledger) para orientar futuras manutenções
     app_name = reqs.get("app_name", "AppCustomizado")
@@ -646,7 +681,8 @@ DIRETRIZ 4: Mantenha as rotas protegidas sob o fluxo de autenticação atual.
 def qa_validator_node(state: AgentState) -> Dict[str, Any]:
     """
     Agente QA / Validador de Build (Real):
-    Executa 'npm install' e 'npm run build' na pasta do frontend clonado.
+    Executa 'npm run build' na pasta do frontend clonado.
+    Executa 'npm install' apenas se a pasta node_modules não estiver presente.
     Analisa o resultado e atualiza o estado com o status de build_success e erros.
     """
     print("\n--- [Agente: QA / Validador] ---")
@@ -656,19 +692,22 @@ def qa_validator_node(state: AgentState) -> Dict[str, Any]:
     frontend_dir = os.path.join(target_path, "frontend")
     print(f"Executando validações de QA em '{frontend_dir}' (Tentativa {attempts})...")
     
-    # 1. Executa 'npm install'
-    print("Executando 'npm install'...")
-    install_process = subprocess.run(
-        "npm install",
-        cwd=frontend_dir,
-        shell=True,
-        capture_output=True,
-        text=True
-    )
-    
-    if install_process.returncode != 0:
-        print("Erro durante 'npm install'!")
-        print(install_process.stderr)
+    # 1. Executa 'npm install' somente se node_modules não existir
+    node_modules_path = os.path.join(frontend_dir, "node_modules")
+    if not os.path.exists(node_modules_path):
+        print("node_modules ausente. Executando 'npm install'...")
+        install_process = subprocess.run(
+            "npm install",
+            cwd=frontend_dir,
+            shell=True,
+            capture_output=True,
+            text=True
+        )
+        if install_process.returncode != 0:
+            print("Erro durante 'npm install'!")
+            print(install_process.stderr)
+    else:
+        print("node_modules já presente a partir do Template Ouro. Pulando 'npm install' para ganho de velocidade.")
         
     # 2. Executa 'npm run build'
     print("Executando 'npm run build'...")

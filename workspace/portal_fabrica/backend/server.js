@@ -440,5 +440,6 @@ app.listen(PORT, () => {
   console.log(`Servidor Backend rodando com sucesso na porta ${PORT}`);
   console.log(`URL base da API: http://localhost:${PORT}`);
   console.log(`Fábrica de IA conectada em: ${SOFTWARE_FACTORY_API_URL}`);
+  console.log(`Banco Supabase conectado: ${supabaseUrl}`);
   console.log(`==================================================`);
 });

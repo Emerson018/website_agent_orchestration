@@ -1,0 +1,12 @@
+{
+  "app_name": "Barbearia Pampas",
+  "primary_color": "#1E293B",
+  "secondary_color": "#0F172A",
+  "supabase_url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co",
+  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM",
+  "logo_url": "/logo.png",
+  "address": "Av. Ipiranga, 1234. Horários: Seg a Sáb das 9h às 20h.",
+  "phone": "(51) 98888-7777. Endereço: Av. Ipiranga, 1234. Horários: Seg a Sáb das 9h às 20h.",
+  "working_hours": "Seg a Sáb das 9h às 20h.",
+  "n8n_webhook_url": "http://localhost:5678/webhook-test/booking"
+}

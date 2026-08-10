@@ -8,11 +8,10 @@ from bs4 import BeautifulSoup
 import pdfplumber
 from PIL import Image
 import pytesseract
-from sentence_transformers import SentenceTransformer
 from supabase import create_client, Client
+from dotenv import load_dotenv
 
 # Carrega as variáveis de ambiente do orquestrador
-from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
@@ -26,11 +25,17 @@ def get_supabase() -> Client:
         raise ValueError("Configurações do Supabase ausentes no arquivo .env.")
     return create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-# Inicializa o modelo de embeddings local (carrega em cache)
-# all-MiniLM-L6-v2 gera vetores de 384 dimensões
-print("[RAG] Inicializando modelo de embeddings local all-MiniLM-L6-v2...")
-embed_model = SentenceTransformer('all-MiniLM-L6-v2')
-print("[RAG] Modelo de embeddings inicializado com sucesso.")
+# Modelo de embeddings local (carregado sob demanda em cache)
+_embed_model = None
+
+def get_embed_model():
+    global _embed_model
+    if _embed_model is None:
+        print("[RAG] Inicializando modelo de embeddings local all-MiniLM-L6-v2...")
+        from sentence_transformers import SentenceTransformer
+        _embed_model = SentenceTransformer('all-MiniLM-L6-v2')
+        print("[RAG] Modelo de embeddings inicializado com sucesso.")
+    return _embed_model
 
 def clean_text(text: str) -> str:
     """Limpa quebras de linha duplicadas e espaços em excesso."""
@@ -278,6 +283,7 @@ async def run_rag_analysis_pipeline(contact_id: str):
 
         # 4. Gera embeddings locais para cada chunk
         print("[RAG] Gerando embeddings locais para os chunks...")
+        embed_model = get_embed_model()
         embeddings = embed_model.encode(chunks).tolist()
         
         # 5. Remove chunks antigos deste contato para evitar duplicatas

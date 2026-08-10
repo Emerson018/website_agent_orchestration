@@ -1,15 +1,4 @@
--- Habilitar a extensão pgcrypto para gen_random_uuid() se necessário
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
--- 1. Tabela de Configurações da Agenda
-CREATE TABLE IF NOT EXISTS configuracao_agenda (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    chave VARCHAR(255) UNIQUE NOT NULL,
-    valor JSONB NOT NULL,
-    atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- 2. Tabela de Agendamentos
+-- Tabela de Agendamentos
 CREATE TABLE IF NOT EXISTS agendamentos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     cliente_nome VARCHAR(255) NOT NULL,
@@ -22,10 +11,18 @@ CREATE TABLE IF NOT EXISTS agendamentos (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Tabela de Configurações da Agenda
+CREATE TABLE IF NOT EXISTS configuracao_agenda (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    chave VARCHAR(255) UNIQUE NOT NULL,
+    valor JSONB NOT NULL,
+    atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Inserir dados padrão de funcionamento e horários
 INSERT INTO configuracao_agenda (chave, valor)
 VALUES 
-('dias_funcionamento', '[2, 3, 4, 5, 6, 0]')
+('dias_funcionamento', '[2, 3, 4, 5, 6, 0]') -- Terça a Domingo (0=Domingo, 1=Segunda, 2=Terça...)
 ON CONFLICT (chave) DO NOTHING;
 
 INSERT INTO configuracao_agenda (chave, valor)
@@ -35,50 +32,19 @@ ON CONFLICT (chave) DO NOTHING;
 
 INSERT INTO configuracao_agenda (chave, valor)
 VALUES 
-('vagas_padrao', '5')
+('vagas_padrao', '5') -- Capacidade padrão de 5 pessoas/lugares por slot
 ON CONFLICT (chave) DO NOTHING;
 
 INSERT INTO configuracao_agenda (chave, valor)
 VALUES 
-('limites_customizados', '{}')
+('limites_customizados', '{}') -- Mapeamento de exceções
 ON CONFLICT (chave) DO NOTHING;
 
--- Habilitar Row Level Security (RLS)
-ALTER TABLE configuracao_agenda ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agendamentos ENABLE ROW LEVEL SECURITY;
+INSERT INTO configuracao_agenda (chave, valor)
+VALUES 
+('campo_observacoes_ativo', 'true') -- Exibir campo de observações por padrão
+ON CONFLICT (chave) DO NOTHING;
 
--- =====================================================================
--- Políticas para configuracao_agenda
--- =====================================================================
-CREATE POLICY "Admin total configuracao_agenda" 
-ON configuracao_agenda 
-TO authenticated 
-USING (true) 
-WITH CHECK (true);
-
-CREATE POLICY "Leitura publica configuracao_agenda" 
-ON configuracao_agenda 
-FOR SELECT 
-TO anon, authenticated 
-USING (true);
-
--- =====================================================================
--- Políticas para agendamentos
--- =====================================================================
-CREATE POLICY "Admin total agendamentos" 
-ON agendamentos 
-TO authenticated 
-USING (true) 
-WITH CHECK (true);
-
-CREATE POLICY "Insercao publica agendamentos" 
-ON agendamentos 
-FOR INSERT 
-TO anon, authenticated 
-WITH CHECK (true);
-
-CREATE POLICY "Leitura publica agendamentos" 
-ON agendamentos 
-FOR SELECT 
-TO anon, authenticated 
-USING (true);
+-- Habilitar replicação realtime para as tabelas de agendamentos
+-- Se estiver no ambiente multi-tenant, execute para a tabela: agendamentos_base
+alter publication supabase_realtime add table agendamentos;
