@@ -1,6 +1,7 @@
 import sys
 import re
 import os
+import httpx
 
 # Garante codificação UTF-8 no console do Windows para evitar UnicodeEncodeError
 if hasattr(sys.stdout, 'reconfigure'):
@@ -39,13 +40,31 @@ def parse_fallback_requirements(lead_raw: Dict[str, Any]) -> Dict[str, Any]:
         match_name = re.search(r"chamado '([^']+)'", mensagem)
     app_name = match_name.group(1) if match_name else lead_raw.get("app_name", "AppCustomizado")
     
-    # Tenta extrair a cor principal por regex
-    match_primary = re.search(r"Cor principal:\s*(#[a-fA-F0-9]{6})", mensagem)
-    primary_color = match_primary.group(1) if match_primary else "#D4AF37"
-    
-    # Tenta extrair a cor secundária por regex
-    match_secondary = re.search(r"Cor secundária:\s*(#[a-fA-F0-9]{6})", mensagem)
-    secondary_color = match_secondary.group(1) if match_secondary else "#1A1A1A"
+    # Tenta extrair a cor principal por qualquer padrão de Hex no texto
+    match_primary = re.search(r"(?:Cor principal|Cor Primária|Cor Primaria)[^#\n\r]*:\s*(#[a-fA-F0-9]{6})", mensagem, re.IGNORECASE)
+    if not match_primary:
+        match_primary = re.search(r"#[a-fA-F0-9]{6}", mensagem)
+        
+    if match_primary:
+        primary_color = match_primary.group(1) if match_primary.groups() else match_primary.group(0)
+    else:
+        # Inferência de cor inteligente por segmento de mercado (nicho)
+        msg_lower = (mensagem + " " + app_name).lower()
+        if any(x in msg_lower for x in ["odont", "dente", "sorriso", "dentist", "saude", "clinic"]):
+            primary_color = "#0EA5E9" # Sky Blue
+        elif any(x in msg_lower for x in ["barbe", "barba", "corte", "navalha", "pampas", "homem"]):
+            primary_color = "#D4AF37" # Gold / Amber
+        elif any(x in msg_lower for x in ["estetic", "beleza", "salao", "hair", "unha", "spa"]):
+            primary_color = "#EC4899" # Rose Pink
+        elif any(x in msg_lower for x in ["pet", "veterinar", "cao", "gato", "animal"]):
+            primary_color = "#F97316" # Warm Orange
+        elif any(x in msg_lower for x in ["gourmet", "comida", "restaurante", "pizz", "hambur", "cafe"]):
+            primary_color = "#EAB308" # Golden Yellow
+        else:
+            primary_color = "#6366F1" # Indigo Moderno
+            
+    match_secondary = re.search(r"(?:Cor secundária|Cor Secundaria)[^#\n\r]*:\s*(#[a-fA-F0-9]{6})", mensagem, re.IGNORECASE)
+    secondary_color = match_secondary.group(1) if match_secondary else ("#000000" if primary_color.upper() == "#FFFFFF" else "#1A1A1A")
 
     # Tenta extrair logo_url de URL de imagem nos arquivos ou links
     logo_match = re.search(r"https?://[^\s\"']+\.(?:png|jpg|jpeg|webp)", mensagem)
@@ -93,7 +112,7 @@ def requirements_analyst_node(state: AgentState) -> Dict[str, Any]:
     use_local = os.environ.get("USE_LOCAL_LLM", "false").lower() == "true"
     
     if use_local:
-        local_url = os.environ.get("LOCAL_LLM_URL", "http://localhost:1234/v1")
+        local_url = os.environ.get("LOCAL_LLM_URL", "http://127.0.0.1:1234/v1")
         local_model = os.environ.get("LOCAL_LLM_MODEL", "google/gemma-3-4b")
         print(f"[Analista de Requisitos] USE_LOCAL_LLM é true. Invocando LLM local {local_model} em {local_url}...")
         llm = ChatOpenAI(
@@ -313,6 +332,60 @@ export default function LandingPage() {{
     return code
 
 
+def invocar_lm_studio_para_codigo(prompt_sistema: str, prompt_usuario: str) -> Optional[str]:
+    """Tenta chamar o LM Studio local via HTTP direto em múltiplos hosts/portas e com/sem API Key para gerar código."""
+    local_url = os.environ.get("LOCAL_LLM_URL", "http://127.0.0.1:1234/v1").rstrip("/")
+    local_model = os.environ.get("LOCAL_LLM_MODEL", "google/gemma-3-4b")
+    local_api_key = os.environ.get("LOCAL_LLM_API_KEY", "").strip()
+    
+    urls_to_try = [
+        local_url,
+        "http://127.0.0.1:1234/v1",
+        "http://localhost:1234/v1",
+        "http://127.0.0.1:63805/v1",
+        "http://127.0.0.1:8000/v1"
+    ]
+    
+    seen = set()
+    urls_unique = [x for x in urls_to_try if not (x in seen or seen.add(x))]
+    
+    payload = {
+        "model": local_model,
+        "messages": [
+            {"role": "system", "content": prompt_sistema},
+            {"role": "user", "content": prompt_usuario}
+        ],
+        "temperature": 0.2
+    }
+    
+    # Headers para testar (com e sem Bearer Token)
+    headers_list = [{"Content-Type": "application/json"}]
+    if local_api_key:
+        headers_list.insert(0, {"Content-Type": "application/json", "Authorization": f"Bearer {local_api_key}"})
+    else:
+        headers_list.append({"Content-Type": "application/json", "Authorization": "Bearer lm-studio"})
+    
+    for url in urls_unique:
+        for headers in headers_list:
+            try:
+                print(f"[LM Studio] Tentando conectar em {url}/chat/completions com modelo {local_model}...")
+                with httpx.Client(timeout=60.0) as client:
+                    res = client.post(f"{url}/chat/completions", json=payload, headers=headers)
+                    if res.status_code == 200:
+                        data = res.json()
+                        content = data["choices"][0]["message"]["content"]
+                        print(f"[LM Studio] Resposta de código obtida do modelo {local_model} via {url} com sucesso!")
+                        return content
+                    elif res.status_code == 401:
+                        print(f"[LM Studio] {url} respondeu 401 (Invalid API Key). Verifique a opção 'Require API Key' no LM Studio.")
+                    else:
+                        print(f"[LM Studio] {url} retornou status HTTP {res.status_code}.")
+            except Exception as err:
+                print(f"[LM Studio] Não foi possível conectar em {url}: {err}")
+            
+    print("⚠️ [LM Studio] Servidor local não respondeu na porta 1234. Para que o Gemma no LM Studio gere o layout customizado, acesse o LM Studio -> aba Developer / Local Server e clique em 'Start Server' (porta 1234).")
+    return None
+
 def generate_landing_page(target_path: str, reqs: Dict[str, Any], lead_raw: Dict[str, Any]):
     app_name = reqs.get("app_name", "AppCustomizado")
     primary_color = reqs.get("primary_color", "#D4AF37")
@@ -321,69 +394,57 @@ def generate_landing_page(target_path: str, reqs: Dict[str, Any], lead_raw: Dict
     
     openai_key = os.environ.get("OPENAI_API_KEY")
     google_key = os.environ.get("GOOGLE_API_KEY")
-    use_local = os.environ.get("USE_LOCAL_LLM", "false").lower() == "true"
+    use_local = os.environ.get("USE_LOCAL_LLM", "true").lower() == "true"
     
-    use_llm = False
-    if use_local:
-        local_url = os.environ.get("LOCAL_LLM_URL", "http://localhost:1234/v1")
-        local_model = os.environ.get("LOCAL_LLM_MODEL", "google/gemma-3-4b")
-        print(f"[Desenvolvedor] USE_LOCAL_LLM é true. Invocando LLM local {local_model} em {local_url} para gerar a Landing Page...")
-        llm = ChatOpenAI(
-            model=local_model,
-            openai_api_key="lm-studio",
-            base_url=local_url,
-            temperature=0
-        )
-        use_llm = True
-    elif openai_key:
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-        use_llm = True
-    elif google_key:
-        llm = ChatOpenAI(
-            model="gemini-1.5-flash",
-            openai_api_key=google_key,
-            base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
-        )
-        use_llm = True
-        
-    code = None
-    if use_llm:
-        try:
-            print("[Desenvolvedor] Gerando Landing Page customizada em React + Vite via LLM...")
-            system_prompt = """Você é um Engenheiro Frontend especialista em React (Vite) e Tailwind CSS.
+    system_prompt = """Você é um Engenheiro Frontend especialista em React (Vite) e Tailwind CSS.
 Sua tarefa é criar um componente funcional React e estilizado com Tailwind CSS para a página de destino (LandingPage) do novo negócio do cliente.
 
 O código gerado deve ser um arquivo LandingPage.jsx React completo e autocontido (export default function LandingPage() { ... }).
 Ele deve:
 1. Seguir exatamente as diretrizes e seções propostas na análise de design da IA enviada pelo usuário.
-2. Utilizar as classes do Tailwind CSS para uma estilização premium, moderna e limpa (use sombras, gradientes, transições e micro-animações).
+2. Utilizar as classes do Tailwind CSS para uma estilização de alta conversão, moderna e temática (use sombras, gradientes, cards de serviços e micro-animações).
 3. Importar Link de 'react-router-dom' para a ação de agendamento (use <Link to="/agendar" className="..."> para o CTA de agendamento).
-4. O design deve se adequar perfeitamente ao setor do negócio (Ex: Barbearia deve ter visual rústico/premium; Odontologia clean e confiável; Estética elegante, etc.).
-5. Usar as variáveis de cor de tailwind 'bg-primary' e 'text-primary' ou 'bg-secondary' e 'text-secondary' nos botões e destaques que devem herdar as cores da marca.
+4. O design deve se adequar perfeitamente ao setor do negócio (Ex: Barbearia deve ter visual rústico/premium; Odontologia clean e confiável; Estética elegante; Restaurante/Gastronomia visual apetitoso e acolhedor, etc.).
+5. Usar as variáveis de cor ou códigos fornecidos nos botões e destaques que devem herdar as cores da marca.
 6. Retornar APENAS o código do arquivo LandingPage.jsx, sem explicações adicionais e sem blocos de código markdown (como ```jsx ou ```). Comece direto com o código.
 7. Use apenas comentários válidos do JSX (como {/* comentário */}) e NUNCA string literals com barra de comentários ou comentários HTML.
 """
-            prompt = ChatPromptTemplate.from_messages([
-                ("system", system_prompt),
-                ("user", "Informações e análises do lead:\n{mensagem}\n\nNome comercial: {app_name}\nCor Primária: {primary_color}\nCor Secundária: {secondary_color}")
+    
+    user_prompt = f"Informações e análises do lead:\n{mensagem}\n\nNome comercial: {app_name}\nCor Primária: {primary_color}\nCor Secundária: {secondary_color}"
+    
+    code = None
+    if use_local:
+        print("[Desenvolvedor] USE_LOCAL_LLM está ativado. Solicitando geração de layout ao Gemma no LM Studio...")
+        code = invocar_lm_studio_para_codigo(system_prompt, user_prompt)
+        
+    if not code and (openai_key or google_key):
+        try:
+            print("[Desenvolvedor] Invocando LLM em nuvem para geração do layout...")
+            if google_key:
+                from langchain_openai import ChatOpenAI
+                llm = ChatOpenAI(
+                    model="gemini-1.5-flash",
+                    openai_api_key=google_key,
+                    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+                )
+            else:
+                from langchain_openai import ChatOpenAI
+                llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+                
+            res = llm.invoke([
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
             ])
-            chain = prompt | llm
-            res = chain.invoke({
-                "mensagem": mensagem,
-                "app_name": app_name,
-                "primary_color": primary_color,
-                "secondary_color": secondary_color
-            })
             code = res.content
-            # Remove markdown code fences if LLM accidentally added them
-            code = re.sub(r"^```[a-zA-Z0-9]*\n", "", code)
-            code = re.sub(r"\n```$", "", code)
-            code = code.strip()
         except Exception as e:
-            print(f"[Desenvolvedor] Falha ao chamar LLM para código ({str(e)}). Usando fallback local...")
-            code = None
+            print(f"[Desenvolvedor] Falha ao chamar LLM nuvem ({str(e)}).")
             
-    if not code:
+    if code:
+        code = re.sub(r"^```[a-zA-Z0-9]*\n", "", code)
+        code = re.sub(r"\n```$", "", code)
+        code = code.strip()
+        
+    if not code or len(code) < 100 or "export default" not in code:
         print("[Desenvolvedor] Utilizando gerador local de fallback para LandingPage em React + Vite...")
         code = generate_fallback_landing_page_code(app_name, primary_color, secondary_color, mensagem, False)
         
@@ -607,8 +668,11 @@ def code_injector_node(state: AgentState) -> Dict[str, Any]:
     print(f"Arquivo de parametrização '{config_file_path}' atualizado com sucesso.")
     
     # Grava as variáveis do Supabase no .env do frontend clonado (Single-Tenant)
-    supabase_url = lead_raw.get("supabase_url") or ""
-    supabase_anon_key = lead_raw.get("supabase_anon_key") or ""
+    raw_sub_url = (lead_raw.get("supabase_url") or "").strip()
+    raw_sub_key = (lead_raw.get("supabase_anon_key") or "").strip()
+    
+    supabase_url = raw_sub_url if raw_sub_url else "https://your-project.supabase.co"
+    supabase_anon_key = raw_sub_key if raw_sub_key else "your-anon-key-here"
     
     env_file_path = os.path.join(target_path, "frontend", ".env")
     try:
@@ -617,7 +681,10 @@ def code_injector_node(state: AgentState) -> Dict[str, Any]:
             f.write(f"VITE_SUPABASE_ANON_KEY={supabase_anon_key}\n")
             f.write(f"NEXT_PUBLIC_SUPABASE_URL={supabase_url}\n")
             f.write(f"NEXT_PUBLIC_SUPABASE_ANON_KEY={supabase_anon_key}\n")
-        print(f"Arquivo .env '{env_file_path}' gravado com credenciais Supabase Single-Tenant e Next.js.")
+        if raw_sub_url and raw_sub_key:
+            print(f"Arquivo .env '{env_file_path}' gravado com credenciais Supabase Single-Tenant.")
+        else:
+            print(f"Arquivo .env '{env_file_path}' gravado em modo desconectado. Insira o Supabase URL e Anon Key posteriormente.")
     except Exception as env_err:
         print(f"Erro ao gravar arquivo .env customizado: {env_err}")
     

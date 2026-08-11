@@ -230,9 +230,7 @@ export default function LandingPage() {
     const payload = {
       project_name: businessName,
       branding: {
-        palette_name: selectedPalette.name,
-        primary_color_hex: selectedPalette.hex,
-        primary_color_rgb: selectedPalette.rgb,
+        palette_name: "Definida via RAG",
       },
       modules: activeModules,
       reference_links: referenceLinks.filter(l => l.url.trim() !== ''),

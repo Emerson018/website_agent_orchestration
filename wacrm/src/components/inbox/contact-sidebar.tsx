@@ -234,20 +234,22 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
   const handleGenerateAISiteFromSidebar = useCallback(async () => {
     if (!contact) return;
 
-    if (!isConnectionValidated || !sidebarSupabaseUrl.trim() || !sidebarSupabaseAnonKey.trim()) {
-      toast.error("Por favor, valide a conexão com o Supabase antes de gerar o PWA.");
-      return;
+    if (!sidebarSupabaseUrl.trim() || !sidebarSupabaseAnonKey.trim()) {
+      toast.info("Gerando PWA sem credenciais do Supabase. Você poderá vinculá-las a qualquer momento após a criação.");
     }
 
     setGeneratingAI(true);
 
     try {
+      const ragBranding = contact.additional_data?.branding;
+      const paletteName = ragBranding?.palette_name || "Definida via RAG";
+      const primaryHex = ragBranding?.primary_color_hex;
+
       const payload = {
         project_name: contact.name || "Projeto Sem Nome",
         branding: {
-          palette_name: "Neon Indigo",
-          primary_color_hex: "#6366f1",
-          primary_color_rgb: "99, 102, 241"
+          palette_name: paletteName,
+          ...(primaryHex ? { primary_color_hex: primaryHex } : {})
         },
         modules: ["agendador_pwa"],
         reference_links: contact.additional_data?.links?.map(l => ({ url: l.url, type: "site", notes: l.label })) || [],
@@ -674,7 +676,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
 
                     <div className="pt-3 border-t border-border/60 space-y-2.5 text-left">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                        Configuração do Supabase (Obrigatório)
+                        Configuração do Supabase (Opcional)
                       </span>
                       
                       <div className="space-y-1">
@@ -732,7 +734,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
                     <div className="pt-3 border-t border-border/60">
                       <Button
                         onClick={handleGenerateAISiteFromSidebar}
-                        disabled={generatingAI || !isConnectionValidated}
+                        disabled={generatingAI}
                         size="sm"
                         className="w-full bg-primary hover:bg-primary/95 text-primary-foreground flex items-center justify-center gap-1.5 font-bold"
                       >
@@ -748,11 +750,11 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
                           </>
                         )}
                       </Button>
-                      {!isConnectionValidated && (
-                        <p className="text-[10px] text-muted-foreground mt-1 text-center font-medium">
-                          Valide a conexão acima para liberar a geração do app.
-                        </p>
-                      )}
+                      <p className="text-[10px] text-muted-foreground mt-1 text-center font-medium">
+                        {isConnectionValidated 
+                          ? "Conexão Supabase validada." 
+                          : "Você pode gerar o PWA agora e vincular o Supabase a qualquer momento."}
+                      </p>
                     </div>
                   </>
                 )}

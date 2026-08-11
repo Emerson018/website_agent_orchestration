@@ -181,16 +181,11 @@ async def processar_fila(req_data: Optional[ProcessarFilaRequest] = None):
         supabase_url = projeto_encontrado.get("supabase_url")
         supabase_anon_key = projeto_encontrado.get("supabase_anon_key")
 
-        # Validação obrigatória das credenciais do Supabase Single-Tenant
-        if not supabase_url or not supabase_anon_key or not supabase_url.strip() or not supabase_anon_key.strip():
-            supabase_client.table("fila_projetos")\
-                .update({"status": "erro"})\
-                .eq("id", project_id)\
-                .execute()
-            raise HTTPException(
-                status_code=400,
-                detail="Credenciais do Supabase ausentes. Os campos supabase_url e supabase_anon_key são obrigatórios para a geração do PWA."
-            )
+        supabase_url_str = (supabase_url or "").strip()
+        supabase_anon_key_str = (supabase_anon_key or "").strip()
+
+        if not supabase_url_str or not supabase_anon_key_str:
+            print(f"[Fila] Projeto ID #{project_id} iniciado sem credenciais do Supabase (Modo Desconectado para vincular posteriormente).")
             
         # Muda imediatamente o status para 'processando'
         supabase_client.table("fila_projetos")\
@@ -202,8 +197,8 @@ async def processar_fila(req_data: Optional[ProcessarFilaRequest] = None):
         estado_inicial = {
             "lead_raw_json": {
                 "mensagem": mensagem_lead,
-                "supabase_url": supabase_url.strip(),
-                "supabase_anon_key": supabase_anon_key.strip()
+                "supabase_url": supabase_url_str,
+                "supabase_anon_key": supabase_anon_key_str
             },
             "customization_requirements": {},
             "template_path": "",

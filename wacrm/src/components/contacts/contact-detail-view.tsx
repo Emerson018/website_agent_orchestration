@@ -324,10 +324,8 @@ export function ContactDetailView({
     }
     setSupabaseUrl(normUrl);
 
-    // Validação Single-Tenant obrigatória
     if (!normUrl || !supabaseAnonKey.trim()) {
-      toast.error('Os campos Supabase URL e Supabase Anon Key são obrigatórios para a geração do PWA (Single-Tenant).');
-      return;
+      toast.info('Gerando PWA sem credenciais do Supabase. Você poderá vinculá-las a qualquer momento após a criação.');
     }
 
     setGeneratingAI(true);
@@ -339,21 +337,22 @@ export function ContactDetailView({
         return f ? customValues[f.id] : undefined;
       };
 
-      const primaryColor = getVal("cor principal") || getVal("primary color") || "#D4AF37";
-      const paletteName = getVal("paleta") || getVal("palette") || "Personalizada";
+      const ragBranding = contact.additional_data?.branding;
+      const primaryColor = getVal("cor principal") || getVal("primary color") || ragBranding?.primary_color_hex;
+      const paletteName = getVal("paleta") || getVal("palette") || ragBranding?.palette_name || "Definida via RAG";
       const modulesStr = getVal("modulos") || getVal("modules") || "site";
       const modules = modulesStr.split(",").map(m => m.trim()).filter(Boolean);
       
       const refLink1 = getVal("link referencia") || getVal("reference link") || "";
       const reference_links = refLink1 ? [{ url: refLink1, type: "site", notes: "Link enviado pelo CRM" }] : [];
       
-      const aiAnalysis = getVal("mensagem lead") || getVal("lead message") || getVal("analise ia") || "Gerado automaticamente via botão CRM.";
+      const aiAnalysis = getVal("mensagem lead") || getVal("lead message") || getVal("analise ia") || contact.rag_report || "Gerado automaticamente via botão CRM.";
 
       const payload = {
         project_name: editName || contact.name || "Projeto Sem Nome",
         branding: {
           palette_name: paletteName,
-          primary_color_hex: primaryColor
+          ...(primaryColor ? { primary_color_hex: primaryColor } : {})
         },
         modules: modules.length > 0 ? modules : ["site"],
         reference_links: reference_links,

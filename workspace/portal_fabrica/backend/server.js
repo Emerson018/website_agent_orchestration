@@ -118,12 +118,31 @@ app.post('/api/projetos', async (req, res) => {
         .join('\n');
     }
 
+    const ragBranding = additional_data?.branding;
+    
+    let paletteName = branding?.palette_name;
+    if (!paletteName || paletteName === 'Neon Indigo' || paletteName === 'Personalizada') {
+      paletteName = ragBranding?.palette_name || 'Definida via RAG';
+    }
+    
+    let primaryHex = (branding?.primary_color_hex && branding.primary_color_hex !== '#6366f1' && branding.primary_color_hex !== '#D4AF37') ? branding.primary_color_hex : null;
+    if (!primaryHex) {
+      primaryHex = ragBranding?.primary_color_hex;
+    }
+    if (!primaryHex && ai_analysis) {
+      const match = ai_analysis.match(/(?:Cor Primária|Cor principal|Cor Primaria)[^#\n\r]*:\s*(#[a-fA-F0-9]{6})/i) || ai_analysis.match(/#[a-fA-F0-9]{6}/i);
+      if (match) primaryHex = match[1] || match[0];
+    }
+    
+    const primaryStr = primaryHex ? primaryHex : 'Definida via análise RAG da IA';
+    const secondaryStr = primaryHex ? (primaryHex.toUpperCase() === '#FFFFFF' ? '#000000' : '#1A1A1A') : 'Definida via análise RAG da IA';
+
     // Cria a mensagem estruturada do lead, incluindo a análise de referências e UX da IA
     const mensagem_lead = `Olá! Quero criar um site/app para meu negócio chamado '${project_name}'.
 Identidade visual recomendada:
-- Paleta sugerida: ${branding?.palette_name || 'Personalizada'}
-- Cor principal: ${branding?.primary_color_hex || '#D4AF37'}
-- Cor secundária: ${branding?.primary_color_hex === '#FFFFFF' ? '#000000' : '#FFFFFF'} (Branco/Preto complementar)
+- Paleta sugerida: ${paletteName}
+- Cor principal: ${primaryStr}
+- Cor secundária: ${secondaryStr}
 
 Módulos solicitados: [${modulosStr}]
 
@@ -407,10 +426,7 @@ app.post('/api/projetos/:id/processar', async (req, res) => {
     }
 
     if (!projeto.supabase_url || !projeto.supabase_anon_key || !projeto.supabase_url.trim() || !projeto.supabase_anon_key.trim()) {
-      return res.status(400).json({ 
-        error: 'Credenciais do Supabase ausentes.', 
-        details: 'Os campos supabase_url e supabase_anon_key são obrigatórios para a geração do PWA (Single-Tenant).' 
-      });
+      console.log(`[Processar Fila] Projeto #${id} sendo compilado sem credenciais prévias do Supabase.`);
     }
 
     // 2. Libera o cliente Express com sucesso
@@ -441,5 +457,7 @@ app.listen(PORT, () => {
   console.log(`URL base da API: http://localhost:${PORT}`);
   console.log(`Fábrica de IA conectada em: ${SOFTWARE_FACTORY_API_URL}`);
   console.log(`Banco Supabase conectado: ${supabaseUrl}`);
+  console.log(`Suporte a branding RAG ativo.`);
+  console.log(`Suporte a geração offline sem Supabase prévio ativo.`);
   console.log(`==================================================`);
 });
