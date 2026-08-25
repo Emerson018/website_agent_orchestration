@@ -69,9 +69,9 @@ function LoginPageInner() {
     document.cookie = "wacrm_dev_session=true; path=/; max-age=86400";
 
     if (inviteToken) {
-      router.push(`/join/${encodeURIComponent(inviteToken)}`);
+      window.location.href = `/join/${encodeURIComponent(inviteToken)}`;
     } else {
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
     }
   };
 

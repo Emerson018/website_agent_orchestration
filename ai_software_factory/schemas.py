@@ -35,3 +35,19 @@ class ClientConfig(BaseModel):
         None,
         description="O número de telefone/WhatsApp de contato do estabelecimento (ex: (51) 99999-9999)."
     )
+    niche: Optional[str] = Field(
+        None,
+        description="O segmento de mercado/nicho do negócio (ex: Odontologia, Barbearia, Pet Shop, Estética, Gastronomia)."
+    )
+    tagline: Optional[str] = Field(
+        None,
+        description="O slogan ou frase marcante da empresa extraída ou sugerida."
+    )
+    color_reasoning: Optional[str] = Field(
+        None,
+        description="Justificativa da escolha da paleta de cores primária e secundária baseada na psicologia das cores para o nicho do cliente."
+    )
+    recommended_sections: Optional[list[str]] = Field(
+        None,
+        description="Lista de seções recomendadas para o site (ex: ['Hero', 'Serviços', 'Sobre Nós', 'Agendamento', 'Depoimentos', 'Contato'])."
+    )

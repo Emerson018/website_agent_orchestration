@@ -605,17 +605,17 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
                 onClick={handleTriggerRag}
                 disabled={ragStatus === "processing"}
                 size="sm"
-                className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center gap-1.5"
+                className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center gap-1.5 font-bold"
               >
                 {ragStatus === "processing" ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>Processando RAG...</span>
+                    <span>Analisando com IA...</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-3.5 w-3.5" />
-                    <span>Analisar Conteúdo (RAG)</span>
+                    <span>Analisar Marca & Conteúdo com IA</span>
                   </>
                 )}
               </Button>

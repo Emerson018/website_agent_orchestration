@@ -144,22 +144,60 @@ def requirements_analyst_node(state: AgentState) -> Dict[str, Any]:
         log_msg = "[RequirementsAnalyst] Requisitos estruturados via Fallback seguro (chave de API ausente)."
     else:
         try:
-            structured_llm = llm.with_structured_output(ClientConfig)
+            system_prompt = (
+                "Você é um Diretor de Arte e Arquiteto de Software Web especialista.\n"
+                "Sua missão é analisar TODOS os dados brutos e históricos enviados pelo cliente (mensagens, links de referências, "
+                "anotações de contatos e preferências) para estruturar a identidade visual e funcionalidade ideal do novo site PWA.\n\n"
+                "O NOVO SITE SERÁ GERADO COM BASE NA ARQUITETURA DO NOSSO TEMPLATE OURO (gold_templates/template_base_app):\n"
+                "- React + Tailwind CSS com temas responsivos e suporte a Dark/Light Mode.\n"
+                "- Integração Serverless com Supabase (autenticação, agendamento de serviços, formulários de contato).\n"
+                "- PWA instalável para dispositivos móveis.\n\n"
+                "REGRAS DE ANÁLISE DE MARCA E IDENTIDADE:\n"
+                "1. app_name: Nome comercial legível da empresa (ex: Barbearia Navalha de Ouro, Sorriso Perfeito).\n"
+                "2. primary_color / secondary_color: Cores hexadecimais (#HEXHEX) elegantes e harmoniosas. "
+                "Aplique a psicologia das cores adequada ao nicho do cliente.\n"
+                "3. address / working_hours / phone: Dados de contato reais e completos do cliente.\n"
+                "4. niche: O segmento/mercado da empresa (ex: Odontologia, Barbearia, Pet Shop, Estética, Gastronomia).\n"
+                "5. tagline: Slogan marcante e atraente para o topo (Hero) do site.\n"
+                "6. color_reasoning: Breve explicação da escolha da paleta de cores.\n"
+                "7. recommended_sections: Seções essenciais para o site (ex: Hero, Serviços, Sobre Nós, Agendamento, Depoimentos, Contato).\n\n"
+                "RETORNE ESTRITAMENTE UM OBJETO JSON VÁLIDO contendo as chaves: app_name, primary_color, secondary_color, logo_url, address, working_hours, phone, niche, tagline, color_reasoning, recommended_sections."
+            )
             
             prompt = ChatPromptTemplate.from_messages([
-                ("system", "Você é um Analista de Requisitos especialista. Analise os dados de entrada do cliente (incluindo links de referências e arquivos anexos) e infira as configurações de personalização do app React (nome comercial, cor primária, cor secundária, URL do logo nos anexos se disponível, endereço físico, horário de funcionamento e telefone/WhatsApp de contato) de acordo com o esquema ClientConfig definido."),
-                ("user", "Dados brutos do lead:\n{lead_raw_json}")
+                ("system", system_prompt),
+                ("user", "Dados brutos e informações completas do lead/cliente:\n{lead_raw_json}")
             ])
             
-            chain = prompt | structured_llm
-            
-            result: ClientConfig = chain.invoke({"lead_raw_json": json.dumps(lead_raw, ensure_ascii=False)})
-            custom_reqs = result.model_dump()
-            log_msg = "[RequirementsAnalyst] Requisitos estruturados via LLM com sucesso."
+            if use_local:
+                # Invocação direta para o LM Studio Local com parsing JSON robusto
+                formatted_messages = prompt.format_messages(lead_raw_json=json.dumps(lead_raw, ensure_ascii=False))
+                raw_res = llm.invoke(formatted_messages)
+                content = raw_res.content if hasattr(raw_res, 'content') else str(raw_res)
+                
+                json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                if json_match:
+                    parsed_json = json.loads(json_match.group(0))
+                else:
+                    parsed_json = json.loads(content)
+                
+                fallback_base = parse_fallback_requirements(lead_raw)
+                for k, v in parsed_json.items():
+                    if v and str(v).strip():
+                        fallback_base[k] = v
+                custom_reqs = fallback_base
+                log_msg = f"[RequirementsAnalyst] Requisitos e layout analisados via LM Studio Local ({local_model}) com sucesso."
+            else:
+                structured_llm = llm.with_structured_output(ClientConfig)
+                chain = prompt | structured_llm
+                result: ClientConfig = chain.invoke({"lead_raw_json": json.dumps(lead_raw, ensure_ascii=False)})
+                custom_reqs = result.model_dump()
+                log_msg = "[RequirementsAnalyst] Requisitos e arquitetura de marca analisados via LLM/Gemini com sucesso."
         except Exception as e:
             print(f"[Analista de Requisitos] AVISO: Falha ao chamar a LLM ({str(e)}). Executando fallback local inteligente...")
             custom_reqs = parse_fallback_requirements(lead_raw)
-            log_msg = f"[RequirementsAnalyst] Requisitos estruturados via Fallback inteligente devido a erro da LLM: {str(e)}"
+            log_msg = f"[RequirementsAnalyst] Requisitos estruturados via Fallback inteligente devido a exceção: {str(e)}"
+
     
     template = "gold_templates/template_base_app"
     
@@ -626,6 +664,34 @@ CREATE TABLE IF NOT EXISTS agendamentos_detalhes (
         print(f"AVISO: Esquema base '{base_template_schema}' não encontrado para cópia.")
 
 
+def update_project_frontend_entrypoints(target_path: str, app_name: str):
+    """Garante que a LandingPage seja a rota principal do App.jsx e que a marca do cliente fique no index.html."""
+    app_jsx_path = os.path.join(target_path, "frontend", "src", "App.jsx")
+    if os.path.exists(app_jsx_path):
+        try:
+            with open(app_jsx_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            if "import LandingPage" not in content:
+                content = content.replace("import MainLayout from './layouts/MainLayout';", "import MainLayout from './layouts/MainLayout';\nimport LandingPage from './pages/LandingPage';")
+            content = content.replace("{ index: true, element: <BookingPage /> }", "{ index: true, element: <LandingPage /> }")
+            with open(app_jsx_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            print(f"[Desenvolvedor] App.jsx atualizado com sucesso. Rota raiz apontando para LandingPage.")
+        except Exception as e:
+            print(f"Aviso ao atualizar App.jsx: {e}")
+            
+    index_html_path = os.path.join(target_path, "frontend", "index.html")
+    if os.path.exists(index_html_path):
+        try:
+            with open(index_html_path, 'r', encoding='utf-8') as f:
+                html_content = f.read()
+            html_content = re.sub(r"<title>.*?</title>", f"<title>{app_name}</title>", html_content)
+            with open(index_html_path, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            print(f"[Desenvolvedor] index.html atualizado com título '{app_name}'.")
+        except Exception as e:
+            print(f"Aviso ao atualizar index.html: {e}")
+
 def code_injector_node(state: AgentState) -> Dict[str, Any]:
     """
     Agente Desenvolvedor / Injetor de Código (Real):
@@ -641,6 +707,11 @@ def code_injector_node(state: AgentState) -> Dict[str, Any]:
     
     print(f"Injetando código e parâmetros no projeto em '{target_path}' (Tentativas realizadas: {attempts})...")
     print(f"Dados a injetar: {reqs}")
+    
+    app_name = reqs.get("app_name", "AppCustomizado")
+    
+    # Atualiza entrypoints do frontend (App.jsx e index.html)
+    update_project_frontend_entrypoints(target_path, app_name)
     
     # Caminho do ai_config.json no projeto clonado
     config_file_path = os.path.join(target_path, "frontend", "ai_config.json")

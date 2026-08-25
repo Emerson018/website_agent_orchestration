@@ -239,22 +239,32 @@ Seja preciso, técnico e detalhista. Escreva em português."""
             except Exception as e:
                 print(f"[RAG] Erro ao conectar em {url}: {str(e)}")
             
-    # Provedor Gemini / OpenAI Fallback se configurado
+    use_local = os.environ.get("USE_LOCAL_LLM", "false").lower() == "true"
     google_key = os.environ.get("GOOGLE_API_KEY")
     openai_key = os.environ.get("OPENAI_API_KEY")
     
-    if google_key or openai_key:
+    if use_local or google_key or openai_key:
         try:
             from langchain_openai import ChatOpenAI
-            if google_key:
-                print("[RAG] Usando Gemini API para relatório RAG...")
+            if use_local:
+                local_url = os.environ.get("LOCAL_LLM_URL", "http://127.0.0.1:1234/v1")
+                local_model = os.environ.get("LOCAL_LLM_MODEL", "google/gemma-3-4b")
+                print(f"[Análise IA] Usando LM Studio Local ({local_model}) em {local_url}...")
+                llm = ChatOpenAI(
+                    model=local_model,
+                    openai_api_key="lm-studio",
+                    base_url=local_url,
+                    temperature=0.3
+                )
+            elif google_key:
+                print("[Análise IA] Usando Gemini API para relatório de marca...")
                 llm = ChatOpenAI(
                     model="gemini-1.5-flash",
                     openai_api_key=google_key,
                     base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
                 )
             else:
-                print("[RAG] Usando OpenAI API para relatório RAG...")
+                print("[Análise IA] Usando OpenAI API para relatório de marca...")
                 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
                 
             res = llm.invoke([
@@ -264,77 +274,82 @@ Seja preciso, técnico e detalhista. Escreva em português."""
             if res and res.content:
                 return res.content
         except Exception as llm_err:
-            print(f"[RAG] Falha ao invocar LLM em nuvem ({llm_err}). Usando analista de fallback...")
+            print(f"[Análise IA] Falha ao invocar LLM ({llm_err}). Usando analista de fallback...")
 
     # Fallback Analítico Inteligente
     print("[RAG] Gerando relatório de análise RAG estruturado via Fallback inteligente...")
     return generate_fallback_rag_report(contact_name, context)
 
 def generate_fallback_rag_report(contact_name: str, context: str) -> str:
-    """Gera um relatório RAG estruturado completo em Markdown via análise de fallback inteligente."""
+    """Gera um relatório estruturado completo em Markdown via análise inteligente de dados do cliente."""
+    import unicodedata
+
+    def strip_accents(s: str) -> str:
+        return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+
     branding = extract_branding_from_report(context, contact_name)
     palette_name = branding["palette_name"]
     primary_hex = branding["primary_color_hex"]
     secondary_hex = branding["secondary_color_hex"]
     
-    text_lower = (context + " " + contact_name).lower()
+    raw_text = (context + " " + contact_name).lower()
+    text_norm = strip_accents(raw_text)
     
-    if any(x in text_lower for x in ["odont", "dente", "sorriso", "dentist", "saude", "clinic"]):
+    if any(x in text_norm for x in ["odont", "dente", "sorriso", "dentist", "saude", "clinic", "medico", "doutor"]):
         nicho = "Saúde & Odontologia"
         servicos = "- Clareamento Dental (R$ 350, 45 min)\n- Limpeza e Profilaxia (R$ 180, 30 min)\n- Avaliação Inicial (R$ 100, 30 min)"
         profissionais = "Cirurgiões Dentistas e Especialistas"
-        estilo = "Visual clean, tons de azul e branco transmitindo máxima higiene, confiança e serenidade."
-    elif any(x in text_lower for x in ["barbe", "barba", "corte", "navalha", "pampas", "homem"]):
+        estilo = "Visual clean e moderno, transmitindo máxima higiene, saúde e serenidade."
+    elif any(x in text_norm for x in ["barbe", "barba", "corte", "navalha", "pampas", "homem", "cabelo"]):
         nicho = "Barbearia & Estilo Masculino"
         servicos = "- Corte de Cabelo (R$ 60, 35 min)\n- Barba com Toalha Quente (R$ 50, 30 min)\n- Combo Cabelo + Barba (R$ 100, 60 min)"
         profissionais = "Barbeiros Especialistas"
-        estilo = "Estilo vintage e rústico premium, tons escuros e ambar transmitindo tradição e elegância."
-    elif any(x in text_lower for x in ["estetic", "beleza", "salao", "hair", "unha", "spa", "maquiagem"]):
+        estilo = "Estilo vintage e rústico premium, tons escuros e ambar transmitindo tradição."
+    elif any(x in text_norm for x in ["estetic", "beleza", "salao", "hair", "unha", "spa", "maquiagem", "sobrancelha"]):
         nicho = "Estética & Beleza"
         servicos = "- Limpeza de Pele Profunda (R$ 150, 50 min)\n- Massagem Modeladora (R$ 180, 45 min)\n- Manicure & Pedicure (R$ 80, 40 min)"
         profissionais = "Esteticistas e Terapeutas"
-        estilo = "Estilo sofisticado e minimalista, tons suaves de rosé e dourado."
-    elif any(x in text_lower for x in ["pet", "veterinar", "cao", "gato", "animal"]):
+        estilo = "Estilo sofisticado e elegante, tons suaves de rosé e dourado."
+    elif any(x in text_norm for x in ["pet", "veterinar", "cao", "gato", "animal", "banho", "tosa"]):
         nicho = "Petshop & Clínica Veterinária"
         servicos = "- Banho e Tosa Completa (R$ 90, 60 min)\n- Consulta Veterinária (R$ 160, 30 min)\n- Vacinação (R$ 80, 20 min)"
         profissionais = "Veterinários e Tosadores"
         estilo = "Visual alegre, acolhedor e dinâmico, tons quentes e amigáveis."
-    elif any(x in text_lower for x in ["gourmet", "comida", "restaurante", "pizz", "hambur", "cafe", "doce", "campeiro", "fogao"]):
+    elif any(x in text_norm for x in ["gourmet", "comida", "restaurante", "pizz", "hambur", "cafe", "doce", "campeiro", "fogao", "alimento", "refeicao", "buffet", "culinaria", "marmita", "prato"]):
         nicho = "Gastronomia & Alimentação"
-        servicos = "- Reserva de Mesa Especial (Gratuito, 120 min)\n- Encomendas & Eventos (Sob consulta)\n- Degustação Harmonizada (R$ 120, 90 min)"
+        servicos = "- Almoço / Buffet Especial (R$ 45, 60 min)\n- Reserva de Mesa / Encomendas (Gratuito, 120 min)\n- Degustação Harmonizada & Eventos (Sob consulta)"
         profissionais = "Chefs e Equipe de Atendimento"
-        estilo = "Visual acolhedor e apetitoso, valorizando o ambiente artesanal e regional."
+        estilo = "Visual acolhedor, rústico e apetitoso, valorizando a culinária e o ambiente da casa."
     else:
-        nicho = "Serviços Gerais & Tecnologia"
-        servicos = "- Consultoria Inicial (R$ 200, 60 min)\n- Atendimento Especializado (R$ 150, 45 min)\n- Suporte Técnico (R$ 100, 30 min)"
-        profissionais = "Especialistas e Consultores"
-        estilo = "Design moderno, focado em alta tecnologia e usabilidade fluida."
+        nicho = "Serviços Gerais & Comércio"
+        servicos = "- Atendimento Especializado (R$ 150, 45 min)\n- Consultoria Sob Medida (R$ 200, 60 min)\n- Suporte Integrado (R$ 100, 30 min)"
+        profissionais = "Equipe de Atendimento e Especialistas"
+        estilo = "Design moderno, focado em alta tecnologia, clareza e usabilidade fluida."
 
     report = f"""### 📅 1. Escopo Principal: Agendador PWA
-- **Objetivo do Agendador**: Proporcionar conveniência e facilidade de agendamento online para os clientes do estabelecimento '{contact_name}', funcionando como aplicativo PWA instalável na tela inicial.
+- **Objetivo do Agendador**: Proporcionar conveniência e facilidade de agendamento online para os clientes de '{contact_name}', funcionando como aplicativo PWA instalável na tela inicial.
 - **Serviços a Agendar**:
 {servicos}
 - **Profissionais/Recursos**: {profissionais}
-- **Regras e Horários**: Atendimento de Segunda a Sábado das 09h às 19h. Cancelamentos permitidos com até 2h de antecedência.
+- **Regras e Horários**: Atendimento de Segunda a Sábado. Cancelamentos permitidos com antecedência.
 
-### 🛍️ 2. Coerência com a Loja / Nicho do Negócio
+### 🛍️ 2. Coerência com o Nicho do Negócio
 - **Nicho de Mercado**: {nicho}
-- **Análise do "Sentido da Loja"**: O agendamento simplificado atende diretamente a demanda do público prioritário, eliminando filas e garantindo previsibilidade de atendimento.
+- **Análise do Sentido da Loja**: O atendimento digital simplificado elimina filas e garante previsão de reservas para o cliente.
 
-### 🎨 3. Direcionamento Visual e de Interface (UX/UI)
+### 🎨 3. Direcionamento Visual e Interface (UX/UI)
 - **Paleta Recomendada**: {palette_name}
 - **Cor Primária (Hex)**: {primary_hex}
 - **Cor Secundária (Hex)**: {secondary_hex}
 - **Estilo Visual e Tom de Voz**: {estilo}
-- **Instalabilidade & Offline (PWA)**: Ícone personalizado com a marca '{contact_name}', suporte a funcionamento offline e notificações de lembrete.
+- **Instalabilidade & Offline (PWA)**: Ícone personalizado para '{contact_name}', suporte a funcionamento PWA em dispositivos móveis.
 
 ### 🌐 4. Módulos Secundários Sugeridos
-- **Site Institucional**: Vitrine moderna exibindo diferenciais, galeria de fotos e depoimentos de clientes.
-- **Integração de WhatsApp / Robô**: Atendimento automático via inteligência artificial para tirar dúvidas e agendar direto no chat.
-- **Aplicativo Mobile Nativo**: Opção futura para publicação nas lojas Google Play e App Store.
+- **Site Institucional PWA**: Vitrine moderna exibindo diferenciais e galeria de fotos do estabelecimento.
+- **Integração de WhatsApp**: Atendimento inteligente para dúvidas rápidas e suporte direto no chat.
 
 ### 📌 5. Dados de Contato e Suporte
-- **Informações do Cliente**: Atendimento integrado para o estabelecimento {contact_name}."""
+- **Informações do Cliente**: Atendimento integrado para {contact_name}."""
 
     return report
 
@@ -470,43 +485,19 @@ async def run_rag_analysis_pipeline(contact_id: str):
                     text = await download_and_extract_file(file_url, client)
                     extracted_texts.append(f"[Arquivo: {filename}]: {text}")
 
-        # 3. Une todos os textos extraídos e divide em blocos (chunks)
+        # 3. Une todos os textos extraídos em um texto completo consolidado
         full_text = "\n\n".join(extracted_texts)
-        chunks = chunk_text(full_text)
-        
-        print(f"[RAG] Extração concluída. Total de blocos (chunks) gerados: {len(chunks)}")
-        
-        if not chunks:
-            # Fallback seguro com o nome do contato se por algum motivo extremo não gerar chunks
-            chunks = [f"[Ficha do Cliente]: Nome: {name}"]
+        if not full_text.strip():
+            full_text = f"[Ficha do Cliente]: Nome: {name}"
 
-        # 4. Gera embeddings locais para cada chunk
-        print("[RAG] Gerando embeddings locais para os chunks...")
-        embed_model = get_embed_model()
-        embeddings = embed_model.encode(chunks).tolist()
+        print(f"[Análise Gemini] Compilação de texto concluída ({len(full_text)} caracteres). Gerando relatório direto via Gemini API...")
         
-        # 5. Remove chunks antigos deste contato para evitar duplicatas
-        supabase.table("contact_document_chunks").delete().eq("contact_id", contact_id).execute()
+        # 4. Gera o relatório completo de análise de marca e requisitos usando a API do Gemini
+        report = await generate_rag_report(name, full_text)
         
-        # 6. Salva os novos chunks e embeddings no Supabase
-        records_to_insert = []
-        for i, chunk in enumerate(chunks):
-            records_to_insert.append({
-                "contact_id": contact_id,
-                "content": chunk,
-                "embedding": embeddings[i],
-                "metadata": {"chunk_index": i}
-            })
-            
-        supabase.table("contact_document_chunks").insert(records_to_insert).execute()
-        print(f"[RAG] {len(chunks)} blocos e vetores gravados no banco de dados com sucesso.")
-        
-        # 7. Gera o relatório final de IA
-        report = await generate_rag_report(name, chunks)
-        
-        # 8. Extrai o branding do relatório RAG e atualiza o contato
+        # 5. Extrai o branding do relatório e atualiza o contato no Supabase
         branding_info = extract_branding_from_report(report, name)
-        print(f"[RAG] Identidade visual / Branding inferido via RAG: {branding_info}")
+        print(f"[Análise Gemini] Identidade visual / Branding inferido: {branding_info}")
         
         updated_additional_data = dict(additional_data)
         updated_additional_data["branding"] = branding_info
@@ -516,7 +507,7 @@ async def run_rag_analysis_pipeline(contact_id: str):
             "rag_report": report,
             "additional_data": updated_additional_data
         }).eq("id", contact_id).execute()
-        print(f"[RAG] Pipeline RAG concluído com sucesso para o contato {name} ({contact_id})!")
+        print(f"[Análise Gemini] Análise de cliente concluída com sucesso para {name} ({contact_id})!")
 
     except Exception as e:
         error_msg = f"Erro no pipeline de RAG:\n{traceback.format_exc()}"

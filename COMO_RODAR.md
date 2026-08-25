@@ -175,8 +175,8 @@ Antes de rodar o Next.js, as tabelas específicas do CRM precisam ser criadas no
 2. Crie ou selecione um contato, defina suas informações e, na aba **Details**, clique no botão **Gerar Site com IA**.
 3. O CRM enviará os dados do cliente para a API da Fábrica (`http://localhost:5000/api/projetos`) e disparará o processamento em segundo plano.
 
-login:
-senha:mano018
+login: admin@wacrm.com
+senha: mano018
 
 ---
 

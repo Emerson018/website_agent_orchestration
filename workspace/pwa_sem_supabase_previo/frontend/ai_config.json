@@ -1,0 +1,12 @@
+{
+  "app_name": "PWA Sem Supabase Previo",
+  "primary_color": "#6366F1",
+  "secondary_color": "#1A1A1A",
+  "supabase_url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co",
+  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM",
+  "logo_url": "/logo.png",
+  "address": "Av. Principal, 1000 - Centro - Porto Alegre/RS",
+  "phone": "51999999999",
+  "working_hours": "Segunda a Sábado das 9h às 18h",
+  "n8n_webhook_url": "http://localhost:5678/webhook-test/booking"
+}
