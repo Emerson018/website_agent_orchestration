@@ -1,0 +1,24 @@
+{
+  "app_name": "Campeiro Fogão",
+  "primary_color": "#EAB308",
+  "secondary_color": "#DC2626",
+  "supabase_url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co",
+  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM",
+  "logo_url": "/logo.png",
+  "address": "Av. Principal, 1000 - Centro - Porto Alegre/RS",
+  "phone": "12131231433",
+  "working_hours": "Segunda a Sábado das 9h às 18h",
+  "n8n_webhook_url": "http://localhost:5678/webhook-test/booking",
+  "niche": "Gastronomia Regional – Churrasco ao Ar Queimado",
+  "tagline": "Sabor Autêntico, Ambiente Acolhedor.",
+  "color_reasoning": "A paleta de cores utiliza tons terrosos (#EAB308) para evocar a rusticidade e o calor do fogão à lenha, contrastando com o vermelho vibrante (#DC2626) para destacar os pratos e chamar a atenção para a qualidade dos ingredientes. O fundo preto (#1C1917) cria um ambiente aconchegante e sofisticado.",
+  "recommended_sections": [
+    "Hero",
+    "Serviços (Churrascos)",
+    "Cardápio",
+    "Sobre Nós (A História do Fogão)",
+    "Agendamento",
+    "Localização (Mapa)",
+    "Contato"
+  ]
+}

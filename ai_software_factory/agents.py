@@ -252,14 +252,25 @@ def generate_fallback_landing_page_code(app_name: str, primary_color: str, secon
     is_barber = any(x in app_name.lower() or x in mensagem.lower() for x in ["barbearia", "barba", "corte", "navalha", "pampas", "barber"])
     is_dental = any(x in app_name.lower() or x in mensagem.lower() for x in ["odont", "sorriso", "dentist", "dente", "clinic"])
     is_beauty = any(x in app_name.lower() or x in mensagem.lower() for x in ["estetic", "beleza", "salao", "hair", "unha", "spa"])
+    is_food = any(x in app_name.lower() or x in mensagem.lower() for x in ["fogao", "campeiro", "restaurante", "gourmet", "comida", "pizz", "hambur", "cafe", "doce", "culinaria", "marmita", "prato", "alimento"])
     
-    if is_barber:
+    if is_food:
+        hero_title = "O Autêntico Sabor no Fogão a Lenha e Tradição"
+        hero_desc = f"Bem-vindo ao {app_name}. Saboreie pratos artesanais da culinária regional com receitas tradicionais, tempero caseiro e ambiente acolhedor."
+        services = [
+            {"name": "Pratos Típicos no Fogão", "desc": "Receitas tradicionais preparadas lentamente no fogão a lenha com ingredientes selecionados.", "price": "R$ 45"},
+            {"name": "Reserva de Mesas Online", "desc": "Garanta seu lugar e de sua família com antecedência sem filas de espera.", "price": "Gratuito"},
+            {"name": "Degustação & Eventos", "desc": "Buffet temático e pratos sob encomenda para momentos especiais.", "price": "Sob consulta"}
+        ]
+        visual_theme = "bg-[#1C1917] text-[#FAFAF9]"
+        card_theme = "bg-[#272425] border-[#3E3A3B] shadow-lg"
+    elif is_barber:
         hero_title = "Estilo e Tradição Para o Homem Moderno"
-        hero_desc = f"Bem-vindo à {app_name}. Aliamos técnicas clássicas de barbearia a um ambiente premium e atendimento personalizado em Porto Alegre."
+        hero_desc = f"Bem-vindo à {app_name}. Aliamos técnicas clássicas de barbearia a um ambiente premium e atendimento personalizado."
         services = [
             {"name": "Corte de Cabelo", "desc": "Corte moderno ou clássico com lavagem e finalização premium.", "price": "R$ 60"},
             {"name": "Barba e Toalha Quente", "desc": "Barba feita na navalha com hidratação, óleo e toalha quente relaxante.", "price": "R$ 50"},
-            {"name": "Combo Premium", "desc": "Corte + Barba + Sobrancelha com cerveja inclusa como cortesia.", "price": "R$ 100"}
+            {"name": "Combo Premium", "desc": "Corte + Barba + Sobrancelha com cortesia exclusiva.", "price": "R$ 100"}
         ]
         visual_theme = "bg-gray-950 text-gray-100"
         card_theme = "bg-gray-900 border-gray-800"
@@ -434,18 +445,17 @@ def generate_landing_page(target_path: str, reqs: Dict[str, Any], lead_raw: Dict
     google_key = os.environ.get("GOOGLE_API_KEY")
     use_local = os.environ.get("USE_LOCAL_LLM", "true").lower() == "true"
     
-    system_prompt = """Você é um Engenheiro Frontend especialista em React (Vite) e Tailwind CSS.
+    system_prompt = """Você é um Engenheiro Frontend e Copywriter especialista em React (Vite) e Tailwind CSS.
 Sua tarefa é criar um componente funcional React e estilizado com Tailwind CSS para a página de destino (LandingPage) do novo negócio do cliente.
 
-O código gerado deve ser um arquivo LandingPage.jsx React completo e autocontido (export default function LandingPage() { ... }).
-Ele deve:
-1. Seguir exatamente as diretrizes e seções propostas na análise de design da IA enviada pelo usuário.
-2. Utilizar as classes do Tailwind CSS para uma estilização de alta conversão, moderna e temática (use sombras, gradientes, cards de serviços e micro-animações).
-3. Importar Link de 'react-router-dom' para a ação de agendamento (use <Link to="/agendar" className="..."> para o CTA de agendamento).
-4. O design deve se adequar perfeitamente ao setor do negócio (Ex: Barbearia deve ter visual rústico/premium; Odontologia clean e confiável; Estética elegante; Restaurante/Gastronomia visual apetitoso e acolhedor, etc.).
-5. Usar as variáveis de cor ou códigos fornecidos nos botões e destaques que devem herdar as cores da marca.
-6. Retornar APENAS o código do arquivo LandingPage.jsx, sem explicações adicionais e sem blocos de código markdown (como ```jsx ou ```). Comece direto com o código.
-7. Use apenas comentários válidos do JSX (como {/* comentário */}) e NUNCA string literals com barra de comentários ou comentários HTML.
+REGRAS OBRIGATÓRIAS DE CÓDIGO E COPYWRITING (SKILL STOP SLOP INTEGRADA):
+1. ZERO TEXTO DE IA GENÉRICO: Proibido usar clichês e jargões artificiais como "No mundo acelerado de hoje", "Revolucione sua experiência", "Desbloqueie o potencial", "Soluções de ponta" ou frases vazias. Escreva como um copywriter humano autêntico, usando linguagem direta, fatos concretos e benefícios reais.
+2. NUNCA gere comentários de placeholder vazios como {/* Conteúdo do título aqui */}. Escreva títulos H1 impactantes, descrições ricas e específicas adaptadas ao negócio (Ex: Gastronomia = receitas tradicionais no fogão a lenha, tempero caseiro; Barbearia = corte clássico na navalha; Odontologia = alinhadores e saúde).
+3. NUNCA use via.placeholder.com ou URLs quebradas. Para fotos do Hero ou dos cards, utilize apenas imagens em alta resolução do Unsplash (Ex para Gastronomia: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1000&q=80', Ex para Barbearia: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1000&q=80', Ex para Odontologia: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1000&q=80').
+4. O componente deve ser export default function LandingPage() { ... } completo e autocontido.
+5. Importar Link de 'react-router-dom' para a ação de agendamento (<Link to="/agendar" className="...">).
+6. O contêiner principal <div className="..."> DEVE definir a cor de fundo apropriada do tema (ex: bg-[#1C1917] para restaurante/gastronomia escuro, bg-slate-950 para barbearia, bg-slate-50 para clínica/saúde) e NUNCA usar fundo azul/roxo genérico.
+7. Retornar APENAS o código do arquivo LandingPage.jsx, sem explicações adicionais e sem blocos de código markdown (sem ```jsx).
 """
     
     user_prompt = f"Informações e análises do lead:\n{mensagem}\n\nNome comercial: {app_name}\nCor Primária: {primary_color}\nCor Secundária: {secondary_color}"
@@ -665,18 +675,18 @@ CREATE TABLE IF NOT EXISTS agendamentos_detalhes (
 
 
 def update_project_frontend_entrypoints(target_path: str, app_name: str):
-    """Garante que a LandingPage seja a rota principal do App.jsx e que a marca do cliente fique no index.html."""
+    """Garante que a rota principal de App.jsx seja o BookingPage (/ e /agendar) e AdminDashboard (/admin)."""
     app_jsx_path = os.path.join(target_path, "frontend", "src", "App.jsx")
     if os.path.exists(app_jsx_path):
         try:
             with open(app_jsx_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-            if "import LandingPage" not in content:
-                content = content.replace("import MainLayout from './layouts/MainLayout';", "import MainLayout from './layouts/MainLayout';\nimport LandingPage from './pages/LandingPage';")
-            content = content.replace("{ index: true, element: <BookingPage /> }", "{ index: true, element: <LandingPage /> }")
+            # Garante que a rota raiz seja a BookingPage e remove a LandingPage
+            content = re.sub(r"import LandingPage from '\./pages/LandingPage';\n?", "", content)
+            content = content.replace("{ index: true, element: <LandingPage /> }", "{ index: true, element: <BookingPage /> }")
             with open(app_jsx_path, 'w', encoding='utf-8') as f:
                 f.write(content)
-            print(f"[Desenvolvedor] App.jsx atualizado com sucesso. Rota raiz apontando para LandingPage.")
+            print(f"[Desenvolvedor] App.jsx atualizado com sucesso. Rota raiz apontando para BookingPage (Agendamento).")
         except Exception as e:
             print(f"Aviso ao atualizar App.jsx: {e}")
             
@@ -691,6 +701,66 @@ def update_project_frontend_entrypoints(target_path: str, app_name: str):
             print(f"[Desenvolvedor] index.html atualizado com título '{app_name}'.")
         except Exception as e:
             print(f"Aviso ao atualizar index.html: {e}")
+
+def update_project_css_theme(target_path: str, reqs: Dict[str, Any], lead_raw: Dict[str, Any]):
+    """Injeta as variáveis CSS da marca (:root --primary-color, --secondary-color, --bg-color) no index.css."""
+    index_css_path = os.path.join(target_path, "frontend", "src", "index.css")
+    if os.path.exists(index_css_path):
+        try:
+            with open(index_css_path, 'r', encoding='utf-8') as f:
+                css = f.read()
+
+            p_color = reqs.get("primary_color", "#EAB308")
+            s_color = reqs.get("secondary_color", "#DC2626")
+            app_name = reqs.get("app_name", "")
+            mensagem = lead_raw.get("mensagem", "")
+
+            # Identifica a cor de fundo com base no nicho do projeto
+            if any(x in app_name.lower() or x in mensagem.lower() for x in ["fogao", "campeiro", "restaurante", "gourmet", "comida", "barbearia", "barba"]):
+                bg_color = "#1C1917"
+                text_color = "#FAFAF9"
+            elif any(x in app_name.lower() or x in mensagem.lower() for x in ["odont", "sorriso", "dentist", "saude", "clinic"]):
+                bg_color = "#F8FAFC"
+                text_color = "#0F172A"
+            elif any(x in app_name.lower() or x in mensagem.lower() for x in ["estetic", "beleza", "salao", "spa"]):
+                bg_color = "#FFF1F2"
+                text_color = "#1C1917"
+            else:
+                bg_color = "#0F172A"
+                text_color = "#F8FAFC"
+
+            root_vars = f"""@import "tailwindcss";
+@config "../tailwind.config.js";
+
+:root {{
+  --primary-color: {p_color};
+  --secondary-color: {s_color};
+  --bg-color: {bg_color};
+  --text-color: {text_color};
+}}
+
+html, body, #root {{
+  background-color: var(--bg-color, {bg_color});
+  color: var(--text-color, {text_color});
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+}}
+
+"""
+            # Remove blocos anteriores de imports, :root e html/body para reconstruir o CSS limpo
+            css_clean = re.sub(r'@import\s+["\'][^"\']+["\'];?', "", css)
+            css_clean = re.sub(r'@config\s+["\'][^"\']+["\'];?', "", css_clean)
+            css_clean = re.sub(r":root\s*\{[^}]*\}", "", css_clean)
+            css_clean = re.sub(r"html,\s*body,\s*#root\s*\{[^}]*\}", "", css_clean)
+            new_css = root_vars + css_clean.strip()
+
+            with open(index_css_path, 'w', encoding='utf-8') as f:
+                f.write(new_css)
+            print(f"[Desenvolvedor] Variáveis CSS :root injetadas em index.css (--bg-color: {bg_color}, --primary-color: {p_color}).")
+        except Exception as e:
+            print(f"Aviso ao atualizar temas CSS em index.css: {e}")
 
 def code_injector_node(state: AgentState) -> Dict[str, Any]:
     """
@@ -710,8 +780,9 @@ def code_injector_node(state: AgentState) -> Dict[str, Any]:
     
     app_name = reqs.get("app_name", "AppCustomizado")
     
-    # Atualiza entrypoints do frontend (App.jsx e index.html)
+    # Atualiza entrypoints do frontend (App.jsx, index.html e index.css)
     update_project_frontend_entrypoints(target_path, app_name)
+    update_project_css_theme(target_path, reqs, lead_raw)
     
     # Caminho do ai_config.json no projeto clonado
     config_file_path = os.path.join(target_path, "frontend", "ai_config.json")

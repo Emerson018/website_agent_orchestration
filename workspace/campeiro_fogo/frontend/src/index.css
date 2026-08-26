@@ -2,15 +2,15 @@
 @config "../tailwind.config.js";
 
 :root {
-  --primary-color: #6366f1;
-  --secondary-color: #4f46e5;
-  --bg-color: #020617;
-  --text-color: #f8fafc;
+  --primary-color: #EAB308;
+  --secondary-color: #DC2626;
+  --bg-color: #1C1917;
+  --text-color: #FAFAF9;
 }
 
 html, body, #root {
-  background-color: var(--bg-color, #020617);
-  color: var(--text-color, #f8fafc);
+  background-color: var(--bg-color, #1C1917);
+  color: var(--text-color, #FAFAF9);
   margin: 0;
   padding: 0;
   width: 100%;

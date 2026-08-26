@@ -134,34 +134,16 @@ app.post('/api/projetos', async (req, res) => {
       if (match) primaryHex = match[1] || match[0];
     }
     
-    const primaryStr = primaryHex ? primaryHex : 'Definida via análise RAG da IA';
-    const secondaryStr = primaryHex ? (primaryHex.toUpperCase() === '#FFFFFF' ? '#000000' : '#1A1A1A') : 'Definida via análise RAG da IA';
+    // Cria a mensagem estruturada do lead para os Agentes de IA
+    const mensagem_lead = `### BRIEFING DO PROJETO DE CLIENTE
+- **Nome do Estabelecimento / Marca**: '${project_name}'
+- **Módulos Solicitados**: [${modulosStr}]
+- **Contato do Cliente**: E-mail: ${client_info?.email || 'Não informado'} | WhatsApp/Tel: ${client_info?.phone || 'Não informado'}
 
-    // Cria a mensagem estruturada do lead, incluindo a análise de referências e UX da IA
-    const mensagem_lead = `Olá! Quero criar um site/app para meu negócio chamado '${project_name}'.
-Identidade visual recomendada:
-- Paleta sugerida: ${paletteName}
-- Cor principal: ${primaryStr}
-- Cor secundária: ${secondaryStr}
-
-Módulos solicitados: [${modulosStr}]
-
-Especificações e Textos Adicionais (RAG/Agendador):
-${textosStr}
-
-Arquivos de apoio (Anexos do Lead):
-${arquivosStr}
-
-Análise de Referências e Proposta de Design da IA:
-${ai_analysis || 'Nenhuma análise de referência disponível.'}
-
-Links de inspiração e referências do cliente:
-${linksStr}
-
-Informações do cliente:
-- E-mail: ${client_info?.email || 'Não informado'}
-- Telefone: ${client_info?.phone || 'Não informado'}
-`;
+${ai_analysis ? `### ANÁLISE DE MARCA & ARQUITETURA DA IA:\n${ai_analysis}\n` : ''}
+${textosStr !== 'Nenhum material ou texto de apoio fornecido.' ? `### CONTEÚDOS E TEXTOS DE APOIO:\n${textosStr}\n` : ''}
+${arquivosStr !== 'Nenhum arquivo de apoio fornecido.' ? `### ARQUIVOS ANEXADOS:\n${arquivosStr}\n` : ''}
+${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\n${linksStr}\n` : ''}`;
 
     // Insere no Supabase na tabela fila_projetos
     const { data, error } = await supabase

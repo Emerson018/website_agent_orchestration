@@ -157,250 +157,306 @@ async def download_and_extract_file(file_url: str, client: httpx.AsyncClient) ->
         print(f"[RAG] Erro no processamento do arquivo {file_url}: {str(e)}")
         return f"[Erro no arquivo {file_url} - {str(e)}]"
 
-async def generate_rag_report(contact_name: str, doc_chunks: List[str]) -> str:
-    """Chama o LM Studio local para gerar um relatório consolidado com base no contexto do RAG."""
-    # Junta as partes mais relevantes do contexto
-    context = "\n\n---\n\n".join(doc_chunks[:15]) # limita para não estourar a janela do LLM local
-    
-    prompt = f"""Você é o Analista de Requisitos e Designer de UX Principal da Fábrica de IA.
-O foco principal deste projeto é criar um **Agendador no estilo PWA (Progressive Web App)** para o cliente. Os módulos de site institucional, aplicativo mobile nativo e agendador de WhatsApp são opcionais/secundários.
+def load_agent_prompt(rel_path: str) -> str:
+    """Carrega o System Prompt de um arquivo de agente Markdown."""
+    abs_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), rel_path)
+    if not os.path.exists(abs_path):
+        return ""
+    try:
+        with open(abs_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        match = re.search(r"system_prompt:\s*\|\s*\n(.*?)(?=\n```|\Z)", content, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        return content.strip()
+    except Exception as e:
+        print(f"[Multi-Agente] Erro ao carregar prompt {rel_path}: {e}")
+        return ""
 
-Seu objetivo é analisar todo o material enviado pelo cliente '{contact_name}' (arquivos, textos, links raspados) e estruturar um relatório de especificações e diretrizes conceituais do agendador. Esse relatório será exibido para o administrador do CRM revisar, editar e validar a coerência com a ideia principal e nicho de negócio ("sentido da loja") antes de iniciarmos a geração de código.
+async def generate_rag_report(contact_name: str, doc_chunks: Any) -> str:
+    """Executa o pipeline sequencial multi-agente: UX Researcher -> UI Designer -> AI Engineer."""
+    if isinstance(doc_chunks, list):
+        context = "\n\n---\n\n".join(doc_chunks[:15])
+    else:
+        context = str(doc_chunks)
 
-⚠️ INSTRUÇÃO IMPORTANTE DE ANÁLISE: Como removemos a coleta manual direta de dados de serviços, preços, profissionais, horários de funcionamento e duração média dos serviços no formulário do lead, você DEVE analisar minuciosamente os links de referência raspados e o conteúdo de texto extraído dos arquivos de apoio enviados pelo cliente (catálogos, cardápios, tabelas, etc.) para identificar e extrair essas informações. Caso esses dados não estejam explícitos nos materiais enviados, você deve deduzir e propor sugestões profissionais altamente coerentes e prontas para o nicho de mercado do estabelecimento.
+    prompt_ux = load_agent_prompt("agents/design/ux-researcher.md")
+    prompt_ui = load_agent_prompt("agents/design/ui-designer.md")
+    prompt_ai = load_agent_prompt("agents/engineering/ai-engineer.md")
 
-Abaixo está todo o contexto extraído dos materiais do cliente:
-{context}
-
-Com base nas informações acima, gere um relatório detalhado, profissional e altamente estruturado em Markdown, contendo exatamente as seguintes seções:
-
-### 📅 1. Escopo Principal: Agendador PWA
-- **Objetivo do Agendador**: (O problema que resolve, público-alvo, conveniência da instalação como app/PWA)
-- **Serviços a Agendar**: (Lista de serviços identificada ou recomendada para o segmento, preços estimados, e durações médias de atendimento)
-- **Profissionais/Recursos**: (Se há indicação de profissionais específicos, equipes, salas ou equipamentos a serem selecionados no agendamento)
-- **Regras e Horários**: (Horários de funcionamento indicados, prazos de cancelamento, regras de agendamento identificadas ou sugeridas)
-
-### 🛍️ 2. Coerência com a Loja / Nicho do Negócio
-- **Nicho de Mercado**: (Setor de atuação e público prioritário)
-- **Análise do "Sentido da Loja"**: (Como o agendamento se integra à proposta de valor do negócio, e o que é indispensável para este segmento específico)
-
-### 🎨 3. Direcionamento Visual e de Interface (UX/UI)
-- **Paleta Recomendada**: (Defina o nome do conceito visual ideal para este nicho, ex: Azul Clínico Confiável, Dourado & Ambar Vintage, Rose & Gold Elegante, Laranja Amigável, etc.)
-- **Cor Primária (Hex)**: #HEXCODE (Defina o código de cor hexadecimal primária ideal para a marca do cliente, ex: #0EA5E9 para odontologia/saúde, #D4AF37 para barbearia, #EC4899 para estética/beleza, #F97316 para petshop, #6366F1 para tecnologia)
-- **Cor Secundária (Hex)**: #HEXCODE (Defina o código de cor hexadecimal secundária complementar)
-- **Estilo Visual e Tom de Voz**: (Diretrizes de layout, tipografia, e referências de design extraídas do nicho)
-- **Instalabilidade & Offline (PWA)**: (Como deve ser a experiência visual na tela inicial do celular do usuário e comportamento offline)
-
-### 🌐 4. Módulos Secundários Sugeridos
-- **Site Institucional**: (Seções recomendadas para a vitrine institucional integrada ao agendador)
-- **Integração de WhatsApp / Robô**: (Como a IA no WhatsApp deve abordar o cliente para agendar de forma fluida)
-- **Aplicativo Mobile Nativo**: (Recursos adicionais sugeridos caso o cliente queira migrar para as lojas de apps futuramente)
-
-### 📌 5. Dados de Contato e Suporte
-- **Informações do Cliente**: (Localização, telefone, e-mail, redes sociais e links importantes mapeados)
-
-Se alguma seção não possuir informações específicas no contexto, forneça sugestões profissionais e criativas totalmente adequadas ao nicho do cliente.
-Seja preciso, técnico e detalhista. Escreva em português."""
-
-    payload = {
-        "model": LOCAL_LLM_MODEL,
-        "messages": [
-            {"role": "system", "content": "Você é um especialista em análise de requisitos de software e design de UX."},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.3
-    }
-    
-    use_local = os.environ.get("USE_LOCAL_LLM", "false").lower() == "true"
-    if use_local:
-        candidate_urls = [
-            LOCAL_LLM_URL,
-            "http://127.0.0.1:1234/v1",
-            "http://localhost:1234/v1",
-            "http://127.0.0.1:63805/v1"
-        ]
-        seen = set()
-        urls_unique = [x for x in candidate_urls if not (x in seen or seen.add(x))]
-        
-        for url in urls_unique:
-            try:
-                print(f"[RAG] Enviando prompt para o LM Studio Local ({url}) usando o modelo {LOCAL_LLM_MODEL}...")
-                async with httpx.AsyncClient(timeout=60.0) as client:
-                    response = await client.post(
-                        f"{url}/chat/completions",
-                        json=payload,
-                        headers={"Content-Type": "application/json"}
-                    )
-                    if response.status_code == 200:
-                        result = response.json()
-                        return result["choices"][0]["message"]["content"]
-                    else:
-                        print(f"[RAG] LM Studio em {url} respondeu status {response.status_code}.")
-            except Exception as e:
-                print(f"[RAG] Erro ao conectar em {url}: {str(e)}")
-            
     use_local = os.environ.get("USE_LOCAL_LLM", "false").lower() == "true"
     google_key = os.environ.get("GOOGLE_API_KEY")
     openai_key = os.environ.get("OPENAI_API_KEY")
-    
+
     if use_local or google_key or openai_key:
         try:
             from langchain_openai import ChatOpenAI
             if use_local:
                 local_url = os.environ.get("LOCAL_LLM_URL", "http://127.0.0.1:1234/v1")
                 local_model = os.environ.get("LOCAL_LLM_MODEL", "google/gemma-3-4b")
-                print(f"[Análise IA] Usando LM Studio Local ({local_model}) em {local_url}...")
+                print(f"[Pipeline Multi-Agente] Executando 3 Agentes via LM Studio Local ({local_model})...")
                 llm = ChatOpenAI(
                     model=local_model,
                     openai_api_key="lm-studio",
                     base_url=local_url,
-                    temperature=0.3
+                    temperature=0.2
                 )
             elif google_key:
-                print("[Análise IA] Usando Gemini API para relatório de marca...")
+                print("[Pipeline Multi-Agente] Executando 3 Agentes via Gemini API (Nuvem rápida)...")
                 llm = ChatOpenAI(
                     model="gemini-1.5-flash",
                     openai_api_key=google_key,
                     base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
                 )
             else:
-                print("[Análise IA] Usando OpenAI API para relatório de marca...")
-                llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
-                
-            res = llm.invoke([
-                {"role": "system", "content": "Você é um especialista em análise de requisitos de software e design de UX."},
-                {"role": "user", "content": prompt}
+                print("[Pipeline Multi-Agente] Executando 3 Agentes via OpenAI API...")
+                llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
+
+            # Agente 1: UX Researcher (Análise de Negócio & Vibe)
+            print("[Pipeline Multi-Agente] Passo 1: Executando Agente UX Researcher...")
+            input_ux = f"Cliente / Estabelecimento: {contact_name}\n\nConteúdo e dados brutos do briefing:\n{context}"
+            res_ux = llm.invoke([
+                {"role": "system", "content": prompt_ux or "Você é um UX Researcher especialista."},
+                {"role": "user", "content": input_ux}
             ])
-            if res and res.content:
-                return res.content
-        except Exception as llm_err:
-            print(f"[Análise IA] Falha ao invocar LLM ({llm_err}). Usando analista de fallback...")
+            output_ux = res_ux.content if hasattr(res_ux, 'content') else str(res_ux)
+
+            # Agente 2: UI Designer (Tradução Visual & Cores HEX)
+            print("[Pipeline Multi-Agente] Passo 2: Executando Agente UI Designer...")
+            res_ui = llm.invoke([
+                {"role": "system", "content": prompt_ui or "Você é um UI Designer especialista."},
+                {"role": "user", "content": f"Diagnóstico de Marca & Vibe (UX Researcher):\n{output_ux}"}
+            ])
+            output_ui = res_ui.content if hasattr(res_ui, 'content') else str(res_ui)
+
+            # Agente 3: AI Engineer (Geração de JSON Schema)
+            print("[Pipeline Multi-Agente] Passo 3: Executando Agente AI Engineer (JSON Schema)...")
+            res_ai = llm.invoke([
+                {"role": "system", "content": prompt_ai or "Você é um AI Engineer. Retorne estritamente um objeto JSON válido."},
+                {"role": "user", "content": f"Especificações Visuais Técnicas (UI Designer):\n{output_ui}"}
+            ])
+            output_ai = res_ai.content if hasattr(res_ai, 'content') else str(res_ai)
+
+            # Relatório Consolidado Estruturado para o CRM
+            full_report = (
+                f"### 🔬 1. Diagnóstico de Marca & Público (UX Researcher)\n{output_ux}\n\n"
+                f"---\n\n"
+                f"### 🎨 2. Especificações Visuais & UX/UI (UI Designer)\n{output_ui}\n\n"
+                f"---\n\n"
+                f"### ⚙️ 3. Configuração de Arquitetura (AI Engineer - Schema JSON)\n```json\n{output_ai.strip()}\n```"
+            )
+            return full_report
+
+        except Exception as err:
+            print(f"[Pipeline Multi-Agente] Falha na execução do pipeline ({err}). Usando analista de fallback...")
 
     # Fallback Analítico Inteligente
-    print("[RAG] Gerando relatório de análise RAG estruturado via Fallback inteligente...")
+    print("[Pipeline Multi-Agente] Gerando relatório via Fallback seguro...")
     return generate_fallback_rag_report(contact_name, context)
 
 def generate_fallback_rag_report(contact_name: str, context: str) -> str:
-    """Gera um relatório estruturado completo em Markdown via análise inteligente de dados do cliente."""
+    """Gera o relatório do pipeline dos 3 Agentes no formato estrito (UX Researcher -> UI Designer -> AI Engineer)."""
     import unicodedata
 
     def strip_accents(s: str) -> str:
         return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
 
-    branding = extract_branding_from_report(context, contact_name)
-    palette_name = branding["palette_name"]
-    primary_hex = branding["primary_color_hex"]
-    secondary_hex = branding["secondary_color_hex"]
-    
     raw_text = (context + " " + contact_name).lower()
     text_norm = strip_accents(raw_text)
-    
-    if any(x in text_norm for x in ["odont", "dente", "sorriso", "dentist", "saude", "clinic", "medico", "doutor"]):
+
+    # Usa regex com \b para evitar que sufixos como -cao (em avaliacao/notificacao) deem falso positivo para cao/pet
+    if re.search(r"\b(odont|dente|dentes|sorriso|dentista|dentistas|saude|clinica|medico|doutor)\b", text_norm):
         nicho = "Saúde & Odontologia"
-        servicos = "- Clareamento Dental (R$ 350, 45 min)\n- Limpeza e Profilaxia (R$ 180, 30 min)\n- Avaliação Inicial (R$ 100, 30 min)"
-        profissionais = "Cirurgiões Dentistas e Especialistas"
-        estilo = "Visual clean e moderno, transmitindo máxima higiene, saúde e serenidade."
-    elif any(x in text_norm for x in ["barbe", "barba", "corte", "navalha", "pampas", "homem", "cabelo"]):
+        vibe = "Clínico, Confiável, Limpo e Acolhedor"
+        primary_hex = "#0EA5E9"
+        secondary_hex = "#0284C7"
+        bg_hex = "#F8FAFC"
+        text_hex = "#0F172A"
+        tema = "light"
+        fonte_titulos = "Montserrat"
+        fonte_corpo = "Inter"
+        borda = "rounded-xl"
+        estilo_botao = "flat"
+        sombra = "shadow-sm"
+        foto_estilo = "Imagens iluminadas, ambientes clínicos limpos e sorrisos naturais"
+    elif re.search(r"\b(barbe|barba|barbearia|barbeiro|corte|navalha|pampas|homem|cabelo)\b", text_norm):
         nicho = "Barbearia & Estilo Masculino"
-        servicos = "- Corte de Cabelo (R$ 60, 35 min)\n- Barba com Toalha Quente (R$ 50, 30 min)\n- Combo Cabelo + Barba (R$ 100, 60 min)"
-        profissionais = "Barbeiros Especialistas"
-        estilo = "Estilo vintage e rústico premium, tons escuros e ambar transmitindo tradição."
-    elif any(x in text_norm for x in ["estetic", "beleza", "salao", "hair", "unha", "spa", "maquiagem", "sobrancelha"]):
+        vibe = "Vintage, Rústico Premium, Tradicional e Elegante"
+        primary_hex = "#D4AF37"
+        secondary_hex = "#1E293B"
+        bg_hex = "#0F172A"
+        text_hex = "#F8FAFC"
+        tema = "dark"
+        fonte_titulos = "Playfair Display"
+        fonte_corpo = "Inter"
+        borda = "rounded-md"
+        estilo_botao = "shadow"
+        sombra = "shadow-md"
+        foto_estilo = "Fotografia com iluminação quente, tons ambar, textura de madeira e metais artesanais"
+    elif re.search(r"\b(estetica|beleza|salao|hair|unha|unhas|spa|maquiagem|sobrancelha)\b", text_norm):
         nicho = "Estética & Beleza"
-        servicos = "- Limpeza de Pele Profunda (R$ 150, 50 min)\n- Massagem Modeladora (R$ 180, 45 min)\n- Manicure & Pedicure (R$ 80, 40 min)"
-        profissionais = "Esteticistas e Terapeutas"
-        estilo = "Estilo sofisticado e elegante, tons suaves de rosé e dourado."
-    elif any(x in text_norm for x in ["pet", "veterinar", "cao", "gato", "animal", "banho", "tosa"]):
-        nicho = "Petshop & Clínica Veterinária"
-        servicos = "- Banho e Tosa Completa (R$ 90, 60 min)\n- Consulta Veterinária (R$ 160, 30 min)\n- Vacinação (R$ 80, 20 min)"
-        profissionais = "Veterinários e Tosadores"
-        estilo = "Visual alegre, acolhedor e dinâmico, tons quentes e amigáveis."
-    elif any(x in text_norm for x in ["gourmet", "comida", "restaurante", "pizz", "hambur", "cafe", "doce", "campeiro", "fogao", "alimento", "refeicao", "buffet", "culinaria", "marmita", "prato"]):
+        vibe = "Sofisticado, Minimalista, Delicado e Relaxante"
+        primary_hex = "#EC4899"
+        secondary_hex = "#F472B6"
+        bg_hex = "#FFF1F2"
+        text_hex = "#1C1917"
+        tema = "light"
+        fonte_titulos = "Playfair Display"
+        fonte_corpo = "Montserrat"
+        borda = "rounded-2xl"
+        estilo_botao = "shadow"
+        sombra = "shadow-sm"
+        foto_estilo = "Estética clean, detalhes delicados, tons pastel e iluminação de estúdio profissional"
+    elif re.search(r"\b(gourmet|comida|restaurante|pizzaria|hamburgueria|cafe|doce|campeiro|fogao|alimento|refeicao|buffet|culinaria|marmita|prato)\b", text_norm):
         nicho = "Gastronomia & Alimentação"
-        servicos = "- Almoço / Buffet Especial (R$ 45, 60 min)\n- Reserva de Mesa / Encomendas (Gratuito, 120 min)\n- Degustação Harmonizada & Eventos (Sob consulta)"
-        profissionais = "Chefs e Equipe de Atendimento"
-        estilo = "Visual acolhedor, rústico e apetitoso, valorizando a culinária e o ambiente da casa."
+        vibe = "Artesanal, Regional, Apetitoso e Acolhedor"
+        primary_hex = "#EAB308"
+        secondary_hex = "#DC2626"
+        bg_hex = "#1C1917"
+        text_hex = "#FAFAF9"
+        tema = "dark"
+        fonte_titulos = "Montserrat"
+        fonte_corpo = "Inter"
+        borda = "rounded-xl"
+        estilo_botao = "gradient"
+        sombra = "shadow-lg"
+        foto_estilo = "Fotografia gastronômica detalhada, contraste marcante e elementos artesanais da culinária"
+    elif re.search(r"\b(pet|petshop|veterinaria|veterinario|vet|cao|caes|gato|gatos|animal|animais|banho|tosa)\b", text_norm):
+        nicho = "Petshop & Clínica Veterinária"
+        vibe = "Alegre, Amigável, Vibrante e Confiável"
+        primary_hex = "#F97316"
+        secondary_hex = "#EA580C"
+        bg_hex = "#FAFAF9"
+        text_hex = "#1C1917"
+        tema = "light"
+        fonte_titulos = "Outfit"
+        fonte_corpo = "Inter"
+        borda = "rounded-2xl"
+        estilo_botao = "flat"
+        sombra = "shadow-md"
+        foto_estilo = "Fotografia espontânea de animais saudáveis, ambiente alegre e colorido"
     else:
-        nicho = "Serviços Gerais & Comércio"
-        servicos = "- Atendimento Especializado (R$ 150, 45 min)\n- Consultoria Sob Medida (R$ 200, 60 min)\n- Suporte Integrado (R$ 100, 30 min)"
-        profissionais = "Equipe de Atendimento e Especialistas"
-        estilo = "Design moderno, focado em alta tecnologia, clareza e usabilidade fluida."
+        nicho = "Serviços Gerais & Tecnologia"
+        vibe = "Moderno, Tecnológico, Dinâmico e Profissional"
+        primary_hex = "#6366F1"
+        secondary_hex = "#4F46E5"
+        bg_hex = "#0F172A"
+        text_hex = "#F8FAFC"
+        tema = "dark"
+        fonte_titulos = "Outfit"
+        fonte_corpo = "Inter"
+        borda = "rounded-xl"
+        estilo_botao = "flat"
+        sombra = "shadow-sm"
+        foto_estilo = "Interface vetorial minimalista, ícones limpos e estética digital de alta precisão"
 
-    report = f"""### 📅 1. Escopo Principal: Agendador PWA
-- **Objetivo do Agendador**: Proporcionar conveniência e facilidade de agendamento online para os clientes de '{contact_name}', funcionando como aplicativo PWA instalável na tela inicial.
-- **Serviços a Agendar**:
-{servicos}
-- **Profissionais/Recursos**: {profissionais}
-- **Regras e Horários**: Atendimento de Segunda a Sábado. Cancelamentos permitidos com antecedência.
+    json_block = f"""{{
+  "tema": "{tema}",
+  "paleta_cores": {{
+    "cor_primaria_hex": "{primary_hex}",
+    "cor_secundaria_hex": "{secondary_hex}",
+    "cor_fundo_hex": "{bg_hex}",
+    "cor_texto_hex": "{text_hex}"
+  }},
+  "tipografia": {{
+    "fonte_titulos": "{fonte_titulos}",
+    "fonte_corpo": "{fonte_corpo}"
+  }},
+  "estilo_botoes": {{
+    "formato_borda": "{borda}",
+    "estilo_visual": "{estilo_botao}",
+    "sombra": "{sombra}"
+  }},
+  "requisitos_fotos": {{
+    "estilo_visual": "{foto_estilo}",
+    "filtro_recomendado": "Tratamento de contraste e saturação otimizados"
+  }}
+}}"""
 
-### 🛍️ 2. Coerência com o Nicho do Negócio
-- **Nicho de Mercado**: {nicho}
-- **Análise do Sentido da Loja**: O atendimento digital simplificado elimina filas e garante previsão de reservas para o cliente.
-
-### 🎨 3. Direcionamento Visual e Interface (UX/UI)
-- **Paleta Recomendada**: {palette_name}
-- **Cor Primária (Hex)**: {primary_hex}
-- **Cor Secundária (Hex)**: {secondary_hex}
-- **Estilo Visual e Tom de Voz**: {estilo}
-- **Instalabilidade & Offline (PWA)**: Ícone personalizado para '{contact_name}', suporte a funcionamento PWA em dispositivos móveis.
-
-### 🌐 4. Módulos Secundários Sugeridos
-- **Site Institucional PWA**: Vitrine moderna exibindo diferenciais e galeria de fotos do estabelecimento.
-- **Integração de WhatsApp**: Atendimento inteligente para dúvidas rápidas e suporte direto no chat.
-
-### 📌 5. Dados de Contato e Suporte
-- **Informações do Cliente**: Atendimento integrado para {contact_name}."""
+    report = (
+        f"### 🔬 1. Diagnóstico de Marca & Público (UX Researcher)\n"
+        f"- **Nicho de Atuação**: {nicho}\n"
+        f"- **Público-Alvo**: Clientes do estabelecimento '{contact_name}' buscando agendamento digital rápido e conveniente.\n"
+        f"- **Vibe & Atmosfera Emocional**: {vibe}.\n"
+        f"- **Pilares da Marca**: Qualidade, Agilidade no Atendimento, Confiança e Experiência do Cliente.\n"
+        f"- **Diretrizes para a Interface**: Interface PWA responsiva com fluxo intuitivo de reserva em 3 passos.\n\n"
+        f"---\n\n"
+        f"### 🎨 2. Especificações Visuais & UX/UI (UI Designer)\n"
+        f"- **Tema Padrão**: {tema}\n"
+        f"- **Paleta de Cores**: Primária {primary_hex}, Secundária {secondary_hex}, Fundo {bg_hex}, Texto {text_hex}.\n"
+        f"- **Tipografia**: Títulos em {fonte_titulos}, Corpo em {fonte_corpo}.\n"
+        f"- **Estilo de Componentes**: Bordas {borda}, Botões estilo {estilo_botao}, Sombras {sombra}.\n"
+        f"- **Requisitos de Mídia**: {foto_estilo}.\n\n"
+        f"---\n\n"
+        f"### ⚙️ 3. Configuração de Arquitetura (AI Engineer - Schema JSON)\n```json\n{json_block}\n```"
+    )
 
     return report
 
 def extract_branding_from_report(report: str, contact_name: str = "") -> Dict[str, str]:
-    """Extrai paleta e cores hex primária/secundária do relatório RAG ou define com base no segmento."""
-    palette_name = "Definida via RAG"
+    """Extrai paleta e cores hex primária/secundária do relatório de 3 agentes ou do JSON embutido."""
+    palette_name = "Definida via IA"
     primary_hex = None
     secondary_hex = None
-    
-    palette_match = re.search(r"(?:Paleta Recomendada|Paleta Sugerida|Paleta)[^:\n\r]*:\s*\*?\*?\s*([^\n\r*]+)", report, re.IGNORECASE)
-    if palette_match:
-        palette_name = palette_match.group(1).strip()
-        
-    primary_match = re.search(r"(?:Cor Primária|Cor principal|Cor Primaria)[^#\n\r]*:\s*(#[a-fA-F0-9]{6})", report, re.IGNORECASE)
-    if primary_match:
-        primary_hex = primary_match.group(1)
-        
-    secondary_match = re.search(r"(?:Cor Secundária|Cor secundaria)[^#\n\r]*:\s*(#[a-fA-F0-9]{6})", report, re.IGNORECASE)
-    if secondary_match:
-        secondary_hex = secondary_match.group(1)
-        
+
+    # Tenta extrair diretamente do bloco JSON do AI Engineer
+    json_match = re.search(r"```json\s*(\{.*?\})\s*```", report, re.DOTALL)
+    if json_match:
+        try:
+            data = json.loads(json_match.group(1))
+            paleta = data.get("paleta_cores", {})
+            if paleta.get("cor_primaria_hex"):
+                primary_hex = paleta.get("cor_primaria_hex")
+            if paleta.get("cor_secundaria_hex"):
+                secondary_hex = paleta.get("cor_secundaria_hex")
+        except Exception:
+            pass
+
+    # Regex de busca direta em texto Markdown como fallback de extração
     if not primary_hex:
-        text_lower = (report + " " + contact_name).lower()
-        if any(x in text_lower for x in ["odont", "dente", "sorriso", "dentist", "saude", "clinic"]):
+        primary_match = re.search(r"(?:Cor Primária|Primária)[^#\n\r]*:\s*(#[a-fA-F0-9]{6})", report, re.IGNORECASE)
+        if primary_match:
+            primary_hex = primary_match.group(1)
+
+    if not secondary_hex:
+        secondary_match = re.search(r"(?:Cor Secundária|Secundária)[^#\n\r]*:\s*(#[a-fA-F0-9]{6})", report, re.IGNORECASE)
+        if secondary_match:
+            secondary_hex = secondary_match.group(1)
+
+    if not primary_hex:
+        import unicodedata
+        def strip_accents(s: str) -> str:
+            return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+
+        text_lower = strip_accents((report + " " + contact_name).lower())
+        if re.search(r"\b(odont|dente|dentes|sorriso|dentista|saude|clinica)\b", text_lower):
             primary_hex = "#0EA5E9"
             secondary_hex = secondary_hex or "#0284C7"
-            if palette_name == "Definida via RAG": palette_name = "Azul Clínico Confiável"
-        elif any(x in text_lower for x in ["barbe", "barba", "corte", "navalha", "pampas", "homem"]):
+            palette_name = "Azul Clínico Confiável"
+        elif re.search(r"\b(barbe|barba|barbearia|barbeiro|corte|navalha|pampas|homem)\b", text_lower):
             primary_hex = "#D4AF37"
             secondary_hex = secondary_hex or "#1E293B"
-            if palette_name == "Definida via RAG": palette_name = "Dourado & Ambar Vintage"
-        elif any(x in text_lower for x in ["estetic", "beleza", "salao", "hair", "unha", "spa", "maquiagem"]):
+            palette_name = "Dourado & Ambar Vintage"
+        elif re.search(r"\b(estetica|beleza|salao|hair|unha|spa|maquiagem)\b", text_lower):
             primary_hex = "#EC4899"
             secondary_hex = secondary_hex or "#F472B6"
-            if palette_name == "Definida via RAG": palette_name = "Rose & Gold Elegante"
-        elif any(x in text_lower for x in ["pet", "veterinar", "cao", "gato", "animal"]):
-            primary_hex = "#F97316"
-            secondary_hex = secondary_hex or "#EA580C"
-            if palette_name == "Definida via RAG": palette_name = "Laranja Amigável"
-        elif any(x in text_lower for x in ["gourmet", "comida", "restaurante", "pizz", "hambur", "cafe", "doce", "campeiro", "fogao"]):
+            palette_name = "Rose & Gold Elegante"
+        elif re.search(r"\b(gourmet|comida|restaurante|pizzaria|hamburgueria|cafe|fogao|campeiro)\b", text_lower):
             primary_hex = "#EAB308"
             secondary_hex = secondary_hex or "#DC2626"
-            if palette_name == "Definida via RAG": palette_name = "Gastronômico Vibrante"
+            palette_name = "Gastronômico Vibrante"
+        elif re.search(r"\b(pet|petshop|veterinaria|veterinario|vet|cao|caes|gato|animal)\b", text_lower):
+            primary_hex = "#F97316"
+            secondary_hex = secondary_hex or "#EA580C"
+            palette_name = "Laranja Amigável"
         else:
             primary_hex = "#6366F1"
             secondary_hex = secondary_hex or "#4F46E5"
-            if palette_name == "Definida via RAG": palette_name = "Indigo Tech Moderno"
-            
+            palette_name = "Indigo Tech Moderno"
+
     if not secondary_hex:
         secondary_hex = "#1E293B"
-        
+
     return {
         "palette_name": palette_name,
         "primary_color_hex": primary_hex,
