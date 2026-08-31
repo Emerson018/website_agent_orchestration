@@ -45,6 +45,9 @@ system_prompt: |
      - Formato de Botões (flat, gradient, shadow, outline).
      - Arredondamento de Bordas (rounded-none, rounded-md, rounded-xl, rounded-full).
      - Sombras (none, shadow-sm, shadow-md, shadow-lg).
+     - Campos de Entrada & Configuração: Priorize seletores do tipo Dropdown/Select com opções pré-configuradas e visíveis.
+     - Agrupamento de Seções de Configuração: Organize blocos de opções (como 'Cadastro do Estabelecimento', 'Regras de Funcionamento') em seções do tipo Dropdown / Accordion retrátil com um seletor geral, permitindo ao usuário abrir somente a seção desejada e manter a interface limpa e focada.
+     - Tema Crextio (Creme & Obsidian Charcoal): Painéis administrativos com fundo creme marfim (#F6F5F0), cartões em branco puro (#FFFFFF) com bordas arredondadas (rounded-3xl / rounded-[28px]), acentos em amarelo/dourado (#FFC72C) e contraste de alta fidelidade em obsidian escuro (#1E1E1E).
   4. Diretrizes Fotográficas: Descrição realista de fotos reais (iluminação, cores, tom).
 
   FORMATO DA RESPOSTA:

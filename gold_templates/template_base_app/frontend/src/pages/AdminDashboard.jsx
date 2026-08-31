@@ -83,6 +83,38 @@ function AdminDashboard() {
   const [bulkEnd, setBulkEnd] = useState('22:00');
   const [bulkInterval, setBulkInterval] = useState('30');
 
+  // Controle de Tema (Light vs Dark Mode)
+  const [themeMode, setThemeMode] = useState(() => {
+    try {
+      return localStorage.getItem('admin_theme_mode') || 'light';
+    } catch (e) {
+      return 'light';
+    }
+  });
+
+  const toggleThemeMode = () => {
+    const nextTheme = themeMode === 'light' ? 'dark' : 'light';
+    setThemeMode(nextTheme);
+    try {
+      localStorage.setItem('admin_theme_mode', nextTheme);
+    } catch (e) {}
+  };
+
+  // Controle de Seções Retráteis (Accordions) da Aba Configurações
+  const [openConfigSections, setOpenConfigSections] = useState({
+    horarios: true,
+    bloqueio: false,
+    cadastro: false,
+    regras: false
+  });
+
+  const toggleConfigSection = (sectionKey) => {
+    setOpenConfigSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }));
+  };
+
   const [appNameInput, setAppNameInput] = useState('');
   const [descriptionInput, setDescriptionInput] = useState('');
   const [addressInput, setAddressInput] = useState('');
@@ -777,26 +809,126 @@ function AdminDashboard() {
 
 
   return (
-    <div className="space-y-6 font-sans text-slate-100 bg-slate-950 min-h-screen px-4 sm:px-6 py-6">
-      {/* Top Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-900 pb-4">
-        <div>
-          <h2 className="text-3xl font-black tracking-tight text-white">Painel do Administrador</h2>
-          <p className="text-xs text-slate-400 mt-1">Gerencie a agenda semanal, vagas, limites e dias de funcionamento.</p>
-        </div>
+    <div className={`min-h-screen font-sans p-4 sm:p-6 lg:p-8 space-y-6 relative overflow-hidden select-none transition-colors duration-300 ${
+      themeMode === 'dark'
+        ? 'bg-slate-950 text-slate-100'
+        : 'bg-[#F6F5F0] text-stone-900'
+    }`}>
+      {/* Gradiente Radial Suave no topo superior direito */}
+      <div className={`absolute top-0 right-0 w-[600px] h-[600px] blur-3xl pointer-events-none -z-10 ${
+        themeMode === 'dark'
+          ? 'bg-gradient-to-br from-amber-500/10 via-indigo-500/5 to-transparent'
+          : 'bg-gradient-to-br from-amber-200/35 via-amber-100/10 to-transparent'
+      }`} />
+
+      {/* Top Floating Capsular Navbar */}
+      <div className={`backdrop-blur-md rounded-full px-4 sm:px-6 py-3 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 transition-colors ${
+        themeMode === 'dark'
+          ? 'bg-slate-900/90 border border-slate-800'
+          : 'bg-white/80 border border-stone-200/70'
+      }`}>
+        {/* Brand Pill */}
         <div className="flex items-center gap-3">
+          <div className="bg-stone-900 text-white font-black text-xs uppercase tracking-wider px-5 py-2 rounded-full shadow-sm flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            {appNameInput || 'Painel Admin'}
+          </div>
+          <span className={`text-xs font-semibold hidden sm:inline-block ${
+            themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+          }`}>
+            Gestão Inteligente de Reservas
+          </span>
+        </div>
+
+        {/* Tab Pills Nav */}
+        <div className={`flex items-center gap-1.5 p-1.5 rounded-full border transition-colors ${
+          themeMode === 'dark'
+            ? 'bg-slate-950 border-slate-800'
+            : 'bg-stone-100/80 border-stone-200/50'
+        }`}>
+          <button
+            onClick={() => handleTabChange('agenda')}
+            className={`px-5 py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
+              activeTab === 'agenda'
+                ? 'bg-amber-400 text-stone-900 shadow-md font-extrabold'
+                : themeMode === 'dark'
+                ? 'text-slate-400 hover:text-white'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            Agenda Semanal
+          </button>
+          <button
+            onClick={() => handleTabChange('config')}
+            className={`px-5 py-2 text-xs font-bold rounded-full transition-all cursor-pointer flex items-center gap-2 ${
+              activeTab === 'config'
+                ? 'bg-amber-400 text-stone-900 shadow-md font-extrabold'
+                : themeMode === 'dark'
+                ? 'text-slate-400 hover:text-white'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            <span>Configurações</span>
+            {hasUnsavedChanges && (
+              <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_6px_#f59e0b] shrink-0 animate-pulse" title="Alterações não salvas" />
+            )}
+          </button>
+          <button
+            onClick={() => handleTabChange('historico')}
+            className={`px-5 py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
+              activeTab === 'historico'
+                ? 'bg-amber-400 text-stone-900 shadow-md font-extrabold'
+                : themeMode === 'dark'
+                ? 'text-slate-400 hover:text-white'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            Histórico de Ações
+          </button>
+        </div>
+
+        {/* Action Buttons Right: Dark/Light Mode + Notificações */}
+        <div className="flex items-center gap-2.5">
+          {/* Botão de Alternância de Tema (Dark Mode / Light Mode) */}
+          <button
+            type="button"
+            onClick={toggleThemeMode}
+            className={`p-2.5 rounded-full border transition-all cursor-pointer flex items-center justify-center shadow-xs ${
+              themeMode === 'dark'
+                ? 'bg-slate-800 border-slate-700 text-amber-400 hover:bg-slate-700'
+                : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-100'
+            }`}
+            title={themeMode === 'dark' ? 'Alternar para Modo Claro (Light Mode)' : 'Alternar para Modo Escuro (Dark Mode)'}
+          >
+            {themeMode === 'dark' ? (
+              /* Sol icon para ativar Light Mode */
+              <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            ) : (
+              /* Lua icon para ativar Dark Mode */
+              <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            )}
+          </button>
+
           {/* Botão e Menu de Notificações */}
           <div className="relative notifications-container">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-350 hover:text-white transition-all cursor-pointer relative flex items-center justify-center"
+              className={`p-2.5 rounded-full border transition-all cursor-pointer relative flex items-center justify-center shadow-xs ${
+                themeMode === 'dark'
+                  ? 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700'
+                  : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-100'
+              }`}
               title="Histórico de Notificações"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
               {unreadCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shadow-[0_0_6px_#ef4444] animate-pulse">
+                <span className="absolute -top-1 -right-1 bg-amber-500 text-stone-900 text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-sm animate-pulse">
                   {unreadCount}
                 </span>
               )}
@@ -804,14 +936,14 @@ function AdminDashboard() {
 
             {/* Dropdown de Histórico de Notificações */}
             {showNotifications && (
-              <div className="absolute right-0 mt-2.5 w-80 bg-slate-900/95 backdrop-blur-md border border-slate-800 rounded-2xl shadow-2xl p-4 z-50 space-y-3 animate-fade-in text-left">
-                <div className="flex justify-between items-center border-b border-slate-850 pb-2">
+              <div className="absolute right-0 mt-3 w-80 bg-stone-900 text-stone-100 border border-stone-800 rounded-3xl shadow-2xl p-4 z-50 space-y-3 animate-fade-in text-left">
+                <div className="flex justify-between items-center border-b border-stone-800 pb-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-white">Notificações</h3>
                   <div className="flex gap-2">
                     {unreadCount > 0 && (
                       <button
                         onClick={markAllAsRead}
-                        className="text-[9px] font-bold text-primary hover:underline cursor-pointer border-0 bg-transparent"
+                        className="text-[9px] font-bold text-amber-400 hover:underline cursor-pointer border-0 bg-transparent"
                       >
                         Ler todas
                       </button>
@@ -819,7 +951,7 @@ function AdminDashboard() {
                     {notifications.length > 0 && (
                       <button
                         onClick={clearAllNotifications}
-                        className="text-[9px] font-bold text-slate-500 hover:text-slate-350 cursor-pointer border-0 bg-transparent"
+                        className="text-[9px] font-bold text-stone-400 hover:text-stone-200 cursor-pointer border-0 bg-transparent"
                       >
                         Limpar
                       </button>
@@ -829,7 +961,7 @@ function AdminDashboard() {
 
                 <div className="max-h-60 overflow-y-auto pr-1 space-y-2">
                   {notifications.length === 0 ? (
-                    <p className="text-[10px] text-slate-500 italic text-center py-6 text-slate-400">
+                    <p className="text-[10px] text-stone-400 italic text-center py-6">
                       Nenhuma notificação recebida no momento.
                     </p>
                   ) : (
@@ -842,25 +974,25 @@ function AdminDashboard() {
                         <div
                           key={n.id}
                           onClick={() => markAsRead(n.id)}
-                          className={`p-2.5 rounded-xl border transition-all cursor-pointer relative ${
+                          className={`p-2.5 rounded-2xl border transition-all cursor-pointer relative ${
                             n.read
-                              ? 'bg-slate-950/40 border-slate-850 hover:border-slate-800'
-                              : 'bg-primary/5 border-primary/20 hover:border-primary/30'
+                              ? 'bg-stone-950/60 border-stone-800 hover:border-stone-700'
+                              : 'bg-amber-400/10 border-amber-400/30 hover:border-amber-400/50'
                           }`}
                         >
                           <div className="flex justify-between items-start gap-1">
                             <span className="text-xs font-extrabold text-white truncate max-w-[160px]">
                               {n.booking.cliente_nome}
                             </span>
-                            <span className="text-[9px] text-slate-500 font-mono">
+                            <span className="text-[9px] text-amber-400 font-mono font-bold">
                               {formatTime(n.timestamp)}
                             </span>
                           </div>
-                          <p className="text-[10px] text-slate-400 mt-1">
-                            Reserva: <strong className="text-slate-200">{n.booking.data ? new Date(n.booking.data + 'T00:00:00').toLocaleDateString('pt-BR') : ''}</strong> às <strong className="text-slate-200">{n.booking.horario}</strong> ({n.booking.pessoas}p)
+                          <p className="text-[10px] text-stone-300 mt-1">
+                            Reserva: <strong className="text-white">{n.booking.data ? new Date(n.booking.data + 'T00:00:00').toLocaleDateString('pt-BR') : ''}</strong> às <strong className="text-white">{n.booking.horario}</strong> ({n.booking.pessoas}p)
                           </p>
                           {!n.read && (
-                            <span className="absolute top-3.5 right-3 w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_4px_#ef4444]" />
+                            <span className="absolute top-3.5 right-3 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_#f59e0b]" />
                           )}
                         </div>
                       );
@@ -873,89 +1005,158 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
+      {/* Hero Header Limpo Sem Métricas Duplicadas */}
+      <div className="pt-2">
+        <h1 className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${
+          themeMode === 'dark' ? 'text-white' : 'text-stone-900'
+        }`}>
+          Bem-vindo, Admin
+        </h1>
+        <p className={`text-xs sm:text-sm mt-1 font-medium ${
+          themeMode === 'dark' ? 'text-slate-400' : 'text-stone-600'
+        }`}>
+          Gerencie reservas, limites de vagas e configurações do sistema em tempo real.
+        </p>
+      </div>
+
+      {/* 4 Principais KPI Cards Únicos (Sem Duplicação, Ícones do mesmo tamanho e cores distintas por modo) */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {/* Total Reservas Card */}
-        <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/60 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 hover:translate-y-[-2px] group">
+        <div className={`rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 group ${
+          themeMode === 'dark'
+            ? 'bg-slate-900 border border-slate-800 text-slate-100 shadow-md hover:border-amber-500/40'
+            : 'bg-white border border-stone-200/80 text-stone-900 shadow-sm hover:shadow-md hover:border-amber-300'
+        }`}>
           <div className="flex justify-between items-start">
             <div className="space-y-1">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Reservas (Hoje)</span>
-              <p className="text-[10px] text-slate-500 font-medium">Agendamentos para hoje</p>
+              <span className={`text-xs font-bold uppercase tracking-wider ${
+                themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+              }`}>Reservas (Hoje)</span>
+              <p className={`text-[11px] font-medium ${
+                themeMode === 'dark' ? 'text-slate-500' : 'text-stone-400'
+              }`}>Agendamentos para hoje</p>
             </div>
-            <div className="p-2.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 transition-transform duration-300 group-hover:scale-110 ${
+              themeMode === 'dark'
+                ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30'
+                : 'bg-amber-100 text-amber-900 border border-amber-300/60'
+            }`}>
+              ↗
             </div>
           </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black text-white tracking-tight">{totalAgendamentos}</span>
-            <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full">Hoje</span>
+          <div className="mt-5 flex items-baseline justify-between">
+            <span className="text-4xl font-black tracking-tight">{totalAgendamentos}</span>
+            <span className="text-[10px] font-black text-stone-900 bg-amber-400 px-3 py-1 rounded-full shadow-xs">
+              Hoje
+            </span>
           </div>
         </div>
 
         {/* Confirmados Card */}
-        <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/60 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 hover:translate-y-[-2px] group">
+        <div className={`rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 group ${
+          themeMode === 'dark'
+            ? 'bg-slate-900 border border-slate-800 text-slate-100 shadow-md hover:border-emerald-500/40'
+            : 'bg-white border border-stone-200/80 text-stone-900 shadow-sm hover:shadow-md hover:border-emerald-300'
+        }`}>
           <div className="flex justify-between items-start">
             <div className="space-y-1">
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Confirmados (Hoje)</span>
-              <p className="text-[10px] text-slate-500 font-medium">Garantidos para hoje</p>
+              <span className={`text-xs font-bold uppercase tracking-wider ${
+                themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+              }`}>Confirmados (Hoje)</span>
+              <p className={`text-[11px] font-medium ${
+                themeMode === 'dark' ? 'text-slate-500' : 'text-stone-400'
+              }`}>Garantidos para hoje</p>
             </div>
-            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 transition-transform duration-300 group-hover:scale-110 ${
+              themeMode === 'dark'
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                : 'bg-emerald-100 text-emerald-900 border border-emerald-300/60'
+            }`}>
+              ✓
             </div>
           </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black text-emerald-400 tracking-tight">{totalConfirmados}</span>
-            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Hoje</span>
+          <div className="mt-5 flex items-baseline justify-between">
+            <span className="text-4xl font-black tracking-tight">{totalConfirmados}</span>
+            <span className={`text-[10px] font-black px-3 py-1 rounded-full shadow-xs ${
+              themeMode === 'dark' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-100 text-emerald-900'
+            }`}>
+              Garantidos
+            </span>
           </div>
         </div>
 
         {/* Total Acessos Card */}
-        <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/60 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:shadow-xl hover:shadow-sky-500/5 transition-all duration-300 hover:translate-y-[-2px] group">
+        <div className={`rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 group ${
+          themeMode === 'dark'
+            ? 'bg-slate-900 border border-slate-800 text-slate-100 shadow-md hover:border-sky-500/40'
+            : 'bg-white border border-stone-200/80 text-stone-900 shadow-sm hover:shadow-md hover:border-sky-300'
+        }`}>
           <div className="flex justify-between items-start">
             <div className="space-y-1">
-              <span className="text-xs font-bold text-sky-400 uppercase tracking-wider">Acessos à Agenda</span>
-              <p className="text-[10px] text-slate-500 font-medium">Cliques/visitas na página de reserva</p>
+              <span className={`text-xs font-bold uppercase tracking-wider ${
+                themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+              }`}>Acessos à Agenda</span>
+              <p className={`text-[11px] font-medium ${
+                themeMode === 'dark' ? 'text-slate-500' : 'text-stone-400'
+              }`}>Visitas na página do PWA</p>
             </div>
-            <div className="p-2.5 bg-sky-500/10 border border-sky-500/20 text-sky-400 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 transition-transform duration-300 group-hover:scale-110 ${
+              themeMode === 'dark'
+                ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
+                : 'bg-sky-100 text-sky-900 border border-sky-300/60'
+            }`}>
+              👁️
             </div>
           </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black text-white tracking-tight">
+          <div className="mt-5 flex items-baseline justify-between">
+            <span className="text-4xl font-black tracking-tight">
               {config.acessos_pagina_agenda || 0}
             </span>
-            <span className="text-[10px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full">Acessos</span>
+            <span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${
+              themeMode === 'dark' ? 'bg-sky-500/20 border-sky-500/30 text-sky-300' : 'bg-sky-50 border-sky-200 text-sky-800'
+            }`}>
+              Visualizações
+            </span>
           </div>
         </div>
 
         {/* Taxa de Confirmação Card */}
-        <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/60 rounded-2xl p-5 flex flex-col justify-between shadow-lg hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 hover:translate-y-[-2px] group">
+        <div className={`rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 group ${
+          themeMode === 'dark'
+            ? 'bg-slate-900 border border-slate-800 text-slate-100 shadow-md hover:border-purple-500/40'
+            : 'bg-white border border-stone-200/80 text-stone-900 shadow-sm hover:shadow-md hover:border-purple-300'
+        }`}>
           <div className="flex justify-between items-start">
             <div className="space-y-1">
-              <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">Confirmações (Hoje)</span>
-              <p className="text-[10px] text-slate-500 font-medium">Mapeamento de hoje</p>
+              <span className={`text-xs font-bold uppercase tracking-wider ${
+                themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+              }`}>Taxa de Conversão</span>
+              <p className={`text-[11px] font-medium ${
+                themeMode === 'dark' ? 'text-slate-500' : 'text-stone-400'
+              }`}>Mapeamento de confirmação</p>
             </div>
-            <div className="p-2.5 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 transition-transform duration-300 group-hover:scale-110 ${
+              themeMode === 'dark'
+                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                : 'bg-purple-100 text-purple-900 border border-purple-300/60'
+            }`}>
+              %
             </div>
           </div>
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-end">
-              <span className="text-3xl font-black text-white tracking-tight">{taxaConfirmacao}%</span>
-              <span className="text-[10px] font-medium text-slate-400">{totalConfirmados} de {totalAgendamentos}</span>
+              <span className="text-3xl font-black tracking-tight">{taxaConfirmacao}%</span>
+              <span className={`text-[10px] font-bold ${
+                themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+              }`}>{totalConfirmados} de {totalAgendamentos}</span>
             </div>
-            <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
+            <div className={`w-full rounded-full h-2 overflow-hidden ${
+              themeMode === 'dark' ? 'bg-slate-950' : 'bg-stone-100'
+            }`}>
               <div 
-                className="bg-gradient-to-r from-purple-500 to-indigo-500 h-1.5 rounded-full transition-all duration-500" 
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  themeMode === 'dark' ? 'bg-purple-400' : 'bg-purple-600'
+                }`}
                 style={{ width: `${taxaConfirmacao}%` }}
               />
             </div>
@@ -963,121 +1164,117 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex border-b border-slate-900">
-        <button
-          onClick={() => handleTabChange('agenda')}
-          className={`px-6 py-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
-            activeTab === 'agenda' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          Agenda Semanal
-        </button>
-        <button
-          onClick={() => handleTabChange('config')}
-          className={`px-6 py-3 text-sm font-bold border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'config' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <span>Configurações</span>
-          {hasUnsavedChanges && (
-            <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_6px_#f59e0b] shrink-0 animate-pulse" title="Alterações não salvas" />
-          )}
-        </button>
-        <button
-          onClick={() => handleTabChange('historico')}
-          className={`px-6 py-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
-            activeTab === 'historico' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          Histórico de Ações
-        </button>
-      </div>
-
       {/* Database Warning */}
       {!usingDb && (
-        <div className="bg-yellow-500/10 border border-yellow-550/20 text-yellow-300 px-4 py-3.5 rounded-2xl text-xs flex gap-3 items-center">
-          <svg className="w-5 h-5 shrink-0 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
+        <div className="bg-amber-500/10 border border-amber-500/30 text-stone-800 px-5 py-4 rounded-3xl text-xs flex gap-3 items-center shadow-xs">
+          <span className="text-lg">⚠️</span>
           <div>
-            <strong>Aviso de Banco de Dados:</strong> As tabelas `agendamentos` e `configuracao_agenda` não foram encontradas no Supabase. O painel está salvando dados localmente no seu navegador para demonstração. Copie o script SQL em `supabase_schema/001_initial_schema.sql` e execute-o no SQL Editor do Supabase para conectar permanentemente.
+            <strong>Aviso de Banco de Dados:</strong> As tabelas `agendamentos` e `configuracao_agenda` não foram encontradas no Supabase. O painel está salvando dados localmente no navegador para demonstração. Copie o script SQL em `supabase_schema/001_initial_schema.sql` e execute-o no SQL Editor do Supabase para conectar permanentemente.
           </div>
         </div>
       )}
 
-      {/* Aba 1: Agenda Semanal (Google Calendar Style) */}
+      {/* Aba 1: Agenda Semanal (Adaptada dinamicamente para Light Mode e Dark Mode) */}
       {activeTab === 'agenda' && (
         <div className="space-y-4">
-          {/* Navigation bar */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 bg-slate-900 border border-slate-850 p-4 rounded-2xl">
-              <div className="flex items-center gap-2">
-                {agendaViewMode === 'grid' ? (
-                  <>
-                    <button 
-                      onClick={() => changeWeek(-1)}
-                      className="p-2 rounded-lg bg-slate-950 border border-slate-800 hover:bg-slate-850 text-slate-350 cursor-pointer"
-                    >
-                      &larr;
-                    </button>
-                    <button 
-                      onClick={setTodayWeek}
-                      className="px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 hover:bg-slate-850 text-xs font-bold cursor-pointer"
-                    >
-                      Hoje
-                    </button>
-                    <button 
-                      onClick={() => changeWeek(1)}
-                      className="p-2 rounded-lg bg-slate-950 border border-slate-800 hover:bg-slate-850 text-slate-350 cursor-pointer"
-                    >
-                      &rarr;
-                    </button>
-                  </>
-                ) : (
-                  <div className="flex items-center gap-2 px-1">
-                    <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span className="text-xs uppercase font-black tracking-wider text-indigo-400">Tabela de Reservas</span>
-                  </div>
-                )}
-              </div>
-              
-              <span className="text-sm font-bold text-white tracking-wide">
-                {agendaViewMode === 'grid' ? formatWeekRange() : `Total: ${bookings.length} agendamentos cadastrados`}
-              </span>
-
-              {/* Seletor de modo de visualização */}
-              <div className="flex items-center gap-1.5 bg-slate-950 p-1 border border-slate-800 rounded-xl shrink-0">
-                <button
-                  onClick={() => setAgendaViewMode('grid')}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] uppercase font-black tracking-wider transition-all cursor-pointer ${
-                    agendaViewMode === 'grid'
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10'
-                      : 'text-slate-450 hover:text-slate-200'
-                  }`}
-                >
-                  Grade Semanal
-                </button>
-                <button
-                  onClick={() => setAgendaViewMode('table')}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] uppercase font-black tracking-wider transition-all cursor-pointer ${
-                    agendaViewMode === 'table'
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10'
-                      : 'text-slate-450 hover:text-slate-200'
-                  }`}
-                >
-                  Tabela Geral
-                </button>
-              </div>
+          {/* Navigation bar (Barra de Controle de visualização e semanas) */}
+          <div className={`flex flex-col sm:flex-row justify-between items-center gap-4 p-4 px-6 rounded-3xl transition-colors duration-300 ${
+            themeMode === 'dark'
+              ? 'bg-slate-900 border border-slate-800 text-slate-100 shadow-md'
+              : 'bg-white border border-stone-200/80 text-stone-900 shadow-sm'
+          }`}>
+            <div className="flex items-center gap-2">
+              {agendaViewMode === 'grid' ? (
+                <>
+                  <button 
+                    onClick={() => changeWeek(-1)}
+                    className={`p-2.5 rounded-full border text-xs font-bold transition-colors cursor-pointer ${
+                      themeMode === 'dark'
+                        ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-200'
+                        : 'bg-stone-100 border-stone-200 hover:bg-stone-200 text-stone-700'
+                    }`}
+                  >
+                    &larr;
+                  </button>
+                  <button 
+                    onClick={setTodayWeek}
+                    className="px-4 py-2.5 rounded-full bg-amber-400 text-stone-900 text-xs font-extrabold transition-all cursor-pointer shadow-xs"
+                  >
+                    Hoje
+                  </button>
+                  <button 
+                    onClick={() => changeWeek(1)}
+                    className={`p-2.5 rounded-full border text-xs font-bold transition-colors cursor-pointer ${
+                      themeMode === 'dark'
+                        ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-200'
+                        : 'bg-stone-100 border-stone-200 hover:bg-stone-200 text-stone-700'
+                    }`}
+                  >
+                    &rarr;
+                  </button>
+                </>
+              ) : (
+                <div className="flex items-center gap-2 px-1">
+                  <span className="text-xs uppercase font-black tracking-wider text-stone-900 bg-amber-400 px-3 py-1 rounded-full">
+                    Tabela de Reservas
+                  </span>
+                </div>
+              )}
             </div>
+            
+            <span className={`text-sm font-extrabold tracking-wide ${
+              themeMode === 'dark' ? 'text-white' : 'text-stone-900'
+            }`}>
+              {agendaViewMode === 'grid' ? formatWeekRange() : `Total: ${bookings.length} agendamentos cadastrados`}
+            </span>
+
+            {/* Seletor de modo de visualização */}
+            <div className={`flex items-center gap-1.5 p-1.5 rounded-full border shrink-0 ${
+              themeMode === 'dark'
+                ? 'bg-slate-950 border-slate-800'
+                : 'bg-stone-100 border-stone-200'
+            }`}>
+              <button
+                onClick={() => setAgendaViewMode('grid')}
+                className={`px-4 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer ${
+                  agendaViewMode === 'grid'
+                    ? 'bg-amber-400 text-stone-900 shadow-xs'
+                    : themeMode === 'dark'
+                    ? 'text-slate-400 hover:text-white'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                Grade Semanal
+              </button>
+              <button
+                onClick={() => setAgendaViewMode('table')}
+                className={`px-4 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer ${
+                  agendaViewMode === 'table'
+                    ? 'bg-amber-400 text-stone-900 shadow-xs'
+                    : themeMode === 'dark'
+                    ? 'text-slate-400 hover:text-white'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                Tabela Geral
+              </button>
+            </div>
+          </div>
 
           {/* Conteúdo Dinâmico */}
           {agendaViewMode === 'table' ? (
-            <div className="overflow-x-auto border border-slate-850 rounded-3xl shadow-2xl bg-slate-900/50 backdrop-blur-md">
+            <div className={`overflow-x-auto border rounded-3xl shadow-sm transition-colors ${
+              themeMode === 'dark'
+                ? 'bg-slate-900 border-slate-800'
+                : 'bg-white border-stone-200/80'
+            }`}>
               <table className="w-full text-left border-collapse min-w-[900px]">
                 <thead>
-                  <tr className="border-b border-slate-850 text-slate-400 text-[10px] uppercase font-bold tracking-widest bg-slate-950/40">
+                  <tr className={`border-b text-[10px] uppercase font-bold tracking-widest ${
+                    themeMode === 'dark'
+                      ? 'border-slate-800 text-slate-400 bg-slate-950/60'
+                      : 'border-stone-200 text-stone-500 bg-stone-50/70'
+                  }`}>
                     <th className="p-4 w-60">Data e Hora</th>
                     <th className="p-4">Cliente</th>
                     <th className="p-4">Telefone</th>
@@ -1087,7 +1284,11 @@ function AdminDashboard() {
                     <th className="p-4 text-center w-28">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-850 text-slate-300 bg-slate-900/10">
+                <tbody className={`divide-y ${
+                  themeMode === 'dark'
+                    ? 'divide-slate-800 text-slate-300'
+                    : 'divide-stone-100 text-stone-700'
+                }`}>
                   {(() => {
                     const sortedBookings = [...bookings]
                       .filter(b => b.status !== 'Cancelado' && b.status !== 'Finalizado')
@@ -1100,7 +1301,7 @@ function AdminDashboard() {
                     if (sortedBookings.length === 0) {
                       return (
                         <tr>
-                          <td colSpan="7" className="p-12 text-center text-slate-500 font-bold text-xs uppercase tracking-wider">
+                          <td colSpan="7" className="p-12 text-center text-slate-400 font-bold text-xs uppercase tracking-wider">
                             Nenhum agendamento encontrado
                           </td>
                         </tr>
@@ -1110,7 +1311,6 @@ function AdminDashboard() {
                     return sortedBookings.map((b) => {
                       const name = b.cliente_nome || b.name || (b.clientes && (b.clientes.nome || b.clientes.cliente_nome)) || 'Sem nome';
                       const phone = b.cliente_telefone || b.phone || (b.clientes && b.clientes.telefone) || 'Sem telefone';
-                      const isConfirmed = (b.status || 'Confirmado') === 'Confirmado';
                       
                       const bookingDate = new Date(`${b.data}T00:00:00`);
                       const dateFormatted = bookingDate.toLocaleDateString('pt-BR', {
@@ -1124,46 +1324,60 @@ function AdminDashboard() {
                       return (
                         <tr 
                           key={b.id} 
-                          className="hover:bg-slate-950/20 transition-colors group/tr"
+                          className={`transition-colors group/tr ${
+                            themeMode === 'dark' ? 'hover:bg-slate-800/40' : 'hover:bg-amber-50/40'
+                          }`}
                         >
-                          <td className="p-4 text-xs font-mono font-bold text-white">
+                          <td className={`p-4 text-xs font-mono font-bold ${
+                            themeMode === 'dark' ? 'text-white' : 'text-stone-900'
+                          }`}>
                             <div className="flex flex-col gap-0.5">
                               <span>{capitalizedDate}</span>
-                              <span className="text-[10px] text-indigo-400 font-black tracking-wider uppercase">⏰ {b.horario}</span>
+                              <span className="text-[10px] text-amber-500 font-black tracking-wider uppercase">⏰ {b.horario}</span>
                             </div>
                           </td>
-                          <td className="p-4 text-xs font-extrabold text-slate-100">
+                          <td className={`p-4 text-xs font-extrabold ${
+                            themeMode === 'dark' ? 'text-slate-100' : 'text-stone-900'
+                          }`}>
                             {name}
                           </td>
-                          <td className="p-4 text-xs font-mono text-slate-450">
+                          <td className={`p-4 text-xs font-mono ${
+                            themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+                          }`}>
                             <span className="flex items-center gap-1">
-                              <svg className="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <svg className="w-3.5 h-3.5 text-stone-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                               </svg>
                               {phone}
                             </span>
                           </td>
                           <td className="p-4 text-xs font-mono text-center font-black">
-                            <span className="bg-slate-950/50 border border-slate-800 text-slate-350 px-2.5 py-1 rounded-lg">
+                            <span className={`px-2.5 py-1 rounded-lg border ${
+                              themeMode === 'dark'
+                                ? 'bg-slate-950 border-slate-800 text-slate-300'
+                                : 'bg-stone-100 border-stone-200 text-stone-800'
+                            }`}>
                               {b.pessoas}p
                             </span>
                           </td>
-                          <td className="p-4 text-[11px] text-slate-400 max-w-[200px] truncate" title={b.observacoes || 'Nenhuma'}>
-                            {b.observacoes || <span className="text-slate-650 font-mono italic">Sem observações</span>}
+                          <td className={`p-4 text-[11px] max-w-[200px] truncate ${
+                            themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+                          }`} title={b.observacoes || 'Nenhuma'}>
+                            {b.observacoes || <span className="italic opacity-60">Sem observações</span>}
                           </td>
                           <td className="p-4 text-xs">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] uppercase font-black tracking-wider ${
                               b.status === 'Cancelado'
-                                ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                ? 'bg-red-500/10 text-red-500 border border-red-500/20'
                                 : b.status === 'Confirmado'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
                                 : b.status === 'Em andamento'
-                                ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20 animate-pulse'
+                                ? 'bg-purple-500/10 text-purple-600 border border-purple-500/20 animate-pulse'
                                 : b.status === 'Finalizado'
-                                ? 'bg-slate-500/10 text-slate-405 border border-slate-500/20'
-                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                ? 'bg-slate-500/10 text-slate-500 border border-slate-500/20'
+                                : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
                             }`}>
-                              <span className={`w-1 h-1 rounded-full ${
+                              <span className={`w-1.5 h-1.5 rounded-full ${
                                 b.status === 'Cancelado'
                                   ? 'bg-red-500'
                                   : b.status === 'Confirmado'
@@ -1181,7 +1395,11 @@ function AdminDashboard() {
                             <div className="flex justify-center gap-2">
                               <button
                                 onClick={() => setSelectedBooking(b)}
-                                className="p-1.5 rounded bg-slate-950/50 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-450 hover:text-white transition-all cursor-pointer"
+                                className={`p-1.5 rounded border transition-all cursor-pointer ${
+                                  themeMode === 'dark'
+                                    ? 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200'
+                                    : 'bg-stone-100 hover:bg-stone-200 border-stone-200 text-stone-700'
+                                }`}
                                 title="Ver detalhes"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1194,7 +1412,7 @@ function AdminDashboard() {
                                   e.stopPropagation();
                                   handleDelete(b.id);
                                 }}
-                                className="p-1.5 rounded bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/25 text-slate-450 hover:text-red-400 transition-all cursor-pointer"
+                                className="p-1.5 rounded bg-red-500/10 hover:bg-red-500 hover:text-white border border-red-500/20 text-red-500 transition-all cursor-pointer"
                                 title="Cancelar reserva"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1218,36 +1436,66 @@ function AdminDashboard() {
               onMouseUp={handleMouseUp}
               onMouseMove={handleMouseMove}
               onWheel={handleWheel}
-              className={`overflow-auto max-h-[85vh] border border-slate-900 rounded-3xl shadow-2xl ${isMouseDown ? 'cursor-grabbing select-none' : 'cursor-grab'}`} 
+              className={`overflow-auto max-h-[85vh] rounded-3xl shadow-xl border transition-colors ${
+                themeMode === 'dark'
+                  ? 'bg-slate-900 border-slate-800'
+                  : 'bg-white border-stone-200/80'
+              } ${isMouseDown ? 'cursor-grabbing select-none' : 'cursor-grab'}`} 
               style={{ WebkitOverflowScrolling: 'touch' }}
             >
               <table className="w-full min-w-[1600px] border-collapse table-fixed text-left">
-                <thead className="sticky top-0 z-20 bg-slate-900 shadow-md">
-                  <tr className="border-b border-slate-850 text-slate-300">
-                    <th className="w-24 p-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-center bg-slate-900 sticky left-0 z-30 border-r border-slate-850 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">Horário</th>
+                <thead className={`sticky top-0 z-20 shadow-sm ${
+                  themeMode === 'dark' ? 'bg-slate-900' : 'bg-stone-100'
+                }`}>
+                  <tr className={`border-b ${
+                    themeMode === 'dark' ? 'border-slate-800 text-slate-300' : 'border-stone-200 text-stone-700'
+                  }`}>
+                    <th className={`w-24 p-4 text-xs font-bold uppercase tracking-wider text-center sticky left-0 z-30 border-r shadow-sm ${
+                      themeMode === 'dark'
+                        ? 'bg-slate-900 border-slate-800 text-slate-400'
+                        : 'bg-stone-100 border-stone-200 text-stone-700'
+                    }`}>Horário</th>
                     {weekDates.map((date, idx) => {
                       const isToday = new Date().toDateString() === date.toDateString();
                       return (
-                        <th key={idx} className={`p-4 border-l border-slate-850 bg-slate-900 ${isToday ? 'text-primary' : ''}`}>
-                            <div className="flex flex-col">
-                              <span className={`text-[10px] uppercase font-bold tracking-widest ${isToday ? 'text-primary font-black' : 'text-slate-400'}`}>
-                                {weekDaysLabels[idx]}
-                              </span>
-                              <span className={`text-lg font-black mt-0.5 ${isToday ? 'text-primary' : 'text-white'}`}>
-                                {date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'numeric' })}
-                              </span>
-                            </div>
-                          </th>
-                        );
-                      })}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-850 bg-slate-900/10">
-                    {config.horarios_disponiveis.map((time) => (
-                      <tr key={time} className="hover:bg-slate-950/20 group/row">
-                        <td className="p-4 text-sm font-extrabold text-slate-400 text-center bg-slate-900 sticky left-0 z-10 border-r border-slate-850 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
-                          {time}
-                        </td>
+                        <th key={idx} className={`p-4 border-l ${
+                          themeMode === 'dark' ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-stone-100'
+                        } ${isToday ? 'text-amber-500 font-extrabold' : ''}`}>
+                          <div className="flex flex-col">
+                            <span className={`text-[10px] uppercase font-bold tracking-widest ${
+                              isToday
+                                ? 'text-amber-500 font-black'
+                                : themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+                            }`}>
+                              {weekDaysLabels[idx]}
+                            </span>
+                            <span className={`text-lg font-black mt-0.5 ${
+                              isToday
+                                ? 'text-amber-500'
+                                : themeMode === 'dark' ? 'text-white' : 'text-stone-900'
+                            }`}>
+                              {date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'numeric' })}
+                            </span>
+                          </div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody className={`divide-y ${
+                  themeMode === 'dark' ? 'divide-slate-800/80 bg-slate-950/20' : 'divide-stone-200/60 bg-stone-50/20'
+                }`}>
+                  {config.horarios_disponiveis.map((time) => (
+                    <tr key={time} className={`transition-colors group/row ${
+                      themeMode === 'dark' ? 'hover:bg-slate-800/20' : 'hover:bg-amber-50/30'
+                    }`}>
+                      <td className={`p-4 text-sm font-extrabold text-center sticky left-0 z-10 border-r shadow-sm ${
+                        themeMode === 'dark'
+                          ? 'bg-slate-900 border-slate-800 text-slate-300'
+                          : 'bg-stone-100 border-stone-200 text-stone-800'
+                      }`}>
+                        {time}
+                      </td>
                         {weekDates.map((date, dayIdx) => {
                           const dateStr = getLocalDateString(date);
                           const bookingsInSlot = bookings.filter(b => b.data === dateStr && b.horario === time && b.status !== 'Cancelado' && b.status !== 'Finalizado');
@@ -1260,10 +1508,12 @@ function AdminDashboard() {
                           return (
                             <td 
                               key={dayIdx} 
-                              className={`p-2 border-l border-slate-850 align-top relative transition-colors ${
+                              className={`p-2 align-top relative transition-colors border-l ${
+                                themeMode === 'dark' ? 'border-slate-800' : 'border-stone-200'
+                              } ${
                                 !isWorkingDay 
-                                  ? 'bg-slate-950/70 pattern-dots opacity-30 select-none' 
-                                  : 'bg-slate-900/5 group-hover/row:bg-slate-900/20'
+                                  ? themeMode === 'dark' ? 'bg-slate-950/70 opacity-30 select-none' : 'bg-stone-200/50 opacity-40 select-none'
+                                  : themeMode === 'dark' ? 'bg-slate-900/5 group-hover/row:bg-slate-900/20' : 'bg-white group-hover/row:bg-amber-50/30'
                               }`}
                               style={{ height: '90px' }}
                             >
@@ -1273,10 +1523,10 @@ function AdminDashboard() {
                                   <div className="flex justify-between items-center">
                                     <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold tracking-wide shadow-xs ${
                                       occupiedSlots >= limit 
-                                        ? 'bg-red-500/15 text-red-400 border border-red-500/20' 
+                                        ? 'bg-red-500/15 text-red-500 border border-red-500/20' 
                                         : hasException 
-                                        ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
-                                        : 'bg-slate-800/80 text-slate-400'
+                                        ? 'bg-amber-500/15 text-amber-600 border border-amber-500/20'
+                                        : themeMode === 'dark' ? 'bg-slate-800/80 text-slate-400 border border-slate-700' : 'bg-stone-100 text-stone-600 border border-stone-200'
                                     }`}>
                                       {occupiedSlots}/{limit} vagas {hasException && '⚡'}
                                     </span>
@@ -1298,13 +1548,16 @@ function AdminDashboard() {
                                           {visibleBookings.map((b) => {
                                             const name = b.cliente_nome || b.name || (b.clientes && (b.clientes.nome || b.clientes.cliente_nome)) || 'Sem nome';
                                             const phone = b.cliente_telefone || b.phone || (b.clientes && b.clientes.telefone) || 'Sem telefone';
-                                            const isConfirmed = (b.status || 'Confirmado') === 'Confirmado';
                                             
                                             return (
                                               <div 
                                                 key={b.id} 
                                                 onClick={() => setSelectedBooking(b)}
-                                                className="group/card relative p-3 bg-gradient-to-br from-slate-900 to-slate-950/70 hover:from-slate-850 hover:to-slate-900 border border-slate-800/85 hover:border-slate-750/90 rounded-xl flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer select-none text-[11px] leading-tight"
+                                                className={`group/card relative p-3 border rounded-xl flex flex-col justify-between shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer select-none text-[11px] leading-tight ${
+                                                  themeMode === 'dark'
+                                                    ? 'bg-slate-900 hover:bg-slate-850 border-slate-800 hover:border-slate-700 text-white'
+                                                    : 'bg-white hover:bg-stone-50 border-stone-200/90 hover:border-amber-300 text-stone-900'
+                                                }`}
                                               >
                                                 <div className="space-y-2">
                                                   {/* Card Top: Status Dot and Pessoas Badge */}
@@ -1323,20 +1576,24 @@ function AdminDashboard() {
                                                       }`} />
                                                       <span className={`text-[9px] uppercase font-black tracking-wider ${
                                                         b.status === 'Cancelado'
-                                                          ? 'text-red-400'
+                                                          ? 'text-red-500'
                                                           : b.status === 'Confirmado'
-                                                          ? 'text-emerald-450'
+                                                          ? 'text-emerald-600'
                                                           : b.status === 'Em andamento'
-                                                          ? 'text-purple-400'
+                                                          ? 'text-purple-600'
                                                           : b.status === 'Finalizado'
-                                                          ? 'text-slate-400'
-                                                          : 'text-amber-450'
+                                                          ? 'text-slate-500'
+                                                          : 'text-amber-600'
                                                       }`}>
                                                         {b.status || 'Confirmado'}
                                                       </span>
                                                     </div>
-                                                    <span className="text-[9px] font-black text-slate-350 bg-slate-800/80 border border-slate-750 px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-0.5">
-                                                      <svg className="w-2.5 h-2.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-0.5 border ${
+                                                      themeMode === 'dark'
+                                                        ? 'bg-slate-800 border-slate-700 text-slate-300'
+                                                        : 'bg-stone-100 border-stone-200 text-stone-700'
+                                                    }`}>
+                                                      <svg className="w-2.5 h-2.5 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                                       </svg>
                                                       {b.pessoas}p
@@ -1345,10 +1602,14 @@ function AdminDashboard() {
                                                   
                                                   {/* Cliente Name and Contact Info */}
                                                   <div className="space-y-1">
-                                                    <p className="font-extrabold text-slate-100 truncate pr-1 text-xs tracking-wide">
+                                                    <p className={`font-extrabold truncate pr-1 text-xs tracking-wide ${
+                                                      themeMode === 'dark' ? 'text-slate-100' : 'text-stone-900'
+                                                    }`}>
                                                       {name}
                                                     </p>
-                                                    <p className="text-[10px] text-slate-450 truncate flex items-center gap-1">
+                                                    <p className={`text-[10px] truncate flex items-center gap-1 ${
+                                                      themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+                                                    }`}>
                                                       <svg className="w-2.5 h-2.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                                       </svg>
@@ -1425,538 +1686,734 @@ function AdminDashboard() {
         </div>
       )}
 
-      {/* Aba 2: Configurações */}
+      {/* Aba 2: Configurações (Totalmente adaptada para Light Mode e Dark Mode) */}
       {activeTab === 'config' && (
         <div className="space-y-6">
           {/* Card 1: Gerenciar Horários da Agenda */}
-          <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl shadow-lg space-y-6">
-            <div className="border-b border-slate-850 pb-2">
-              <h3 className="text-xl font-bold text-white">Gerenciar Horários da Agenda</h3>
-              <p className="text-xs text-slate-400 mt-1">Configure as vagas de horário disponíveis para agendamento dos clientes.</p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Lado Esquerdo: Chips de Horários Ativos */}
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Horários Ativos ({horariosDisponiveisSelected.length})</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Estes são os horários atualmente oferecidos aos clientes no formulário.</p>
+          <div className={`rounded-3xl border overflow-hidden transition-all duration-300 ${
+            themeMode === 'dark'
+              ? 'bg-slate-900 border-slate-800 text-slate-100 shadow-md'
+              : 'bg-white border-stone-200/80 text-stone-900 shadow-sm'
+          }`}>
+            <button
+              type="button"
+              onClick={() => toggleConfigSection('horarios')}
+              className={`w-full p-6 text-left flex items-center justify-between transition-colors cursor-pointer select-none ${
+                themeMode === 'dark' ? 'bg-slate-900 hover:bg-slate-850' : 'bg-white hover:bg-stone-50'
+              }`}
+            >
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg p-2 bg-amber-400 text-stone-900 rounded-2xl">⏰</span>
+                  <h3 className={`text-xl font-extrabold ${themeMode === 'dark' ? 'text-white' : 'text-stone-900'}`}>
+                    Gerenciar Horários da Agenda
+                  </h3>
                 </div>
-                {horariosDisponiveisSelected.length === 0 ? (
-                  <div className="p-6 border border-dashed border-slate-800 rounded-xl text-center">
-                    <p className="text-xs text-slate-500 italic">Nenhum horário cadastrado. Adicione horários abaixo ou use o gerador.</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2 max-h-[220px] overflow-y-auto pr-1">
-                    {horariosDisponiveisSelected.map((time) => (
-                      <div 
-                        key={time} 
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-950 border border-slate-800 hover:border-red-500/30 rounded-xl group transition-all text-xs font-mono font-bold"
-                      >
-                        <span className="text-slate-200">{time}</span>
-                        <button 
+                <p className={`text-xs font-medium ${themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'}`}>
+                  Configure as vagas de horário disponíveis para agendamento dos clientes.
+                </p>
+              </div>
+            </button>
+
+            {openConfigSections.horarios && (
+              <div className={`p-6 pt-6 border-t space-y-6 ${
+                themeMode === 'dark' ? 'border-slate-800' : 'border-stone-200/60'
+              }`}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Lado Esquerdo: Chips de Horários Ativos */}
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className={`text-xs font-bold uppercase tracking-wider ${
+                        themeMode === 'dark' ? 'text-slate-300' : 'text-stone-500'
+                      }`}>Horários Ativos ({horariosDisponiveisSelected.length})</h4>
+                      <p className={`text-[11px] mt-0.5 font-medium ${
+                        themeMode === 'dark' ? 'text-slate-400' : 'text-stone-400'
+                      }`}>Estes são os horários atualmente oferecidos aos clientes no formulário.</p>
+                    </div>
+                    {horariosDisponiveisSelected.length === 0 ? (
+                      <div className={`p-6 border border-dashed rounded-2xl text-center ${
+                        themeMode === 'dark' ? 'border-slate-800' : 'border-stone-300'
+                      }`}>
+                        <p className="text-xs text-stone-400 italic">Nenhum horário cadastrado. Adicione horários abaixo ou use o gerador.</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2 max-h-[220px] overflow-y-auto pr-1">
+                        {horariosDisponiveisSelected.map((time) => (
+                          <div 
+                            key={time} 
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl group transition-all text-xs font-mono font-bold shadow-xs border ${
+                              themeMode === 'dark'
+                                ? 'bg-slate-950 text-amber-400 border-slate-800'
+                                : 'bg-stone-900 text-white border-stone-800'
+                            }`}
+                          >
+                            <span className={themeMode === 'dark' ? 'text-amber-400' : 'text-amber-400'}>{time}</span>
+                            <button 
+                              type="button"
+                              onClick={() => handleRemoveHorario(time)}
+                              className="text-stone-400 hover:text-red-400 font-extrabold transition-colors cursor-pointer text-sm leading-none"
+                              title={`Remover ${time}`}
+                            >
+                              &times;
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Adicionar Individual */}
+                    <div className={`pt-4 border-t space-y-2 ${
+                      themeMode === 'dark' ? 'border-slate-800' : 'border-stone-200/60'
+                    }`}>
+                      <h4 className={`text-xs font-bold uppercase tracking-wider ${
+                        themeMode === 'dark' ? 'text-slate-300' : 'text-stone-500'
+                      }`}>Adicionar Horário Individual</h4>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <select 
+                            value={newTimeInput}
+                            onChange={(e) => setNewTimeInput(e.target.value)}
+                            className={`w-full px-3 py-2.5 text-xs rounded-xl focus:border-amber-500 focus:outline-none cursor-pointer font-semibold border ${
+                              themeMode === 'dark'
+                                ? 'bg-slate-950 border-slate-800 text-slate-100'
+                                : 'bg-stone-50 border-stone-200 text-stone-900'
+                            }`}
+                          >
+                            <option value="">-- Selecione o Horário --</option>
+                            {["07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30","22:00","22:30","23:00","23:30"].map(t => (
+                              <option key={t} value={t}>{t}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <button
                           type="button"
-                          onClick={() => handleRemoveHorario(time)}
-                          className="text-slate-500 hover:text-red-400 font-extrabold transition-colors cursor-pointer text-sm leading-none"
-                          title={`Remover ${time}`}
+                          onClick={handleAddHorario}
+                          className="px-4 py-2.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-extrabold rounded-xl text-xs transition-all cursor-pointer shadow-xs"
                         >
-                          &times;
+                          + Adicionar
                         </button>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                )}
-                
-                {/* Adicionar Individual */}
-                <div className="pt-4 border-t border-slate-850/50 space-y-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Adicionar Horário Individual</h4>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <input 
-                        type="time"
-                        value={newTimeInput}
-                        onChange={(e) => setNewTimeInput(e.target.value)}
-                        onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
-                        className="w-full pl-9 pr-3 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none cursor-pointer font-semibold"
-                        style={{ colorScheme: 'dark' }}
-                      />
-                      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-500">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+
+                  {/* Lado Direito: Gerador em Massa */}
+                  <div className={`p-5 rounded-2xl space-y-4 border ${
+                    themeMode === 'dark'
+                      ? 'bg-slate-950/60 border-slate-800'
+                      : 'bg-stone-50/70 border-stone-200/80'
+                  }`}>
+                    <div>
+                      <h4 className={`text-xs font-bold uppercase tracking-wider ${
+                        themeMode === 'dark' ? 'text-slate-200' : 'text-stone-700'
+                      }`}>Gerador de Horários em Massa</h4>
+                      <p className={`text-[11px] mt-0.5 ${
+                        themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+                      }`}>Preencha um intervalo de horas de forma automática.</p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <label className={`block text-[9px] font-bold uppercase ${
+                          themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+                        }`}>Hora Início</label>
+                        <select
+                          value={bulkStart}
+                          onChange={(e) => setBulkStart(e.target.value)}
+                          className={`w-full px-2 py-2 text-xs rounded-xl focus:border-amber-500 focus:outline-none cursor-pointer font-semibold border ${
+                            themeMode === 'dark'
+                              ? 'bg-slate-900 border-slate-800 text-slate-100'
+                              : 'bg-white border-stone-200 text-stone-900'
+                          }`}
+                        >
+                          {["06:00","06:30","07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30","22:00","22:30","23:00"].map(t => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className={`block text-[9px] font-bold uppercase ${
+                          themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+                        }`}>Hora Fim</label>
+                        <select
+                          value={bulkEnd}
+                          onChange={(e) => setBulkEnd(e.target.value)}
+                          className={`w-full px-2 py-2 text-xs rounded-xl focus:border-amber-500 focus:outline-none cursor-pointer font-semibold border ${
+                            themeMode === 'dark'
+                              ? 'bg-slate-900 border-slate-800 text-slate-100'
+                              : 'bg-white border-stone-200 text-stone-900'
+                          }`}
+                        >
+                          {["06:30","07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30","22:00","22:30","23:00","23:30"].map(t => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className={`block text-[9px] font-bold uppercase ${
+                          themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+                        }`}>Intervalo</label>
+                        <select
+                          value={bulkInterval}
+                          onChange={(e) => setBulkInterval(e.target.value)}
+                          className={`w-full px-2 py-2 text-xs rounded-xl focus:border-amber-500 focus:outline-none cursor-pointer border ${
+                            themeMode === 'dark'
+                              ? 'bg-slate-900 border-slate-800 text-slate-100'
+                              : 'bg-white border-stone-200 text-stone-900'
+                          }`}
+                        >
+                          <option value="15">15 min</option>
+                          <option value="30">30 min</option>
+                          <option value="45">45 min</option>
+                          <option value="60">60 min (1h)</option>
+                          <option value="90">90 min</option>
+                          <option value="120">120 min (2h)</option>
+                        </select>
                       </div>
                     </div>
+
                     <button
                       type="button"
-                      onClick={handleAddHorario}
-                      className="px-4 py-2.5 bg-slate-950 border border-slate-800 hover:border-primary/50 text-white hover:text-primary font-bold rounded-xl text-xs transition-all cursor-pointer"
+                      onClick={handleGenerateBulkHorarios}
+                      className="w-full py-2.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-extrabold rounded-xl text-xs transition-all cursor-pointer shadow-xs"
                     >
-                      + Adicionar
+                      Gerar Horários
                     </button>
                   </div>
                 </div>
               </div>
+            )}
+          </div>
 
-              {/* Lado Direito: Gerador em Massa */}
-              <div className="bg-slate-950/40 border border-slate-850/50 p-4 rounded-xl space-y-4">
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-350">Gerador de Horários em Massa</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Preencha um intervalo de horas de forma automática.</p>
+          {/* Card 2: Bloqueio & Ajustes de Vagas */}
+          <div className={`rounded-3xl border overflow-hidden transition-all duration-300 ${
+            themeMode === 'dark'
+              ? 'bg-slate-900 border-slate-800 text-slate-100 shadow-md'
+              : 'bg-white border-stone-200/80 text-stone-900 shadow-sm'
+          }`}>
+            <button
+              type="button"
+              onClick={() => toggleConfigSection('bloqueio')}
+              className={`w-full p-6 text-left flex items-center justify-between transition-colors cursor-pointer select-none ${
+                themeMode === 'dark' ? 'bg-slate-900 hover:bg-slate-850' : 'bg-white hover:bg-stone-50'
+              }`}
+            >
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg p-2 bg-stone-900 text-amber-400 rounded-2xl border border-stone-800">🚫</span>
+                  <h3 className={`text-xl font-extrabold ${themeMode === 'dark' ? 'text-white' : 'text-stone-900'}`}>
+                    Bloqueio & Ajustes de Vagas
+                  </h3>
                 </div>
+                <p className={`text-xs font-medium ${themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'}`}>
+                  Defina a capacidade ou feche horários específicos (0 vagas) para uma data.
+                </p>
+              </div>
+            </button>
 
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1">
-                    <label className="block text-[9px] font-bold uppercase text-slate-400">Hora Início</label>
-                    <div className="relative">
-                      <input 
-                        type="time"
-                        value={bulkStart}
-                        onChange={(e) => setBulkStart(e.target.value)}
-                        onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
-                        className="w-full pl-8 pr-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none cursor-pointer font-semibold"
-                        style={{ colorScheme: 'dark' }}
-                      />
-                      <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-slate-500">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[9px] font-bold uppercase text-slate-400">Hora Fim</label>
-                    <div className="relative">
-                      <input 
-                        type="time"
-                        value={bulkEnd}
-                        onChange={(e) => setBulkEnd(e.target.value)}
-                        onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
-                        className="w-full pl-8 pr-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none cursor-pointer font-semibold"
-                        style={{ colorScheme: 'dark' }}
-                      />
-                      <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-slate-500">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[9px] font-bold uppercase text-slate-400">Intervalo</label>
-                    <select
-                      value={bulkInterval}
-                      onChange={(e) => setBulkInterval(e.target.value)}
-                      className="w-full px-2 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none cursor-pointer"
+            {openConfigSections.bloqueio && (
+              <div className={`p-6 pt-6 border-t space-y-6 ${
+                themeMode === 'dark' ? 'border-slate-800' : 'border-stone-200/60'
+              }`}>
+                <div className="space-y-2">
+                  <label className={`block text-xs font-bold uppercase tracking-wider ${
+                    themeMode === 'dark' ? 'text-slate-300' : 'text-stone-500'
+                  }`}>Selecionar Dia para Ajuste</label>
+                  <div className="relative">
+                    <select 
+                      value={exData}
+                      onChange={(e) => setExData(e.target.value)}
+                      className={`w-full px-4 py-3 text-xs rounded-xl focus:border-amber-500 focus:outline-none transition-all cursor-pointer font-semibold border ${
+                        themeMode === 'dark'
+                          ? 'bg-slate-950 border-slate-800 text-slate-100'
+                          : 'bg-stone-50 border-stone-200 text-stone-900'
+                      }`}
                     >
-                      <option value="15">15 min</option>
-                      <option value="30">30 min</option>
-                      <option value="45">45 min</option>
-                      <option value="60">60 min (1h)</option>
-                      <option value="90">90 min</option>
-                      <option value="120">120 min (2h)</option>
+                      {Array.from({ length: 14 }).map((_, i) => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + i);
+                        const dateStr = getLocalDateString(d);
+                        const label = i === 0 
+                          ? `Hoje (${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })})` 
+                          : i === 1 
+                          ? `Amanhã (${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })})`
+                          : `${d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}`;
+                        return <option key={dateStr} value={dateStr}>{label}</option>;
+                      })}
                     </select>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleGenerateBulkHorarios}
-                  className="w-full py-2.5 bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-sm"
-                >
-                  Gerar Horários
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: Exceções e Bloqueio de Vagas (ABAIXO DE GERENCIAR HORÁRIOS) */}
-          <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl shadow-lg space-y-6">
-            <div>
-              <h3 className="text-xl font-bold text-white">Bloqueio & Ajustes de Vagas</h3>
-              <p className="text-xs text-slate-400 mt-1">Defina a capacidade ou feche horários específicos (0 vagas) para uma data.</p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Selecionar Dia para Ajuste</label>
-              <div className="relative">
-                <input 
-                  type="date"
-                  value={exData}
-                  onChange={(e) => setExData(e.target.value)}
-                  onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
-                  className="w-full pl-10 pr-4 py-3 text-sm rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none transition-all cursor-pointer font-semibold"
-                  style={{ colorScheme: 'dark' }}
-                />
-                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-500">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Ajuste em Massa para o dia */}
-            <div className="bg-slate-950/50 p-4 border border-slate-850 rounded-xl space-y-3">
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-350">Ajuste de Capacidade</h4>
-                <p className="text-[10px] text-slate-500 mt-0.5">Mude a capacidade de todos os horários deste dia simultaneamente.</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase select-none">Vagas Geral:</span>
-                  <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleBulkLimitChange(Math.max(0, bulkLimitInput - 1))}
-                      className="px-3.5 py-1.5 text-slate-400 hover:text-white hover:bg-slate-900 font-black transition-all cursor-pointer select-none border-0 text-sm"
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      min="0"
-                      max="50"
-                      value={bulkLimitInput}
-                      onChange={(e) => handleBulkLimitChange(e.target.value)}
-                      className="w-10 bg-transparent text-white font-mono font-extrabold text-center focus:outline-none border-0 text-xs py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleBulkLimitChange(bulkLimitInput + 1)}
-                      className="px-3.5 py-1.5 text-slate-400 hover:text-white hover:bg-slate-900 font-black transition-all cursor-pointer select-none border-0 text-sm"
-                    >
-                      +
-                    </button>
+                {/* Ajuste em Massa para o dia */}
+                <div className={`p-4 rounded-2xl space-y-3 border ${
+                  themeMode === 'dark'
+                    ? 'bg-slate-950/60 border-slate-800'
+                    : 'bg-stone-50 border-stone-200/80'
+                }`}>
+                  <div>
+                    <h4 className={`text-xs font-bold uppercase tracking-wider ${
+                      themeMode === 'dark' ? 'text-slate-200' : 'text-stone-700'
+                    }`}>Ajuste de Capacidade</h4>
+                    <p className={`text-[10px] mt-0.5 ${
+                      themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+                    }`}>Mude a capacidade de todos os horários deste dia simultaneamente.</p>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Slots Grid Editor */}
-            <div className="space-y-3 pt-2">
-              <div className="flex justify-between items-center">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Vagas para {exData ? new Date(exData + 'T00:00:00').toLocaleDateString('pt-BR') : ''}
-                </h4>
-                <span className="text-[10px] text-slate-500">Ajuste de capacidade</span>
-              </div>
-              
-              {config.horarios_disponiveis.length === 0 ? (
-                <p className="text-xs text-slate-500 italic text-center py-4">Nenhum horário cadastrado nas regras.</p>
-              ) : (
-                <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
-                  {[...config.horarios_disponiveis].sort().map(time => {
-                    const customLimit = limitesCustomizadosSelected?.[exData]?.[time];
-                    const savedLimit = config.limites_customizados?.[exData]?.[time];
-                    const currentLimit = customLimit !== undefined ? customLimit : config.vagas_padrao;
-                    const isCustomized = customLimit !== undefined;
-                    const isModified = customLimit !== savedLimit;
-
-                    return (
-                      <div 
-                        key={time} 
-                        className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-200 ${
-                          isModified 
-                            ? 'bg-amber-500/5 border-amber-500/45 shadow-[0_0_8px_rgba(245,158,11,0.05)]' 
-                            : isCustomized 
-                            ? 'bg-indigo-500/5 border-indigo-500/30'
-                            : 'bg-slate-950/40 border-slate-800 hover:border-slate-750'
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold uppercase select-none ${
+                        themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+                      }`}>Vagas Geral:</span>
+                      <select
+                        value={bulkLimitInput}
+                        onChange={(e) => handleBulkLimitChange(parseInt(e.target.value))}
+                        className={`px-3 py-1.5 text-xs rounded-xl font-mono font-bold focus:border-amber-500 focus:outline-none cursor-pointer border ${
+                          themeMode === 'dark'
+                            ? 'bg-slate-900 border-slate-800 text-white'
+                            : 'bg-white border-stone-200 text-stone-900'
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono font-black text-slate-100">{time}</span>
-                        </div>
+                        <option value="0">0 vagas (Bloquear Tudo)</option>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 40, 50].map(n => (
+                          <option key={n} value={n}>{n} vagas por horário</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
 
-                        <div className="flex items-center gap-1.5">
-                          {isCustomized && (
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateSlotLimit(time, config.vagas_padrao)}
-                              className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center shrink-0 animate-fade-in ${
-                                isModified
-                                  ? 'text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/20 hover:border-amber-500/40'
-                                  : 'text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/25 border border-indigo-500/20 hover:border-indigo-500/40'
-                              }`}
-                              title="Restaurar capacidade padrão"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                              </svg>
-                            </button>
-                          )}
+                {/* Slots Grid Editor */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex justify-between items-center">
+                    <h4 className={`text-xs font-bold uppercase tracking-wider ${
+                      themeMode === 'dark' ? 'text-slate-300' : 'text-stone-500'
+                    }`}>
+                      Vagas para {exData ? new Date(exData + 'T00:00:00').toLocaleDateString('pt-BR') : ''}
+                    </h4>
+                    <span className="text-[10px] text-stone-400 font-medium">Ajuste de capacidade</span>
+                  </div>
+                  
+                  {config.horarios_disponiveis.length === 0 ? (
+                    <p className="text-xs text-stone-400 italic text-center py-4">Nenhum horário cadastrado nas regras.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+                      {[...config.horarios_disponiveis].sort().map(time => {
+                        const customLimit = limitesCustomizadosSelected?.[exData]?.[time];
+                        const savedLimit = config.limites_customizados?.[exData]?.[time];
+                        const currentLimit = customLimit !== undefined ? customLimit : config.vagas_padrao;
+                        const isCustomized = customLimit !== undefined;
+                        const isModified = customLimit !== savedLimit;
 
-                          <div className="flex items-center bg-slate-950 border border-slate-800 rounded-lg overflow-hidden shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateSlotLimit(time, Math.max(0, currentLimit - 1))}
-                              className="px-2.5 py-1 text-slate-400 hover:text-white hover:bg-slate-900 font-extrabold transition-all cursor-pointer select-none"
-                            >
-                              -
-                            </button>
-                            <span className="w-8 text-center text-xs font-mono font-bold text-white">
-                              {currentLimit}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateSlotLimit(time, currentLimit + 1)}
-                              className="px-2.5 py-1 text-slate-400 hover:text-white hover:bg-slate-900 font-extrabold transition-all cursor-pointer select-none"
-                            >
-                              +
-                            </button>
+                        return (
+                          <div 
+                            key={time} 
+                            className={`flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 ${
+                              isModified 
+                                ? 'bg-amber-500/10 border-amber-400 shadow-xs' 
+                                : isCustomized 
+                                ? themeMode === 'dark' ? 'bg-amber-400/10 border-amber-400/30' : 'bg-amber-50/50 border-amber-300'
+                                : themeMode === 'dark' ? 'bg-slate-950 border-slate-800' : 'bg-stone-50 border-stone-200 hover:border-stone-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-mono font-black ${
+                                themeMode === 'dark' ? 'text-slate-100' : 'text-stone-900'
+                              }`}>{time}</span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              {isCustomized && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateSlotLimit(time, config.vagas_padrao)}
+                                  className="p-1.5 rounded-lg text-amber-700 bg-amber-100 hover:bg-amber-200 transition-all cursor-pointer shrink-0"
+                                  title="Restaurar capacidade padrão"
+                                >
+                                  🔄
+                                </button>
+                              )}
+
+                              <select
+                                value={currentLimit}
+                                onChange={(e) => handleUpdateSlotLimit(time, parseInt(e.target.value))}
+                                className={`px-2 py-1 text-xs rounded-lg font-mono font-bold focus:border-amber-500 focus:outline-none cursor-pointer border ${
+                                  themeMode === 'dark'
+                                    ? 'bg-slate-900 border-slate-800 text-white'
+                                    : 'bg-white border-stone-200 text-stone-900'
+                                }`}
+                              >
+                                <option value="0">0 (Bloqueado)</option>
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 50].map(n => (
+                                  <option key={n} value={n}>{n} vagas</option>
+                                ))}
+                              </select>
+
+                              {currentLimit > 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateSlotLimit(time, 0)}
+                                  className="px-2 py-1 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 hover:border-transparent rounded-lg text-[9px] font-bold transition-all cursor-pointer"
+                                >
+                                  Bloquear
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateSlotLimit(time, config.vagas_padrao)}
+                                  className="px-2 py-1 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 hover:border-transparent rounded-lg text-[9px] font-bold transition-all cursor-pointer"
+                                >
+                                  Liberar
+                                </button>
+                              )}
+                            </div>
                           </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
-                          {currentLimit > 0 ? (
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateSlotLimit(time, 0)}
-                              className="px-2 py-1 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/20 hover:border-transparent rounded-lg text-[9px] font-bold transition-all cursor-pointer"
-                            >
-                              Bloquear
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateSlotLimit(time, config.vagas_padrao)}
-                              className="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/20 hover:border-transparent rounded-lg text-[9px] font-bold transition-all cursor-pointer"
-                            >
-                              Liberar
-                            </button>
-                          )}
-                        </div>
+          {/* Cards de Cadastro e Regras */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            {/* Card 3: Cadastro do Estabelecimento */}
+            <div className={`rounded-3xl border overflow-hidden transition-all duration-300 ${
+              themeMode === 'dark'
+                ? 'bg-slate-900 border-slate-800 text-slate-100 shadow-md'
+                : 'bg-white border-stone-200/80 text-stone-900 shadow-sm'
+            }`}>
+              <button
+                type="button"
+                onClick={() => toggleConfigSection('cadastro')}
+                className={`w-full p-6 text-left flex items-center justify-between transition-colors cursor-pointer select-none ${
+                  themeMode === 'dark' ? 'bg-slate-900 hover:bg-slate-850' : 'bg-white hover:bg-stone-50'
+                }`}
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg p-2 bg-amber-400 text-stone-900 rounded-2xl">🏢</span>
+                    <h3 className={`text-xl font-extrabold ${themeMode === 'dark' ? 'text-white' : 'text-stone-900'}`}>
+                      Cadastro do Estabelecimento
+                    </h3>
+                  </div>
+                  <p className={`text-xs font-medium ${themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'}`}>
+                    Configure nome, telefones, endereço e descrição.
+                  </p>
+                </div>
+              </button>
+
+              {openConfigSections.cadastro && (
+                <div className={`p-6 pt-6 border-t space-y-6 ${
+                  themeMode === 'dark' ? 'border-slate-800' : 'border-stone-200/60'
+                }`}>
+                  {/* Nome do Estabelecimento (Limite: 60 caracteres) */}
+                  <div className="space-y-1.5">
+                    <label className={`block text-xs font-bold uppercase tracking-wider ${
+                      themeMode === 'dark' ? 'text-slate-300' : 'text-stone-500'
+                    }`}>Nome do Estabelecimento</label>
+                    <input 
+                      type="text"
+                      maxLength={60}
+                      value={appNameInput}
+                      onChange={(e) => setAppNameInput(e.target.value.slice(0, 60))}
+                      placeholder="Ex: Marcianos"
+                      className={`w-full px-4 py-2.5 text-xs rounded-xl focus:border-amber-500 focus:outline-none font-semibold border ${
+                        themeMode === 'dark'
+                          ? 'bg-slate-950 border-slate-800 text-slate-100'
+                          : 'bg-stone-50 border-stone-200 text-stone-900'
+                      }`}
+                    />
+                  </div>
+
+                  {/* Telefones de Contato (Formatados) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className={`block text-xs font-bold uppercase tracking-wider ${
+                        themeMode === 'dark' ? 'text-slate-300' : 'text-stone-500'
+                      }`}>Telefone Principal</label>
+                      <input 
+                        type="text"
+                        value={phoneInput}
+                        onChange={(e) => setPhoneInput(formatPhoneNumber(e.target.value))}
+                        placeholder="Ex: (51) 99523-9876"
+                        maxLength={15}
+                        className={`w-full px-4 py-2.5 text-xs rounded-xl focus:border-amber-500 focus:outline-none font-mono font-semibold border ${
+                          themeMode === 'dark'
+                            ? 'bg-slate-950 border-slate-800 text-slate-100'
+                            : 'bg-stone-50 border-stone-200 text-stone-900'
+                        }`}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className={`block text-xs font-bold uppercase tracking-wider ${
+                        themeMode === 'dark' ? 'text-slate-300' : 'text-stone-500'
+                      }`}>Telefone Adicional (Opcional)</label>
+                      <input 
+                        type="text"
+                        value={phone2Input}
+                        onChange={(e) => setPhone2Input(formatPhoneNumber(e.target.value))}
+                        placeholder="Ex: (51) 98888-7777"
+                        maxLength={15}
+                        className={`w-full px-4 py-2.5 text-xs rounded-xl focus:border-amber-500 focus:outline-none font-mono font-semibold border ${
+                          themeMode === 'dark'
+                            ? 'bg-slate-950 border-slate-800 text-slate-100'
+                            : 'bg-stone-50 border-stone-200 text-stone-900'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Endereço com Busca / Autocomplete */}
+                  <div className="space-y-1.5 relative">
+                    <label className={`block text-xs font-bold uppercase tracking-wider ${
+                      themeMode === 'dark' ? 'text-slate-300' : 'text-stone-500'
+                    }`}>Endereço Completo</label>
+                    <div className="relative">
+                      <input 
+                        type="text"
+                        value={addressInput}
+                        onChange={(e) => {
+                          setAddressInput(e.target.value);
+                          setShowAddressDropdown(true);
+                        }}
+                        onFocus={() => setShowAddressDropdown(true)}
+                        placeholder="Comece a digitar o nome do lugar para escolher..."
+                        className={`w-full px-4 py-2.5 text-xs rounded-xl focus:border-amber-500 focus:outline-none font-semibold pr-10 border ${
+                          themeMode === 'dark'
+                            ? 'bg-slate-950 border-slate-800 text-slate-100'
+                            : 'bg-stone-50 border-stone-200 text-stone-900'
+                        }`}
+                      />
+                      <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-stone-400">
+                        {isSearchingAddress ? (
+                          <span className="animate-spin">⌛</span>
+                        ) : (
+                          <span>📍</span>
+                        )}
                       </div>
-                    );
-                  })}
+                    </div>
+
+                    {/* Dropdown de Sugestões */}
+                    {showAddressDropdown && addressSuggestions.length > 0 && (
+                      <div className={`absolute z-50 left-0 right-0 top-full mt-1 rounded-2xl shadow-xl overflow-hidden max-h-56 overflow-y-auto border ${
+                        themeMode === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-stone-200'
+                      }`}>
+                        {addressSuggestions.map((sug, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              setAddressInput(sug);
+                              setShowAddressDropdown(false);
+                            }}
+                            className={`w-full text-left px-4 py-2.5 text-xs transition-colors flex items-start gap-2 cursor-pointer border-b last:border-0 ${
+                              themeMode === 'dark'
+                                ? 'text-slate-200 hover:bg-slate-800 border-slate-800'
+                                : 'text-stone-800 hover:bg-amber-50 border-stone-100'
+                            }`}
+                          >
+                            <span className="shrink-0 text-stone-400 mt-0.5">📍</span>
+                            <span className="leading-tight">{sug}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Descrição (Slogan) - Formato 0/150 */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <label className={`block text-xs font-bold uppercase tracking-wider ${
+                        themeMode === 'dark' ? 'text-slate-300' : 'text-stone-500'
+                      }`}>Descrição (Slogan)</label>
+                      <span className="text-[10px] font-mono text-stone-400 font-semibold">{descriptionInput.length}/150</span>
+                    </div>
+                    <textarea 
+                      rows="3"
+                      maxLength={150}
+                      value={descriptionInput}
+                      onChange={(e) => setDescriptionInput(e.target.value.slice(0, 150))}
+                      placeholder="Descrição curta que aparece no rodapé do site..."
+                      className={`w-full px-4 py-2.5 text-xs rounded-xl focus:border-amber-500 focus:outline-none font-semibold resize-none border ${
+                        themeMode === 'dark'
+                          ? 'bg-slate-950 border-slate-800 text-slate-100'
+                          : 'bg-stone-50 border-stone-200 text-stone-900'
+                      }`}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Card 4: Regras de Funcionamento */}
+            <div className={`rounded-3xl border overflow-hidden transition-all duration-300 ${
+              themeMode === 'dark'
+                ? 'bg-slate-900 border-slate-800 text-slate-100 shadow-md'
+                : 'bg-white border-stone-200/80 text-stone-900 shadow-sm'
+            }`}>
+              <button
+                type="button"
+                onClick={() => toggleConfigSection('regras')}
+                className={`w-full p-6 text-left flex items-center justify-between transition-colors cursor-pointer select-none ${
+                  themeMode === 'dark' ? 'bg-slate-900 hover:bg-slate-850' : 'bg-white hover:bg-stone-50'
+                }`}
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg p-2 bg-amber-400 text-stone-900 rounded-2xl">⚙️</span>
+                    <h3 className={`text-xl font-extrabold ${themeMode === 'dark' ? 'text-white' : 'text-stone-900'}`}>
+                      Regras de Funcionamento
+                    </h3>
+                  </div>
+                  <p className={`text-xs font-medium ${themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'}`}>
+                    Defina os dias de abertura, observações e prazos.
+                  </p>
+                </div>
+              </button>
+
+              {openConfigSections.regras && (
+                <div className={`p-6 pt-6 border-t space-y-6 ${
+                  themeMode === 'dark' ? 'border-slate-800' : 'border-stone-200/60'
+                }`}>
+                  {/* Dias de funcionamento */}
+                  <div className="space-y-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                      <label className={`block text-xs font-bold uppercase tracking-wider ${
+                        themeMode === 'dark' ? 'text-slate-300' : 'text-stone-500'
+                      }`}>Dias em que o Estabelecimento Abre</label>
+                      <select
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "seg-sex") setDiasFuncionamentoSelected([1, 2, 3, 4, 5]);
+                          else if (val === "seg-sab") setDiasFuncionamentoSelected([1, 2, 3, 4, 5, 6]);
+                          else if (val === "ter-dom") setDiasFuncionamentoSelected([2, 3, 4, 5, 6, 0]);
+                          else if (val === "todos") setDiasFuncionamentoSelected([1, 2, 3, 4, 5, 6, 0]);
+                          else if (val === "fds") setDiasFuncionamentoSelected([6, 0]);
+                        }}
+                        className={`px-3 py-1.5 text-xs rounded-xl focus:border-amber-500 focus:outline-none cursor-pointer font-semibold border ${
+                          themeMode === 'dark'
+                            ? 'bg-slate-950 border-slate-800 text-slate-100'
+                            : 'bg-stone-50 border-stone-200 text-stone-900'
+                        }`}
+                      >
+                        <option value="">-- Escolher Preset de Dias --</option>
+                        <option value="todos">Todos os Dias (Seg a Dom)</option>
+                        <option value="ter-dom">Terça a Domingo</option>
+                        <option value="seg-sab">Segunda a Sábado</option>
+                        <option value="seg-sex">Segunda a Sexta-feira</option>
+                        <option value="fds">Apenas Finais de Semana (Sáb e Dom)</option>
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {[
+                        { value: 1, label: "Segunda-feira" },
+                        { value: 2, label: "Terça-feira" },
+                        { value: 3, label: "Quarta-feira" },
+                        { value: 4, label: "Quinta-feira" },
+                        { value: 5, label: "Sexta-feira" },
+                        { value: 6, label: "Sábado" },
+                        { value: 0, label: "Domingo" }
+                      ].map(day => {
+                        const isChecked = diasFuncionamentoSelected.includes(day.value);
+                        return (
+                          <label key={day.value} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border cursor-pointer select-none transition-colors ${
+                            themeMode === 'dark'
+                              ? 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-200'
+                              : 'bg-stone-50 border-stone-200 hover:border-amber-400 text-stone-800'
+                          }`}>
+                            <input 
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                if (isChecked) {
+                                  setDiasFuncionamentoSelected(prev => prev.filter(v => v !== day.value));
+                                } else {
+                                  setDiasFuncionamentoSelected(prev => [...prev, day.value]);
+                                }
+                              }}
+                              className="accent-amber-500 size-4"
+                            />
+                            <span className="text-xs font-semibold">{day.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Campo de Observações Ativo */}
+                  <div className="space-y-2">
+                    <label className={`block text-xs font-bold uppercase tracking-wider mb-1 ${
+                      themeMode === 'dark' ? 'text-slate-300' : 'text-stone-500'
+                    }`}>Campo de Observações</label>
+                    <select
+                      value={campoObservacoesAtivoInput ? "true" : "false"}
+                      onChange={(e) => setCampoObservacoesAtivoInput(e.target.value === "true")}
+                      className={`w-full px-4 py-3 text-xs rounded-xl focus:border-amber-500 focus:outline-none cursor-pointer font-semibold border ${
+                        themeMode === 'dark'
+                          ? 'bg-slate-950 border-slate-800 text-slate-100'
+                          : 'bg-stone-50 border-stone-200 text-stone-900'
+                      }`}
+                    >
+                      <option value="true">✅ Ativo - Exibir campo de observações no formulário de reserva</option>
+                      <option value="false">🚫 Inativo - Ocultar campo de observações</option>
+                    </select>
+                  </div>
+
+                  {/* Antecedência Máxima de Dias */}
+                  <div className={`space-y-2 pt-2 border-t ${
+                    themeMode === 'dark' ? 'border-slate-800' : 'border-stone-200'
+                  }`}>
+                    <label className={`block text-xs font-bold uppercase tracking-wider mb-1 ${
+                      themeMode === 'dark' ? 'text-slate-300' : 'text-stone-500'
+                    }`}>
+                      Limite de Dias para Agendamento Futuro
+                    </label>
+                    <p className={`text-[10px] mb-2 font-medium ${
+                      themeMode === 'dark' ? 'text-slate-400' : 'text-stone-400'
+                    }`}>
+                      Defina até quantos dias a partir da data atual o cliente poderá agendar uma mesa (Padrão: 7 dias).
+                    </p>
+                    <select
+                      value={antecedenciaMaximaDiasInput}
+                      onChange={(e) => setAntecedenciaMaximaDiasInput(parseInt(e.target.value))}
+                      className={`w-full px-4 py-3 text-xs rounded-xl focus:border-amber-500 focus:outline-none cursor-pointer font-semibold border ${
+                        themeMode === 'dark'
+                          ? 'bg-slate-950 border-slate-800 text-slate-100'
+                          : 'bg-stone-50 border-stone-200 text-stone-900'
+                      }`}
+                    >
+                      <option value="1">1 dia (Somente amanhã)</option>
+                      <option value="3">3 dias à frente</option>
+                      <option value="7">7 dias (1 semana - Padrão)</option>
+                      <option value="14">14 dias (2 semanas)</option>
+                      <option value="21">21 dias (3 semanas)</option>
+                      <option value="30">30 dias (1 mês)</option>
+                      <option value="60">60 dias (2 meses)</option>
+                      <option value="90">90 dias (3 meses)</option>
+                      <option value="180">180 dias (6 meses)</option>
+                      <option value="365">365 dias (1 ano)</option>
+                    </select>
+                  </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Cards de Cadastro e Regras no Mesmo Tamanho */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-            {/* Cadastro do Estabelecimento */}
-            <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl shadow-lg flex flex-col justify-between space-y-6 h-full">
-              <div className="space-y-6">
-                <div className="border-b border-slate-850 pb-2">
-                  <h3 className="text-xl font-bold text-white">Cadastro do Estabelecimento</h3>
-                  <p className="text-xs text-slate-400 mt-1">Configure o nome, descrição, endereço e telefones exibidos no rodapé do site.</p>
-                </div>
-
-                {/* Nome do Estabelecimento (Limite: 60 caracteres) */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Nome do Estabelecimento</label>
-                  <input 
-                    type="text"
-                    maxLength={60}
-                    value={appNameInput}
-                    onChange={(e) => setAppNameInput(e.target.value.slice(0, 60))}
-                    placeholder="Ex: Marcianos"
-                    className="w-full px-4 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none font-semibold"
-                  />
-                </div>
-
-                {/* Telefones de Contato (Formatados) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Telefone Principal</label>
-                    <input 
-                      type="text"
-                      value={phoneInput}
-                      onChange={(e) => setPhoneInput(formatPhoneNumber(e.target.value))}
-                      placeholder="Ex: (51) 99523-9876"
-                      maxLength={15}
-                      className="w-full px-4 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none font-mono font-semibold"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Telefone Adicional (Opcional)</label>
-                    <input 
-                      type="text"
-                      value={phone2Input}
-                      onChange={(e) => setPhone2Input(formatPhoneNumber(e.target.value))}
-                      placeholder="Ex: (51) 98888-7777"
-                      maxLength={15}
-                      className="w-full px-4 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none font-mono font-semibold"
-                    />
-                  </div>
-                </div>
-
-                {/* Endereço com Busca / Autocomplete */}
-                <div className="space-y-1.5 relative">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Endereço Completo</label>
-                  <div className="relative">
-                    <input 
-                      type="text"
-                      value={addressInput}
-                      onChange={(e) => {
-                        setAddressInput(e.target.value);
-                        setShowAddressDropdown(true);
-                      }}
-                      onFocus={() => setShowAddressDropdown(true)}
-                      placeholder="Comece a digitar o nome do lugar para escolher..."
-                      className="w-full px-4 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none font-semibold pr-10"
-                    />
-                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-500">
-                      {isSearchingAddress ? (
-                        <svg className="w-4 h-4 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                      ) : (
-                        <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Dropdown de Sugestões */}
-                  {showAddressDropdown && addressSuggestions.length > 0 && (
-                    <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto">
-                      {addressSuggestions.map((sug, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => {
-                            setAddressInput(sug);
-                            setShowAddressDropdown(false);
-                          }}
-                          className="w-full text-left px-4 py-2.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-white border-b border-slate-800/50 last:border-0 transition-colors flex items-start gap-2 cursor-pointer"
-                        >
-                          <span className="shrink-0 text-slate-400 mt-0.5">📍</span>
-                          <span className="leading-tight">{sug}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Descrição (Slogan) - Formato 0/150 */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Descrição (Slogan)</label>
-                    <span className="text-[10px] font-mono text-slate-400 font-semibold">{descriptionInput.length}/150</span>
-                  </div>
-                  <textarea 
-                    rows="3"
-                    maxLength={150}
-                    value={descriptionInput}
-                    onChange={(e) => setDescriptionInput(e.target.value.slice(0, 150))}
-                    placeholder="Descrição curta que aparece no rodapé do site..."
-                    className="w-full px-4 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:border-primary focus:outline-none font-semibold resize-none"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Configurações de Funcionamento */}
-            <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl shadow-lg flex flex-col justify-between space-y-6 h-full">
-              <div className="space-y-6">
-                <h3 className="text-xl font-bold border-b border-slate-850 pb-2">Regras de Funcionamento</h3>
-
-                {/* Dias de funcionamento */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Dias em que o Estabelecimento Abre</label>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {[
-                      { value: 1, label: "Segunda-feira" },
-                      { value: 2, label: "Terça-feira" },
-                      { value: 3, label: "Quarta-feira" },
-                      { value: 4, label: "Quinta-feira" },
-                      { value: 5, label: "Sexta-feira" },
-                      { value: 6, label: "Sábado" },
-                      { value: 0, label: "Domingo" }
-                    ].map(day => {
-                      const isChecked = diasFuncionamentoSelected.includes(day.value);
-                      return (
-                        <label key={day.value} className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-800 hover:border-primary/20 bg-slate-950/50 cursor-pointer select-none">
-                          <input 
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => {
-                              if (isChecked) {
-                                setDiasFuncionamentoSelected(prev => prev.filter(v => v !== day.value));
-                              } else {
-                                setDiasFuncionamentoSelected(prev => [...prev, day.value]);
-                              }
-                            }}
-                            className="accent-primary size-4"
-                          />
-                          <span className="text-xs font-semibold">{day.label}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Campo de Observações Ativo */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Campo de Observações</label>
-                  <label className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-800 hover:border-primary/20 bg-slate-950/50 cursor-pointer select-none">
-                    <input 
-                      type="checkbox"
-                      checked={campoObservacoesAtivoInput}
-                      onChange={(e) => setCampoObservacoesAtivoInput(e.target.checked)}
-                      className="accent-primary size-4"
-                    />
-                    <span className="text-xs font-semibold">Exibir campo de observações no formulário de reserva</span>
-                  </label>
-                </div>
-
-                {/* Antecedência Máxima de Dias */}
-                <div className="space-y-2 pt-2 border-t border-slate-850">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-                    Limite de Dias para Agendamento Futuro
-                  </label>
-                  <p className="text-[10px] text-slate-500 mb-2">
-                    Defina até quantos dias a partir da data atual o cliente poderá agendar uma mesa (Padrão: 7 dias).
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setAntecedenciaMaximaDiasInput(Math.max(1, antecedenciaMaximaDiasInput - 1))}
-                        className="px-3.5 py-1.5 text-slate-450 hover:text-white hover:bg-slate-900 font-black transition-all cursor-pointer select-none border-0 text-sm"
-                      >
-                        -
-                      </button>
-                      <input 
-                        type="number"
-                        min="1"
-                        max="365"
-                        value={antecedenciaMaximaDiasInput}
-                        onChange={(e) => setAntecedenciaMaximaDiasInput(Math.max(1, parseInt(e.target.value) || 1))}
-                        className="w-10 bg-transparent text-white font-mono font-extrabold text-center focus:outline-none border-0 text-xs py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setAntecedenciaMaximaDiasInput(Math.min(365, antecedenciaMaximaDiasInput + 1))}
-                        className="px-3.5 py-1.5 text-slate-450 hover:text-white hover:bg-slate-900 font-black transition-all cursor-pointer select-none border-0 text-sm"
-                      >
-                        +
-                      </button>
-                    </div>
-                    <span className="text-xs text-slate-400 font-semibold select-none">dias a partir de hoje</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Botão unificado para salvar todas as alterações no rodapé */}
-          <div className="md:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-900 mt-4">
+          <div className={`md:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t mt-4 ${
+            themeMode === 'dark' ? 'border-slate-800' : 'border-stone-200/80'
+          }`}>
             {hasUnsavedChanges ? (
-              <div className="flex items-center gap-2 text-xs font-semibold text-amber-450 bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 rounded-xl animate-pulse w-full sm:w-auto">
-                <svg className="w-4 h-4 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <span>Alterações pendentes de gravação. Não se esqueça de salvar!</span>
+              <div className="flex items-center gap-2 text-xs font-semibold text-stone-900 bg-amber-400/20 border border-amber-400/50 px-4 py-3 rounded-2xl animate-pulse w-full sm:w-auto">
+                <span className="text-base">⚠️</span>
+                <span className={themeMode === 'dark' ? 'text-amber-300' : 'text-stone-900'}>Alterações pendentes de gravação. Não se esqueça de salvar!</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 px-4 py-2.5 w-full sm:w-auto">
-                <svg className="w-4.5 h-4.5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+              <div className={`flex items-center gap-2 text-xs font-semibold px-4 py-2.5 w-full sm:w-auto ${
+                themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+              }`}>
+                <span className="text-emerald-500 font-bold text-base">✓</span>
                 <span>Configurações sincronizadas</span>
               </div>
             )}
@@ -1964,14 +2421,18 @@ function AdminDashboard() {
               {hasUnsavedChanges && (
                 <button
                   onClick={handleDiscardChanges}
-                  className="w-full sm:w-auto px-6 py-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 font-bold rounded-2xl transition-all cursor-pointer text-xs uppercase tracking-wider"
+                  className={`w-full sm:w-auto px-6 py-3.5 font-bold rounded-2xl transition-all cursor-pointer text-xs uppercase tracking-wider border ${
+                    themeMode === 'dark'
+                      ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                      : 'bg-stone-200 hover:bg-stone-300 text-stone-800 border-stone-300'
+                  }`}
                 >
                   Cancelar Alterações
                 </button>
               )}
               <button
                 onClick={handleSaveConfigs}
-                className="w-full sm:w-auto px-10 py-4 bg-primary hover:brightness-110 text-white font-black rounded-2xl shadow-lg hover:shadow-primary/20 transition-all cursor-pointer text-xs uppercase tracking-wider shrink-0"
+                className="w-full sm:w-auto px-8 py-3.5 bg-amber-400 hover:bg-amber-500 text-stone-900 font-black rounded-2xl shadow-md transition-all cursor-pointer text-xs uppercase tracking-wider shrink-0"
               >
                 Salvar Todas as Alterações
               </button>
@@ -1980,13 +2441,25 @@ function AdminDashboard() {
         </div>
       )}
 
-      {/* Aba 3: Histórico de Ações */}
+      {/* Aba 3: Histórico de Ações (Cores distintas por tipo de ação & Adaptável a Temas) */}
       {activeTab === 'historico' && (
-        <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl shadow-lg space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-850 pb-4">
+        <div className={`border p-6 sm:p-8 rounded-3xl shadow-xl space-y-6 transition-colors ${
+          themeMode === 'dark'
+            ? 'bg-slate-900 text-slate-100 border-slate-800'
+            : 'bg-white text-stone-900 border-stone-200/80'
+        }`}>
+          <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4 ${
+            themeMode === 'dark' ? 'border-slate-800' : 'border-stone-200'
+          }`}>
             <div>
-              <h3 className="text-xl font-bold text-white">Histórico de Atividades</h3>
-              <p className="text-xs text-slate-400 mt-1">Veja um registro cronológico de todas as ações e modificações realizadas na agenda.</p>
+              <h3 className={`text-xl font-black flex items-center gap-2 ${
+                themeMode === 'dark' ? 'text-white' : 'text-stone-900'
+              }`}>
+                <span>⚡</span> Histórico de Atividades
+              </h3>
+              <p className={`text-xs mt-1 ${
+                themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+              }`}>Veja um registro cronológico de todas as ações e modificações realizadas na agenda.</p>
             </div>
             <button
               onClick={() => {
@@ -1996,7 +2469,7 @@ function AdminDashboard() {
                   setCurrentPage(1);
                 }
               }}
-              className="px-4 py-2 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/20 hover:border-transparent rounded-xl text-xs font-bold transition-all cursor-pointer border-0"
+              className="px-4 py-2 bg-red-500/15 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer"
             >
               Limpar Histórico
             </button>
@@ -2009,59 +2482,115 @@ function AdminDashboard() {
             const endIndex = startIndex + logsPerPage;
             const paginatedLogs = activityLogs.slice(startIndex, endIndex);
 
+            // Função para resolver cores e ícones exclusivos para cada tipo de ação no Histórico
+            const getLogMeta = (log) => {
+              const type = log.actionType || '';
+              const details = (log.details || '').toLowerCase();
+
+              if (type === 'cancel' || details.includes('cancel')) {
+                return {
+                  label: 'Cancelamento',
+                  icon: '✕',
+                  dotBg: 'bg-red-500 text-white',
+                  badgeBg: 'bg-red-500/15 text-red-500 border-red-500/30',
+                  hoverBorder: 'hover:border-red-500/40'
+                };
+              }
+              if (type === 'create' || details.includes('novo agendamento') || details.includes('reserva')) {
+                return {
+                  label: 'Novo Agendamento',
+                  icon: '✓',
+                  dotBg: 'bg-emerald-500 text-white',
+                  badgeBg: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30',
+                  hoverBorder: 'hover:border-emerald-500/40'
+                };
+              }
+              if (type === 'update' || type === 'edit' || details.includes('alterad') || details.includes('modificad')) {
+                return {
+                  label: 'Modificação',
+                  icon: '✎',
+                  dotBg: 'bg-indigo-500 text-white',
+                  badgeBg: 'bg-indigo-500/15 text-indigo-600 border-indigo-500/30',
+                  hoverBorder: 'hover:border-indigo-500/40'
+                };
+              }
+              if (type === 'config_save' || details.includes('config')) {
+                return {
+                  label: 'Configuração Salva',
+                  icon: '⚙',
+                  dotBg: 'bg-purple-500 text-white',
+                  badgeBg: 'bg-purple-500/15 text-purple-600 border-purple-500/30',
+                  hoverBorder: 'hover:border-purple-500/40'
+                };
+              }
+              if (type === 'override_limit' || details.includes('vagas') || details.includes('capacidade')) {
+                return {
+                  label: 'Ajuste de Vagas',
+                  icon: '⚡',
+                  dotBg: 'bg-amber-500 text-stone-900',
+                  badgeBg: 'bg-amber-500/15 text-amber-600 border-amber-500/30',
+                  hoverBorder: 'hover:border-amber-500/40'
+                };
+              }
+              if (type === 'horarios' || details.includes('horário') || details.includes('horario')) {
+                return {
+                  label: 'Gestão de Horários',
+                  icon: '⏰',
+                  dotBg: 'bg-teal-500 text-white',
+                  badgeBg: 'bg-teal-500/15 text-teal-600 border-teal-500/30',
+                  hoverBorder: 'hover:border-teal-500/40'
+                };
+              }
+              return {
+                label: 'Atividade',
+                icon: '📌',
+                dotBg: 'bg-sky-500 text-white',
+                badgeBg: 'bg-sky-500/15 text-sky-600 border-sky-500/30',
+                hoverBorder: 'hover:border-sky-500/40'
+              };
+            };
+
             return (
               <>
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
                   {activityLogs.length === 0 ? (
-                    <p className="text-xs text-slate-500 italic text-center py-10">Nenhuma ação registrada no histórico de atividades.</p>
+                    <p className={`text-xs italic text-center py-10 ${
+                      themeMode === 'dark' ? 'text-slate-400' : 'text-stone-400'
+                    }`}>Nenhuma ação registrada no histórico de atividades.</p>
                   ) : (
-                    <div className="relative border-l-2 border-slate-800 ml-4 pl-6 space-y-6">
+                    <div className={`relative border-l-2 ml-4 pl-6 space-y-6 ${
+                      themeMode === 'dark' ? 'border-slate-800' : 'border-stone-200'
+                    }`}>
                       {paginatedLogs.map(log => {
                         const logDate = new Date(log.timestamp);
                         const formattedDateTime = `${logDate.toLocaleDateString('pt-BR')} às ${logDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
-                        
-                        // Escolhe cores baseadas no tipo de ação
-                        let colorClass = 'bg-slate-800 border-slate-700 text-slate-400';
-                        let badgeText = 'Geral';
-                        
-                        if (log.actionType === 'create') {
-                          colorClass = 'bg-emerald-500/15 border-emerald-500/30 text-emerald-455';
-                          badgeText = 'Novo Agendamento';
-                        } else if (log.actionType === 'cancel') {
-                          colorClass = 'bg-red-500/15 border-red-500/30 text-red-455';
-                          badgeText = 'Cancelamento';
-                        } else if (log.actionType === 'config_save') {
-                          colorClass = 'bg-primary/15 border-primary/30 text-primary-400';
-                          badgeText = 'Configurações';
-                        } else if (log.actionType === 'override_limit' || log.actionType === 'remove_override') {
-                          colorClass = 'bg-amber-500/15 border-amber-500/30 text-amber-455';
-                          badgeText = 'Ajuste de Vagas';
-                        } else if (log.actionType === 'add_time' || log.actionType === 'remove_time') {
-                          colorClass = 'bg-sky-500/15 border-sky-500/30 text-sky-455';
-                          badgeText = 'Horários';
-                        }
+                        const meta = getLogMeta(log);
 
                         return (
                           <div key={log.id} className="relative group/log">
-                            {/* Ponto indicador da linha do tempo */}
-                            <span className={`absolute -left-[31px] top-1.5 w-4 h-4 rounded-full border-2 bg-slate-950 flex items-center justify-center transition-transform group-hover/log:scale-110 ${
-                              log.actionType === 'create' ? 'border-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' :
-                              log.actionType === 'cancel' ? 'border-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]' :
-                              log.actionType === 'config_save' ? 'border-primary shadow-[0_0_6px_rgba(99,102,241,0.5)]' :
-                              log.actionType === 'add_time' || log.actionType === 'remove_time' ? 'border-sky-500 shadow-[0_0_6px_rgba(14,165,233,0.5)]' :
-                              'border-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.5)]'
-                            }`} />
+                            {/* Ponto indicador da linha do tempo com cor e ícone específicos */}
+                            <span className={`absolute -left-[31px] top-1.5 w-5 h-5 rounded-full font-extrabold text-[10px] flex items-center justify-center shadow-xs ${meta.dotBg}`}>
+                              {meta.icon}
+                            </span>
 
-                            <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-2xl space-y-2 hover:border-slate-800 transition-all">
+                            <div className={`p-4 rounded-2xl space-y-2 border transition-all ${
+                              themeMode === 'dark'
+                                ? 'bg-slate-950/80 border-slate-800'
+                                : 'bg-stone-50 border-stone-200/80'
+                            } ${meta.hoverBorder}`}>
                               <div className="flex justify-between items-center flex-wrap gap-2">
-                                <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${colorClass}`}>
-                                  {badgeText}
+                                <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${meta.badgeBg}`}>
+                                  {meta.label}
                                 </span>
-                                <span className="text-[10px] text-slate-500 font-mono">
+                                <span className={`text-[10px] font-mono font-semibold ${
+                                  themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+                                }`}>
                                   {formattedDateTime}
                                 </span>
                               </div>
-                              <p className="text-xs text-slate-350 leading-relaxed font-medium">
+                              <p className={`text-xs leading-relaxed font-medium ${
+                                themeMode === 'dark' ? 'text-slate-200' : 'text-stone-800'
+                              }`}>
                                 {log.details}
                               </p>
                             </div>
@@ -2072,10 +2601,14 @@ function AdminDashboard() {
                   )}
                 </div>
 
-                {/* Paginação */}
+                {/* Paginação Adaptável a Temas */}
                 {totalPages > 1 && (
-                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t border-slate-850 select-none">
-                    <span className="text-xs text-slate-500 font-medium">
+                  <div className={`flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t select-none mt-6 ${
+                    themeMode === 'dark' ? 'border-slate-800' : 'border-stone-200'
+                  }`}>
+                    <span className={`text-xs font-medium ${
+                      themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
+                    }`}>
                       Exibindo {startIndex + 1} a {Math.min(endIndex, activityLogs.length)} de {activityLogs.length} atividades
                     </span>
                     <div className="flex items-center gap-2">
@@ -2083,10 +2616,10 @@ function AdminDashboard() {
                         type="button"
                         disabled={currentPage === 1}
                         onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        className={`px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer select-none active:scale-95 border-slate-800/80 ${
+                        className={`px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer select-none active:scale-95 ${
                           currentPage === 1
-                            ? 'bg-slate-900/40 text-slate-650 cursor-not-allowed opacity-50'
-                            : 'bg-slate-950 text-slate-300 hover:text-white hover:border-slate-700'
+                            ? themeMode === 'dark' ? 'bg-slate-950 text-slate-600 border-slate-800 cursor-not-allowed opacity-50' : 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
+                            : themeMode === 'dark' ? 'bg-slate-950 border-slate-800 text-slate-300 hover:text-white' : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50'
                         }`}
                       >
                         ← Anterior
@@ -2099,8 +2632,8 @@ function AdminDashboard() {
                             onClick={() => setCurrentPage(pageNum)}
                             className={`w-8 h-8 flex items-center justify-center text-xs font-bold rounded-xl border transition-all cursor-pointer select-none active:scale-95 ${
                               currentPage === pageNum
-                                ? 'bg-gradient-to-br from-indigo-600 to-primary text-white border-indigo-500 shadow-md font-black'
-                                : 'bg-slate-950 border-slate-800/80 text-slate-450 hover:text-slate-200 hover:border-slate-700'
+                                ? 'bg-amber-400 text-stone-900 border-amber-400 shadow-sm font-black'
+                                : themeMode === 'dark' ? 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white' : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
                             }`}
                           >
                             {pageNum}
@@ -2111,10 +2644,10 @@ function AdminDashboard() {
                         type="button"
                         disabled={currentPage === totalPages}
                         onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        className={`px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer select-none active:scale-95 border-slate-800/80 ${
+                        className={`px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer select-none active:scale-95 ${
                           currentPage === totalPages
-                            ? 'bg-slate-900/40 text-slate-650 cursor-not-allowed opacity-50'
-                            : 'bg-slate-950 text-slate-300 hover:text-white hover:border-slate-700'
+                            ? themeMode === 'dark' ? 'bg-slate-950 text-slate-600 border-slate-800 cursor-not-allowed opacity-50' : 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
+                            : themeMode === 'dark' ? 'bg-slate-950 border-slate-800 text-slate-300 hover:text-white' : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50'
                         }`}
                       >
                         Próxima →
