@@ -3,24 +3,41 @@
 
 :root {
   --primary-color: #EAB308;
-  --secondary-color: #DC2626;
-  --bg-color: #1C1917;
-  --text-color: #FAFAF9;
+  --secondary-color: #C85A17;
+  --bg-color: #12100E;
+  --surface-card: #1C1815;
+  --surface-elevated: #26211C;
+  --border-subtle: #342C26;
+  --text-main: #FAF7F2;
+  --text-muted: #A89F96;
+  --accent-ember: #D9651E;
+  --accent-gold: #E5A93C;
 }
 
 html, body, #root {
-  background-color: var(--bg-color, #1C1917);
-  color: var(--text-color, #FAFAF9);
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 0;
   width: 100%;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom Scrollbar Styling (Modern Dynamic Theme) */
+.font-serif-brand {
+  font-family: 'Cinzel', serif;
+}
+
+.font-sans-ui {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Custom Scrollbar Styling */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--primary-color) var(--bg-color);
+  scrollbar-color: #4A3C33 var(--bg-color);
 }
 
 ::-webkit-scrollbar {
@@ -29,20 +46,17 @@ html, body, #root {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(2, 6, 23, 0.3);
-  border-radius: 10px;
+  background: #12100E;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.25);
-  border-radius: 10px;
-  border: 1px solid transparent;
-  background-clip: padding-box;
+  background: #3E322A;
+  border-radius: 6px;
   transition: all 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.55);
+  background: #C85A17;
 }
 
 ::-webkit-scrollbar-corner {

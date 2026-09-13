@@ -81,15 +81,16 @@ function MainLayout() {
   }, []);
 
   const headerStyle = {
-    backgroundColor: config.primary_color ? `${config.primary_color}dd` : '#6366f1dd',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    padding: '0.6rem 2rem',
-    color: '#ffffff',
+    backgroundColor: 'rgba(18, 16, 14, 0.92)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    borderBottom: '1px solid #2E2520',
+    padding: '0.85rem 2rem',
+    color: '#FAF7F2',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.6)',
     position: 'sticky',
     top: 0,
     zIndex: 50,
@@ -98,26 +99,22 @@ function MainLayout() {
   };
 
   const navLinkStyle = {
-    color: '#ffffff',
+    color: '#FAF7F2',
     textDecoration: 'none',
-    marginLeft: '1.5rem',
+    marginLeft: '1.75rem',
     fontWeight: '600',
-    fontSize: '0.95rem',
+    fontSize: '0.88rem',
+    letterSpacing: '0.02em',
     opacity: 0.85,
-    transition: 'opacity 0.2s',
+    transition: 'all 0.2s ease',
   };
 
-  const isMarcianos = config.app_name?.toLowerCase().includes('marcianos');
-  const bgColor = isMarcianos ? '#020617' : (config.secondary_color || '#f9fafb');
-  const textColor = isMarcianos ? '#f1f5f9' : '#111827';
-
   const containerStyle = {
-    backgroundColor: bgColor,
-    color: textColor,
+    backgroundColor: '#12100E',
+    color: '#FAF7F2',
     minHeight: '100vh',
     display: 'flex',
     flexDirection: 'column',
-    transition: 'background-color 0.3s ease',
   };
 
   const [logoSrc, setLogoSrc] = useState(logo);
@@ -126,14 +123,14 @@ function MainLayout() {
     if (config.logo_url && config.logo_url !== '/logo.png') {
       setLogoSrc(config.logo_url);
     }
-  }, []);
+  }, [config.logo_url]);
 
   const footerStyle = {
-    backgroundColor: isMarcianos ? '#090d16' : '#ffffff',
-    borderTop: isMarcianos ? '1px solid #1e293b' : '1px solid #e2e8f0',
-    padding: '2.5rem 2rem',
-    color: isMarcianos ? '#94a3b8' : '#64748b',
-    fontSize: '0.9rem',
+    backgroundColor: '#0C0A09',
+    borderTop: '1px solid #261F1A',
+    padding: '3rem 2rem 2rem 2rem',
+    color: '#9E928A',
+    fontSize: '0.88rem',
     marginTop: 'auto',
   };
 
@@ -234,33 +231,30 @@ function MainLayout() {
       <footer style={footerStyle}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
           <div>
-            <h4 style={{ color: isMarcianos ? '#ffffff' : '#0f172a', fontWeight: '700', marginBottom: '1rem', fontSize: '1.1rem' }}>
+            <h4 style={{ color: '#FAF7F2', fontWeight: '700', marginBottom: '0.75rem', fontSize: '1.05rem', fontFamily: 'Cinzel, serif' }}>
               {config.app_name}
             </h4>
-            <p style={{ lineHeight: '1.6', fontSize: '0.85rem' }}>
-              {config.description || (isMarcianos 
-                ? 'O maior rodízio de mini burgers do universo, com boliche e diversão garantida para toda a família!'
-                : 'Oferecemos uma experiência excepcional com agendamento online rápido, seguro e prático.'
-              )}
+            <p style={{ lineHeight: '1.6', fontSize: '0.85rem', color: '#A89F96' }}>
+              {config.description || 'Gastronomia regional autêntica, churrasco ao fogo de chão e cortes nobres preparados com maestria e paixão.'}
             </p>
           </div>
           <div>
-            <h4 style={{ color: isMarcianos ? '#ffffff' : '#0f172a', fontWeight: '700', marginBottom: '1rem', fontSize: '1.1rem' }}>
+            <h4 style={{ color: '#FAF7F2', fontWeight: '700', marginBottom: '0.75rem', fontSize: '1.05rem', fontFamily: 'Cinzel, serif' }}>
               Endereço
             </h4>
-            <p style={{ lineHeight: '1.6', fontSize: '0.85rem' }}>
-              {config.address || 'Av. Padre Cacique, 580 - Menino Deus - Porto Alegre/RS'}
+            <p style={{ lineHeight: '1.6', fontSize: '0.85rem', color: '#A89F96' }}>
+              {config.address || 'Av. Principal, 1000 - Centro - Porto Alegre/RS'}
             </p>
           </div>
           <div>
-            <h4 style={{ color: isMarcianos ? '#ffffff' : '#0f172a', fontWeight: '700', marginBottom: '1rem', fontSize: '1.1rem' }}>
-              Contato & Horários
+            <h4 style={{ color: '#FAF7F2', fontWeight: '700', marginBottom: '0.75rem', fontSize: '1.05rem', fontFamily: 'Cinzel, serif' }}>
+              Contato & Atendimento
             </h4>
-            <p style={{ lineHeight: '1.6', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-              <strong>Telefone:</strong> {config.phone || '(51) 99523-9876'}{config.phone2 ? ` / ${config.phone2}` : ''}
+            <p style={{ lineHeight: '1.6', fontSize: '0.85rem', marginBottom: '0.35rem', color: '#A89F96' }}>
+              <strong className="text-stone-300">Telefone:</strong> {config.phone || '(51) 99999-9999'}{config.phone2 ? ` / ${config.phone2}` : ''}
             </p>
-            <p style={{ lineHeight: '1.6', fontSize: '0.85rem' }}>
-              <strong>Funcionamento:</strong> {config.working_hours || 'Terça a Domingo das 17h às 23h'}
+            <p style={{ lineHeight: '1.6', fontSize: '0.85rem', color: '#A89F96' }}>
+              <strong className="text-stone-300">Funcionamento:</strong> {config.working_hours || 'Terça a Domingo das 11h30 às 23h'}
             </p>
           </div>
         </div>
@@ -268,10 +262,10 @@ function MainLayout() {
           maxWidth: '1200px', 
           margin: '2rem auto 0 auto', 
           paddingTop: '1.5rem', 
-          borderTop: isMarcianos ? '1px solid #1e293b' : '1px solid #e2e8f0', 
+          borderTop: '1px solid #231C18', 
           textAlign: 'center', 
           fontSize: '0.8rem', 
-          opacity: 0.7 
+          color: '#786F67' 
         }}>
           © {new Date().getFullYear()} {config.app_name}. Todos os direitos reservados.
         </div>

@@ -86,9 +86,9 @@ function AdminDashboard() {
   // Controle de Tema (Light vs Dark Mode)
   const [themeMode, setThemeMode] = useState(() => {
     try {
-      return localStorage.getItem('admin_theme_mode') || 'light';
+      return localStorage.getItem('admin_theme_mode') || 'dark';
     } catch (e) {
-      return 'light';
+      return 'dark';
     }
   });
 
@@ -817,7 +817,7 @@ function AdminDashboard() {
       {/* Gradiente Radial Suave no topo superior direito */}
       <div className={`absolute top-0 right-0 w-[600px] h-[600px] blur-3xl pointer-events-none -z-10 ${
         themeMode === 'dark'
-          ? 'bg-gradient-to-br from-amber-500/10 via-indigo-500/5 to-transparent'
+          ? 'bg-gradient-to-br from-[#C85A17]/15 via-[#E5A93C]/5 to-transparent'
           : 'bg-gradient-to-br from-amber-200/35 via-amber-100/10 to-transparent'
       }`} />
 
@@ -829,14 +829,14 @@ function AdminDashboard() {
       }`}>
         {/* Brand Pill */}
         <div className="flex items-center gap-3">
-          <div className="bg-stone-900 text-white font-black text-xs uppercase tracking-wider px-5 py-2 rounded-full shadow-sm flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            {appNameInput || 'Painel Admin'}
+          <div className="bg-gradient-to-r from-[#221B16] to-[#1A1613] border border-[#3E3228] text-[#E5A93C] font-black text-xs uppercase tracking-wider px-5 py-2 rounded-full shadow-sm flex items-center gap-2 font-serif-brand">
+            <span className="w-2 h-2 rounded-full bg-[#C85A17] animate-pulse" />
+            {appNameInput || 'Campeiro Fogão'}
           </div>
           <span className={`text-xs font-semibold hidden sm:inline-block ${
             themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
           }`}>
-            Gestão Inteligente de Reservas
+            Painel de Gestão & Reservas
           </span>
         </div>
 
@@ -848,39 +848,39 @@ function AdminDashboard() {
         }`}>
           <button
             onClick={() => handleTabChange('agenda')}
-            className={`px-5 py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
+            className={`px-5 py-2 text-xs rounded-full transition-all cursor-pointer ${
               activeTab === 'agenda'
-                ? 'bg-amber-400 text-stone-900 shadow-md font-extrabold'
+                ? 'bg-gradient-to-r from-[#C85A17] to-[#E5A93C] text-[#FAF7F2] shadow-md shadow-[#C85A17]/25 font-bold'
                 : themeMode === 'dark'
-                ? 'text-slate-400 hover:text-white'
-                : 'text-stone-600 hover:text-stone-900'
+                ? 'text-slate-400 hover:text-white font-semibold'
+                : 'text-stone-600 hover:text-stone-900 font-semibold'
             }`}
           >
             Agenda Semanal
           </button>
           <button
             onClick={() => handleTabChange('config')}
-            className={`px-5 py-2 text-xs font-bold rounded-full transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-5 py-2 text-xs rounded-full transition-all cursor-pointer flex items-center gap-2 ${
               activeTab === 'config'
-                ? 'bg-amber-400 text-stone-900 shadow-md font-extrabold'
+                ? 'bg-gradient-to-r from-[#C85A17] to-[#E5A93C] text-[#FAF7F2] shadow-md shadow-[#C85A17]/25 font-bold'
                 : themeMode === 'dark'
-                ? 'text-slate-400 hover:text-white'
-                : 'text-stone-600 hover:text-stone-900'
+                ? 'text-slate-400 hover:text-white font-semibold'
+                : 'text-stone-600 hover:text-stone-900 font-semibold'
             }`}
           >
             <span>Configurações</span>
             {hasUnsavedChanges && (
-              <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_6px_#f59e0b] shrink-0 animate-pulse" title="Alterações não salvas" />
+              <span className="w-2 h-2 rounded-full bg-[#C85A17] shadow-[0_0_6px_#C85A17] shrink-0 animate-pulse" title="Alterações não salvas" />
             )}
           </button>
           <button
             onClick={() => handleTabChange('historico')}
-            className={`px-5 py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
+            className={`px-5 py-2 text-xs rounded-full transition-all cursor-pointer ${
               activeTab === 'historico'
-                ? 'bg-amber-400 text-stone-900 shadow-md font-extrabold'
+                ? 'bg-gradient-to-r from-[#C85A17] to-[#E5A93C] text-[#FAF7F2] shadow-md shadow-[#C85A17]/25 font-bold'
                 : themeMode === 'dark'
-                ? 'text-slate-400 hover:text-white'
-                : 'text-stone-600 hover:text-stone-900'
+                ? 'text-slate-400 hover:text-white font-semibold'
+                : 'text-stone-600 hover:text-stone-900 font-semibold'
             }`}
           >
             Histórico de Ações
@@ -1007,24 +1007,24 @@ function AdminDashboard() {
 
       {/* Hero Header Limpo Sem Métricas Duplicadas */}
       <div className="pt-2">
-        <h1 className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${
+        <h1 className={`text-3xl sm:text-4xl font-bold tracking-tight font-serif-brand ${
           themeMode === 'dark' ? 'text-white' : 'text-stone-900'
         }`}>
-          Bem-vindo, Admin
+          Painel Administrativo
         </h1>
         <p className={`text-xs sm:text-sm mt-1 font-medium ${
           themeMode === 'dark' ? 'text-slate-400' : 'text-stone-600'
         }`}>
-          Gerencie reservas, limites de vagas e configurações do sistema em tempo real.
+          Gestão em tempo real das reservas, turnos, limites e disponibilidade do salão.
         </p>
       </div>
 
-      {/* 4 Principais KPI Cards Únicos (Sem Duplicação, Ícones do mesmo tamanho e cores distintas por modo) */}
+      {/* 4 Principais KPI Cards Únicos */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {/* Total Reservas Card */}
         <div className={`rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 group ${
           themeMode === 'dark'
-            ? 'bg-slate-900 border border-slate-800 text-slate-100 shadow-md hover:border-amber-500/40'
+            ? 'bg-slate-900 border border-slate-800 text-slate-100 shadow-md hover:border-[#C85A17]/60'
             : 'bg-white border border-stone-200/80 text-stone-900 shadow-sm hover:shadow-md hover:border-amber-300'
         }`}>
           <div className="flex justify-between items-start">
@@ -1038,15 +1038,15 @@ function AdminDashboard() {
             </div>
             <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 transition-transform duration-300 group-hover:scale-110 ${
               themeMode === 'dark'
-                ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30'
+                ? 'bg-[#C85A17]/20 text-[#E5A93C] border border-[#C85A17]/30'
                 : 'bg-amber-100 text-amber-900 border border-amber-300/60'
             }`}>
-              ↗
+              🔥
             </div>
           </div>
           <div className="mt-5 flex items-baseline justify-between">
-            <span className="text-4xl font-black tracking-tight">{totalAgendamentos}</span>
-            <span className="text-[10px] font-black text-stone-900 bg-amber-400 px-3 py-1 rounded-full shadow-xs">
+            <span className="text-4xl font-bold tracking-tight font-serif-brand">{totalAgendamentos}</span>
+            <span className="text-[10px] font-bold text-white bg-gradient-to-r from-[#C85A17] to-[#E5A93C] px-3 py-1 rounded-full shadow-xs">
               Hoje
             </span>
           </div>
@@ -1076,7 +1076,7 @@ function AdminDashboard() {
             </div>
           </div>
           <div className="mt-5 flex items-baseline justify-between">
-            <span className="text-4xl font-black tracking-tight">{totalConfirmados}</span>
+            <span className="text-4xl font-bold tracking-tight font-serif-brand">{totalConfirmados}</span>
             <span className={`text-[10px] font-black px-3 py-1 rounded-full shadow-xs ${
               themeMode === 'dark' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-100 text-emerald-900'
             }`}>
@@ -1088,7 +1088,7 @@ function AdminDashboard() {
         {/* Total Acessos Card */}
         <div className={`rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 group ${
           themeMode === 'dark'
-            ? 'bg-slate-900 border border-slate-800 text-slate-100 shadow-md hover:border-sky-500/40'
+            ? 'bg-slate-900 border border-slate-800 text-slate-100 shadow-md hover:border-[#D4A373]/40'
             : 'bg-white border border-stone-200/80 text-stone-900 shadow-sm hover:shadow-md hover:border-sky-300'
         }`}>
           <div className="flex justify-between items-start">
@@ -1098,22 +1098,22 @@ function AdminDashboard() {
               }`}>Acessos à Agenda</span>
               <p className={`text-[11px] font-medium ${
                 themeMode === 'dark' ? 'text-slate-500' : 'text-stone-400'
-              }`}>Visitas na página do PWA</p>
+              }`}>Visitas na página de reserva</p>
             </div>
             <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 transition-transform duration-300 group-hover:scale-110 ${
               themeMode === 'dark'
-                ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
+                ? 'bg-[#D4A373]/20 text-[#D4A373] border border-[#D4A373]/30'
                 : 'bg-sky-100 text-sky-900 border border-sky-300/60'
             }`}>
               👁️
             </div>
           </div>
           <div className="mt-5 flex items-baseline justify-between">
-            <span className="text-4xl font-black tracking-tight">
+            <span className="text-4xl font-bold tracking-tight font-serif-brand">
               {config.acessos_pagina_agenda || 0}
             </span>
             <span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${
-              themeMode === 'dark' ? 'bg-sky-500/20 border-sky-500/30 text-sky-300' : 'bg-sky-50 border-sky-200 text-sky-800'
+              themeMode === 'dark' ? 'bg-[#D4A373]/15 border-[#D4A373]/30 text-[#D4A373]' : 'bg-sky-50 border-sky-200 text-sky-800'
             }`}>
               Visualizações
             </span>
@@ -1123,7 +1123,7 @@ function AdminDashboard() {
         {/* Taxa de Confirmação Card */}
         <div className={`rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 group ${
           themeMode === 'dark'
-            ? 'bg-slate-900 border border-slate-800 text-slate-100 shadow-md hover:border-purple-500/40'
+            ? 'bg-slate-900 border border-slate-800 text-slate-100 shadow-md hover:border-[#C85A17]/50'
             : 'bg-white border border-stone-200/80 text-stone-900 shadow-sm hover:shadow-md hover:border-purple-300'
         }`}>
           <div className="flex justify-between items-start">
@@ -1137,7 +1137,7 @@ function AdminDashboard() {
             </div>
             <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 transition-transform duration-300 group-hover:scale-110 ${
               themeMode === 'dark'
-                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                ? 'bg-[#C85A17]/20 text-[#E5A93C] border border-[#C85A17]/30'
                 : 'bg-purple-100 text-purple-900 border border-purple-300/60'
             }`}>
               %
@@ -1145,7 +1145,7 @@ function AdminDashboard() {
           </div>
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-end">
-              <span className="text-3xl font-black tracking-tight">{taxaConfirmacao}%</span>
+              <span className="text-3xl font-bold tracking-tight font-serif-brand">{taxaConfirmacao}%</span>
               <span className={`text-[10px] font-bold ${
                 themeMode === 'dark' ? 'text-slate-400' : 'text-stone-500'
               }`}>{totalConfirmados} de {totalAgendamentos}</span>
@@ -1155,7 +1155,7 @@ function AdminDashboard() {
             }`}>
               <div 
                 className={`h-2 rounded-full transition-all duration-500 ${
-                  themeMode === 'dark' ? 'bg-purple-400' : 'bg-purple-600'
+                  themeMode === 'dark' ? 'bg-gradient-to-r from-[#C85A17] to-[#E5A93C]' : 'bg-amber-600'
                 }`}
                 style={{ width: `${taxaConfirmacao}%` }}
               />
@@ -1166,7 +1166,11 @@ function AdminDashboard() {
 
       {/* Database Warning */}
       {!usingDb && (
-        <div className="bg-amber-500/10 border border-amber-500/30 text-stone-800 px-5 py-4 rounded-3xl text-xs flex gap-3 items-center shadow-xs">
+        <div className={`border px-5 py-4 rounded-3xl text-xs flex gap-3 items-center shadow-xs ${
+          themeMode === 'dark'
+            ? 'bg-amber-500/10 border-amber-500/30 text-amber-200'
+            : 'bg-amber-500/10 border-amber-500/30 text-stone-800'
+        }`}>
           <span className="text-lg">⚠️</span>
           <div>
             <strong>Aviso de Banco de Dados:</strong> As tabelas `agendamentos` e `configuracao_agenda` não foram encontradas no Supabase. O painel está salvando dados localmente no navegador para demonstração. Copie o script SQL em `supabase_schema/001_initial_schema.sql` e execute-o no SQL Editor do Supabase para conectar permanentemente.
