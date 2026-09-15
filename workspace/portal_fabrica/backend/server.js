@@ -145,14 +145,37 @@ ${textosStr !== 'Nenhum material ou texto de apoio fornecido.' ? `### CONTEÚDOS
 ${arquivosStr !== 'Nenhum arquivo de apoio fornecido.' ? `### ARQUIVOS ANEXADOS:\n${arquivosStr}\n` : ''}
 ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\n${linksStr}\n` : ''}`;
 
-    // Insere no Supabase na tabela fila_projetos
+    // 1. Busca dinâmica da conta e usuário do CRM (admin@wacrm.com)
+    let { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id, account_id')
+      .eq('email', 'admin@wacrm.com')
+      .maybeSingle();
+
+    if (!profile) {
+      const { data: fallbackProfile } = await supabase
+        .from('profiles')
+        .select('user_id, account_id')
+        .limit(1)
+        .maybeSingle();
+      profile = fallbackProfile;
+    }
+
+    const defaultUserId = profile?.user_id || '2b66650c-a300-4239-b922-2aab9bccac6f';
+    const defaultAccountId = profile?.account_id || '98006e91-88b1-44ea-9178-50c257cd973f';
+
+    // Insere no Supabase na tabela fila_projetos com os metadados de conta
     const { data, error } = await supabase
       .from('fila_projetos')
       .insert([
         {
           mensagem_lead,
           status: 'pendente',
-          resultado_json: null,
+          resultado_json: {
+            account_id: defaultAccountId,
+            user_id: defaultUserId,
+            project_name: project_name
+          },
           supabase_url: supabase_url || null,
           supabase_anon_key: supabase_anon_key || null
         }
@@ -168,17 +191,10 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
 
     // INTEGRACAO COM O CRM
     try {
-      // 1. Busca dinâmica da primeira conta e usuário (agente) ativos no CRM
-      const { data: profile, error: profileErr } = await supabase
-        .from('profiles')
-        .select('user_id, account_id')
-        .limit(1)
-        .maybeSingle();
-
-      const defaultUserId = profile?.user_id || 'ea3ebc3a-054e-4a3c-985d-74f0b13d3789';
-      const defaultAccountId = profile?.account_id || '44a33a6e-8254-4707-b70c-916672b2c36b';
-
       const phone = client_info?.phone || 'Não informado';
+      const phone_normalized = phone.replace(/\D/g, '');
+      const email = client_info?.email || 'Não informado';
+      const contactName = project_name;
       const phone_normalized = phone.replace(/\D/g, '');
       const email = client_info?.email || 'Não informado';
       const contactName = project_name;
@@ -303,15 +319,33 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
 
       // 5. Cria uma oportunidade (Deal) no funil de vendas (Kanban) do CRM
       if (contactId && conversationId) {
-        // Busca o primeiro estágio/pipeline existente
-        const { data: stage } = await supabase
-          .from('pipeline_stages')
-          .select('id, pipeline_id')
+        // Busca a pipeline da conta
+        let pipelineId = null;
+        let stageId = null;
+
+        const { data: userPipeline } = await supabase
+          .from('pipelines')
+          .select('id, stages:pipeline_stages(id, position)')
+          .eq('account_id', defaultAccountId)
           .limit(1)
           .maybeSingle();
 
-        const pipeline_id = stage?.pipeline_id || '6f0d4f66-7a9f-4a2e-bc5c-605c6cc8105a';
-        const stage_id = stage?.id || '1ba374d4-14a5-439f-8d02-84e8c557bbe6';
+        if (userPipeline) {
+          pipelineId = userPipeline.id;
+          const sortedStages = (userPipeline.stages || []).sort((a, b) => a.position - b.position);
+          stageId = sortedStages[0]?.id;
+        }
+
+        if (!stageId) {
+          const { data: stage } = await supabase
+            .from('pipeline_stages')
+            .select('id, pipeline_id')
+            .limit(1)
+            .maybeSingle();
+          pipelineId = stage?.pipeline_id || '7d56fa7e-a864-44ed-a68a-2c8c4a6b1076';
+          stageId = stage?.id || 'e6a8eefb-cae2-45e0-94a4-ee4439c27942';
+        }
+
         const dealValue = summary?.total_setup_price || 0;
 
         const { error: dealError } = await supabase
@@ -320,8 +354,8 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
             {
               user_id: defaultUserId,
               account_id: defaultAccountId,
-              pipeline_id: pipeline_id,
-              stage_id: stage_id,
+              pipeline_id: pipelineId,
+              stage_id: stageId,
               contact_id: contactId,
               conversation_id: conversationId,
               title: `Projeto - ${project_name}`,

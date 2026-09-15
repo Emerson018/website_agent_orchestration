@@ -241,7 +241,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
     setGeneratingAI(true);
 
     try {
-      const ragBranding = contact.additional_data?.branding;
+      const ragBranding = (contact.additional_data as Record<string, any>)?.branding;
       const paletteName = ragBranding?.palette_name || "Definida via RAG";
       const primaryHex = ragBranding?.primary_color_hex;
 

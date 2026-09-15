@@ -337,7 +337,7 @@ export function ContactDetailView({
         return f ? customValues[f.id] : undefined;
       };
 
-      const ragBranding = contact.additional_data?.branding;
+      const ragBranding = (contact.additional_data as Record<string, any>)?.branding;
       const primaryColor = getVal("cor principal") || getVal("primary color") || ragBranding?.primary_color_hex;
       const paletteName = getVal("paleta") || getVal("palette") || ragBranding?.palette_name || "Definida via RAG";
       const modulesStr = getVal("modulos") || getVal("modules") || "site";
