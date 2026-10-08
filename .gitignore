@@ -67,6 +67,7 @@ out/
 
 # Logs and temporary files
 *.log
+*.timestamp-*.mjs
 scratch/
 testar_lmstudio_tools.py
 testando.py

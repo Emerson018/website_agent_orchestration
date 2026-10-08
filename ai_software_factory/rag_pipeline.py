@@ -188,13 +188,16 @@ async def generate_rag_report(contact_name: str, doc_chunks: Any) -> str:
     google_key = os.environ.get("GOOGLE_API_KEY")
     openai_key = os.environ.get("OPENAI_API_KEY")
 
+    mecanismo_usado = "Fallback Heurístico Local (Motor Python)"
+
     if use_local or google_key or openai_key:
         try:
             from langchain_openai import ChatOpenAI
             if use_local:
                 local_url = os.environ.get("LOCAL_LLM_URL", "http://127.0.0.1:1234/v1")
                 local_model = os.environ.get("LOCAL_LLM_MODEL", "google/gemma-3-4b")
-                print(f"[Pipeline Multi-Agente] Executando 3 Agentes via LM Studio Local ({local_model})...")
+                mecanismo_usado = f"LM Studio Local ({local_model} em {local_url})"
+                print(f"[Pipeline Multi-Agente] Executando 3 Agentes via {mecanismo_usado}...")
                 llm = ChatOpenAI(
                     model=local_model,
                     openai_api_key="lm-studio",
@@ -202,14 +205,16 @@ async def generate_rag_report(contact_name: str, doc_chunks: Any) -> str:
                     temperature=0.2
                 )
             elif google_key:
-                print("[Pipeline Multi-Agente] Executando 3 Agentes via Gemini API (Nuvem rápida)...")
+                mecanismo_usado = "API Google Gemini (gemini-3.8-flash)"
+                print(f"[Pipeline Multi-Agente] Executando 3 Agentes via {mecanismo_usado}...")
                 llm = ChatOpenAI(
-                    model="gemini-1.5-flash",
+                    model="gemini-3.8-flash",
                     openai_api_key=google_key,
                     base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
                 )
             else:
-                print("[Pipeline Multi-Agente] Executando 3 Agentes via OpenAI API...")
+                mecanismo_usado = "API OpenAI (gpt-4o-mini)"
+                print(f"[Pipeline Multi-Agente] Executando 3 Agentes via {mecanismo_usado}...")
                 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
 
             # Agente 1: UX Researcher (Análise de Negócio & Vibe)
@@ -239,6 +244,9 @@ async def generate_rag_report(contact_name: str, doc_chunks: Any) -> str:
 
             # Relatório Consolidado Estruturado para o CRM
             full_report = (
+                f"### ⚡ 0. Mecanismo de IA Utilizado\n"
+                f"- **Motor de Processamento**: `{mecanismo_usado}`\n\n"
+                f"---\n\n"
                 f"### 🔬 1. Diagnóstico de Marca & Público (UX Researcher)\n{output_ux}\n\n"
                 f"---\n\n"
                 f"### 🎨 2. Especificações Visuais & UX/UI (UI Designer)\n{output_ui}\n\n"
@@ -251,10 +259,10 @@ async def generate_rag_report(contact_name: str, doc_chunks: Any) -> str:
             print(f"[Pipeline Multi-Agente] Falha na execução do pipeline ({err}). Usando analista de fallback...")
 
     # Fallback Analítico Inteligente
-    print("[Pipeline Multi-Agente] Gerando relatório via Fallback seguro...")
-    return generate_fallback_rag_report(contact_name, context)
+    print(f"[Pipeline Multi-Agente] Gerando relatório via {mecanismo_usado}...")
+    return generate_fallback_rag_report(contact_name, context, mecanismo_usado=mecanismo_usado)
 
-def generate_fallback_rag_report(contact_name: str, context: str) -> str:
+def generate_fallback_rag_report(contact_name: str, context: str, mecanismo_usado: str = "Fallback Heurístico Local (Motor Python)") -> str:
     """Gera o relatório do pipeline dos 3 Agentes no formato estrito (UX Researcher -> UI Designer -> AI Engineer)."""
     import unicodedata
 
@@ -374,6 +382,9 @@ def generate_fallback_rag_report(contact_name: str, context: str) -> str:
 }}"""
 
     report = (
+        f"### ⚡ 0. Mecanismo de IA Utilizado\n"
+        f"- **Motor de Processamento**: `{mecanismo_usado}`\n\n"
+        f"---\n\n"
         f"### 🔬 1. Diagnóstico de Marca & Público (UX Researcher)\n"
         f"- **Nicho de Atuação**: {nicho}\n"
         f"- **Público-Alvo**: Clientes do estabelecimento '{contact_name}' buscando agendamento digital rápido e conveniente.\n"

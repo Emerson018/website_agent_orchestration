@@ -195,9 +195,6 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
       const phone_normalized = phone.replace(/\D/g, '');
       const email = client_info?.email || 'Não informado';
       const contactName = project_name;
-      const phone_normalized = phone.replace(/\D/g, '');
-      const email = client_info?.email || 'Não informado';
-      const contactName = project_name;
 
       let contactId;
 

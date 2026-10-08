@@ -220,7 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const setMockDevSession = () => {
       const mockUser: User = {
-        id: "6128fdb5-b4ba-4ed6-b488-763b1912174d",
+        id: "2b66650c-a300-4239-b922-2aab9bccac6f",
         email: "admin@wacrm.com",
         app_metadata: {},
         user_metadata: { full_name: "Admin WACRM" },
@@ -236,11 +236,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         avatar_url: null,
         role: "admin",
         beta_features: [],
-        account_id: "dev-account-id",
+        account_id: "98006e91-88b1-44ea-9178-50c257cd973f",
         account_role: "owner",
       });
       setAccount({
-        id: "dev-account-id",
+        id: "98006e91-88b1-44ea-9178-50c257cd973f",
         name: "WACRM Workspace",
         default_currency: DEFAULT_CURRENCY,
       });

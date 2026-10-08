@@ -9,7 +9,13 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
+    port: 5173,
     proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true,
+        secure: false,
+      },
       '/api-lm': {
         target: 'http://localhost:1234',
         changeOrigin: true,

@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest) {
   // Fallback for offline or local dev auth
   const devCookie = request.cookies.get('wacrm_dev_session')?.value
   if (!user && devCookie === 'true') {
-    user = { id: '6128fdb5-b4ba-4ed6-b488-763b1912174d', email: 'admin@wacrm.com' } as any
+    user = { id: '2b66650c-a300-4239-b922-2aab9bccac6f', email: 'admin@wacrm.com' } as any
   }
 
   // Auth pages - redirect to dashboard if already logged in.

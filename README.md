@@ -87,29 +87,43 @@ full_stack/
 
 Para rodar todo o ecossistema localmente, você deve iniciar os servidores correspondentes. Consulte o guia detalhado em [COMO_RODAR.md](file:///d:/full_stack/COMO_RODAR.md) para obter comandos exatos e configurações de variáveis de ambiente.
 
-1. **Orquestrador FastAPI (FastAPI)**:
+### 🌐 URLs / Rotas dos 5 Projetos
+
+| # | Projeto / Serviço | URL / Rota | Tecnologia |
+|---|---|---|---|
+| 1 | **Orquestrador FastAPI** | `http://localhost:8000` | Python / FastAPI |
+| 2 | **Express Backend do Portal** | `http://localhost:5000` | Node.js / Express |
+| 3 | **Portal Frontend** | `http://localhost:5173` | React / Vite |
+| 4 | **WhatsApp CRM** | `http://localhost:3000` | Next.js 15+ |
+| 5 | **Site de Cliente (Campeiro do Fogo)** | `http://localhost:5173` (ou `http://localhost:5174`) | React / Vite |
+
+---
+
+### 💻 Comandos de Inicialização
+
+1. **Orquestrador FastAPI (FastAPI)** — 🌐 `http://localhost:8000`:
    ```powershell
    .venv\Scripts\activate
    python main.py
    ```
-2. **Express Backend do Portal (Node.js)**:
+2. **Express Backend do Portal (Node.js)** — 🌐 `http://localhost:5000`:
    ```powershell
    cd workspace/portal_fabrica/backend
    npm run dev
    ```
-3. **Portal Frontend (Vite / React)**:
+3. **Portal Frontend (Vite / React)** — 🌐 `http://localhost:5173`:
    ```powershell
    cd workspace/portal_fabrica
    npm run dev
    ```
-4. **WhatsApp CRM (Next.js)**:
+4. **WhatsApp CRM (Next.js)** — 🌐 `http://localhost:3000`:
    ```powershell
    cd wacrm
    npm run dev
    ```
-5. **Visualizar Site de Cliente (Marcianos)**:
+5. **Visualizar Site de Cliente (Campeiro do Fogo)** — 🌐 `http://localhost:5173` (ou `http://localhost:5174`):
    ```powershell
-   cd workspace/Marcianos/frontend
+   cd workspace/campeiro_fogo/frontend
    npm run dev
    ```
 

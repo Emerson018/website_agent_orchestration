@@ -1,0 +1,50 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+:root {
+  --primary-color: #4A3B6E;
+  --secondary-color: #D7C9FF;
+  --bg-color: #1C1917;
+  --text-color: #FAFAF9;
+}
+
+html, body, #root {
+  background-color: var(--bg-color, #1C1917);
+  color: var(--text-color, #FAFAF9);
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Custom Scrollbar Styling (Modern Dynamic Theme) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-color) var(--bg-color);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(2, 6, 23, 0.3);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.25);
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.55);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

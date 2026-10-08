@@ -99,6 +99,17 @@ export default function LandingPage() {
   const [recentProjects, setRecentProjects] = useState([]);
   const [currentProjectId, setCurrentProjectId] = useState(null);
 
+  const apiFetch = async (endpoint, options = {}) => {
+    try {
+      const res = await fetch(`/api${endpoint}`, options);
+      if (res.ok) return res;
+      console.warn(`[apiFetch] Endpoint /api${endpoint} retornou status ${res.status}. Tentando URL direta...`);
+    } catch (e) {
+      console.warn(`[apiFetch] Erro na rota primária: ${e.message}. Tentando URL direta...`);
+    }
+    return await fetch(`http://127.0.0.1:5000/api${endpoint}`, { ...options });
+  };
+
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -116,7 +127,7 @@ export default function LandingPage() {
         });
 
         console.log(`Uploading file ${file.name} to server...`);
-        const response = await fetch('http://localhost:5000/api/upload', {
+        const response = await apiFetch('/upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -149,7 +160,7 @@ export default function LandingPage() {
 
   const fetchRecentProjects = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/projetos');
+      const response = await apiFetch('/projetos');
       if (response.ok) {
         const data = await response.json();
         setRecentProjects(data);
@@ -255,7 +266,7 @@ export default function LandingPage() {
     try {
       // 1. Salva o projeto no backend/Supabase
       setSimLogs(prev => [...prev, '💾 Salvando especificações do projeto no banco de dados Supabase...']);
-      const saveResponse = await fetch('http://localhost:5000/api/projetos', {
+      const saveResponse = await apiFetch('/projetos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -268,9 +279,26 @@ export default function LandingPage() {
       setSimLogs(prev => [
         ...prev, 
         `✅ Lead registrado com sucesso! Código de Fila: #${project.id}`,
-        '📩 Suas informações foram enviadas com sucesso para o nosso time de análise.',
-        '📞 Em breve entraremos em contato para apresentar sua proposta e iniciar a geração do seu sistema!'
+        '🚀 Disparando orquestrador da Fábrica de IA para compilação autônoma...'
       ]);
+
+      // 2. Dispara o processamento na Fábrica de IA (Python FastAPI + LangGraph)
+      try {
+        const processRes = await apiFetch(`/projetos/${project.id}/processar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (processRes.ok) {
+          setSimLogs(prev => [
+            ...prev,
+            '⚡ Orquestração da Fábrica de IA iniciada com sucesso!',
+            '📩 Suas informações foram enviadas e o código está sendo gerado em segundo plano.',
+            '📞 Acompanhe o progresso na Fila de Projetos ou no CRM!'
+          ]);
+        }
+      } catch (procErr) {
+        console.warn('Erro ao disparar processamento imediato:', procErr);
+      }
       
       setSimStep(8);
       fetchRecentProjects(); // Atualiza a lista de projetos recentes

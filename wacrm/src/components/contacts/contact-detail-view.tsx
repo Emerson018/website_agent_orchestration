@@ -106,11 +106,20 @@ export function ContactDetailView({
     if (!contactId) return;
     setLoading(true);
 
-    const { data } = await supabase
+    let { data } = await supabase
       .from('contacts')
       .select('*')
       .eq('id', contactId)
-      .single();
+      .maybeSingle();
+
+    if (!data) {
+      try {
+        const res = await fetch(`/api/contacts/${contactId}`);
+        if (res.ok) {
+          data = await res.json();
+        }
+      } catch (e) {}
+    }
 
     if (data) {
       setContact(data);
@@ -366,8 +375,16 @@ export function ContactDetailView({
         ai_analysis: aiAnalysis
       };
 
+      const fetch5000 = async (path: string, options?: RequestInit) => {
+        try {
+          const res = await fetch(`http://localhost:5000${path}`, options);
+          if (res.ok) return res;
+        } catch (e) {}
+        return await fetch(`http://127.0.0.1:5000${path}`, options);
+      };
+
       // 1. Criar projeto na fila
-      const createRes = await fetch("http://localhost:5000/api/projetos", {
+      const createRes = await fetch5000("/api/projetos", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -383,7 +400,7 @@ export function ContactDetailView({
       const projectId = newProject.id;
 
       // 2. Disparar processamento da fábrica de IA
-      const processRes = await fetch(`http://localhost:5000/api/projetos/${projectId}/processar`, {
+      const processRes = await fetch5000(`/api/projetos/${projectId}/processar`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

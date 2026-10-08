@@ -23,10 +23,26 @@ import {
   Edit2,
   Save,
   File,
+  Layers,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { FilaProjetosModal } from "@/components/projects/fila-projetos-modal";
 import { format } from "date-fns";
+
+interface FilaProjeto {
+  id: number;
+  created_at: string;
+  mensagem_lead: string;
+  status: 'pendente' | 'processando' | 'concluido' | 'erro';
+  resultado_json: any;
+  supabase_url: string | null;
+  supabase_anon_key: string | null;
+}
 
 interface ContactSidebarProps {
   contact: Contact | null;
@@ -39,6 +55,8 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
   const [deals, setDeals] = useState<Deal[]>([]);
   const [notes, setNotes] = useState<ContactNote[]>([]);
   const [tags, setTags] = useState<(Tag & { contact_tag_id: string })[]>([]);
+  const [projects, setProjects] = useState<FilaProjeto[]>([]);
+  const [filaModalOpen, setFilaModalOpen] = useState(false);
   const [newNote, setNewNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
 
@@ -264,7 +282,15 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
         additional_data: contact.additional_data || { files: [], links: [], texts: [] }
       };
 
-      const createRes = await fetch("http://localhost:5000/api/projetos", {
+      const fetch5000 = async (path: string, options?: RequestInit) => {
+        try {
+          const res = await fetch(`http://localhost:5000${path}`, options);
+          if (res.ok) return res;
+        } catch (e) {}
+        return await fetch(`http://127.0.0.1:5000${path}`, options);
+      };
+
+      const createRes = await fetch5000("/api/projetos", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -279,7 +305,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
       const newProject = await createRes.json();
       const projectId = newProject.id;
 
-      const processRes = await fetch(`http://localhost:5000/api/projetos/${projectId}/processar`, {
+      const processRes = await fetch5000(`/api/projetos/${projectId}/processar`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -291,6 +317,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
       }
 
       toast.success("Geração de site por IA iniciada com sucesso!");
+      fetchContactData();
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Erro na integração com a Fábrica de IA.");
@@ -304,8 +331,8 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
 
     const supabase = createClient();
 
-    // Fetch deals, notes, and tags in parallel
-    const [dealsRes, notesRes, tagsRes] = await Promise.all([
+    // Fetch deals, notes, tags, and projects in parallel
+    const [dealsRes, notesRes, tagsRes, projectsRes] = await Promise.all([
       supabase
         .from("deals")
         .select("*, stage:pipeline_stages(*)")
@@ -320,6 +347,10 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
         .from("contact_tags")
         .select("id, tag_id, tags(*)")
         .eq("contact_id", contact.id),
+      supabase
+        .from("fila_projetos")
+        .select("*")
+        .order("created_at", { ascending: false }),
     ]);
 
     if (dealsRes.data) setDeals(dealsRes.data);
@@ -332,6 +363,9 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
           contact_tag_id: ct.id as string,
         }));
       setTags(mapped);
+    }
+    if (projectsRes.data) {
+      setProjects(projectsRes.data);
     }
   }, [contact]);
 
@@ -468,6 +502,120 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
               )}
             </div>
           </div>
+
+          {/* Divider */}
+          <div className="my-4 border-t border-border" />
+
+          {/* Projetos do Cliente (IA) */}
+          {(() => {
+            const contactProjects = projects.filter((p) => {
+              if (!contact) return false;
+              if (p.resultado_json?.contact_id === contact.id) return true;
+              const projectMsg = (p.mensagem_lead || "").toLowerCase();
+              const contactName = (contact.name || "").toLowerCase();
+              const contactPhone = contact.phone ? contact.phone.replace(/\D/g, "") : "";
+              const contactEmail = (contact.email || "").toLowerCase();
+
+              if (contactName && contactName.length > 2 && projectMsg.includes(contactName)) return true;
+              if (contactPhone && contactPhone.length > 5 && projectMsg.includes(contactPhone)) return true;
+              if (contactEmail && contactEmail.length > 3 && projectMsg.includes(contactEmail)) return true;
+              if (p.resultado_json?.project_name && contactName && p.resultado_json.project_name.toLowerCase() === contactName) return true;
+
+              return false;
+            });
+
+            return (
+              <div>
+                <div className="flex items-center justify-between px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <Layers className="h-3.5 w-3.5 text-primary animate-pulse" />
+                    Projetos ({contactProjects.length})
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setFilaModalOpen(true)}
+                    className="h-6 px-1.5 text-[10px] text-primary hover:text-primary/80"
+                  >
+                    Ver Fila Geral
+                  </Button>
+                </div>
+                <div className="mt-2 space-y-2">
+                  {contactProjects.length === 0 ? (
+                    <div className="rounded-lg bg-muted/40 p-2.5 text-center text-xs text-muted-foreground">
+                      <p>Nenhum projeto associado diretamente.</p>
+                      {projects.length > 0 && (
+                        <Button
+                          variant="link"
+                          onClick={() => setFilaModalOpen(true)}
+                          className="h-auto p-0 text-[11px] text-primary mt-1"
+                        >
+                          Ver {projects.length} projeto(s) na fila geral
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    contactProjects.map((p) => {
+                      const titleMatch = p.mensagem_lead?.match(/Nome do Estabelecimento \/ Marca'?:\s*'([^']+)'/i);
+                      const brandName = titleMatch ? titleMatch[1] : (p.resultado_json?.project_name || `Projeto #${p.id}`);
+
+                      const getProjectBadge = (status: FilaProjeto['status']) => {
+                        switch (status) {
+                          case 'concluido':
+                            return (
+                              <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 gap-1 font-semibold text-[10px] px-1.5 py-0">
+                                <CheckCircle2 className="size-3" /> Concluído
+                              </Badge>
+                            );
+                          case 'processando':
+                            return (
+                              <Badge className="bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 gap-1 font-semibold text-[10px] px-1.5 py-0 animate-pulse">
+                                <Loader2 className="size-3 animate-spin" /> Processando
+                              </Badge>
+                            );
+                          case 'erro':
+                            return (
+                              <Badge className="bg-red-500/10 text-red-400 border border-red-500/20 gap-1 font-semibold text-[10px] px-1.5 py-0">
+                                <AlertCircle className="size-3" /> Erro
+                              </Badge>
+                            );
+                          default:
+                            return (
+                              <Badge className="bg-blue-500/10 text-blue-400 border border-blue-500/20 gap-1 font-semibold text-[10px] px-1.5 py-0">
+                                <Clock className="size-3" /> Pendente
+                              </Badge>
+                            );
+                        }
+                      };
+
+                      return (
+                        <div
+                          key={p.id}
+                          onClick={() => setFilaModalOpen(true)}
+                          className="cursor-pointer rounded-lg bg-muted p-2.5 transition-colors hover:bg-muted/80 border border-border/50"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate text-xs font-bold text-foreground">
+                              {brandName}
+                            </span>
+                            {getProjectBadge(p.status)}
+                          </div>
+                          <p className="mt-1 text-[10px] text-muted-foreground">
+                            Criado em {new Date(p.created_at).toLocaleDateString('pt-BR')}
+                          </p>
+                          {p.supabase_url && (
+                            <p className="mt-0.5 truncate text-[10px] text-primary font-mono">
+                              {p.supabase_url}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Divider */}
           <div className="my-4 border-t border-border" />
@@ -809,6 +957,12 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
           </div>
         </div>
       </ScrollArea>
+
+      {/* Modal da Fila de Projetos */}
+      <FilaProjetosModal
+        open={filaModalOpen}
+        onOpenChange={setFilaModalOpen}
+      />
     </div>
   );
 }

@@ -1,0 +1,25 @@
+{
+  "app_name": "20barranove",
+  "primary_color": "#EC4899",
+  "secondary_color": "#F472B6",
+  "supabase_url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co",
+  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM",
+  "logo_url": "/logo.png",
+  "address": "Av. Principal, 1000 - Centro - Porto Alegre/RS",
+  "phone": "121212121212",
+  "working_hours": "Segunda a Sábado das 9h às 18h",
+  "n8n_webhook_url": "http://localhost:5678/webhook-test/booking",
+  "niche": "Gastronomia – Parrilla e Experiências Sociais",
+  "tagline": "O Sabor da Tradição Gaúcha em Cada Mordida.",
+  "color_reasoning": "A paleta de cores utiliza tons quentes como vermelho (#EC4899) e laranja (#F472B6) para evocar o calor do fogo, a carne grelhada e a atmosfera acolhedora da parrilla. O fundo escuro (#0F172A) contrasta com as cores vibrantes, criando um visual sofisticado e convidativo.",
+  "recommended_sections": [
+    "Hero",
+    "Serviços (Parrilla, Experiências Sociais)",
+    "Sobre Nós (História do 20barranove)",
+    "Cardápio (com fotos de alta qualidade)",
+    "Agendamento (PWA)",
+    "Localização (Mapa interativo)",
+    "Contato",
+    "Depoimentos"
+  ]
+}

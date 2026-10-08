@@ -119,7 +119,24 @@ export default function ContactsPage() {
       query = query.or(`name.ilike.${term},phone.ilike.${term},email.ilike.${term}`);
     }
 
-    const { data, count, error } = await query;
+    let { data, count, error } = await query;
+
+    // Fallback: If browser client returned empty or error (e.g. dev session or RLS unauthenticated), fetch via /api/contacts
+    if (error || !data || data.length === 0) {
+      try {
+        const apiRes = await fetch(`/api/contacts?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(search.trim())}`);
+        if (apiRes.ok) {
+          const apiData = await apiRes.json();
+          if (Array.isArray(apiData.contacts) && apiData.contacts.length > 0) {
+            data = apiData.contacts;
+            count = apiData.count ?? apiData.contacts.length;
+            error = null;
+          }
+        }
+      } catch (err) {
+        console.warn('Fallback /api/contacts failed:', err);
+      }
+    }
 
     if (error) {
       toast.error('Failed to load contacts');

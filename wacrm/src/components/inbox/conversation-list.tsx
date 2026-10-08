@@ -79,10 +79,26 @@ export function ConversationList({
     let cancelled = false;
 
     (async () => {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("conversations")
         .select("*, contact:contacts(*)")
         .order("last_message_at", { ascending: false });
+
+      // Fallback: If browser client returned empty or error (e.g. dev session or RLS unauthenticated), fetch via /api/conversations
+      if (error || !data || data.length === 0) {
+        try {
+          const apiRes = await fetch("/api/conversations");
+          if (apiRes.ok) {
+            const apiData = await apiRes.json();
+            if (Array.isArray(apiData) && apiData.length > 0) {
+              data = apiData;
+              error = null;
+            }
+          }
+        } catch (e) {
+          console.warn("Fallback /api/conversations failed:", e);
+        }
+      }
 
       if (cancelled) return;
 
