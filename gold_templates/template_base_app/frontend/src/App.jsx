@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import config from '../ai_config.json';
 import MainLayout from './layouts/MainLayout';
+import LandingPage from './pages/LandingPage';
 import BookingPage from './pages/BookingPage';
 import AdminDashboard from './pages/AdminDashboard';
 import LoginPage from './pages/LoginPage';
@@ -13,7 +14,7 @@ const router = createBrowserRouter([
     path: "/",
     element: <MainLayout />,
     children: [
-      { index: true, element: <BookingPage /> },
+      { index: true, element: <LandingPage /> },
       { path: "agendar", element: <BookingPage /> },
       { path: "login", element: <LoginPage /> },
       {

@@ -129,7 +129,7 @@ def requirements_analyst_node(state: AgentState) -> Dict[str, Any]:
     elif google_key:
         print("[Analista de Requisitos] GOOGLE_API_KEY configurada. Invocando Gemini real via endpoint compatível...")
         llm = ChatOpenAI(
-            model="gemini-1.5-flash",
+            model="gemini-3.8-flash",
             openai_api_key=google_key,
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
         )
@@ -247,133 +247,218 @@ def infra_cloner_node(state: AgentState) -> Dict[str, Any]:
         "execution_logs": current_logs
     }
 
-def generate_fallback_landing_page_code(app_name: str, primary_color: str, secondary_color: str, mensagem: str, is_nextjs: bool = False) -> str:
-    # Identifica o tipo de negócio na mensagem
-    is_barber = any(x in app_name.lower() or x in mensagem.lower() for x in ["barbearia", "barba", "corte", "navalha", "pampas", "barber"])
-    is_dental = any(x in app_name.lower() or x in mensagem.lower() for x in ["odont", "sorriso", "dentist", "dente", "clinic"])
-    is_beauty = any(x in app_name.lower() or x in mensagem.lower() for x in ["estetic", "beleza", "salao", "hair", "unha", "spa"])
-    is_food = any(x in app_name.lower() or x in mensagem.lower() for x in ["fogao", "campeiro", "restaurante", "gourmet", "comida", "pizz", "hambur", "cafe", "doce", "culinaria", "marmita", "prato", "alimento"])
-    
-    if is_food:
-        hero_title = "O Autêntico Sabor no Fogão a Lenha e Tradição"
-        hero_desc = f"Bem-vindo ao {app_name}. Saboreie pratos artesanais da culinária regional com receitas tradicionais, tempero caseiro e ambiente acolhedor."
-        services = [
-            {"name": "Pratos Típicos no Fogão", "desc": "Receitas tradicionais preparadas lentamente no fogão a lenha com ingredientes selecionados.", "price": "R$ 45"},
-            {"name": "Reserva de Mesas Online", "desc": "Garanta seu lugar e de sua família com antecedência sem filas de espera.", "price": "Gratuito"},
-            {"name": "Degustação & Eventos", "desc": "Buffet temático e pratos sob encomenda para momentos especiais.", "price": "Sob consulta"}
-        ]
-        visual_theme = "bg-[#1C1917] text-[#FAFAF9]"
-        card_theme = "bg-[#272425] border-[#3E3A3B] shadow-lg"
-    elif is_barber:
-        hero_title = "Estilo e Tradição Para o Homem Moderno"
-        hero_desc = f"Bem-vindo à {app_name}. Aliamos técnicas clássicas de barbearia a um ambiente premium e atendimento personalizado."
-        services = [
-            {"name": "Corte de Cabelo", "desc": "Corte moderno ou clássico com lavagem e finalização premium.", "price": "R$ 60"},
-            {"name": "Barba e Toalha Quente", "desc": "Barba feita na navalha com hidratação, óleo e toalha quente relaxante.", "price": "R$ 50"},
-            {"name": "Combo Premium", "desc": "Corte + Barba + Sobrancelha com cortesia exclusiva.", "price": "R$ 100"}
-        ]
-        visual_theme = "bg-gray-950 text-gray-100"
-        card_theme = "bg-gray-900 border-gray-800"
-    elif is_dental:
-        hero_title = "O Sorriso Perfeito Que Você Sempre Sonhou"
-        hero_desc = f"Na {app_name}, oferecemos tratamentos odontológicos avançados com tecnologia de ponta e equipe especializada para cuidar do seu sorriso."
-        services = [
-            {"name": "Clareamento Dental", "desc": "Técnicas a laser e caseira para deixar seu sorriso mais branco e radiante.", "price": "Consulte"},
-            {"name": "Implantes e Próteses", "desc": "Reabilitação oral completa com materiais de alta qualidade e durabilidade.", "price": "Consulte"},
-            {"name": "Ortodontia Invisível", "desc": "Alinhadores transparentes modernos para alinhar seus dentes com total discrição.", "price": "Consulte"}
-        ]
-        visual_theme = "bg-slate-50 text-slate-800"
-        card_theme = "bg-white border-slate-100 shadow-md"
-    elif is_beauty:
-        hero_title = "Realce Sua Beleza Natural Com Nossos Tratamentos"
-        hero_desc = f"Descubra a melhor versão de si mesma na {app_name}. Clínicas de estética facial, corporal e tratamentos de alta performance."
-        services = [
-            {"name": "Limpeza de Pele Profunda", "desc": "Remoção de impurezas, hidratação profunda e renovação celular.", "price": "R$ 120"},
-            {"name": "Massagem Modeladora", "desc": "Redução de medidas, drenagem linfática e tonificação corporal.", "price": "R$ 150"},
-            {"name": "Toxina Botulínica", "desc": "Prevenção e suavização de linhas de expressão com naturalidade.", "price": "Consulte"}
-        ]
-        visual_theme = "bg-stone-50 text-stone-800"
-        card_theme = "bg-white border-stone-100 shadow-sm"
+def get_niche_media(app_name: str, mensagem: str) -> Dict[str, Any]:
+    """Retorna mídia temática curada do Unsplash e dados de vitrine alinhados ao nicho do cliente."""
+    text = f"{app_name} {mensagem}".lower()
+    if any(x in text for x in ["barbe", "barba", "navalha", "corte", "pampas", "barber"]):
+        return {
+            "niche": "Barbearia",
+            "hero_title": "Estilo, Tradição e Cuidado Masculino",
+            "hero_desc": f"Bem-vindo à {app_name}. Aliamos o corte clássico na navalha a um ambiente exclusivo com atendimento de primeira.",
+            "hero_img": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1200&q=80",
+            "services": [
+                {"name": "Corte de Cabelo Clássico", "desc": "Corte moderno ou clássico com lavagem, alinhamento e finalização premium.", "price": "R$ 60", "img": "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=600&q=80"},
+                {"name": "Barboterapia com Toalha Quente", "desc": "Barba desenhada na navalha com hidratação, óleos nobres e toalha quente relaxante.", "price": "R$ 50", "img": "https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=600&q=80"},
+                {"name": "Combo Estilo Completo", "desc": "Cabelo, barba e sobrancelha com café expresso cortesia e atendimento VIP.", "price": "R$ 100", "img": "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=600&q=80"}
+            ],
+            "theme_bg": "bg-[#090D16] text-[#F1F5F9]",
+            "card_bg": "bg-[#111827] border-[#1F2937]"
+        }
+    elif any(x in text for x in ["fogao", "campeiro", "restaurante", "gourmet", "comida", "pizz", "hambur", "carne", "churrasco", "culinaria"]):
+        return {
+            "niche": "Gastronomia",
+            "hero_title": "O Autêntico Sabor e Tradição Artesanal",
+            "hero_desc": f"Bem-vindo ao {app_name}. Saboreie pratos artesanais da culinária regional com receitas tradicionais, tempero caseiro e ambiente acolhedor.",
+            "hero_img": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80",
+            "services": [
+                {"name": "Pratos Típicos Tradicionais", "desc": "Receitas clássicas preparadas lentamente com ingredientes nobres da estação.", "price": "R$ 48", "img": "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80"},
+                {"name": "Cortes Especiais na Brasa", "desc": "Carnes selecionadas preparadas lentamente na brasa no ponto exato da sua preferência.", "price": "R$ 85", "img": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80"},
+                {"name": "Reserva de Mesas Online", "desc": "Garanta seu lugar e de sua família com antecedência sem filas de espera.", "price": "Gratuito", "img": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80"}
+            ],
+            "theme_bg": "bg-[#1C1917] text-[#FAFAF9]",
+            "card_bg": "bg-[#292524] border-[#44403C]"
+        }
+    elif any(x in text for x in ["odont", "dente", "sorriso", "dentist", "saude", "clinic"]):
+        return {
+            "niche": "Odontologia & Saúde",
+            "hero_title": "O Sorriso Radiante Que Você Merece",
+            "hero_desc": f"Na {app_name}, unimos tecnologia de ponta e cuidado humanizado para transformar e valorizar o seu sorriso com total conforto.",
+            "hero_img": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=80",
+            "services": [
+                {"name": "Clareamento Dental Avançado", "desc": "Procedimento seguro a laser para devolver o brilho e a tonalidade natural dos dentes.", "price": "Consulte", "img": "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&w=600&q=80"},
+                {"name": "Alinhadores Transparentes", "desc": "Correção ortodôntica moderna com aparelhos invisíveis, removíveis e imperceptíveis.", "price": "Consulte", "img": "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=600&q=80"},
+                {"name": "Check-up Preventivo Completo", "desc": "Avaliação detalhada, limpeza ultrassônica e orientações completas de saúde bucal.", "price": "Consulte", "img": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=600&q=80"}
+            ],
+            "theme_bg": "bg-[#F8FAFC] text-[#0F172A]",
+            "card_bg": "bg-white border-[#E2E8F0] shadow-md"
+        }
+    elif any(x in text for x in ["estetic", "beleza", "salao", "hair", "unha", "spa"]):
+        return {
+            "niche": "Estética & Beleza",
+            "hero_title": "Realce Sua Beleza e Bem-Estar Natural",
+            "hero_desc": f"Descubra sua melhor versão na {app_name}. Protocolos estéticos personalizados em um ambiente relaxante e sofisticado.",
+            "hero_img": "https://images.unsplash.com/photo-1560750588-73207b1ef5b8?auto=format&fit=crop&w=1200&q=80",
+            "services": [
+                {"name": "Limpeza de Pele Profunda", "desc": "Remoção de impurezas, hidratação celular intensa e renovação do viço facial.", "price": "R$ 150", "img": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=600&q=80"},
+                {"name": "Massagem Relaxante com Aromas", "desc": "Terapia corporal antiestresse com óleos essenciais para equilíbrio físico e mental.", "price": "R$ 130", "img": "https://images.unsplash.com/photo-1512290900672-1f4a4340d21a?auto=format&fit=crop&w=600&q=80"},
+                {"name": "Design & Cuidados Corporais", "desc": "Tratamentos modeladores e protocolos exclusivos de alta performance estética.", "price": "Consulte", "img": "https://images.unsplash.com/photo-1519415510236-718bdfcd89c8?auto=format&fit=crop&w=600&q=80"}
+            ],
+            "theme_bg": "bg-[#FFF1F2] text-[#1C1917]",
+            "card_bg": "bg-white border-[#FFE4E6] shadow-sm"
+        }
+    elif any(x in text for x in ["pet", "veterin", "cao", "gato", "animal"]):
+        return {
+            "niche": "Pet & Veterinária",
+            "hero_title": "Cuidado e Carinho Que Seu Pet Merece",
+            "hero_desc": f"Na {app_name}, tratamos seu melhor amigo com amor, dedicação e toda a estrutura que ele precisa para viver feliz e saudável.",
+            "hero_img": "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=1200&q=80",
+            "services": [
+                {"name": "Banho & Tosa Especializada", "desc": "Higiene delicada com cosméticos seguros e tosa higiênica ou na tesoura.", "price": "R$ 70", "img": "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&w=600&q=80"},
+                {"name": "Consulta Clínica & Preventiva", "desc": "Avaliação de rotina, carteira de vacinas e acompanhamento nutricional para pets.", "price": "R$ 120", "img": "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=600&q=80"},
+                {"name": "Spa & Hidratação de Pelos", "desc": "Tratamento de pelagem com máscara hidratante e massagem relaxante.", "price": "R$ 90", "img": "https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?auto=format&fit=crop&w=600&q=80"}
+            ],
+            "theme_bg": "bg-[#FFFBEB] text-[#451A03]",
+            "card_bg": "bg-white border-[#FEF3C7] shadow-sm"
+        }
     else:
-        hero_title = f"Soluções Inovadoras Para Seu Dia a Dia"
-        hero_desc = f"Conheça os produtos e serviços da {app_name}. Desenvolvidos com o máximo padrão de qualidade e atenção aos mínimos detalhes."
-        services = [
-            {"name": "Serviço Padrão", "desc": "Nossa solução base adaptada sob medida para as necessidades do seu negócio.", "price": "Sob consulta"},
-            {"name": "Consultoria Premium", "desc": "Acompanhamento estratégico para alavancar seus resultados comerciais.", "price": "Sob consulta"},
-            {"name": "Suporte Integrado", "desc": "Atendimento e monitoramento contínuo para garantir estabilidade operacional.", "price": "Sob consulta"}
-        ]
-        visual_theme = "bg-slate-950 text-slate-100"
-        card_theme = "bg-slate-900 border-slate-800"
+        return {
+            "niche": "Serviços Especializados",
+            "hero_title": f"Excelência e Conforto em Cada Detalhe",
+            "hero_desc": f"Conheça os serviços da {app_name}. Desenvolvidos com alto padrão de qualidade e atenção individualizada às suas necessidades.",
+            "hero_img": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80",
+            "services": [
+                {"name": "Atendimento Personalizado", "desc": "Soluções focadas sob medida para entregar exatamente o que você procura.", "price": "Sob consulta", "img": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80"},
+                {"name": "Consultoria & Diagnóstico", "desc": "Avaliação detalhada para garantir precisão, economia de tempo e melhores resultados.", "price": "Sob consulta", "img": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80"},
+                {"name": "Agendamento Prático Online", "desc": "Escolha com antecedência o dia e horário que melhor se encaixam na sua rotina.", "price": "Online", "img": "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=600&q=80"}
+            ],
+            "theme_bg": "bg-[#0F172A] text-[#F8FAFC]",
+            "card_bg": "bg-[#1E293B] border-[#334155] shadow-lg"
+        }
 
-    services_html = ""
-    for s in services:
-        services_html += f"""
-        <div className="p-6 rounded-2xl border {card_theme} transition-all duration-300 hover:-translate-y-1 text-left">
-          <h4 className="text-lg font-bold text-primary">{s['name']}</h4>
-          <p className="text-sm opacity-80 mt-2">{s['desc']}</p>
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-xs opacity-60 font-semibold uppercase tracking-wider">Valor</span>
-            <span className="text-sm font-black text-primary">{s['price']}</span>
-          </div>
-        </div>
-        """
-
+def generate_fallback_landing_page_code(app_name: str, primary_color: str, secondary_color: str, mensagem: str, is_nextjs: bool = False, address: str = "", working_hours: str = "", phone: str = "") -> str:
+    """Gera uma LandingPage completa em 5 blocos com fotos do Unsplash caso o modelo LLM não esteja disponível."""
+    media = get_niche_media(app_name, mensagem)
+    
+    addr = address or "Av. Principal, 1000 - Centro"
+    hours = working_hours or "Segunda a Sábado das 9h às 19h"
+    tel = phone or "(51) 99999-9999"
+    
     link_import = "import Link from 'next/link';" if is_nextjs else "import { Link } from 'react-router-dom';"
     link_attr = "href" if is_nextjs else "to"
+
+    services_cards = ""
+    for s in media["services"]:
+        services_cards += f"""
+          <div className="overflow-hidden rounded-2xl border {media['card_bg']} transition-all duration-300 hover:-translate-y-1.5 flex flex-col text-left">
+            <img src="{s['img']}" alt="{s['name']}" className="w-full h-48 object-cover" />
+            <div className="p-6 flex flex-col flex-1 justify-between">
+              <div>
+                <h4 className="text-xl font-bold text-primary">{s['name']}</h4>
+                <p className="text-sm opacity-80 mt-2 leading-relaxed">{s['desc']}</p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-xs uppercase tracking-wider font-semibold opacity-60">Investimento</span>
+                <span className="text-base font-extrabold text-primary">{s['price']}</span>
+              </div>
+            </div>
+          </div>
+        """
 
     code = f"""import React from 'react';
 {link_import}
 
 export default function LandingPage() {{
   return (
-    <div className="min-h-screen {visual_theme} flex flex-col font-sans">
-      {{/* Hero Section */}}
-      <section className="relative py-20 px-6 sm:px-12 flex flex-col items-center text-center max-w-5xl mx-auto">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-72 bg-primary/10 rounded-full filter blur-3xl pointer-events-none"></div>
-        <span className="text-xs font-bold text-primary uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
-          Bem-vindo
-        </span>
-        <h1 className="text-4xl sm:text-6xl font-black tracking-tight mt-6 leading-tight">
-          {hero_title}
-        </h1>
-        <p className="mt-6 text-base sm:text-lg opacity-85 max-w-2xl leading-relaxed">
-          {hero_desc}
-        </p>
-        <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
-          <Link 
-            {link_attr}="/agendar"
-            className="w-full sm:w-auto px-8 py-4 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/25 hover:brightness-110 hover:shadow-primary/35 transition-all flex items-center justify-center gap-2 group cursor-pointer"
-          >
-            <span>Realizar reserva</span>
-            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </Link>
-        </div>
-      </section>
-
-      {{/* Serviços Section */}}
-      <section className="py-20 border-t border-gray-900/10 dark:border-gray-800/80 px-6 sm:px-12 max-w-6xl mx-auto w-full">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl sm:text-3xl font-extrabold">Nossos Serviços</h2>
-          <p className="text-xs sm:text-sm opacity-60 mt-2">Diferenciais e cuidados que fazem a diferença no seu dia</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {services_html}
-        </div>
-      </section>
-
-      {{/* Call to Action Section */}}
-      <section className="py-16 px-6 sm:px-12 bg-primary/5 border border-primary/10 rounded-3xl max-w-5xl mx-auto w-full my-10 text-center flex flex-col items-center">
-        <h3 className="text-2xl font-bold">Pronto para ter uma experiência incrível?</h3>
-        <p className="text-sm opacity-80 mt-3 max-w-md">Escolha o melhor dia, horário e o profissional da sua preferência diretamente no nosso sistema.</p>
+    <div className="min-h-screen {media['theme_bg']} flex flex-col font-sans">
+      {{/* Bloco 1: Navbar com Nome Comercial e Botão Agendar */}}
+      <nav className="w-full py-4 px-6 sm:px-12 border-b border-white/10 flex items-center justify-between max-w-7xl mx-auto">
+        <span className="text-xl font-black tracking-tight text-primary">{app_name}</span>
         <Link 
           {link_attr}="/agendar"
-          className="mt-8 px-6 py-3 rounded-lg bg-primary text-white font-bold shadow-md hover:brightness-105 transition-all"
+          className="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold shadow-md hover:brightness-110 transition-all cursor-pointer"
         >
-          Realizar reserva
+          Agendar Horário
         </Link>
+      </nav>
+
+      {{/* Bloco 2: Hero Section de Alto Impacto */}}
+      <section className="relative py-20 px-6 sm:px-12 flex flex-col md:flex-row items-center justify-between max-w-7xl mx-auto w-full gap-12">
+        <div className="flex-1 text-left z-10">
+          <span className="text-xs font-bold text-primary uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
+            {media['niche']}
+          </span>
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight mt-6 leading-tight">
+            {media['hero_title']}
+          </h1>
+          <p className="mt-6 text-base sm:text-lg opacity-85 max-w-xl leading-relaxed">
+            {media['hero_desc']}
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center gap-4">
+            <Link 
+              {link_attr}="/agendar"
+              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/25 hover:brightness-110 transition-all flex items-center justify-center gap-2 group cursor-pointer"
+            >
+              <span>Agendar Agora</span>
+              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
+          </div>
+        </div>
+        <div className="flex-1 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-white/10">
+          <img 
+            src="{media['hero_img']}" 
+            alt="{app_name}" 
+            className="w-full h-[420px] object-cover hover:scale-105 transition-transform duration-700"
+          />
+        </div>
       </section>
+
+      {{/* Bloco 3: Vitrine de Diferenciais e Serviços com Imagens Reais */}}
+      <section className="py-20 border-t border-white/10 px-6 sm:px-12 max-w-7xl mx-auto w-full">
+        <div className="text-center mb-16">
+          <span className="text-xs font-bold text-primary uppercase tracking-widest">Nossos Serviços</span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold mt-3">Experiência e Cuidados com Você</h2>
+          <p className="text-sm opacity-70 mt-2 max-w-xl mx-auto">Confira abaixo nossos principais atendimentos e reserve seu horário online com praticidade.</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {services_cards}
+        </div>
+      </section>
+
+      {{/* Bloco 4: Informações Locais & Horários */}}
+      <section className="py-16 px-6 sm:px-12 bg-white/5 border-y border-white/10 max-w-7xl mx-auto w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+          <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+            <span className="text-xs font-bold text-primary uppercase tracking-widest block">Onde Estamos</span>
+            <h4 className="text-lg font-bold mt-2">Endereço</h4>
+            <p className="text-sm opacity-80 mt-2 leading-relaxed">{addr}</p>
+          </div>
+          <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+            <span className="text-xs font-bold text-primary uppercase tracking-widest block">Atendimento</span>
+            <h4 className="text-lg font-bold mt-2">Horários</h4>
+            <p className="text-sm opacity-80 mt-2 leading-relaxed">{hours}</p>
+          </div>
+          <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+            <span className="text-xs font-bold text-primary uppercase tracking-widest block">Fale Conosco</span>
+            <h4 className="text-lg font-bold mt-2">Telefone / WhatsApp</h4>
+            <p className="text-sm opacity-80 mt-2 leading-relaxed">{tel}</p>
+          </div>
+        </div>
+      </section>
+
+      {{/* Bloco 5: Rodapé & CTA Final */}}
+      <footer className="py-16 px-6 sm:px-12 text-center max-w-7xl mx-auto w-full flex flex-col items-center">
+        <h3 className="text-2xl sm:text-3xl font-bold">Pronto para agendar o seu momento?</h3>
+        <p className="text-sm opacity-80 mt-3 max-w-md">Escolha a melhor data e horário no nosso sistema digital sem complicações.</p>
+        <Link 
+          {link_attr}="/agendar"
+          className="mt-6 px-8 py-3.5 rounded-xl bg-primary text-white font-bold shadow-lg hover:brightness-110 transition-all cursor-pointer"
+        >
+          Ir Para o Agendamento
+        </Link>
+        <p className="text-xs opacity-50 mt-12">© {{new Date().getFullYear()}} {app_name}. Todos os direitos reservados.</p>
+      </footer>
     </div>
   );
 }}
@@ -382,7 +467,7 @@ export default function LandingPage() {{
 
 
 def invocar_lm_studio_para_codigo(prompt_sistema: str, prompt_usuario: str) -> Optional[str]:
-    """Tenta chamar o LM Studio local via HTTP direto em múltiplos hosts/portas e com/sem API Key para gerar código."""
+    """Chama o LM Studio local via HTTP direto com timeout estendido de 120s para gerar código JSX confiável."""
     local_url = os.environ.get("LOCAL_LLM_URL", "http://127.0.0.1:1234/v1").rstrip("/")
     local_model = os.environ.get("LOCAL_LLM_MODEL", "google/gemma-3-4b")
     local_api_key = os.environ.get("LOCAL_LLM_API_KEY", "").strip()
@@ -390,9 +475,7 @@ def invocar_lm_studio_para_codigo(prompt_sistema: str, prompt_usuario: str) -> O
     urls_to_try = [
         local_url,
         "http://127.0.0.1:1234/v1",
-        "http://localhost:1234/v1",
-        "http://127.0.0.1:63805/v1",
-        "http://127.0.0.1:8000/v1"
+        "http://localhost:1234/v1"
     ]
     
     seen = set()
@@ -407,7 +490,6 @@ def invocar_lm_studio_para_codigo(prompt_sistema: str, prompt_usuario: str) -> O
         "temperature": 0.2
     }
     
-    # Headers para testar (com e sem Bearer Token)
     headers_list = [{"Content-Type": "application/json"}]
     if local_api_key:
         headers_list.insert(0, {"Content-Type": "application/json", "Authorization": f"Bearer {local_api_key}"})
@@ -417,52 +499,67 @@ def invocar_lm_studio_para_codigo(prompt_sistema: str, prompt_usuario: str) -> O
     for url in urls_unique:
         for headers in headers_list:
             try:
-                print(f"[LM Studio] Tentando conectar em {url}/chat/completions com modelo {local_model}...")
-                with httpx.Client(timeout=60.0) as client:
+                print(f"[LM Studio] Enviando solicitação de geração da Landing Page ao modelo {local_model} em {url} (Timeout: 120s)...")
+                with httpx.Client(timeout=120.0) as client:
                     res = client.post(f"{url}/chat/completions", json=payload, headers=headers)
                     if res.status_code == 200:
                         data = res.json()
                         content = data["choices"][0]["message"]["content"]
-                        print(f"[LM Studio] Resposta de código obtida do modelo {local_model} via {url} com sucesso!")
+                        print(f"[LM Studio] Código JSX gerado com sucesso pelo modelo {local_model} via {url}!")
                         return content
                     elif res.status_code == 401:
-                        print(f"[LM Studio] {url} respondeu 401 (Invalid API Key). Verifique a opção 'Require API Key' no LM Studio.")
+                        print(f"[LM Studio] {url} respondeu 401 (Invalid API Key). Verifique se 'Require API Key' está desativado no LM Studio.")
                     else:
                         print(f"[LM Studio] {url} retornou status HTTP {res.status_code}.")
             except Exception as err:
-                print(f"[LM Studio] Não foi possível conectar em {url}: {err}")
+                print(f"[LM Studio] Não foi possível conectar ou timeout em {url}: {err}")
             
-    print("⚠️ [LM Studio] Servidor local não respondeu na porta 1234. Para que o Gemma no LM Studio gere o layout customizado, acesse o LM Studio -> aba Developer / Local Server e clique em 'Start Server' (porta 1234).")
+    print("⚠️ [LM Studio] Servidor local não respondeu na porta 1234. Para que o Gemma no LM Studio gere o layout customizado, certifique-se de iniciar o servidor na aba Developer / Local Server (porta 1234).")
     return None
 
 def generate_landing_page(target_path: str, reqs: Dict[str, Any], lead_raw: Dict[str, Any]):
     app_name = reqs.get("app_name", "AppCustomizado")
     primary_color = reqs.get("primary_color", "#D4AF37")
     secondary_color = reqs.get("secondary_color", "#1A1A1A")
+    address = reqs.get("address", "")
+    working_hours = reqs.get("working_hours", "")
+    phone = reqs.get("phone", "")
     mensagem = lead_raw.get("mensagem", "")
+    
+    media = get_niche_media(app_name, mensagem)
     
     openai_key = os.environ.get("OPENAI_API_KEY")
     google_key = os.environ.get("GOOGLE_API_KEY")
     use_local = os.environ.get("USE_LOCAL_LLM", "true").lower() == "true"
     
-    system_prompt = """Você é um Engenheiro Frontend e Copywriter especialista em React (Vite) e Tailwind CSS.
-Sua tarefa é criar um componente funcional React e estilizado com Tailwind CSS para a página de destino (LandingPage) do novo negócio do cliente.
+    system_prompt = f"""Você é um Arquiteto Frontend e Copywriter especialista em React (Vite) e Tailwind CSS.
+Sua missão é gerar um componente React completo para a Landing Page (LandingPage.jsx) adaptado sob medida para o estabelecimento do cliente.
 
-REGRAS OBRIGATÓRIAS DE CÓDIGO E COPYWRITING (SKILL STOP SLOP INTEGRADA):
-1. ZERO TEXTO DE IA GENÉRICO: Proibido usar clichês e jargões artificiais como "No mundo acelerado de hoje", "Revolucione sua experiência", "Desbloqueie o potencial", "Soluções de ponta" ou frases vazias. Escreva como um copywriter humano autêntico, usando linguagem direta, fatos concretos e benefícios reais.
-2. NUNCA gere comentários de placeholder vazios como {/* Conteúdo do título aqui */}. Escreva títulos H1 impactantes, descrições ricas e específicas adaptadas ao negócio (Ex: Gastronomia = receitas tradicionais no fogão a lenha, tempero caseiro; Barbearia = corte clássico na navalha; Odontologia = alinhadores e saúde).
-3. NUNCA use via.placeholder.com ou URLs quebradas. Para fotos do Hero ou dos cards, utilize apenas imagens em alta resolução do Unsplash (Ex para Gastronomia: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1000&q=80', Ex para Barbearia: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1000&q=80', Ex para Odontologia: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1000&q=80').
-4. O componente deve ser export default function LandingPage() { ... } completo e autocontido.
-5. Importar Link de 'react-router-dom' para a ação de agendamento (<Link to="/agendar" className="...">).
-6. O contêiner principal <div className="..."> DEVE definir a cor de fundo apropriada do tema (ex: bg-[#1C1917] para restaurante/gastronomia escuro, bg-slate-950 para barbearia, bg-slate-50 para clínica/saúde) e NUNCA usar fundo azul/roxo genérico.
-7. Retornar APENAS o código do arquivo LandingPage.jsx, sem explicações adicionais e sem blocos de código markdown (sem ```jsx).
+ESTRUTURA OBRIGATÓRIA EM 5 BLOCOS:
+1. NAVBAR: Nome do estabelecimento e botão de destaque para agendamento (<Link to="/agendar" ...>Agendar Horário</Link>).
+2. HERO SECTION: Título de alto impacto focado no nicho '{media['niche']}', descrição acolhedora sem clichês de IA, botão CTA principal (<Link to="/agendar">) e foto temática do Unsplash: '{media['hero_img']}'.
+3. VITRINE DE SERVIÇOS: Exatamente 3 cards de diferenciais/serviços com as seguintes imagens reais:
+   - Card 1: Foto '{media['services'][0]['img']}', Título '{media['services'][0]['name']}', Valor '{media['services'][0]['price']}'
+   - Card 2: Foto '{media['services'][1]['img']}', Título '{media['services'][1]['name']}', Valor '{media['services'][1]['price']}'
+   - Card 3: Foto '{media['services'][2]['img']}', Título '{media['services'][2]['name']}', Valor '{media['services'][2]['price']}'
+4. INFORMAÇÕES LOCAIS: Cards com Endereço ({address or 'Endereço central do cliente'}), Horários de funcionamento ({working_hours or 'Segunda a Sábado'}) e Telefone/WhatsApp ({phone or 'WhatsApp para contato'}).
+5. FOOTER: Rodapé institucional com botão final levando a '/agendar' e copyright.
+
+REGRAS ESTRITAS DE SINTAXE:
+1. Inicie importando:
+   import React from 'react';
+   import {{ Link }} from 'react-router-dom';
+2. O componente DEVE ser: export default function LandingPage() {{ ... }}
+3. Todos os botões de ação DEVEM usar <Link to="/agendar"> da biblioteca 'react-router-dom'.
+4. NUNCA use clichês de IA ("no mundo acelerado de hoje", "revolucione sua experiência").
+5. Retorne APENAS o código JSX puro, sem explicações em texto e sem blocos markdown (sem ```jsx ou ```).
 """
     
-    user_prompt = f"Informações e análises do lead:\n{mensagem}\n\nNome comercial: {app_name}\nCor Primária: {primary_color}\nCor Secundária: {secondary_color}"
+    user_prompt = f"Dados do cliente para o layout:\n- Nome: '{app_name}'\n- Nicho: '{media['niche']}'\n- Cor Primária: '{primary_color}'\n- Cor Secundária: '{secondary_color}'\n- Endereço: '{address}'\n- Horários: '{working_hours}'\n- Contato: '{phone}'\n- Briefing: {mensagem}"
     
     code = None
     if use_local:
-        print("[Desenvolvedor] USE_LOCAL_LLM está ativado. Solicitando geração de layout ao Gemma no LM Studio...")
+        print(f"[Desenvolvedor] USE_LOCAL_LLM está ativado. Solicitando geração de Landing Page ao Gemma no LM Studio para '{app_name}' ({media['niche']})...")
         code = invocar_lm_studio_para_codigo(system_prompt, user_prompt)
         
     if not code and (openai_key or google_key):
@@ -471,7 +568,7 @@ REGRAS OBRIGATÓRIAS DE CÓDIGO E COPYWRITING (SKILL STOP SLOP INTEGRADA):
             if google_key:
                 from langchain_openai import ChatOpenAI
                 llm = ChatOpenAI(
-                    model="gemini-1.5-flash",
+                    model="gemini-3.8-flash",
                     openai_api_key=google_key,
                     base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
                 )
@@ -493,8 +590,8 @@ REGRAS OBRIGATÓRIAS DE CÓDIGO E COPYWRITING (SKILL STOP SLOP INTEGRADA):
         code = code.strip()
         
     if not code or len(code) < 100 or "export default" not in code:
-        print("[Desenvolvedor] Utilizando gerador local de fallback para LandingPage em React + Vite...")
-        code = generate_fallback_landing_page_code(app_name, primary_color, secondary_color, mensagem, False)
+        print("[Desenvolvedor] Utilizando gerador visual inteligente de fallback com fotos Unsplash em 5 blocos...")
+        code = generate_fallback_landing_page_code(app_name, primary_color, secondary_color, mensagem, False, address, working_hours, phone)
         
     landing_page_path = os.path.join(target_path, "frontend", "src", "pages", "LandingPage.jsx")
     os.makedirs(os.path.dirname(landing_page_path), exist_ok=True)
@@ -531,10 +628,9 @@ def provision_client_database(target_path: str, lead_raw: Dict[str, Any]):
     
     db_dir = os.path.join(target_path, "database")
     base_sql_path = os.path.join(db_dir, "base_schema.sql")
-    ext_sql_path = os.path.join(db_dir, "ai_extension_schema.sql")
     
     if not supabase_url or not supabase_key:
-        print(f"\n[Supabase Single-Tenant] Nenhuma credencial de banco de dados enviada no lead. Os arquivos de schema SQL foram salvos em '{db_dir}' para execução manual.")
+        print(f"\n[Supabase Single-Tenant] Nenhuma credencial de banco de dados enviada no lead. O arquivo base_schema.sql foi salvo em '{db_dir}' para execução manual.")
         return
         
     print(f"\n[Supabase Single-Tenant] Credenciais detectadas. Tentando provisionar tabelas no banco: {supabase_url}...")
@@ -543,150 +639,51 @@ def provision_client_database(target_path: str, lead_raw: Dict[str, Any]):
         from supabase import create_client
         client = create_client(supabase_url, supabase_key)
         
-        sqls_to_run = []
         if os.path.exists(base_sql_path):
             with open(base_sql_path, 'r', encoding='utf-8') as f:
-                sqls_to_run.append(("base_schema.sql", f.read()))
+                sql_content = f.read()
                 
-        if os.path.exists(ext_sql_path):
-            with open(ext_sql_path, 'r', encoding='utf-8') as f:
-                sqls_to_run.append(("ai_extension_schema.sql", f.read()))
-                
-        for filename, sql_content in sqls_to_run:
-            if not sql_content.strip():
-                continue
-            print(f"[Supabase Single-Tenant] Aplicando {filename} no Supabase...")
-            try:
-                # Tenta executar via RPC exec_sql se configurado no Supabase
-                client.rpc("exec_sql", {"query": sql_content}).execute()
-                print(f" -> Tabela e schema de {filename} provisionados com sucesso!")
-            except Exception as rpc_err:
-                print(f" -> Conexão autenticada. (RPC exec_sql não ativo ou chave sem DDL: {rpc_err}). Arquivo {filename} salvo em 'database/' para execução no Supabase SQL Editor.")
-                
+            if sql_content.strip():
+                print(f"[Supabase Single-Tenant] Aplicando base_schema.sql padronizado no Supabase...")
+                try:
+                    client.rpc("exec_sql", {"query": sql_content}).execute()
+                    print(f" -> Tabelas base provisionadas com sucesso via RPC exec_sql!")
+                except Exception as rpc_err:
+                    print(f" -> Conexão autenticada. (RPC exec_sql não disponível: {rpc_err}). O schema base_schema.sql está pronto em '{db_dir}' para rodar no SQL Editor.")
     except Exception as e:
         print(f"[Supabase Single-Tenant] Aviso ao conectar ao Supabase do cliente: {e}")
 
 
 def generate_niche_database_schema(target_path: str, lead_raw: Dict[str, Any]):
-    mensagem = lead_raw.get("mensagem", "")
-    
-    openai_key = os.environ.get("OPENAI_API_KEY")
-    google_key = os.environ.get("GOOGLE_API_KEY")
-    use_local = os.environ.get("USE_LOCAL_LLM", "false").lower() == "true"
-    
-    use_llm = False
-    if use_local:
-        local_url = os.environ.get("LOCAL_LLM_URL", "http://localhost:1234/v1")
-        local_model = os.environ.get("LOCAL_LLM_MODEL", "google/gemma-3-4b")
-        llm = ChatOpenAI(
-            model=local_model,
-            openai_api_key="lm-studio",
-            base_url=local_url,
-            temperature=0
-        )
-        use_llm = True
-    elif openai_key:
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-        use_llm = True
-    elif google_key:
-        llm = ChatOpenAI(
-            model="gemini-1.5-flash",
-            openai_api_key=google_key,
-            base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
-        )
-        use_llm = True
-        
-    sql_code = None
-    if use_llm:
-        try:
-            print("[Desenvolvedor] Gerando ai_extension_schema.sql customizado via LLM...")
-            prompt = ChatPromptTemplate.from_messages([
-                ("system", """Você é um Engenheiro de Banco de Dados PostgreSQL e Arquiteto de Software especialista.
-Sua tarefa é ler e analisar as especificações e o relatório de design enviados (especialmente os serviços, produtos e a Seção 2 sobre o Nicho do Negócio).
-Com base nessa análise, gere um código PostgreSQL puro (SQL) contendo tabelas específicas para o nicho de agendamento do cliente (ex: para Barbearia: colaboradores/barbeiros, serviços detalhados; para Clínica: médicos, especialidades, salas; para Petshop: pets, raças, portes).
-
-SEGURANÇA E REGRAS ESTRITAS:
-1. Conecte as tabelas do nicho criadas (via Foreign Key / Chave Estrangeira) à tabela genérica 'agendamentos_base(id)'. Por exemplo, você pode criar uma tabela 'detalhes_agendamento_nicho' que referencia 'agendamentos_base(id)'.
-2. Use a cláusula 'CREATE TABLE IF NOT EXISTS' para todas as tabelas.
-3. Retorne APENAS o código SQL puro, sem explicações adicionais e sem blocos de código markdown (como ```sql ou ```). Comece direto com a primeira linha de SQL.
-4. Escreva em português, usando nomenclatura clara e coerente.
-"""),
-                ("user", "Informações e relatório do lead:\n{mensagem}")
-            ])
-            chain = prompt | llm
-            res = chain.invoke({"mensagem": mensagem})
-            sql_code = res.content
-            # Remove markdown code fences if LLM accidentally added them
-            sql_code = re.sub(r"^```[a-zA-Z0-9]*\n", "", sql_code)
-            sql_code = re.sub(r"\n```$", "", sql_code)
-            sql_code = sql_code.strip()
-        except Exception as e:
-            print(f"[Desenvolvedor] Falha ao chamar LLM para gerar banco ({str(e)}). Usando fallback local...")
-            sql_code = None
-            
-    if not sql_code:
-        # Fallback estático simples para caso o LLM esteja fora
-        sql_code = """-- Fallback: Estrutura adicional de serviços e profissionais para o agendador
-CREATE TABLE IF NOT EXISTS profissionais (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    nome VARCHAR(255) NOT NULL,
-    especialidade VARCHAR(255),
-    criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS servicos (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    nome VARCHAR(255) NOT NULL,
-    preco DECIMAL(10, 2) NOT NULL,
-    duracao INT NOT NULL, -- em minutos
-    criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS agendamentos_detalhes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    agendamento_id UUID REFERENCES agendamentos_base(id) ON DELETE CASCADE,
-    profissional_id UUID REFERENCES profissionais(id) ON DELETE SET NULL,
-    servico_id UUID REFERENCES servicos(id) ON DELETE SET NULL,
-    observacoes TEXT
-);
-"""
-
-    # Valida e sanitiza o código SQL gerado
-    sql_code = validate_and_sanitize_sql(sql_code)
-        
-    # 2. Salva o resultado gerado em ai_extension_schema.sql dentro de workspace/{nome_do_projeto}/database/
+    """Copia a base geral padronizada do banco (base_schema.sql) sem alucinações de SQL e sem dados falsos."""
     db_dir = os.path.join(target_path, "database")
     os.makedirs(db_dir, exist_ok=True)
     
-    extension_schema_path = os.path.join(db_dir, "ai_extension_schema.sql")
-    with open(extension_schema_path, 'w', encoding='utf-8') as f:
-        f.write(sql_code)
-    print(f"Esquema estendido 'ai_extension_schema.sql' gravado com sucesso em: {extension_schema_path}")
-    
-    # 3. Copia o arquivo base_schema.sql do template padrão para a mesma pasta
     base_template_schema = "gold_templates/template_base_app/supabase_schema/base_schema.sql"
     base_dest_schema = os.path.join(db_dir, "base_schema.sql")
     
     if os.path.exists(base_template_schema):
         shutil.copy2(base_template_schema, base_dest_schema)
-        print(f"Esquema base '{base_template_schema}' copiado com sucesso para: {base_dest_schema}")
+        print(f"[Desenvolvedor] Esquema base geral '{base_template_schema}' copiado com sucesso para: {base_dest_schema}")
     else:
-        print(f"AVISO: Esquema base '{base_template_schema}' não encontrado para cópia.")
+        print(f"[Desenvolvedor] AVISO: Esquema base '{base_template_schema}' não encontrado para cópia.")
 
 
 def update_project_frontend_entrypoints(target_path: str, app_name: str):
-    """Garante que a rota principal de App.jsx seja o BookingPage (/ e /agendar) e AdminDashboard (/admin)."""
+    """Garante que a rota principal de App.jsx seja a LandingPage (/) e o BookingPage (/agendar)."""
     app_jsx_path = os.path.join(target_path, "frontend", "src", "App.jsx")
     if os.path.exists(app_jsx_path):
         try:
             with open(app_jsx_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-            # Garante que a rota raiz seja a BookingPage e remove a LandingPage
-            content = re.sub(r"import LandingPage from '\./pages/LandingPage';\n?", "", content)
-            content = content.replace("{ index: true, element: <LandingPage /> }", "{ index: true, element: <BookingPage /> }")
+            if "LandingPage" not in content:
+                content = content.replace("import BookingPage from './pages/BookingPage';", "import LandingPage from './pages/LandingPage';\nimport BookingPage from './pages/BookingPage';")
+            content = content.replace("{ index: true, element: <BookingPage /> }", "{ index: true, element: <LandingPage /> }")
+            if '{ path: "agendar", element: <BookingPage /> }' not in content:
+                content = content.replace('{ index: true, element: <LandingPage /> },', '{ index: true, element: <LandingPage /> },\n      { path: "agendar", element: <BookingPage /> },')
             with open(app_jsx_path, 'w', encoding='utf-8') as f:
                 f.write(content)
-            print(f"[Desenvolvedor] App.jsx atualizado com sucesso. Rota raiz apontando para BookingPage (Agendamento).")
+            print(f"[Desenvolvedor] App.jsx atualizado com sucesso. Rota raiz apontando para LandingPage e /agendar para BookingPage.")
         except Exception as e:
             print(f"Aviso ao atualizar App.jsx: {e}")
             
