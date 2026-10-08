@@ -1,133 +1,151 @@
 # 🚀 Fábrica de Software Autônoma com IA & CRM Integrado
 
-Este projeto é um ecossistema completo e automatizado para captação de leads, qualificação inteligente, enriquecimento de contexto via **RAG (Retrieval-Augmented Generation)** e **geração 100% autônoma de websites e aplicativos PWAs** customizados para clientes.
+Ecossistema completo e automatizado para **captação de leads via WhatsApp CRM**, **análise de contexto com RAG**, e **geração 100% autônoma de aplicações web e PWAs** adaptadas ao nicho de cada cliente.
 
-O sistema integra inteligência artificial avançada utilizando **LangGraph** (grafos cíclicos de decisão com recuperação de falhas), **pgvector** no Supabase para busca semântica de arquivos dos clientes (cardápios, PDFs, etc.) e um painel de gerenciamento **CRM moderno em Next.js**.
+O sistema opera com uma equipe de agentes de inteligência artificial construídos sobre **LangGraph** (com autorrecuperação cíclica e validação de QA com build real), suporte nativo a **LLMs Locais via LM Studio (Google Gemma)** ou nuvem, e persistência serverless via **Supabase**.
 
 ---
 
-## 🗺️ Visão Geral do Ecossistema
-
-O fluxo de valor do projeto abrange desde o contato inicial do lead até o deploy e gerenciamento do site gerado:
+## 🗺️ Arquitetura do Ecossistema
 
 ```mermaid
 graph TD
-    A[Landing Page: Entrada de Leads] -->|Registra Lead| E[(Supabase Central + pgvector)]
-    H[WhatsApp CRM Next.js: Painel Admin] <-->|Gerencia / Qualifica| E
-    H -->|Dispara Geração| B[Portal Fábrica: Backend Node.js]
-    B <-->|Orquestração| C[Orquestrador FastAPI Python]
-    C <-->|Lê Contexto RAG| E
-    C <-->|Agentes & Compilação| D[Workspace: Projetos de Clientes]
-    A -->|Notifica Criação| B
+    A[WhatsApp CRM: Next.js 16] <-->|Gerencia Leads & RAG| E[(Supabase Central)]
+    A -->|Disparo com 1 Clique| B[Portal Fábrica: Backend Express :5000]
+    B <-->|Orquestração HTTP| C[Orquestrador FastAPI :8000]
+    C <-->|Geração de Layout & Copy| L[LM Studio: Gemma 3-4B :1234]
+    C -->|Clona Template Ouro| D[Workspace: Aplicações de Clientes]
+    C -->|Validação de QA: npm run build| D
+    P[Portal Fábrica: Frontend Vite :5173] <-->|Monitora Fila & Logs| B
+    D <-->|Persistência Serverless| S[(Supabase do Cliente)]
 ```
 
 ---
 
-## ✨ Funcionalidades Principais
+## ✨ Pilares e Funcionalidades
 
-### 1. Captação & Qualificação de Leads (WhatsApp CRM)
-- **Painel CRM com Next.js 15+**: Interface administrativa moderna para gerenciar contatos, qualificar leads e criar funis de vendas.
-- **Campos Customizados**: Configuração de paletas de cores, diferenciais do negócio, links do Instagram/inspirações e dados do estabelecimento.
-- **Disparo com um Clique**: Botão direto na UI do contato para acionar a Fábrica de IA e gerar o site do cliente instantaneamente.
+### 1. 🤖 Orquestrador de Agentes de IA (LangGraph + FastAPI)
+Fluxo cíclico com autorrecuperação que transforma um briefing em uma aplicação completa:
+* **Analista de Requisitos (`requirements_analyst_node`)**: Analisa o lead, mensagens e links (Instagram/Site) via LLM ou RAG para extrair nicho, nome, paleta de cores e serviços essenciais.
+* **Clonador de Infraestrutura (`infra_cloner_node`)**: Clona fisicamente a base do `gold_templates/template_base_app` para a pasta do cliente em `workspace/<nome_do_app>`.
+* **Desenvolvedor / Injetor (`code_injector_node`)**:
+  * Gera a **`LandingPage.jsx` sob medida** em 5 seções estruturadas via LLM local (LM Studio);
+  * Injeta a identidade visual no `index.css` (`:root` `--primary-color`, `--bg-color`);
+  * Atualiza o `ai_config.json` e o título do `index.html`;
+  * Copia o schema estável e padronizado do banco para `database/base_schema.sql`.
+* **Validador de QA (`qa_validator_node`)**: Executa `npm run build` real no projeto compilado. Se houver falha sintática, retroalimenta o Desenvolvedor para correção automática (até 3 tentativas).
 
-### 2. Pipeline de RAG (pgvector no Supabase)
-- **Ingestão Inteligente**: Upload de manuais, cardápios, PDFs de serviços ou links de sites de referência no CRM.
-- **Busca Semântica**: O backend Python fatiou e vetorizou os arquivos usando embeddings locais. Durante a escrita do código, a IA busca trechos relevantes nos documentos anexados do cliente para escrever um conteúdo ultra-fiel à realidade do estabelecimento.
+### 2. 🧠 Suporte Nativo a LLM Local (LM Studio) & Nuvem
+* **Execução 100% Local**: Conecta-se diretamente ao LM Studio (`http://127.0.0.1:1234/v1`) utilizando o modelo **`google/gemma-3-4b`** (ou modelos compatíveis).
+* **Timeout Resiliente**: Configurado com 120s de tolerância para modelos locais em GPU/CPU.
+* **Fallback Inteligente**: Se a LLM local ou a nuvem estiverem indisponíveis, o sistema aciona um motor heurístico com fotos temáticas do Unsplash que garante que o projeto nunca fique quebrado.
 
-### 3. Orquestrador de Agentes de IA (LangGraph)
-Grafo cíclico estruturado com autorrecuperação e validação de código (QA):
-- **Analista**: Processa o lead e busca contexto semântico relevante no banco de dados RAG.
-- **Clonador**: Copia o *Template Ouro* limpo em React/Vite para a pasta do cliente.
-- **Desenvolvedor**: Injeta estilos Tailwind/CSS, monta as seções com base nas informações do RAG e cria formulários.
-- **QA (Garantia de Qualidade)**: Roda testes de compilação reais (`npm run build`). Caso quebre, repassa os logs de erro para o desenvolvedor reescrever a seção danificada até atingir 100% de sucesso.
+### 3. 🎨 Frontend Adaptado ao Nicho (Experiência Comercial)
+* **Rota Raiz (`/`)**: Apresenta uma **Landing Page completa e profissional**, dividida em 5 blocos:
+  1. **Navbar**: Logotipo, nome comercial e botão direto "Agendar Horário";
+  2. **Hero Section**: Headline de alto impacto do nicho, proposta de valor humanizada (sem clichês de IA), botão CTA e foto temática do Unsplash;
+  3. **Vitrine de Diferenciais & Serviços**: 3 cards com fotos reais em alta resolução do Unsplash, descrição e preços;
+  4. **Informações Locais**: Endereço, horários de atendimento e telefone/WhatsApp extraídos do lead;
+  5. **Footer**: Rodapé institucional com CTA para reserva.
+* **Rota de Agendamento (`/agendar`)**: Formulário intuitivo e dinâmico de reserva de vagas e horários (`BookingPage`).
+* **Painel Administrativo (`/admin`)**: Gestão de horários, vagas e configurações da agenda.
 
-### 4. Aplicação do Cliente Gerada (Ex: Marcianos Burger)
-- **Página de Agendamento Moderno**: Formulário intuitivo de reservas integrado ao Supabase.
-- **Gerenciador de Horários do Administrador**:
-  - Visualização de chips/badges interativos com remoção rápida.
-  - Inserção de horários individuais e **Gerador em Massa (Bulk Generator)** (define início, fim e intervalo para criar slots automaticamente).
-  - Ordenação automática cronológica e ajustes dinâmicos de capacidade por slot.
-  - Exibição/ocultação condicional do campo de observações (e limite de 50 caracteres) controlado diretamente pelo admin.
-- **UX Otimizada para Mobile**:
-  - **Barra superior retrátil**: Oculta-se suavemente ao rolar para baixo e reaparece ao rolar para cima.
-  - **Botão "Recolher"**: Permite travar a barra superior no modo escondido para evitar incômodos de rolagem no celular.
-  - **Rolagem Multidirecional Livre (Diagonal)**: O grid semanal de reservas pode ser movido em todos os eixos no celular (horizontal, vertical e diagonal) de forma unificada, mantendo o cabeçalho de datas (`thead`) fixo e alinhado no topo da tela (`sticky`).
+### 4. 🗄️ Backend Padronizado & Geral (Supabase Serverless)
+* **Base Idempotente**: A pasta `database/` de cada cliente recebe o `base_schema.sql` oficial e limpo, sem alucinações de SQL e **sem dados falsos/mock**.
+* **Tabelas Prontas**: `agendamentos`, `configuracao_agenda` e publicação Realtime habilitada.
+* **Escalabilidade**: A base é estável para qualquer segmento e pode receber extensões pontuais conforme as demandas do negócio.
+
+### 5. 📱 WhatsApp CRM (Next.js 16 Turbopack)
+* Painel completo de gestão de contatos, funis de vendas (*Deals*) e histórico de conversas.
+* Integração direta com a Fábrica: botão **"Iniciar Geração do PWA (IA)"** no sidebar do contato para disparar a automação instantaneamente.
 
 ---
 
 ## 🛠️ Stack Tecnológica
 
-- **Frontend (Portal & Landing)**: React.js (Vite), TailwindCSS, Vanilla CSS.
-- **WhatsApp CRM**: Next.js 15+ (App Router, Server Components), Shadcn UI, Supabase REST & Realtime Client.
-- **Fábrica de IA & RAG**: Python 3.10+, FastAPI, LangGraph, LangChain, psycopg2-binary, pgvector, SentenceTransformers.
-- **Ambiente de Simulação**: Fallback automático para `localStorage` no frontend caso a conexão com as tabelas de banco de dados do Supabase central ou individual não seja configurada.
+| Camada | Tecnologias |
+| :--- | :--- |
+| **WhatsApp CRM** | Next.js 16 (Turbopack, App Router), React 19, Tailwind CSS, Shadcn UI |
+| **Fábrica de IA** | Python 3.10+, FastAPI, LangGraph, LangChain, Uvicorn, HTTPX |
+| **Modelos de IA** | LM Studio Local (`google/gemma-3-4b`) + fallback Google Gemini / OpenAI |
+| **Portal Fábrica** | React (Vite 5), Tailwind CSS, Node.js / Express |
+| **Projetos de Clientes** | PWA React + Vite, Tailwind CSS, Supabase JS (Serverless) |
+| **Banco de Dados** | Supabase (PostgreSQL + RLS + Realtime) |
 
 ---
 
-## 📁 Estrutura de Diretórios do Projeto
+## 📁 Estrutura do Repositório
 
 ```text
 full_stack/
-├── ARCHITECTURE.md          # Especificação técnica global do sistema
-├── COMO_RODAR.md            # Guia prático de inicialização passo a passo
-├── README.md                # Este guia de apresentação do ecossistema
-├── main.py                  # Servidor Python FastAPI do orquestrador
-├── requirements.txt         # Dependências do Python (LangGraph, psycopg2, etc.)
-├── ai_software_factory/     # Código fonte do orquestrador de IA (Agentes & RAG)
-├── wacrm/                   # Aplicação Next.js do WhatsApp CRM
-└── workspace/               # Workspace físico dos projetos compilados e portais
-    ├── portal_fabrica/      # Portal de monitoramento de geração (React + Express)
-    ├── Marcianos/           # Exemplo de site gerado de hamburgueria com agendamento
-    └── Sorriso_Perfeito/    # Exemplo de site gerado de clínica odontológica
+├── main.py                  # Ponto de entrada do Orquestrador FastAPI (porta 8000)
+├── requirements.txt         # Dependências Python (FastAPI, LangGraph, etc.)
+├── COMO_RODAR.md            # Guia prático de comandos e credenciais
+├── README.md                # Apresentação do projeto e arquitetura
+├── ai_software_factory/     # Núcleo da IA: agentes, estado, prompts e RAG
+│   ├── agents.py            # Grafo de agentes (Analista, Cloner, Dev, QA)
+│   ├── main.py              # API FastAPI (/processar-fila, /gerar-site)
+│   └── .env                 # Chaves de API e USE_LOCAL_LLM=true
+├── gold_templates/          # Templates Ouro usados como matriz de clonagem
+│   └── template_base_app/   # Base PWA React + Vite + Supabase
+├── wacrm/                   # Aplicação Next.js 16 do WhatsApp CRM (porta 3000)
+└── workspace/               # Portais e diretório dos clientes gerados
+    ├── portal_fabrica/      # Dashboard de acompanhamento (porta 5173 / 5000)
+    ├── Marcianos/           # Exemplo: Hamburgueria / Rodízio
+    ├── barbearia_dom_lucas/ # Exemplo: Barbearia gerada via Gemma no LM Studio
+    └── campeiro_fogo/       # Exemplo: Restaurante campeiro
 ```
 
 ---
 
-## 🚀 Como Inicializar o Projeto
+## 🚀 Como Rodar o Ecossistema
 
-Para rodar todo o ecossistema localmente, você deve iniciar os servidores correspondentes. Consulte o guia detalhado em [COMO_RODAR.md](file:///d:/full_stack/COMO_RODAR.md) para obter comandos exatos e configurações de variáveis de ambiente.
+Consulte o documento completo em [COMO_RODAR.md](COMO_RODAR.md) para detalhes adicionais.
 
-### 🌐 URLs / Rotas dos 5 Projetos
+### 🌐 Portas e Serviços Locais
 
-| # | Projeto / Serviço | URL / Rota | Tecnologia |
-|---|---|---|---|
-| 1 | **Orquestrador FastAPI** | `http://localhost:8000` | Python / FastAPI |
-| 2 | **Express Backend do Portal** | `http://localhost:5000` | Node.js / Express |
-| 3 | **Portal Frontend** | `http://localhost:5173` | React / Vite |
-| 4 | **WhatsApp CRM** | `http://localhost:3000` | Next.js 15+ |
-| 5 | **Site de Cliente (Campeiro do Fogo)** | `http://localhost:5173` (ou `http://localhost:5174`) | React / Vite |
+| Serviço | URL | Descrição |
+| :--- | :--- | :--- |
+| **LM Studio** | `http://127.0.0.1:1234` | Servidor local com modelo `google/gemma-3-4b` |
+| **WhatsApp CRM** | [http://localhost:3000](http://localhost:3000) | Gestão de leads e disparo de geração (`admin@wacrm.com` / `mano018`) |
+| **Portal Fábrica (Backend)** | [http://localhost:5000](http://localhost:5000) | API Express intermediadora de fila e Supabase |
+| **Portal Fábrica (Frontend)** | [http://localhost:5173](http://localhost:5173) | Dashboard de monitoramento em tempo real |
+| **Orquestrador de IA** | [http://localhost:8000/docs](http://localhost:8000/docs) | API FastAPI dos agentes com Swagger interativo |
+| **Site de Cliente (Exemplo)** | [http://localhost:5174](http://localhost:5174) | Aplicação PWA compilada do cliente |
 
 ---
 
-### 💻 Comandos de Inicialização
+### 💻 Comandos de Inicialização (Terminais Separados)
 
-1. **Orquestrador FastAPI (FastAPI)** — 🌐 `http://localhost:8000`:
+1. **LM Studio (Modelo Local)**:
+   * Abra o LM Studio, carregue o modelo `google/gemma-3-4b`, acesse **Developer / Local Server** e inicie o servidor na porta `1234`.
+
+2. **Orquestrador de IA (FastAPI)** — `http://localhost:8000`:
    ```powershell
    .venv\Scripts\activate
    python main.py
    ```
-2. **Express Backend do Portal (Node.js)** — 🌐 `http://localhost:5000`:
+
+3. **Backend do Portal Fábrica (Express)** — `http://localhost:5000`:
    ```powershell
    cd workspace/portal_fabrica/backend
    npm run dev
    ```
-3. **Portal Frontend (Vite / React)** — 🌐 `http://localhost:5173`:
+
+4. **Frontend do Portal Fábrica (Vite)** — `http://localhost:5173`:
    ```powershell
    cd workspace/portal_fabrica
    npm run dev
    ```
-4. **WhatsApp CRM (Next.js)** — 🌐 `http://localhost:3000`:
+
+5. **WhatsApp CRM (Next.js)** — `http://localhost:3000`:
    ```powershell
    cd wacrm
    npm run dev
    ```
-5. **Visualizar Site de Cliente (Campeiro do Fogo)** — 🌐 `http://localhost:5173` (ou `http://localhost:5174`):
+
+6. **Visualizar um Site de Cliente (Ex: Barbearia Dom Lucas)**:
    ```powershell
-   cd workspace/campeiro_fogo/frontend
+   cd workspace/barbearia_dom_lucas/frontend
    npm run dev
    ```
-
-*Nota: O site gerado inclui suporte para ngrok no arquivo `vite.config.js` via `allowedHosts: true`, facilitando o acesso instantâneo e responsivo de seu smartphone local durante o desenvolvimento.*
-
-**Ativação Ngrok**
-no terminal digita: ngrok http 5173
