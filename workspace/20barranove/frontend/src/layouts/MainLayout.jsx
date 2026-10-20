@@ -1,284 +1,292 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import staticConfig from '../../ai_config.json';
-import logo from '../logo.png';
 import { getAgendaConfig } from '../services/api';
 
-const formatWorkingHours = (dias, horarios) => {
-  if (!dias || dias.length === 0) return 'Fechado';
-  
-  const weekdaysPT = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-  const sortedDays = [...dias].map(d => d === 0 ? 7 : d).sort((a, b) => a - b);
-  
-  let isConsecutive = true;
-  for (let i = 1; i < sortedDays.length; i++) {
-    if (sortedDays[i] !== sortedDays[i - 1] + 1) {
-      isConsecutive = false;
-      break;
-    }
-  }
-  
-  let daysText = '';
-  if (isConsecutive && sortedDays.length > 1) {
-    const firstDay = weekdaysPT[sortedDays[0] === 7 ? 0 : sortedDays[0]];
-    const lastDay = weekdaysPT[sortedDays[sortedDays.length - 1] === 7 ? 0 : sortedDays[sortedDays.length - 1]];
-    daysText = `${firstDay} a ${lastDay}`;
-  } else {
-    daysText = dias.map(d => weekdaysPT[d].slice(0, 3)).join(', ');
-  }
-
-  let hoursText = '';
-  if (horarios && horarios.length > 0) {
-    const sortedHours = [...horarios].sort();
-    const minHour = sortedHours[0];
-    const maxHour = sortedHours[sortedHours.length - 1];
-    hoursText = ` das ${minHour} às ${maxHour}`;
-  }
-  
-  return `${daysText}${hoursText}`;
-};
-
-function MainLayout() {
+export default function MainLayout() {
   const [config, setConfig] = useState(staticConfig);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-  const [isLockedHidden, setIsLockedHidden] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
-    if (isLockedHidden) return;
-
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      setIsScrolled(currentScrollY > 50);
-
-      // Oculta a barra ao rolar para baixo e exibe ao rolar para cima
-      if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        setIsVisible(false);
-      } else {
-        setIsVisible(true);
-      }
-      setLastScrollY(currentScrollY);
+      setIsScrolled(window.scrollY > 20);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY, isLockedHidden]);
+  }, []);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
   useEffect(() => {
     async function loadConfig() {
       try {
         const cfg = await getAgendaConfig();
-        setConfig(prev => ({
-          ...prev,
-          ...cfg,
-          working_hours: formatWorkingHours(cfg.dias_funcionamento, cfg.horarios_disponiveis)
-        }));
+        if (cfg) {
+          setConfig(prev => ({
+            ...prev,
+            ...cfg
+          }));
+        }
       } catch (err) {
-        console.error("Erro ao carregar configurações dinâmicas no MainLayout:", err);
+        // Fallback silencioso para config estático
       }
     }
     loadConfig();
   }, []);
 
-  const headerStyle = {
-    backgroundColor: config.primary_color ? `${config.primary_color}dd` : '#6366f1dd',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    padding: '0.6rem 2rem',
-    color: '#ffffff',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
-    position: 'sticky',
-    top: 0,
-    zIndex: 50,
-    transform: (isLockedHidden || !isVisible) ? 'translateY(-100%)' : 'translateY(0)',
-    transition: 'transform 0.3s ease',
-  };
-
-  const navLinkStyle = {
-    color: '#ffffff',
-    textDecoration: 'none',
-    marginLeft: '1.5rem',
-    fontWeight: '600',
-    fontSize: '0.95rem',
-    opacity: 0.85,
-    transition: 'opacity 0.2s',
-  };
-
-  const isMarcianos = config.app_name?.toLowerCase().includes('marcianos');
-  const bgColor = isMarcianos ? '#020617' : (config.secondary_color || '#f9fafb');
-  const textColor = isMarcianos ? '#f1f5f9' : '#111827';
-
-  const containerStyle = {
-    backgroundColor: bgColor,
-    color: textColor,
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    transition: 'background-color 0.3s ease',
-  };
-
-  const [logoSrc, setLogoSrc] = useState(logo);
-
-  useEffect(() => {
-    if (config.logo_url && config.logo_url !== '/logo.png') {
-      setLogoSrc(config.logo_url);
-    }
-  }, []);
-
-  const footerStyle = {
-    backgroundColor: isMarcianos ? '#090d16' : '#ffffff',
-    borderTop: isMarcianos ? '1px solid #1e293b' : '1px solid #e2e8f0',
-    padding: '2.5rem 2rem',
-    color: isMarcianos ? '#94a3b8' : '#64748b',
-    fontSize: '0.9rem',
-    marginTop: 'auto',
-  };
-
   return (
-    <div style={containerStyle}>
-      {isLockedHidden && (
-        <button
-          type="button"
-          onClick={() => {
-            setIsLockedHidden(false);
-            setIsVisible(true);
-          }}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 100,
-            backgroundColor: config.primary_color ? `${config.primary_color}dd` : '#6366f1dd',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            color: '#ffffff',
-            border: 'none',
-            borderBottomLeftRadius: '1rem',
-            borderBottomRightRadius: '1rem',
-            padding: '0.5rem 1.5rem',
-            fontSize: '0.75rem',
-            fontWeight: 'bold',
-            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.25rem',
-            transition: 'all 0.2s ease',
-          }}
-          className="hover:brightness-110"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-          </svg>
-          Expandir Menu
-        </button>
-      )}
+    <div className="min-h-screen flex flex-col bg-[#0E0D0C] text-[#F5F4F0]">
+      {/* HEADER / NAVBAR */}
+      <header
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          isScrolled
+            ? 'bg-[#0E0D0C]/90 backdrop-blur-md shadow-lg border-b border-[#262320] py-3'
+            : 'bg-transparent border-b border-[#262320]/40 py-4'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+          {/* LOGO & BRAND */}
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E55A1B] to-[#D97706] flex items-center justify-center shadow-md shadow-[#E55A1B]/20 group-hover:scale-105 transition-transform">
+              <span className="text-xl">🔥</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-display font-extrabold text-xl tracking-tight text-[#F5F4F0] group-hover:text-[#E55A1B] transition-colors">
+                {config.app_name || '20barranove'}
+              </span>
+              <span className="text-[10px] tracking-widest uppercase text-[#A8A29E] font-medium">
+                Parrilla & Burger Bar
+              </span>
+            </div>
+          </Link>
 
-      <header style={headerStyle}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
-          <img 
-            src={logoSrc} 
-            alt={config.app_name} 
-            onError={() => {
-              if (logoSrc !== logo) {
-                setLogoSrc(logo);
-              }
-            }}
-            style={{ 
-              height: '2.4rem', 
-              width: 'auto', 
-              objectFit: 'contain'
-            }} 
-          />
-        </Link>
-        <nav style={{ display: 'flex', alignItems: 'center' }}>
-          <Link to="/" style={navLinkStyle} className="hover:opacity-100">Início</Link>
-          <Link to="/agendar" style={navLinkStyle} className="hover:opacity-100">Agendar</Link>
-          <Link to="/admin" style={navLinkStyle} className="hover:opacity-100">Painel</Link>
-          <button 
-            type="button"
-            onClick={() => setIsLockedHidden(true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#ffffff',
-              cursor: 'pointer',
-              opacity: 0.8,
-              marginLeft: '1.5rem',
-              fontWeight: '600',
-              fontSize: '0.95rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem',
-              transition: 'opacity 0.2s',
-              padding: 0
-            }}
-            className="hover:opacity-100"
-            title="Recolher e fixar menu oculto"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 15l7-7 7 7" />
-            </svg>
-            <span className="hidden sm:inline">Recolher</span>
-          </button>
-        </nav>
+          {/* DESKTOP NAV LINKS */}
+          <nav className="hidden md:flex items-center gap-8">
+            <Link
+              to="/"
+              className={`text-sm font-semibold transition-colors ${
+                location.pathname === '/' ? 'text-[#E55A1B]' : 'text-[#A8A29E] hover:text-[#F5F4F0]'
+              }`}
+            >
+              Início
+            </Link>
+            <a
+              href="/#cardapio"
+              className="text-sm font-semibold text-[#A8A29E] hover:text-[#F5F4F0] transition-colors"
+            >
+              Cortes & Cardápio
+            </a>
+            <a
+              href="/#experiencia"
+              className="text-sm font-semibold text-[#A8A29E] hover:text-[#F5F4F0] transition-colors"
+            >
+              A Casa
+            </a>
+            <a
+              href="/#contato"
+              className="text-sm font-semibold text-[#A8A29E] hover:text-[#F5F4F0] transition-colors"
+            >
+              Contato & Horários
+            </a>
+            <Link
+              to="/admin"
+              className="text-xs font-medium text-[#78716C] hover:text-[#A8A29E] transition-colors"
+            >
+              Painel
+            </Link>
+          </nav>
+
+          {/* DESKTOP CTA BUTTON */}
+          <div className="hidden md:flex items-center gap-4">
+            <Link
+              to="/agendar"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold bg-[#E55A1B] hover:bg-[#C2410C] text-white shadow-md shadow-[#E55A1B]/25 hover:shadow-lg hover:shadow-[#E55A1B]/35 transition-all duration-200 active:scale-95"
+            >
+              <span>Reservar Mesa</span>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </Link>
+          </div>
+
+          {/* MOBILE MENU BUTTON */}
+          <div className="flex md:hidden items-center gap-3">
+            <Link
+              to="/agendar"
+              className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#E55A1B] text-white shadow-sm"
+            >
+              Reservar
+            </Link>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-lg bg-[#1F1C19] border border-[#2E2924] text-[#F5F4F0] focus:outline-none"
+              aria-label="Abrir Menu"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* MOBILE DRAWER */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-[#171513] border-b border-[#2E2924] px-4 pt-3 pb-6 space-y-3">
+            <Link
+              to="/"
+              className="block py-2 text-base font-semibold text-[#F5F4F0] hover:text-[#E55A1B]"
+            >
+              Início
+            </Link>
+            <a
+              href="/#cardapio"
+              className="block py-2 text-base font-semibold text-[#A8A29E] hover:text-[#F5F4F0]"
+            >
+              Cortes & Cardápio
+            </a>
+            <a
+              href="/#experiencia"
+              className="block py-2 text-base font-semibold text-[#A8A29E] hover:text-[#F5F4F0]"
+            >
+              A Casa & Ambiente
+            </a>
+            <a
+              href="/#contato"
+              className="block py-2 text-base font-semibold text-[#A8A29E] hover:text-[#F5F4F0]"
+            >
+              Contato & Horários
+            </a>
+            <Link
+              to="/admin"
+              className="block py-2 text-sm text-[#78716C] hover:text-[#A8A29E]"
+            >
+              Painel Administrativo
+            </Link>
+            <div className="pt-2">
+              <Link
+                to="/agendar"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-center font-bold bg-[#E55A1B] text-white shadow-md"
+              >
+                Reservar Horário na Parrilla
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
-      <main style={{ width: '100%', flex: '1 0 auto' }}>
+      {/* MAIN VIEW CONTENT */}
+      <main className="flex-1 w-full">
         <Outlet />
       </main>
 
-      <footer style={footerStyle}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
-          <div>
-            <h4 style={{ color: isMarcianos ? '#ffffff' : '#0f172a', fontWeight: '700', marginBottom: '1rem', fontSize: '1.1rem' }}>
-              {config.app_name}
-            </h4>
-            <p style={{ lineHeight: '1.6', fontSize: '0.85rem' }}>
-              {config.description || (isMarcianos 
-                ? 'O maior rodízio de mini burgers do universo, com boliche e diversão garantida para toda a família!'
-                : 'Oferecemos uma experiência excepcional com agendamento online rápido, seguro e prático.'
-              )}
-            </p>
+      {/* FOOTER */}
+      <footer className="bg-[#121110] border-t border-[#262320] pt-14 pb-8 text-[#A8A29E] text-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-[#262320]">
+            {/* COL 1: SOBRE */}
+            <div className="md:col-span-1 space-y-4">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">🔥</span>
+                <span className="font-display font-extrabold text-xl text-[#F5F4F0]">
+                  {config.app_name || '20barranove'}
+                </span>
+              </div>
+              <p className="text-xs leading-relaxed text-[#A8A29E]">
+                {config.description || 'Parrilla contemporânea, hambúrgueres artesanais feitos na brasa e culto à boa carne com cerveja artesanal.'}
+              </p>
+              <div className="flex items-center gap-3 pt-2">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#1F1C19] border border-[#2E2924] text-[11px] text-[#E55A1B] font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#E55A1B] animate-pulse"></span>
+                  Parrilla Porto Alegre
+                </span>
+              </div>
+            </div>
+
+            {/* COL 2: ENDEREÇO */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-[#F5F4F0] text-sm uppercase tracking-wider">
+                Endereço
+              </h4>
+              <p className="text-xs leading-relaxed text-[#D6D3D1]">
+                {config.address || "Rua Silva Jardim, 167 - Mont'Serrat"}
+              </p>
+              <p className="text-xs text-[#78716C]">
+                Porto Alegre - RS, Brasil
+              </p>
+              <a
+                href={`https://maps.google.com/?q=${encodeURIComponent(config.address || '20barranove Porto Alegre')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-[#E55A1B] hover:underline font-semibold"
+              >
+                <span>Ver no Mapa</span>
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
+
+            {/* COL 3: HORÁRIOS & CONTATO */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-[#F5F4F0] text-sm uppercase tracking-wider">
+                Horários da Cozinha
+              </h4>
+              <p className="text-xs leading-relaxed text-[#D6D3D1]">
+                {config.working_hours || 'Terça a Domingo das 18h às 23h30'}
+              </p>
+              <div className="pt-2">
+                <p className="text-xs text-[#78716C]">Atendimento / WhatsApp:</p>
+                <p className="text-xs font-semibold text-[#F5F4F0]">
+                  {config.phone || '(51) 99320-2009'}
+                </p>
+              </div>
+            </div>
+
+            {/* COL 4: RESERVA RÁPIDA */}
+            <div className="space-y-4">
+              <h4 className="font-bold text-[#F5F4F0] text-sm uppercase tracking-wider">
+                Agendamento Online
+              </h4>
+              <p className="text-xs text-[#A8A29E] leading-relaxed">
+                Garanta sua mesa sem filas de espera para você e seus convidados.
+              </p>
+              <Link
+                to="/agendar"
+                className="inline-flex w-full items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-[#E55A1B] hover:bg-[#C2410C] text-white shadow-md transition-colors"
+              >
+                <span>Reservar Mesa Agora</span>
+              </Link>
+            </div>
           </div>
-          <div>
-            <h4 style={{ color: isMarcianos ? '#ffffff' : '#0f172a', fontWeight: '700', marginBottom: '1rem', fontSize: '1.1rem' }}>
-              Endereço
-            </h4>
-            <p style={{ lineHeight: '1.6', fontSize: '0.85rem' }}>
-              {config.address || 'Av. Padre Cacique, 580 - Menino Deus - Porto Alegre/RS'}
+
+          {/* BOTTOM BAR */}
+          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#78716C]">
+            <p>
+              © {new Date().getFullYear()} {config.app_name || '20barranove'}. Todos os direitos reservados.
             </p>
+            <div className="flex items-center gap-6">
+              <Link to="/agendar" className="hover:text-[#F5F4F0] transition-colors">
+                Agendamentos
+              </Link>
+              <Link to="/login" className="hover:text-[#F5F4F0] transition-colors">
+                Área Restrita
+              </Link>
+              <Link to="/admin" className="hover:text-[#F5F4F0] transition-colors">
+                Gestão
+              </Link>
+            </div>
           </div>
-          <div>
-            <h4 style={{ color: isMarcianos ? '#ffffff' : '#0f172a', fontWeight: '700', marginBottom: '1rem', fontSize: '1.1rem' }}>
-              Contato & Horários
-            </h4>
-            <p style={{ lineHeight: '1.6', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-              <strong>Telefone:</strong> {config.phone || '(51) 99523-9876'}{config.phone2 ? ` / ${config.phone2}` : ''}
-            </p>
-            <p style={{ lineHeight: '1.6', fontSize: '0.85rem' }}>
-              <strong>Funcionamento:</strong> {config.working_hours || 'Terça a Domingo das 17h às 23h'}
-            </p>
-          </div>
-        </div>
-        <div style={{ 
-          maxWidth: '1200px', 
-          margin: '2rem auto 0 auto', 
-          paddingTop: '1.5rem', 
-          borderTop: isMarcianos ? '1px solid #1e293b' : '1px solid #e2e8f0', 
-          textAlign: 'center', 
-          fontSize: '0.8rem', 
-          opacity: 0.7 
-        }}>
-          © {new Date().getFullYear()} {config.app_name}. Todos os direitos reservados.
         </div>
       </footer>
     </div>
   );
 }
-
-export default MainLayout;

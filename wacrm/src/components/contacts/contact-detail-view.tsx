@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getContactById } from '@/lib/crm-repository';
+import { normalizeTenantSupabaseUrl, enqueueAndTriggerBuild } from '@/lib/project-queue';
 import { useAuth } from '@/hooks/use-auth';
 import { formatCurrency } from '@/lib/currency';
 import { toast } from 'sonner';
@@ -106,20 +108,7 @@ export function ContactDetailView({
     if (!contactId) return;
     setLoading(true);
 
-    let { data } = await supabase
-      .from('contacts')
-      .select('*')
-      .eq('id', contactId)
-      .maybeSingle();
-
-    if (!data) {
-      try {
-        const res = await fetch(`/api/contacts/${contactId}`);
-        if (res.ok) {
-          data = await res.json();
-        }
-      } catch (e) {}
-    }
+    const data = await getContactById(supabase, contactId);
 
     if (data) {
       setContact(data);
@@ -246,10 +235,7 @@ export function ContactDetailView({
   async function handleDeployDatabase() {
     if (!contactId || !contact) return;
     
-    let normUrl = supabaseUrl.trim();
-    if (normUrl && !normUrl.startsWith('http://') && !normUrl.startsWith('https://')) {
-      normUrl = `https://${normUrl}.supabase.co`;
-    }
+    const normUrl = normalizeTenantSupabaseUrl(supabaseUrl);
     setSupabaseUrl(normUrl);
 
     if (!normUrl || !supabaseServiceRoleKey.trim()) {
@@ -294,10 +280,7 @@ export function ContactDetailView({
     }
 
     setSavingDetails(true);
-    let normUrl = supabaseUrl.trim();
-    if (normUrl && !normUrl.startsWith('http://') && !normUrl.startsWith('https://')) {
-      normUrl = `https://${normUrl}.supabase.co`;
-    }
+    const normUrl = normalizeTenantSupabaseUrl(supabaseUrl);
     setSupabaseUrl(normUrl);
 
     const { error } = await supabase
@@ -327,10 +310,7 @@ export function ContactDetailView({
   async function handleGenerateAISite() {
     if (!contactId || !contact) return;
 
-    let normUrl = supabaseUrl.trim();
-    if (normUrl && !normUrl.startsWith('http://') && !normUrl.startsWith('https://')) {
-      normUrl = `https://${normUrl}.supabase.co`;
-    }
+    const normUrl = normalizeTenantSupabaseUrl(supabaseUrl);
     setSupabaseUrl(normUrl);
 
     if (!normUrl || !supabaseAnonKey.trim()) {
@@ -357,14 +337,15 @@ export function ContactDetailView({
       
       const aiAnalysis = getVal("mensagem lead") || getVal("lead message") || getVal("analise ia") || contact.rag_report || "Gerado automaticamente via botão CRM.";
 
-      const payload = {
+      await enqueueAndTriggerBuild({
         project_name: editName || contact.name || "Projeto Sem Nome",
+        contact_id: contactId,
         branding: {
           palette_name: paletteName,
           ...(primaryColor ? { primary_color_hex: primaryColor } : {})
         },
         modules: modules.length > 0 ? modules : ["site"],
-        reference_links: reference_links,
+        reference_links,
         client_info: {
           email: editEmail || contact.email || "",
           phone: editPhone || contact.phone || ""
@@ -372,44 +353,8 @@ export function ContactDetailView({
         supabase_url: normUrl,
         supabase_anon_key: supabaseAnonKey.trim(),
         supabase_service_role_key: supabaseServiceRoleKey.trim(),
-        ai_analysis: aiAnalysis
-      };
-
-      const fetch5000 = async (path: string, options?: RequestInit) => {
-        try {
-          const res = await fetch(`http://localhost:5000${path}`, options);
-          if (res.ok) return res;
-        } catch (e) {}
-        return await fetch(`http://127.0.0.1:5000${path}`, options);
-      };
-
-      // 1. Criar projeto na fila
-      const createRes = await fetch5000("/api/projetos", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
+        ai_analysis: aiAnalysis,
       });
-
-      if (!createRes.ok) {
-        throw new Error("Erro ao registrar o projeto na fila.");
-      }
-
-      const newProject = await createRes.json();
-      const projectId = newProject.id;
-
-      // 2. Disparar processamento da fábrica de IA
-      const processRes = await fetch5000(`/api/projetos/${projectId}/processar`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (!processRes.ok) {
-        throw new Error("Erro ao iniciar a geração do site.");
-      }
 
       toast.success("Geração de site por IA iniciada com sucesso!");
     } catch (err: any) {

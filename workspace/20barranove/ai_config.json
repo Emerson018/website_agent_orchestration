@@ -1,11 +1,17 @@
 {
-  "app_name": "Template Agendamento Base",
-  "primary_color": "#4F46E5",
-  "secondary_color": "#10B981",
-  "supabase_url": "https://your-project.supabase.co",
-  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "app_name": "20barranove",
+  "tagline": "Fogo, Parrilla e Experiências Autênticas",
+  "description": "Culto ao fogo, hambúrgueres artesanais na brasa, cortes nobres na parrilla e chopp artesanal no ponto.",
+  "primary_color": "#E55A1B",
+  "secondary_color": "#D97706",
+  "bg_color": "#0E0D0C",
+  "text_color": "#F5F4F0",
+  "supabase_url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co",
+  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM",
   "logo_url": "/logo.png",
-  "address": "Av. Principal, 1000 - Centro - Porto Alegre/RS",
-  "phone": "(51) 99999-9999",
-  "working_hours": "Segunda a Sábado das 9h às 18h"
+  "address": "Rua Silva Jardim, 167 - Mont'Serrat - Porto Alegre/RS",
+  "phone": "(51) 99320-2009",
+  "working_hours": "Terça a Domingo das 18h às 23h30",
+  "niche": "Gastronomia – Parrilla e Hamburgueria Artesanal",
+  "n8n_webhook_url": "http://localhost:5678/webhook-test/booking"
 }

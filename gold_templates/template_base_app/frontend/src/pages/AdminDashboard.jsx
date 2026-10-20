@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useBlocker } from 'react-router-dom';
-import { getAgendamentos, getAgendaConfig, saveAgendaConfig, deleteAgendamento, isUsingDatabase } from '../services/api';
-import { supabase } from '../lib/supabase';
-
-const getLocalDateString = (date) => {
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-};
+import {
+  DEFAULT_AGENDA_CONFIG,
+  getLocalDateString,
+  formatPhoneMask,
+  generateTimeSlots,
+  hasUnsavedConfigChanges,
+  subscribeToBookings,
+  getAgendamentos,
+  getAgendaConfig,
+  saveAgendaConfig,
+  deleteAgendamento,
+  isUsingDatabase,
+} from '../services/api';
 
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('agenda'); // 'agenda' | 'config'
@@ -52,14 +58,7 @@ function AdminDashboard() {
   const [startY, setStartY] = useState(0);
   const [scrollTop, setScrollTop] = useState(0);
 
-  const [config, setConfig] = useState({
-    dias_funcionamento: [2, 3, 4, 5, 6, 0],
-    horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
-    vagas_padrao: 5,
-    limites_customizados: {},
-    campo_observacoes_ativo: true,
-    antecedencia_maxima_dias: 7
-  });
+  const [config, setConfig] = useState(DEFAULT_AGENDA_CONFIG);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
@@ -127,15 +126,7 @@ function AdminDashboard() {
 
   const [usingDb, setUsingDb] = useState(false);
 
-  const formatPhoneNumber = (val) => {
-    if (!val) return '';
-    const digits = val.replace(/\D/g, '').slice(0, 11);
-    if (digits.length === 0) return '';
-    if (digits.length <= 2) return `(${digits}`;
-    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-    if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
-  };
+  const formatPhoneNumber = formatPhoneMask;
 
   useEffect(() => {
     if (!addressInput || addressInput.trim().length < 2) {
@@ -208,35 +199,22 @@ function AdminDashboard() {
   };
 
   // Verificação de alterações não salvas
-  const checkUnsavedChanges = () => {
-    if (!config) return false;
-    if (campoObservacoesAtivoInput !== (config.campo_observacoes_ativo ?? true)) return true;
-    if (antecedenciaMaximaDiasInput !== (config.antecedencia_maxima_dias ?? 7)) return true;
-    if (appNameInput !== (config.app_name || '')) return true;
-    if (descriptionInput !== (config.description || '')) return true;
-    if (addressInput !== (config.address || '')) return true;
-    if (phoneInput !== (config.phone ? formatPhoneNumber(config.phone) : '')) return true;
-    if (phone2Input !== (config.phone2 ? formatPhoneNumber(config.phone2) : '')) return true;
-    if (JSON.stringify(limitesCustomizadosSelected) !== JSON.stringify(config.limites_customizados || {})) return true;
-    
-    // Compara dias de funcionamento
-    if (diasFuncionamentoSelected.length !== (config.dias_funcionamento || []).length) return true;
-    const sortedSelectedDays = [...diasFuncionamentoSelected].sort();
-    const sortedConfigDays = [...(config.dias_funcionamento || [])].sort();
-    for (let i = 0; i < sortedSelectedDays.length; i++) {
-      if (sortedSelectedDays[i] !== sortedConfigDays[i]) return true;
-    }
-
-    // Compara horários disponíveis
-    if (horariosDisponiveisSelected.length !== (config.horarios_disponiveis || []).length) return true;
-    const sortedSelectedHours = [...horariosDisponiveisSelected].sort();
-    const sortedConfigHours = [...(config.horarios_disponiveis || [])].sort();
-    for (let i = 0; i < sortedSelectedHours.length; i++) {
-      if (sortedSelectedHours[i] !== sortedConfigHours[i]) return true;
-    }
-
-    return false;
-  };
+  const checkUnsavedChanges = () =>
+    hasUnsavedConfigChanges(
+      {
+        campo_observacoes_ativo: campoObservacoesAtivoInput,
+        antecedencia_maxima_dias: antecedenciaMaximaDiasInput,
+        app_name: appNameInput,
+        description: descriptionInput,
+        address: addressInput,
+        phone: phoneInput,
+        phone2: phone2Input,
+        limites_customizados: limitesCustomizadosSelected,
+        dias_funcionamento: diasFuncionamentoSelected,
+        horarios_disponiveis: horariosDisponiveisSelected,
+      },
+      config
+    );
   const hasUnsavedChanges = checkUnsavedChanges();
 
   // Intercepta recarregamento ou fechamento da aba no navegador
@@ -485,104 +463,66 @@ function AdminDashboard() {
     }
     loadData();
 
-    let channel;
-    if (usingDb) {
-      channel = supabase
-        .channel('admin-bookings-realtime')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'agendamentos_base'
-          },
-          async (payload) => {
-            console.log("Alteração recebida em tempo real no Supabase!", payload);
-            try {
-              // Registra o cancelamento no log de atividades se o status mudou para Cancelado via webhook
-              if (payload.eventType === 'UPDATE' && payload.new.status === 'Cancelado' && payload.old.status !== 'Cancelado') {
-                setBookings(prevBookings => {
-                  const oldBooking = prevBookings.find(b => b.id === payload.new.id);
-                  if (oldBooking) {
-                    const clientName = oldBooking.cliente_nome || 'Cliente';
-                    const dateStr = oldBooking.data ? new Date(oldBooking.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-                    const horario = oldBooking.horario || '';
-                    addActivityLog('cancel', `Reserva de ${clientName} (Data: ${dateStr} às ${horario}) foi cancelada via WhatsApp pelo cliente`);
-                  }
-                  return prevBookings;
-                });
+    const unsubscribe = subscribeToBookings({
+      enabledDb: usingDb,
+      onChanges: async ({ eventType, newRecord, oldRecord, bookings: updatedBookings }) => {
+        try {
+          if (eventType === 'UPDATE' && newRecord?.status === 'Cancelado' && oldRecord?.status !== 'Cancelado') {
+            setBookings(prevBookings => {
+              const oldBooking = prevBookings.find(b => b.id === newRecord.id);
+              if (oldBooking) {
+                const clientName = oldBooking.cliente_nome || 'Cliente';
+                const dateStr = oldBooking.data ? new Date(oldBooking.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+                const horario = oldBooking.horario || '';
+                addActivityLog('cancel', `Reserva de ${clientName} (Data: ${dateStr} às ${horario}) foi cancelada via WhatsApp pelo cliente`);
               }
+              return prevBookings;
+            });
+          }
 
-              // Recarrega a lista completa
-              const updatedBookings = await getAgendamentos();
-              setBookings(updatedBookings);
-              
-              // Toca sinal apenas em novas inserções
-              if (payload.eventType === 'INSERT') {
-                playChime();
-                
-                const freshBooking = updatedBookings.find(b => b.id === payload.new.id);
-                if (freshBooking) {
-                  addToast(freshBooking);
-                  addNotification(freshBooking);
-                  const bookingDateStr = freshBooking.data ? new Date(freshBooking.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-                  addActivityLog('create', `Nova reserva criada para ${freshBooking.cliente_nome} (Data: ${bookingDateStr} às ${freshBooking.horario}, ${freshBooking.pessoas}p)`);
-                } else {
-                  let datePart = '';
-                  let timePart = '';
-                  if (payload.new.inicio) {
-                    const parts = payload.new.inicio.split(/T|\s/);
-                    datePart = parts[0] || '';
-                    if (parts[1]) {
-                      timePart = parts[1].slice(0, 5);
-                    }
-                  }
-                  
-                  const mockBooking = {
-                    cliente_nome: 'Novo Cliente',
-                    horario: timePart || '18:30',
-                    data: datePart || getLocalDateString(new Date())
-                  };
-                  addToast(mockBooking);
-                  addNotification(mockBooking);
-                  const bookingDateStr = mockBooking.data ? new Date(mockBooking.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-                  addActivityLog('create', `Nova reserva criada para Novo Cliente (Data: ${bookingDateStr} às ${mockBooking.horario})`);
+          setBookings(updatedBookings);
+
+          if (eventType === 'INSERT') {
+            playChime();
+            const freshBooking = newRecord?.id
+              ? updatedBookings.find(b => b.id === newRecord.id) || newRecord
+              : newRecord;
+
+            if (freshBooking && (freshBooking.cliente_nome || freshBooking.clienteNome)) {
+              addToast(freshBooking);
+              addNotification(freshBooking);
+              const bookingDateStr = freshBooking.data ? new Date(freshBooking.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+              const clientLabel = freshBooking.cliente_nome || freshBooking.clienteNome || 'Cliente';
+              addActivityLog('create', `Nova reserva criada para ${clientLabel} (Data: ${bookingDateStr} às ${freshBooking.horario}, ${freshBooking.pessoas || 2}p)`);
+            } else {
+              let datePart = '';
+              let timePart = '';
+              if (newRecord?.inicio) {
+                const parts = newRecord.inicio.split(/T|\s/);
+                datePart = parts[0] || '';
+                if (parts[1]) {
+                  timePart = parts[1].slice(0, 5);
                 }
               }
-            } catch (err) {
-              console.error("Erro no callback realtime do Supabase:", err);
+              const mockBooking = {
+                cliente_nome: 'Novo Cliente',
+                horario: timePart || '18:30',
+                data: datePart || getLocalDateString(new Date())
+              };
+              addToast(mockBooking);
+              addNotification(mockBooking);
+              const bookingDateStr = mockBooking.data ? new Date(mockBooking.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+              addActivityLog('create', `Nova reserva criada para Novo Cliente (Data: ${bookingDateStr} às ${mockBooking.horario})`);
             }
           }
-        )
-        .subscribe();
-    }
-
-    const handleStorageChange = async (e) => {
-      if (e.key === 'mock_agendamentos') {
-        try {
-          const updatedBookings = await getAgendamentos();
-          setBookings(updatedBookings);
-          
-          playChime();
-          
-          const localList = JSON.parse(e.newValue || '[]');
-          if (localList.length > 0) {
-            const last = localList[localList.length - 1];
-            addToast(last);
-            addNotification(last);
-            const bookingDateStr = last.data ? new Date(last.data + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-            addActivityLog('create', `Nova reserva criada para ${last.clienteNome || last.cliente_nome || 'Cliente'} (Data: ${bookingDateStr} às ${last.horario}, ${last.pessoas || 2}p)`);
-          }
         } catch (err) {
-          console.error("Erro ao processar storage change:", err);
+          console.error("Erro no callback realtime de agendamentos:", err);
         }
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
+      },
+    });
 
     return () => {
-      if (channel) supabase.removeChannel(channel);
-      window.removeEventListener('storage', handleStorageChange);
+      unsubscribe();
     };
   }, [usingDb]);
 
@@ -725,25 +665,10 @@ function AdminDashboard() {
       return;
     }
 
-    const [startH, startM] = bulkStart.split(':').map(Number);
-    const [endH, endM] = bulkEnd.split(':').map(Number);
-    
-    let startMinutes = startH * 60 + startM;
-    const endMinutes = endH * 60 + endM;
-    const step = parseInt(bulkInterval);
-    
-    if (startMinutes >= endMinutes) {
+    const generated = generateTimeSlots(bulkStart, bulkEnd, bulkInterval);
+    if (generated.length === 0) {
       showAlert("Gerador de Horários", "A hora de início deve ser menor que a hora de término.", "warning");
       return;
-    }
-
-    const generated = [];
-    while (startMinutes <= endMinutes) {
-      const h = Math.floor(startMinutes / 60) % 24;
-      const m = startMinutes % 60;
-      const pad = (n) => String(n).padStart(2, '0');
-      generated.push(`${pad(h)}:${pad(m)}`);
-      startMinutes += step;
     }
 
     // Merge generated hours with current ones, ensuring uniqueness

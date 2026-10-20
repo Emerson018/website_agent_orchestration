@@ -255,6 +255,7 @@ export default function LandingPage() {
       },
       ai_analysis: "",
       additional_data,
+      auto_process: true,
       timestamp: new Date().toISOString(),
     };
 
@@ -264,7 +265,7 @@ export default function LandingPage() {
     setSimLogs(['🤖 Iniciando envio de especificações...']);
 
     try {
-      // 1. Salva o projeto no backend/Supabase
+      // 1. Salva o projeto no backend/Supabase e dispara o orquestrador
       setSimLogs(prev => [...prev, '💾 Salvando especificações do projeto no banco de dados Supabase...']);
       const saveResponse = await apiFetch('/projetos', {
         method: 'POST',
@@ -282,13 +283,17 @@ export default function LandingPage() {
         '🚀 Disparando orquestrador da Fábrica de IA para compilação autônoma...'
       ]);
 
-      // 2. Dispara o processamento na Fábrica de IA (Python FastAPI + LangGraph)
+      // 2. Dispara o processamento na Fábrica de IA (caso o backend não tenha auto-disparado)
       try {
-        const processRes = await apiFetch(`/projetos/${project.id}/processar`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        if (processRes.ok) {
+        let dispatched = Boolean(project.auto_dispatched);
+        if (!dispatched) {
+          const processRes = await apiFetch(`/projetos/${project.id}/processar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          dispatched = processRes.ok;
+        }
+        if (dispatched) {
           setSimLogs(prev => [
             ...prev,
             '⚡ Orquestração da Fábrica de IA iniciada com sucesso!',

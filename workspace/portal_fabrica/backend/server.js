@@ -81,10 +81,42 @@ app.post('/api/upload', async (req, res) => {
   }
 });
 
+// Helper para disparar processamento assíncrono na Fábrica de IA
+async function dispatchProjectToFactory(projectId) {
+  try {
+    const response = await fetch(`${SOFTWARE_FACTORY_API_URL}/processar-fila`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ project_id: parseInt(projectId, 10) })
+    });
+    const result = await response.json();
+    console.log(`Resultado do processamento da fila disparado pelo projeto ${projectId}:`, result);
+    return result;
+  } catch (err) {
+    console.error(`Erro ao disparar processamento da fábrica para projeto ${projectId}:`, err.message);
+    return null;
+  }
+}
+
 // 1. Criar novo projeto (Lead) no Supabase e integrar com o CRM
 app.post('/api/projetos', async (req, res) => {
   try {
-    const { project_name, branding, modules, reference_links, client_info, summary, ai_analysis, additional_data, supabase_url, supabase_anon_key } = req.body;
+    const {
+      project_name,
+      contact_id: incomingContactId,
+      branding,
+      modules,
+      reference_links,
+      client_info,
+      summary,
+      ai_analysis,
+      additional_data,
+      supabase_url,
+      supabase_anon_key,
+      auto_process
+    } = req.body;
 
     if (!project_name) {
       return res.status(400).json({ error: 'O nome do projeto (project_name) é obrigatório.' });
@@ -164,42 +196,15 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
     const defaultUserId = profile?.user_id || '2b66650c-a300-4239-b922-2aab9bccac6f';
     const defaultAccountId = profile?.account_id || '98006e91-88b1-44ea-9178-50c257cd973f';
 
-    // Insere no Supabase na tabela fila_projetos com os metadados de conta
-    const { data, error } = await supabase
-      .from('fila_projetos')
-      .insert([
-        {
-          mensagem_lead,
-          status: 'pendente',
-          resultado_json: {
-            account_id: defaultAccountId,
-            user_id: defaultUserId,
-            project_name: project_name
-          },
-          supabase_url: supabase_url || null,
-          supabase_anon_key: supabase_anon_key || null
-        }
-      ])
-      .select();
+    // 2. Resolve ou cria o contato no CRM antes de inserir na fila para vincular contact_id
+    let contactId = incomingContactId || null;
+    const phone = client_info?.phone || 'Não informado';
+    const phone_normalized = phone.replace(/\D/g, '');
+    const email = client_info?.email || 'Não informado';
+    const contactName = project_name;
 
-    if (error) {
-      console.error('Erro ao salvar no Supabase:', error);
-      return res.status(500).json({ error: 'Erro ao salvar projeto no banco de dados.', details: error.message });
-    }
-
-    console.log(`Projeto criado com sucesso na fila_projetos! ID: ${data[0].id}`);
-
-    // INTEGRACAO COM O CRM
     try {
-      const phone = client_info?.phone || 'Não informado';
-      const phone_normalized = phone.replace(/\D/g, '');
-      const email = client_info?.email || 'Não informado';
-      const contactName = project_name;
-
-      let contactId;
-
-      // 2. Busca contato existente por telefone normalizado no CRM
-      if (phone_normalized) {
+      if (!contactId && phone_normalized) {
         const { data: existingContact } = await supabase
           .from('contacts')
           .select('id')
@@ -211,23 +216,23 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
         if (existingContact) {
           contactId = existingContact.id;
           console.log(`Contato existente encontrado no CRM. ID: ${contactId}`);
-          
-          // Atualiza o contato com os dados novos do RAG
-          const { error: updateErr } = await supabase
-            .from('contacts')
-            .update({
-              additional_data: additional_data || {},
-              rag_status: 'idle',
-              rag_report: null
-            })
-            .eq('id', contactId);
-          if (updateErr) {
-            console.error('Erro ao atualizar contato existente no CRM:', updateErr);
+
+          if (additional_data) {
+            const { error: updateErr } = await supabase
+              .from('contacts')
+              .update({
+                additional_data: additional_data || {},
+                rag_status: 'idle',
+                rag_report: null
+              })
+              .eq('id', contactId);
+            if (updateErr) {
+              console.error('Erro ao atualizar contato existente no CRM:', updateErr);
+            }
           }
         }
       }
 
-      // Se não existir, cria o contato no CRM
       if (!contactId) {
         const { data: newContact, error: contactError } = await supabase
           .from('contacts')
@@ -252,7 +257,38 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
           console.log(`Novo contato criado no CRM com sucesso! ID: ${contactId}`);
         }
       }
+    } catch (contactLookupErr) {
+      console.error('Erro ao resolver contato no CRM antes da fila:', contactLookupErr);
+    }
 
+    // Insere no Supabase na tabela fila_projetos com os metadados de conta e contact_id
+    const { data, error } = await supabase
+      .from('fila_projetos')
+      .insert([
+        {
+          mensagem_lead,
+          status: 'pendente',
+          resultado_json: {
+            account_id: defaultAccountId,
+            user_id: defaultUserId,
+            ...(contactId ? { contact_id: contactId } : {}),
+            project_name: project_name
+          },
+          supabase_url: supabase_url || null,
+          supabase_anon_key: supabase_anon_key || null
+        }
+      ])
+      .select();
+
+    if (error) {
+      console.error('Erro ao salvar no Supabase:', error);
+      return res.status(500).json({ error: 'Erro ao salvar projeto no banco de dados.', details: error.message });
+    }
+
+    console.log(`Projeto criado com sucesso na fila_projetos! ID: ${data[0].id}`);
+
+    // INTEGRACAO COM O CRM (Conversa, Mensagem e Deal)
+    try {
       // 3. Busca ou cria conversa aberta para o contato no CRM
       let conversationId;
       if (contactId) {
@@ -372,7 +408,16 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
       console.error('Erro no fluxo de integração automatizada com o CRM:', crmErr);
     }
 
-    res.status(201).json(data[0]);
+    const createdProject = {
+      ...data[0],
+      auto_dispatched: Boolean(auto_process)
+    };
+
+    res.status(201).json(createdProject);
+
+    if (auto_process) {
+      dispatchProjectToFactory(data[0].id);
+    }
   } catch (err) {
     console.error('Erro na rota POST /api/projetos:', err);
     res.status(500).json({ error: 'Erro interno do servidor.', details: err.message });
@@ -446,16 +491,7 @@ app.post('/api/projetos/:id/processar', async (req, res) => {
     res.json({ status: 'processando', mensagem: 'Compilação iniciada no orquestrador da Fábrica de IA.' });
 
     // 3. Executa o processamento no orquestrador
-    const response = await fetch(`${SOFTWARE_FACTORY_API_URL}/processar-fila`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ project_id: parseInt(id) })
-    });
-
-    const result = await response.json();
-    console.log(`Resultado do processamento da fila disparado pelo projeto ${id}:`, result);
+    await dispatchProjectToFactory(id);
   } catch (err) {
     console.error(`Erro ao disparar processamento da fábrica para projeto ${id}:`, err.message);
     if (!res.headersSent) {

@@ -204,7 +204,7 @@ function BookingPage() {
             payload.append('time', formData.time);
             payload.append('guests', formData.guests);
             payload.append('notes', formData.notes || '');
-            payload.append('establishment_name', config.app_name || aiConfig.app_name || 'Marcianos');
+            payload.append('establishment_name', config.app_name || aiConfig.app_name || 'Estabelecimento');
             payload.append('establishment_address', config.address || aiConfig.address || '');
             payload.append('establishment_phone', config.phone || aiConfig.phone || '');
 

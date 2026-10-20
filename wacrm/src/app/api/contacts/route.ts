@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabase
       .from('contacts')
-      .select('*', { count: 'exact' })
+      .select('*, contact_tags(tag_id, tags(*))', { count: 'exact' })
       .order('created_at', { ascending: false });
 
     if (search.trim()) {

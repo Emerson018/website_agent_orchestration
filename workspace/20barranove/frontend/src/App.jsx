@@ -32,11 +32,15 @@ const router = createBrowserRouter([
 function App() {
   useEffect(() => {
     if (config) {
-      document.documentElement.style.setProperty('--primary-color', config.primary_color);
-      document.documentElement.style.setProperty('--secondary-color', config.secondary_color);
+      if (config.primary_color) {
+        document.documentElement.style.setProperty('--primary-color', config.primary_color);
+      }
+      if (config.secondary_color) {
+        document.documentElement.style.setProperty('--secondary-color', config.secondary_color);
+      }
       
-      const isMarcianos = config.app_name?.toLowerCase().includes('marcianos');
-      const bgColor = isMarcianos ? '#020617' : (config.secondary_color || '#f9fafb');
+      const bgColor = config.bg_color || '#0E0D0C';
+      document.documentElement.style.setProperty('--bg-color', bgColor);
       document.body.style.backgroundColor = bgColor;
     }
   }, []);

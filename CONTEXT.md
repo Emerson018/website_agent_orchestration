@@ -1,0 +1,43 @@
+# AI Software Factory & WhatsApp CRM
+
+An integrated ecosystem that captures and qualifies business leads in a WhatsApp CRM, enriches them via multi-agent RAG analysis, and autonomously provisions customized web applications from a Gold Template.
+
+## Language
+
+### AI Software Factory & Orchestration
+
+**Lead Briefing**:
+A structured intake specification capturing a prospective business's name, contact details, reference links, and requested capabilities (`mensagem_lead`).
+_Avoid_: Payload, prompt text, raw lead
+
+**Niche Profile**:
+The canonical brand archetype for a market segment (such as Odontologia, Barbearia, Estética, Gastronomia, or Pet), pairing hex color tokens, theme polarity, typography, and curated showcase media.
+_Avoid_: Niche media, fallback colors, theme preset
+
+**Project Queue Item**:
+A tracked build lifecycle record in `fila_projetos` linking a CRM Contact to its Lead Briefing, tenant database credentials, status (`pendente`, `processando`, `concluido`, `erro`), and generated configuration.
+_Avoid_: Job, task, build ticket
+
+**Gold Template**:
+The canonical reference application in `gold_templates/template_base_app` cloned and customized to produce each client's application.
+_Avoid_: Base project, starter kit, boilerplate
+
+**Tenant Workspace**:
+The isolated project directory under `workspace/<slug>` and optional single-tenant Supabase database provisioned for a specific client.
+_Avoid_: Client folder, target folder, output dir
+
+### Scheduling & Client Applications
+
+**Booking**:
+A customer appointment for a specific date, time slot, and service (`agendamentos_base`), progressing through `Confirmado`, `Em andamento`, `Finalizado`, and `Cancelado`.
+_Avoid_: Reservation, event, order
+
+**Schedule Configuration**:
+The operating rules of an establishment (`configuracao_agenda`), defining active weekdays, bookable time slots, and per-slot capacity (`vagas_padrao`).
+_Avoid_: Calendar settings, business hours
+
+### WhatsApp CRM (WACRM)
+
+**CRM Contact**:
+A business lead or customer record in WACRM (`contacts`), enriched with custom fields, tags, RAG brand reports, conversations, and sales pipeline deals.
+_Avoid_: Client, user, account

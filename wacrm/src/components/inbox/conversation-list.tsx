@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { listConversationsWithContacts } from "@/lib/crm-repository";
 import { cn } from "@/lib/utils";
 import type { Conversation, ConversationStatus } from "@/types";
 import { Search, ChevronDown } from "lucide-react";
@@ -79,26 +80,7 @@ export function ConversationList({
     let cancelled = false;
 
     (async () => {
-      let { data, error } = await supabase
-        .from("conversations")
-        .select("*, contact:contacts(*)")
-        .order("last_message_at", { ascending: false });
-
-      // Fallback: If browser client returned empty or error (e.g. dev session or RLS unauthenticated), fetch via /api/conversations
-      if (error || !data || data.length === 0) {
-        try {
-          const apiRes = await fetch("/api/conversations");
-          if (apiRes.ok) {
-            const apiData = await apiRes.json();
-            if (Array.isArray(apiData) && apiData.length > 0) {
-              data = apiData;
-              error = null;
-            }
-          }
-        } catch (e) {
-          console.warn("Fallback /api/conversations failed:", e);
-        }
-      }
+      const { conversations: loaded, error } = await listConversationsWithContacts(supabase);
 
       if (cancelled) return;
 
@@ -114,7 +96,7 @@ export function ConversationList({
         return;
       }
 
-      onConversationsLoadedRef.current(data ?? []);
+      onConversationsLoadedRef.current(loaded);
       setLoading(false);
     })();
 

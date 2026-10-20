@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { listContactsWithTags, type ContactWithTags } from '@/lib/crm-repository';
 import { toast } from 'sonner';
 import type { Contact, Tag, ContactTag } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -54,10 +55,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 const PAGE_SIZE = 25;
 
-interface ContactWithTags extends Contact {
-  tags?: Tag[];
-}
-
 export default function ContactsPage() {
   const supabase = createClient();
   const canEdit = useCan('send-messages');
@@ -105,38 +102,13 @@ export default function ContactsPage() {
     // act on rows the user can no longer see.
     setSelected(new Set());
 
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-
-    let query = supabase
-      .from('contacts')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(from, to);
-
-    if (search.trim()) {
-      const term = `%${search.trim()}%`;
-      query = query.or(`name.ilike.${term},phone.ilike.${term},email.ilike.${term}`);
-    }
-
-    let { data, count, error } = await query;
-
-    // Fallback: If browser client returned empty or error (e.g. dev session or RLS unauthenticated), fetch via /api/contacts
-    if (error || !data || data.length === 0) {
-      try {
-        const apiRes = await fetch(`/api/contacts?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(search.trim())}`);
-        if (apiRes.ok) {
-          const apiData = await apiRes.json();
-          if (Array.isArray(apiData.contacts) && apiData.contacts.length > 0) {
-            data = apiData.contacts;
-            count = apiData.count ?? apiData.contacts.length;
-            error = null;
-          }
-        }
-      } catch (err) {
-        console.warn('Fallback /api/contacts failed:', err);
-      }
-    }
+    const { contacts: enriched, count, error } = await listContactsWithTags({
+      supabase,
+      page,
+      pageSize: PAGE_SIZE,
+      search,
+      tagsMap,
+    });
 
     if (error) {
       toast.error('Failed to load contacts');
@@ -144,34 +116,7 @@ export default function ContactsPage() {
       return;
     }
 
-    setTotalCount(count ?? 0);
-
-    if (!data || data.length === 0) {
-      setContacts([]);
-      setLoading(false);
-      return;
-    }
-
-    // Fetch tags for these contacts
-    const contactIds = data.map((c) => c.id);
-    const { data: contactTags } = await supabase
-      .from('contact_tags')
-      .select('contact_id, tag_id')
-      .in('contact_id', contactIds);
-
-    const tagsByContact: Record<string, string[]> = {};
-    contactTags?.forEach((ct) => {
-      if (!tagsByContact[ct.contact_id]) tagsByContact[ct.contact_id] = [];
-      tagsByContact[ct.contact_id].push(ct.tag_id);
-    });
-
-    const enriched: ContactWithTags[] = data.map((c) => ({
-      ...c,
-      tags: (tagsByContact[c.id] ?? [])
-        .map((tid) => tagsMap[tid])
-        .filter(Boolean),
-    }));
-
+    setTotalCount(count);
     setContacts(enriched);
     setLoading(false);
   }, [supabase, page, search, tagsMap]);

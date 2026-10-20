@@ -2,25 +2,43 @@
 @config "../tailwind.config.js";
 
 :root {
-  --primary-color: #EC4899;
-  --secondary-color: #F472B6;
-  --bg-color: #FFF1F2;
-  --text-color: #1C1917;
+  --primary-color: #E55A1B;
+  --primary-hover: #C2410C;
+  --secondary-color: #D97706;
+  --bg-color: #0E0D0C;
+  --surface-color: #171513;
+  --surface-card: #1F1C19;
+  --surface-border: #2E2924;
+  --text-main: #F5F4F0;
+  --text-muted: #A8A29E;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }
 
-html, body, #root {
-  background-color: var(--bg-color, #FFF1F2);
-  color: var(--text-color, #1C1917);
+html {
+  scroll-behavior: smooth;
+  background-color: var(--bg-color, #0E0D0C);
+  color: var(--text-main, #F5F4F0);
+}
+
+body {
   margin: 0;
   padding: 0;
-  width: 100%;
   min-height: 100vh;
+  background-color: var(--bg-color, #0E0D0C);
+  color: var(--text-main, #F5F4F0);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
 }
 
-/* Custom Scrollbar Styling (Modern Dynamic Theme) */
+h1, h2, h3, .font-display {
+  font-family: 'Syne', 'Plus Jakarta Sans', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Scrollbar refinada e discreta */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--primary-color) var(--bg-color);
+  scrollbar-color: #2E2924 #0E0D0C;
 }
 
 ::-webkit-scrollbar {
@@ -29,22 +47,14 @@ html, body, #root {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(2, 6, 23, 0.3);
-  border-radius: 10px;
+  background: #0E0D0C;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.25);
-  border-radius: 10px;
-  border: 1px solid transparent;
-  background-clip: padding-box;
-  transition: all 0.3s ease;
+  background: #2E2924;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.55);
-}
-
-::-webkit-scrollbar-corner {
-  background: transparent;
+  background: #E55A1B;
 }

@@ -2,6 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  normalizeTenantSupabaseUrl,
+  enqueueAndTriggerBuild,
+  filterProjectsForContact,
+  extractProjectBrandName,
+  type ProjectQueueItem,
+} from "@/lib/project-queue";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -34,15 +41,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { FilaProjetosModal } from "@/components/projects/fila-projetos-modal";
 import { format } from "date-fns";
 
-interface FilaProjeto {
-  id: number;
-  created_at: string;
-  mensagem_lead: string;
-  status: 'pendente' | 'processando' | 'concluido' | 'erro';
-  resultado_json: any;
-  supabase_url: string | null;
-  supabase_anon_key: string | null;
-}
+type FilaProjeto = ProjectQueueItem;
 
 interface ContactSidebarProps {
   contact: Contact | null;
@@ -198,11 +197,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
 
     setValidatingConnection(true);
     try {
-      let rawUrl = sidebarSupabaseUrl.trim();
-      if (rawUrl && !rawUrl.startsWith("http://") && !rawUrl.startsWith("https://")) {
-        rawUrl = `https://${rawUrl}.supabase.co`;
-      }
-      const cleanUrl = rawUrl.replace(/\/$/, "");
+      const cleanUrl = normalizeTenantSupabaseUrl(sidebarSupabaseUrl);
       setSidebarSupabaseUrl(cleanUrl);
 
       const res = await fetch(`${cleanUrl}/rest/v1/`, {
@@ -263,8 +258,9 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
       const paletteName = ragBranding?.palette_name || "Definida via RAG";
       const primaryHex = ragBranding?.primary_color_hex;
 
-      const payload = {
+      await enqueueAndTriggerBuild({
         project_name: contact.name || "Projeto Sem Nome",
+        contact_id: contact.id,
         branding: {
           palette_name: paletteName,
           ...(primaryHex ? { primary_color_hex: primaryHex } : {})
@@ -279,42 +275,8 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
         supabase_anon_key: sidebarSupabaseAnonKey.trim(),
         supabase_service_role_key: contact.supabase_service_role_key?.trim() || "",
         ai_analysis: ragReport || "",
-        additional_data: contact.additional_data || { files: [], links: [], texts: [] }
-      };
-
-      const fetch5000 = async (path: string, options?: RequestInit) => {
-        try {
-          const res = await fetch(`http://localhost:5000${path}`, options);
-          if (res.ok) return res;
-        } catch (e) {}
-        return await fetch(`http://127.0.0.1:5000${path}`, options);
-      };
-
-      const createRes = await fetch5000("/api/projetos", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
+        additional_data: (contact.additional_data as Record<string, unknown>) || { files: [], links: [], texts: [] }
       });
-
-      if (!createRes.ok) {
-        throw new Error("Erro ao registrar o projeto na fila.");
-      }
-
-      const newProject = await createRes.json();
-      const projectId = newProject.id;
-
-      const processRes = await fetch5000(`/api/projetos/${projectId}/processar`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (!processRes.ok) {
-        throw new Error("Erro ao iniciar a geração do site.");
-      }
 
       toast.success("Geração de site por IA iniciada com sucesso!");
       fetchContactData();
@@ -324,7 +286,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
     } finally {
       setGeneratingAI(false);
     }
-  }, [contact, ragReport, isConnectionValidated, sidebarSupabaseUrl, sidebarSupabaseAnonKey]);
+  }, [contact, ragReport, sidebarSupabaseUrl, sidebarSupabaseAnonKey]);
 
   const fetchContactData = useCallback(async () => {
     if (!contact) return;
@@ -508,21 +470,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
 
           {/* Projetos do Cliente (IA) */}
           {(() => {
-            const contactProjects = projects.filter((p) => {
-              if (!contact) return false;
-              if (p.resultado_json?.contact_id === contact.id) return true;
-              const projectMsg = (p.mensagem_lead || "").toLowerCase();
-              const contactName = (contact.name || "").toLowerCase();
-              const contactPhone = contact.phone ? contact.phone.replace(/\D/g, "") : "";
-              const contactEmail = (contact.email || "").toLowerCase();
-
-              if (contactName && contactName.length > 2 && projectMsg.includes(contactName)) return true;
-              if (contactPhone && contactPhone.length > 5 && projectMsg.includes(contactPhone)) return true;
-              if (contactEmail && contactEmail.length > 3 && projectMsg.includes(contactEmail)) return true;
-              if (p.resultado_json?.project_name && contactName && p.resultado_json.project_name.toLowerCase() === contactName) return true;
-
-              return false;
-            });
+            const contactProjects = filterProjectsForContact(projects, contact);
 
             return (
               <div>
@@ -556,8 +504,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
                     </div>
                   ) : (
                     contactProjects.map((p) => {
-                      const titleMatch = p.mensagem_lead?.match(/Nome do Estabelecimento \/ Marca'?:\s*'([^']+)'/i);
-                      const brandName = titleMatch ? titleMatch[1] : (p.resultado_json?.project_name || `Projeto #${p.id}`);
+                      const brandName = extractProjectBrandName(p);
 
                       const getProjectBadge = (status: FilaProjeto['status']) => {
                         switch (status) {

@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getAgendaConfig, getAgendamentos, createAgendamento, trackPageAccess } from '../services/api';
+import {
+  DEFAULT_AGENDA_CONFIG,
+  getLocalDateString,
+  formatPhoneMask,
+  formatWahaChatId,
+  computeSlotAvailability,
+  getAvailableBookingDays,
+  getAgendaConfig,
+  getAgendamentos,
+  createAgendamento,
+  trackPageAccess,
+} from '../services/api';
 import aiConfig from '../../ai_config.json';
-
-const getLocalDateString = (date) => {
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-};
 
 function BookingPage() {
   const [formData, setFormData] = useState({
@@ -21,21 +27,9 @@ function BookingPage() {
   const [config, setConfig] = useState(() => {
     try {
       const saved = localStorage.getItem('cached_agenda_config');
-      return saved ? JSON.parse(saved) : {
-        dias_funcionamento: [2, 3, 4, 5, 6, 0],
-        horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
-        vagas_padrao: 5,
-        limites_customizados: {},
-        campo_observacoes_ativo: true
-      };
+      return saved ? JSON.parse(saved) : DEFAULT_AGENDA_CONFIG;
     } catch (e) {
-      return {
-        dias_funcionamento: [2, 3, 4, 5, 6, 0],
-        horarios_disponiveis: ["18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"],
-        vagas_padrao: 5,
-        limites_customizados: {},
-        campo_observacoes_ativo: true
-      };
+      return DEFAULT_AGENDA_CONFIG;
     }
   });
   const [bookings, setBookings] = useState(() => {
@@ -71,16 +65,7 @@ function BookingPage() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name === 'phone') {
-      const digits = value.replace(/\D/g, '').slice(0, 11);
-      let formatted = '';
-      if (digits.length <= 10) {
-        if (digits.length > 0) formatted += `(${digits.slice(0, 2)}`;
-        if (digits.length > 2) formatted += `) ${digits.slice(2, 6)}`;
-        if (digits.length > 6) formatted += `-${digits.slice(6, 10)}`;
-      } else {
-        formatted = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
-      }
-      setFormData(prev => ({ ...prev, [name]: formatted }));
+      setFormData(prev => ({ ...prev, [name]: formatPhoneMask(value) }));
     } else if (name === 'date' && value) {
       // Valida antecedência máxima de dias
       const maxDate = new Date();
@@ -112,54 +97,10 @@ function BookingPage() {
     setFormData(prev => ({ ...prev, time }));
   };
 
-  const getSlotAvailability = (timeSlot) => {
-    if (!formData.date) return { available: true, remaining: config.vagas_padrao };
+  const getSlotAvailability = (timeSlot) =>
+    computeSlotAvailability(formData.date, timeSlot, config, bookings);
 
-    // Verifica capacidade para a data e slot
-    const limit = config.limites_customizados?.[formData.date]?.[timeSlot] ?? config.vagas_padrao;
-
-    // Se a data selecionada for no passado
-    const todayStr = getLocalDateString(new Date());
-    if (formData.date < todayStr) {
-      return { available: false, remaining: 0, limit };
-    }
-
-    // Se a data selecionada for hoje, verifica se o horário já passou
-    if (formData.date === todayStr) {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
-      const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
-      
-      if (slotHour < currentHour || (slotHour === currentHour && slotMinute <= currentMinute)) {
-        return { available: false, remaining: 0, limit };
-      }
-    }
-
-    // Filtra agendamentos na mesma data e slot
-    const bookingsInSlot = bookings.filter(b => b.data === formData.date && b.horario === timeSlot);
-    const occupiedSlots = bookingsInSlot.length;
-
-    const remaining = Math.max(0, limit - occupiedSlots);
-    const available = remaining >= 1;
-
-    return { available, remaining, limit };
-  };
-
-  const getNext7Days = () => {
-    const days = [];
-    let current = new Date();
-    const limitDays = config.antecedencia_maxima_dias ?? 7;
-    
-    for (let i = 0; i < limitDays; i++) {
-      const dayOfWeek = current.getDay();
-      if (config.dias_funcionamento.includes(dayOfWeek)) {
-        days.push(new Date(current));
-      }
-      current.setDate(current.getDate() + 1);
-    }
-    return days;
-  };
+  const getNext7Days = () => getAvailableBookingDays(config);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -183,18 +124,7 @@ function BookingPage() {
         if (aiConfig.n8n_webhook_url) {
           try {
             // Limpa o telefone para o formato WAHA (55 + DDD + Número + @c.us)
-            let digitsForWaha = formData.phone.replace(/\D/g, '');
-            if (!digitsForWaha.startsWith('55')) {
-              digitsForWaha = '55' + digitsForWaha;
-            }
-            if (digitsForWaha.length === 13) {
-              const ddd = parseInt(digitsForWaha.slice(2, 4));
-              if (ddd > 28) {
-                // Remove o dígito '9' extra logo após o DDD (index 4)
-                digitsForWaha = digitsForWaha.slice(0, 4) + digitsForWaha.slice(5);
-              }
-            }
-            const chatId = `${digitsForWaha}@c.us`;
+            const chatId = formatWahaChatId(formData.phone);
 
             const payload = new URLSearchParams();
             payload.append('name', formData.name);
