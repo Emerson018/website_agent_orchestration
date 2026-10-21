@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import sys
 from typing import Any, Callable, Dict, Optional
+from urllib.parse import quote_plus
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -23,6 +24,7 @@ if hasattr(sys.stderr, "reconfigure"):
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config
+from ai_software_factory import skill_loader
 from ai_software_factory.schemas import ClientConfig
 from ai_software_factory.state import AgentState
 from ai_software_factory.workspace_provisioner import (
@@ -37,7 +39,7 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 
 
 def parse_fallback_requirements(lead_raw: Dict[str, Any]) -> Dict[str, Any]:
-    """Delega para o módulo profundo de resolução de Lead Briefing & Niche Profile."""
+    """Delega para o módulo profundo de resolução de Lead Briefing & Design Direction."""
     return config.parse_lead_briefing(lead_raw)
 
 
@@ -51,51 +53,60 @@ def invocar_lm_studio_para_codigo(prompt_sistema: str, prompt_usuario: str) -> O
     return config.invoke_local_lm_studio_http(prompt_sistema, prompt_usuario)
 
 
+def _merge_with_fallback_direction(
+    parsed_data: Dict[str, Any], lead_raw: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Garante que todos os tokens da Design Direction (6 cores, tipografia, tema,
+    layout_concept, focal_element, design_critique e copy_tone) estejam preenchidos.
+    """
+    base = parse_fallback_requirements(lead_raw)
+    for k, v in (parsed_data or {}).items():
+        if v is not None and str(v).strip() != "" and v != []:
+            base[k] = v
+    return base
+
+
 def requirements_analyst_node(
     state: AgentState, llm_adapter: Optional[Any] = None
 ) -> Dict[str, Any]:
     """
-    Agente Analista de Requisitos (Real com Fallback Seguro):
-    Lê o Lead Briefing, consulta o gateway unificado de LLM se configurado,
-    ou aplica a extração determinística de Niche Profile como fallback.
+    Agente Analista de Requisitos & Diretor de Design (Passe 1 — Design Direction):
+    Lê o Lead Briefing, aplica a skill `/frontend-design` + `stop-slop` via `skill_loader`
+    para planejar e criticar a Design Direction do cliente, ou recorre ao fallback determinístico.
     """
-    print("\n--- [Agente: Analista de Requisitos] ---")
+    print("\n--- [Agente: Analista de Requisitos — Passe 1: Design Direction] ---")
     lead_raw = state.get("lead_raw_json", {})
     print(f"Analisando lead_raw_json recebido: {lead_raw}")
 
     llm_info = config.describe_active_llm()
-    llm = config.get_llm(temperature=0.0, adapter=llm_adapter)
+    llm = config.get_llm(temperature=0.2, adapter=llm_adapter)
+    planning_skill = skill_loader.get_design_planning_skill_prompt()
 
     if llm is None:
         print("[Analista de Requisitos] AVISO: Nenhuma chave de API de LLM configurada.")
         custom_reqs = parse_fallback_requirements(lead_raw)
-        log_msg = "[RequirementsAnalyst] Requisitos estruturados via Fallback seguro (chave de API ausente)."
+        log_msg = "[RequirementsAnalyst] Design Direction estruturada via Fallback seguro (chave de API ausente)."
     else:
         try:
             system_prompt = (
-                "Você é um Diretor de Arte e Arquiteto de Software Web especialista.\n"
-                "Sua missão é analisar TODOS os dados brutos e históricos enviados pelo cliente (mensagens, links de referências, "
-                "anotações de contatos e preferências) para estruturar a identidade visual e funcionalidade ideal do novo site PWA.\n\n"
-                "O NOVO SITE SERÁ GERADO COM BASE NA ARQUITETURA DO NOSSO TEMPLATE OURO (gold_templates/template_base_app):\n"
-                "- React + Tailwind CSS com temas responsivos e suporte a Dark/Light Mode.\n"
-                "- Integração Serverless com Supabase (autenticação, agendamento de serviços, formulários de contato).\n"
-                "- PWA instalável para dispositivos móveis.\n\n"
-                "REGRAS DE ANÁLISE DE MARCA E IDENTIDADE:\n"
-                "1. app_name: Nome comercial legível da empresa (ex: Barbearia Navalha de Ouro, Sorriso Perfeito).\n"
-                "2. primary_color / secondary_color: Cores hexadecimais (#HEXHEX) elegantes e harmoniosas. "
-                "Aplique a psicologia das cores adequada ao nicho do cliente.\n"
-                "3. address / working_hours / phone: Dados de contato reais e completos do cliente.\n"
-                "4. niche: O segmento/mercado da empresa (ex: Odontologia, Barbearia, Pet Shop, Estética, Gastronomia).\n"
-                "5. tagline: Slogan marcante e atraente para o topo (Hero) do site.\n"
-                "6. color_reasoning: Breve explicação da escolha da paleta de cores.\n"
-                "7. recommended_sections: Seções essenciais para o site (ex: Hero, Serviços, Sobre Nós, Agendamento, Depoimentos, Contato).\n\n"
-                "RETORNE ESTRITAMENTE UM OBJETO JSON VÁLIDO contendo as chaves: app_name, primary_color, secondary_color, logo_url, address, working_hours, phone, niche, tagline, color_reasoning, recommended_sections."
+                "Você é o Design Lead e Arquiteto de Software Web responsável pelo PASSE 1 (Design Direction & Auto-Crítica).\n"
+                "Sua missão é analisar os dados reais do cliente no Lead Briefing e definir uma Design Direction "
+                "autoral, específica para a matéria-prima do negócio, evitando qualquer aparência de template genérico.\n\n"
+                f"{planning_skill}\n\n"
+                "RETORNE ESTRITAMENTE UM OBJETO JSON VÁLIDO correspondente ao schema ClientConfig contendo: "
+                "app_name, primary_color, secondary_color, bg_color, surface_color, text_color, muted_color, "
+                "theme, font_heading, font_body, logo_url, address, working_hours, phone, niche, tagline, "
+                "color_reasoning, layout_concept, focal_element, design_critique, copy_tone, recommended_sections."
             )
 
             prompt = ChatPromptTemplate.from_messages(
                 [
                     ("system", system_prompt),
-                    ("user", "Dados brutos e informações completas do lead/cliente:\n{lead_raw_json}"),
+                    (
+                        "user",
+                        "Dados brutos e informações completas do Lead Briefing:\n{lead_raw_json}",
+                    ),
                 ]
             )
 
@@ -108,27 +119,22 @@ def requirements_analyst_node(
 
                 json_match = re.search(r"\{.*\}", content, re.DOTALL)
                 parsed_json = json.loads(json_match.group(0) if json_match else content)
-
-                fallback_base = parse_fallback_requirements(lead_raw)
-                for k, v in parsed_json.items():
-                    if v and str(v).strip():
-                        fallback_base[k] = v
-                custom_reqs = fallback_base
-                log_msg = f"[RequirementsAnalyst] Requisitos e layout analisados via {llm_info['label']} com sucesso."
+                custom_reqs = _merge_with_fallback_direction(parsed_json, lead_raw)
+                log_msg = f"[RequirementsAnalyst] Design Direction (Passe 1) elaborada via {llm_info['label']} com skill frontend-design."
             else:
                 structured_llm = llm.with_structured_output(ClientConfig)
                 chain = prompt | structured_llm
                 result: ClientConfig = chain.invoke(
                     {"lead_raw_json": json.dumps(lead_raw, ensure_ascii=False)}
                 )
-                custom_reqs = result.model_dump()
-                log_msg = "[RequirementsAnalyst] Requisitos e arquitetura de marca analisados via LLM com sucesso."
+                custom_reqs = _merge_with_fallback_direction(result.model_dump(), lead_raw)
+                log_msg = "[RequirementsAnalyst] Design Direction (Passe 1) elaborada via LLM com skill frontend-design."
         except Exception as e:
             print(
-                f"[Analista de Requisitos] AVISO: Falha ao chamar a LLM ({str(e)}). Executando fallback local inteligente..."
+                f"[Analista de Requisitos] AVISO: Falha ao chamar a LLM ({str(e)}). Executando fallback local com Design Direction..."
             )
             custom_reqs = parse_fallback_requirements(lead_raw)
-            log_msg = f"[RequirementsAnalyst] Requisitos estruturados via Fallback inteligente devido a exceção: {str(e)}"
+            log_msg = f"[RequirementsAnalyst] Design Direction estruturada via Fallback devido a exceção: {str(e)}"
 
     template = state.get("template_path") or "gold_templates/template_base_app"
 
@@ -175,13 +181,22 @@ def generate_fallback_landing_page_code(
     address: str = "",
     working_hours: str = "",
     phone: str = "",
+    design_direction: Optional[Dict[str, Any]] = None,
 ) -> str:
-    """Gera uma LandingPage completa em 5 blocos com fotos do Unsplash caso o modelo LLM não esteja disponível."""
+    """
+    Gera uma LandingPage autoral seguindo as diretrizes da skill `frontend-design`:
+    - Sem duplicar <header> ou <footer> (já providos pelo MainLayout.jsx).
+    - Usa as variáveis CSS semânticas (:root --bg-color, --surface-color, --border-color, --text-color, --muted-color, --primary-color) e as fontes (.font-display / .font-sans).
+    - Sem os tells proibidos pela skill (sem eyebrows ALL-CAPS em todas as seções, sem SaaS-card kit de 3 cartões idênticos, sem setas '→' anexadas aos botões).
+    """
     media = get_niche_media(app_name, mensagem)
+    direction = design_direction or {}
 
-    addr = address or "Av. Principal, 1000 - Centro"
-    hours = working_hours or "Segunda a Sábado das 9h às 19h"
-    tel = phone or "(51) 99999-9999"
+    addr = address or direction.get("address") or "Av. Principal, 1000 - Centro"
+    hours = working_hours or direction.get("working_hours") or "Segunda a Sábado das 9h às 19h"
+    tel = phone or direction.get("phone") or "(51) 99999-9999"
+    hero_title = direction.get("tagline") or media["hero_title"]
+    hero_desc = media["hero_desc"]
 
     link_import = (
         "import Link from 'next/link';"
@@ -190,26 +205,38 @@ def generate_fallback_landing_page_code(
     )
     link_attr = "href" if is_nextjs else "to"
 
-    services_cards = ""
+    service_rows = ""
     for s in media["services"]:
-        services_cards += f"""
-          <div className="overflow-hidden rounded-2xl border border-[#2E2924] bg-[#181614] transition-all duration-300 hover:-translate-y-1.5 hover:border-[var(--primary-color,#E55A1B)]/50 flex flex-col text-left group">
-            <div className="relative h-48 overflow-hidden bg-[#1F1C19]">
-              <img src="{s['img']}" alt="{s['name']}" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            </div>
-            <div className="p-6 flex flex-col flex-1 justify-between space-y-4">
-              <div>
-                <h4 className="text-lg font-bold text-[#F5F4F0] group-hover:text-[var(--primary-color,#E55A1B)] transition-colors">{s['name']}</h4>
-                <p className="text-xs text-[#A8A29E] mt-2 leading-relaxed">{s['desc']}</p>
+        service_rows += f"""
+            <article className="py-8 border-b border-[var(--border-color,#2E2924)] grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div className="md:col-span-3 overflow-hidden rounded-xl bg-[var(--surface-color,#181614)] border border-[var(--border-color,#2E2924)]">
+                <img
+                  src="{s['img']}"
+                  alt="{s['name']}"
+                  className="w-full h-40 object-cover"
+                  loading="lazy"
+                />
               </div>
-              <div className="pt-3 border-t border-[#262320] flex items-center justify-between">
-                <span className="text-base font-extrabold text-[#F5F4F0]">{s['price']}</span>
-                <Link {link_attr}="/agendar" className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#262320] hover:bg-[var(--primary-color,#E55A1B)] hover:text-white text-[#D6D3D1] transition-all">
-                  Agendar
+              <div className="md:col-span-6 space-y-2">
+                <h3 className="font-display text-xl font-bold text-[var(--text-color,#F5F4F0)]">
+                  {s['name']}
+                </h3>
+                <p className="text-sm text-[var(--muted-color,#A8A29E)] max-w-prose leading-relaxed">
+                  {s['desc']}
+                </p>
+              </div>
+              <div className="md:col-span-3 flex md:flex-col items-center md:items-end justify-between gap-3">
+                <span className="font-display text-lg font-bold text-[var(--text-color,#F5F4F0)]">
+                  {s['price']}
+                </span>
+                <Link
+                  {link_attr}="/agendar"
+                  className="inline-flex items-center justify-center px-4 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold bg-[var(--surface-color,#181614)] hover:bg-[var(--primary-color,#E55A1B)] hover:text-white text-[var(--text-color,#F5F4F0)] border border-[var(--border-color,#2E2924)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color,#E55A1B)]"
+                >
+                  Escolher horário
                 </Link>
               </div>
-            </div>
-          </div>
+            </article>
         """
 
     return f"""import React from 'react';
@@ -217,138 +244,118 @@ def generate_fallback_landing_page_code(
 
 export default function LandingPage() {{
   return (
-    <div className="w-full bg-[#0E0D0C] text-[#F5F4F0] overflow-hidden">
-      {{/* Bloco 1: Hero Section de Alto Impacto */}}
-      <section className="relative min-h-[85vh] flex items-center justify-center pt-8 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="{media['hero_img']}" 
-            alt="{app_name}" 
-            className="w-full h-full object-cover object-center filter brightness-[0.35] contrast-[1.1]" 
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0E0D0C] via-[#0E0D0C]/60 to-transparent"></div>
-        </div>
-
-        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#1F1C19]/80 border border-[var(--primary-color,#E55A1B)]/30 backdrop-blur-md">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--primary-color,#E55A1B)]">
-              {media['niche']}
-            </span>
-          </div>
-
-          <h1 className="font-display text-4xl sm:text-6xl font-extrabold tracking-tight text-[#F5F4F0] leading-tight">
-            {media['hero_title']}
-          </h1>
-
-          <p className="text-base sm:text-lg text-[#D6D3D1] max-w-2xl mx-auto leading-relaxed">
-            {media['hero_desc']}
-          </p>
-
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link 
-              {link_attr}="/agendar"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-full text-base font-bold bg-[var(--primary-color,#E55A1B)] hover:brightness-110 text-white shadow-xl shadow-[var(--primary-color,#E55A1B)]/30 transition-all active:scale-95"
-            >
-              <span>Agendar Agora</span>
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </Link>
-
-            <a 
-              href="#destaques"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full text-base font-semibold bg-[#1F1C19]/90 hover:bg-[#2A2622] text-[#F5F4F0] border border-[#2E2924] transition-colors"
-            >
-              <span>Conhecer Serviços</span>
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {{/* Bloco 2: Sobre a Casa & Diferenciais */}}
-      <section id="sobre" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-6 space-y-5">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--primary-color,#E55A1B)]">
-              Experiência & Cuidado
-            </span>
-            <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-[#F5F4F0] leading-tight">
-              Excelência e atenção em cada detalhe.
-            </h2>
-            <p className="text-sm sm:text-base text-[#D6D3D1] leading-relaxed">
-              No {app_name}, unimos tradição, técnica e acolhimento para proporcionar a você a melhor experiência.
-              Nosso espaço foi pensado para o seu bem-estar, com agendamentos pontuais e atendimento exclusivo.
+    <div className="w-full bg-[var(--bg-color)] text-[var(--text-color)] font-sans">
+      {{/* Abertura Editorial Assimétrica (Ponto Focal Único) */}}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-20 lg:py-24 border-b border-[var(--border-color)]">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+          <div className="lg:col-span-7 space-y-6 text-left">
+            <p className="text-sm font-medium text-[var(--primary-color)]">
+              {media['niche']} · {app_name}
             </p>
+
+            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--text-color)] leading-[1.08]">
+              {hero_title}
+            </h1>
+
+            <p className="text-base sm:text-lg text-[var(--muted-color)] max-w-2xl leading-relaxed">
+              {hero_desc}
+            </p>
+
+            <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <Link
+                {link_attr}="/agendar"
+                className="inline-flex items-center justify-center px-8 py-4 min-h-[48px] rounded-xl text-base font-bold bg-[var(--primary-color)] hover:brightness-110 text-white shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)]"
+              >
+                Reservar horário
+              </Link>
+
+              <a
+                href="#destaques"
+                className="inline-flex items-center justify-center px-6 py-4 min-h-[48px] rounded-xl text-base font-semibold bg-[var(--surface-color)] text-[var(--text-color)] border border-[var(--border-color)] hover:border-[var(--primary-color)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)]"
+              >
+                Ver especialidades e valores
+              </a>
+            </div>
+
+            <dl className="pt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-[var(--border-color)] text-sm">
+              <div>
+                <dt className="font-semibold text-[var(--text-color)]">Funcionamento</dt>
+                <dd className="text-[var(--muted-color)] mt-0.5">{hours}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-[var(--text-color)]">Localização</dt>
+                <dd className="text-[var(--muted-color)] mt-0.5">{addr}</dd>
+              </div>
+            </dl>
           </div>
-          <div className="lg:col-span-6">
-            <div className="relative rounded-2xl overflow-hidden border border-[#2E2924] shadow-2xl">
-              <img 
-                src="{media['hero_img']}" 
-                alt="{app_name}" 
-                className="w-full h-[360px] object-cover hover:scale-105 transition-transform duration-700" 
+
+          <div className="lg:col-span-5">
+            <div className="overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--surface-color)] shadow-lg">
+              <img
+                src="{media['hero_img']}"
+                alt="{app_name}"
+                className="w-full h-[380px] sm:h-[460px] object-cover"
               />
             </div>
           </div>
         </div>
       </section>
 
-      {{/* Bloco 3: Vitrine de Destaques */}}
-      <section id="destaques" className="py-20 bg-[#121110] border-y border-[#262320]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14 space-y-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--primary-color,#E55A1B)]">
-              Serviços Selecionados
-            </span>
-            <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-[#F5F4F0]">
-              Especialidades & Atendimentos
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {services_cards}
-          </div>
+      {{/* Quadro de Especialidades & Preços (Estrutura Linear Informativa) */}}
+      <section id="destaques" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="max-w-2xl space-y-2 mb-12">
+          <h2 className="font-display text-3xl sm:text-4xl font-bold text-[var(--text-color)]">
+            Especialidades e atendimento
+          </h2>
+          <p className="text-base text-[var(--muted-color)] leading-relaxed">
+            Confira as opções disponíveis no {app_name} e escolha o horário diretamente na agenda online.
+          </p>
+        </div>
+
+        <div className="border-t border-[var(--border-color)]">
+          {service_rows}
         </div>
       </section>
 
-      {{/* Bloco 4: Localização, Horários & Reserva Rápida */}}
-      <section id="contato" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="bg-[#141211] rounded-3xl border border-[#2E2924] p-8 sm:p-12 shadow-2xl">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-7 space-y-6">
-              <span className="text-xs font-semibold uppercase tracking-wider text-[var(--primary-color,#E55A1B)]">
-                Localização & Atendimento
-              </span>
-              <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-[#F5F4F0]">
-                Fácil acesso e conveniência para você
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-[#1A1816] border border-[#262320]">
-                  <p className="text-xs text-[#78716C] uppercase font-semibold">Endereço</p>
-                  <p className="text-sm font-medium text-[#F5F4F0] mt-1">{addr}</p>
-                </div>
-                <div className="p-4 rounded-xl bg-[#1A1816] border border-[#262320]">
-                  <p className="text-xs text-[#78716C] uppercase font-semibold">Horários</p>
-                  <p className="text-sm font-medium text-[#F5F4F0] mt-1">{hours}</p>
-                </div>
-              </div>
+      {{/* Sobre o Estabelecimento & Endereço */}}
+      <section id="sobre" className="bg-[var(--surface-color)] border-t border-[var(--border-color)] py-20">
+        <div id="contato" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+          <div className="lg:col-span-7 space-y-4">
+            <h2 className="font-display text-2xl sm:text-3xl font-bold text-[var(--text-color)]">
+              Atendimento com hora marcada no {app_name}
+            </h2>
+            <p className="text-base text-[var(--muted-color)] max-w-prose leading-relaxed">
+              Organizamos nossa agenda para receber você no horário combinado, com preparo prévio da equipe e confirmação imediata pelo sistema.
+            </p>
+          </div>
+
+          <div className="lg:col-span-5 p-6 sm:p-8 rounded-2xl bg-[var(--bg-color)] border border-[var(--border-color)] space-y-5">
+            <div className="space-y-1">
+              <h3 className="font-display text-xl font-bold text-[var(--text-color)]">
+                Informações para visita
+              </h3>
+              <p className="text-sm text-[var(--muted-color)]">
+                {addr}
+              </p>
             </div>
 
-            <div className="lg:col-span-5 flex flex-col items-center justify-center p-6 rounded-2xl bg-[#1A1816] border border-[#262320] text-center space-y-4">
-              <h3 className="font-display text-xl font-bold text-[#F5F4F0]">
-                Reserve Online em Segundos
-              </h3>
-              <p className="text-xs text-[#A8A29E]">
-                Escolha a data e horário ideal sem esperas.
+            <div className="space-y-2 text-sm border-y border-[var(--border-color)] py-4">
+              <p className="flex justify-between gap-4">
+                <span className="text-[var(--muted-color)]">Horários:</span>
+                <span className="font-medium text-[var(--text-color)] text-right">{hours}</span>
               </p>
-              <Link 
-                {link_attr}="/agendar"
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm bg-[var(--primary-color,#E55A1B)] hover:brightness-110 text-white shadow-lg transition-all"
-              >
-                <span>Agendar Horário</span>
-              </Link>
-              <p className="text-[11px] text-[#78716C]">
-                Contato: <span className="text-[#D6D3D1] font-semibold">{tel}</span>
+              <p className="flex justify-between gap-4">
+                <span className="text-[var(--muted-color)]">Telefone / WhatsApp:</span>
+                <span className="font-medium text-[var(--text-color)] text-right">{tel}</span>
               </p>
             </div>
+
+            <Link
+              {link_attr}="/agendar"
+              className="w-full inline-flex items-center justify-center px-6 py-3.5 min-h-[44px] rounded-xl font-bold text-sm bg-[var(--primary-color)] hover:brightness-110 text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)]"
+            >
+              Agendar horário agora
+            </Link>
           </div>
         </div>
       </section>
@@ -364,6 +371,11 @@ def generate_landing_page(
     lead_raw: Dict[str, Any],
     code_llm_adapter: Optional[Callable[[str, str], Optional[str]]] = None,
 ):
+    """
+    Passe 2 (Construção do Código Frontend):
+    Gera `LandingPage.jsx` injetando obrigatoriamente a skill `frontend-design` +
+    `stop-slop` + `web-design-guidelines` e a Design Direction aprovada no Passe 1.
+    """
     app_name = reqs.get("app_name", "AppCustomizado")
     primary_color = reqs.get("primary_color", "#D4AF37")
     secondary_color = reqs.get("secondary_color", "#1A1A1A")
@@ -373,44 +385,63 @@ def generate_landing_page(
     mensagem = lead_raw.get("mensagem", "")
 
     media = get_niche_media(app_name, mensagem)
+    direction = _merge_with_fallback_direction(reqs, lead_raw)
+    coding_skill_prompt = skill_loader.get_frontend_coding_skill_prompt(direction)
 
-    system_prompt = f"""Você é um Arquiteto Frontend e Copywriter especialista em React (Vite) e Tailwind CSS.
-Sua missão é gerar um componente React completo para a Landing Page (LandingPage.jsx) adaptado sob medida para o estabelecimento do cliente.
+    system_prompt = f"""Você é um Design Engineer Sênior especialista em React (Vite) e Tailwind CSS.
+Sua missão é executar o PASSE 2 (Construção de Interface) gerando o componente `LandingPage.jsx` sob medida para o estabelecimento do cliente, seguindo rigorosamente a skill `/frontend-design` e a Design Direction aprovada no Passe 1.
 
-ESTRUTURA OBRIGATÓRIA EM 5 BLOCOS:
-1. NAVBAR: Nome do estabelecimento e botão de destaque para agendamento (<Link to="/agendar" ...>Agendar Horário</Link>).
-2. HERO SECTION: Título de alto impacto focado no nicho '{media['niche']}', descrição acolhedora sem clichês de IA, botão CTA principal (<Link to="/agendar">) e foto temática do Unsplash: '{media['hero_img']}'.
-3. VITRINE DE SERVIÇOS: Exatamente 3 cards de diferenciais/serviços com as seguintes imagens reais:
-   - Card 1: Foto '{media['services'][0]['img']}', Título '{media['services'][0]['name']}', Valor '{media['services'][0]['price']}'
-   - Card 2: Foto '{media['services'][1]['img']}', Título '{media['services'][1]['name']}', Valor '{media['services'][1]['price']}'
-   - Card 3: Foto '{media['services'][2]['img']}', Título '{media['services'][2]['name']}', Valor '{media['services'][2]['price']}'
-4. INFORMAÇÕES LOCAIS: Cards com Endereço ({address or 'Endereço central do cliente'}), Horários de funcionamento ({working_hours or 'Segunda a Sábado'}) e Telefone/WhatsApp ({phone or 'WhatsApp para contato'}).
-5. FOOTER: Rodapé institucional com botão final levando a '/agendar' e copyright.
+{coding_skill_prompt}
 
-REGRAS ESTRITAS DE SINTAXE:
-1. Inicie importando:
+CONTRATO ARQUITETURAL E INVARIANTES TÉCNICOS DO GOLD TEMPLATE:
+1. O componente `MainLayout.jsx` já envolve a rota `/` com o Header/Navbar global e o Footer global. Portanto, NÃO crie tags `<header>`, `<nav>` ou `<footer>` duplicadas dentro de `LandingPage.jsx`. Concentre 100% da página nas seções de conteúdo (`<section id="destaques">`, `<section id="sobre">`, `<section id="contato">`).
+2. Use as variáveis CSS semânticas já injetadas em `:root` (`var(--bg-color)`, `var(--surface-color)`, `var(--border-color)`, `var(--text-color)`, `var(--muted-color)`, `var(--primary-color)`, `var(--secondary-color)`) e as classes tipográficas `font-display` (títulos) e `font-sans` (corpo).
+3. Fotos reais curadas do setor disponíveis para uso:
+   - Imagem Principal / Ambiente: '{media['hero_img']}'
+   - Serviço 1: '{media['services'][0]['name']}' ({media['services'][0]['price']}) — '{media['services'][0]['img']}' — {media['services'][0]['desc']}
+   - Serviço 2: '{media['services'][1]['name']}' ({media['services'][1]['price']}) — '{media['services'][1]['img']}' — {media['services'][1]['desc']}
+   - Serviço 3: '{media['services'][2]['name']}' ({media['services'][2]['price']}) — '{media['services'][2]['img']}' — {media['services'][2]['desc']}
+4. Inicie obrigatoriamente importando:
    import React from 'react';
    import {{ Link }} from 'react-router-dom';
-2. O componente DEVE ser: export default function LandingPage() {{ ... }}
-3. Todos os botões de ação DEVEM usar <Link to="/agendar"> da biblioteca 'react-router-dom'.
-4. NUNCA use clichês de IA ("no mundo acelerado de hoje", "revolucione sua experiência").
-5. Retorne APENAS o código JSX puro, sem explicações em texto e sem blocos markdown (sem ```jsx ou ```).
+5. O componente DEVE ser exportado como: `export default function LandingPage() {{ ... }}`
+6. Todos os botões de agendamento DEVEM usar `<Link to="/agendar">` da biblioteca `react-router-dom` com texto em voz ativa (sem setas '→' anexadas).
+7. Retorne APENAS o código JSX puro, sem explicações em texto e sem blocos markdown (sem ```jsx ou ```).
 """
 
     user_prompt = (
-        f"Dados do cliente para o layout:\n- Nome: '{app_name}'\n- Nicho: '{media['niche']}'\n"
-        f"- Cor Primária: '{primary_color}'\n- Cor Secundária: '{secondary_color}'\n"
-        f"- Endereço: '{address}'\n- Horários: '{working_hours}'\n- Contato: '{phone}'\n- Briefing: {mensagem}"
+        f"Construa o código completo de `LandingPage.jsx` para o cliente:\n"
+        f"- Estabelecimento: '{app_name}'\n"
+        f"- Nicho: '{direction.get('niche') or media['niche']}'\n"
+        f"- Tema: '{direction.get('theme')}'\n"
+        f"- Paleta Semântica: Primária={direction.get('primary_color')}, Secundária={direction.get('secondary_color')}, "
+        f"Fundo={direction.get('bg_color')}, Superfície={direction.get('surface_color')}, Texto={direction.get('text_color')}, Muted={direction.get('muted_color')}\n"
+        f"- Tipografia: Display='{direction.get('font_heading')}', Corpo='{direction.get('font_body')}'\n"
+        f"- Conceito de Layout: {direction.get('layout_concept')}\n"
+        f"- Elemento Focal Único: {direction.get('focal_element')}\n"
+        f"- Crítica Anti-Clichê: {direction.get('design_critique')}\n"
+        f"- Endereço: '{address}'\n"
+        f"- Horários: '{working_hours}'\n"
+        f"- Telefone/WhatsApp: '{phone}'\n"
+        f"- Briefing Original: {mensagem}"
     )
 
     code = config.invoke_code_llm(system_prompt, user_prompt, adapter=code_llm_adapter)
 
     if not code or len(code) < 50 or "export default" not in code:
         print(
-            "[Desenvolvedor] Utilizando gerador visual inteligente de fallback com fotos Unsplash em 5 blocos..."
+            "[Desenvolvedor] Utilizando gerador autoral de fallback alinhado à Design Direction e skill frontend-design..."
         )
         code = generate_fallback_landing_page_code(
-            app_name, primary_color, secondary_color, mensagem, False, address, working_hours, phone
+            app_name,
+            primary_color,
+            secondary_color,
+            mensagem,
+            False,
+            address,
+            working_hours,
+            phone,
+            design_direction=direction,
         )
 
     landing_page_path = os.path.join(target_path, "frontend", "src", "pages", "LandingPage.jsx")
@@ -473,8 +504,27 @@ def generate_niche_database_schema(
         )
 
 
-def update_project_frontend_entrypoints(target_path: str, app_name: str):
-    """Garante que a rota principal de App.jsx seja a LandingPage (/) e o BookingPage (/agendar)."""
+def _build_google_fonts_url(font_heading: str, font_body: str) -> str:
+    """Monta a URL da API Google Fonts CSS2 para as famílias de título e corpo."""
+    families = []
+    for font in [font_heading, font_body]:
+        clean = (font or "").strip()
+        if clean and clean not in families:
+            families.append(clean)
+    if not families:
+        families = ["Plus Jakarta Sans", "Inter"]
+
+    query_parts = [f"family={quote_plus(fam)}:wght@400;500;600;700;800" for fam in families]
+    return f"https://fonts.googleapis.com/css2?{'&'.join(query_parts)}&display=swap"
+
+
+def update_project_frontend_entrypoints(
+    target_path: str, app_name: str, reqs: Optional[Dict[str, Any]] = None
+):
+    """
+    Garante que a rota principal de App.jsx seja a LandingPage (/) e o BookingPage (/agendar),
+    e injeta no index.html o <title> e as famílias tipográficas do Google Fonts da Design Direction.
+    """
     app_jsx_path = os.path.join(target_path, "frontend", "src", "App.jsx")
     if os.path.exists(app_jsx_path):
         try:
@@ -507,6 +557,31 @@ def update_project_frontend_entrypoints(target_path: str, app_name: str):
             html_content = re.sub(
                 r"<title>.*?</title>", f"<title>{app_name}</title>", html_content
             )
+
+            font_heading = (reqs or {}).get("font_heading") or "Plus Jakarta Sans"
+            font_body = (reqs or {}).get("font_body") or "Inter"
+            fonts_url = _build_google_fonts_url(font_heading, font_body)
+            font_link_tag = f'<link href="{fonts_url}" rel="stylesheet">'
+
+            if "fonts.googleapis.com/css2" in html_content:
+                html_content = re.sub(
+                    r'<link[^>]+href="https://fonts\.googleapis\.com/css2[^"]*"[^>]*>',
+                    font_link_tag,
+                    html_content,
+                )
+            elif "</head>" in html_content:
+                html_content = html_content.replace(
+                    "</head>",
+                    f'  <link rel="preconnect" href="https://fonts.googleapis.com">\n'
+                    f'  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
+                    f"  {font_link_tag}\n</head>",
+                )
+
+            html_content = html_content.replace(
+                'bg-[#0E0D0C] text-[#F5F4F0]',
+                'bg-[var(--bg-color,#0E0D0C)] text-[var(--text-color,#F5F4F0)]',
+            )
+
             with open(index_html_path, "w", encoding="utf-8") as f:
                 f.write(html_content)
         except Exception as e:
@@ -516,7 +591,11 @@ def update_project_frontend_entrypoints(target_path: str, app_name: str):
 def update_project_css_theme(
     target_path: str, reqs: Dict[str, Any], lead_raw: Dict[str, Any]
 ):
-    """Injeta as variáveis CSS da marca (:root --primary-color, --secondary-color, --bg-color) no index.css usando o Niche Profile."""
+    """
+    Injeta os tokens semânticos da Design Direction (:root --primary-color, --secondary-color,
+    --bg-color, --surface-color, --border-color, --text-color, --muted-color, --font-display,
+    --font-sans) no index.css.
+    """
     index_css_path = os.path.join(target_path, "frontend", "src", "index.css")
     if os.path.exists(index_css_path):
         try:
@@ -529,8 +608,13 @@ def update_project_css_theme(
 
             p_color = reqs.get("primary_color") or profile["primary_color"]
             s_color = reqs.get("secondary_color") or profile["secondary_color"]
-            bg_color = profile["bg_color"]
-            text_color = profile["text_color"]
+            bg_color = reqs.get("bg_color") or profile["bg_color"]
+            surface_color = reqs.get("surface_color") or profile.get("surface_color", "#181614")
+            border_color = reqs.get("border_color") or profile.get("border_color", "#2E2924")
+            text_color = reqs.get("text_color") or profile["text_color"]
+            muted_color = reqs.get("muted_color") or profile.get("muted_color", "#A8A29E")
+            font_heading = reqs.get("font_heading") or profile.get("font_heading", "Plus Jakarta Sans")
+            font_body = reqs.get("font_body") or profile.get("font_body", "Inter")
 
             root_vars = f"""@import "tailwindcss";
 @config "../tailwind.config.js";
@@ -539,16 +623,30 @@ def update_project_css_theme(
   --primary-color: {p_color};
   --secondary-color: {s_color};
   --bg-color: {bg_color};
+  --surface-color: {surface_color};
+  --border-color: {border_color};
   --text-color: {text_color};
+  --muted-color: {muted_color};
+  --font-display: '{font_heading}', Georgia, serif;
+  --font-sans: '{font_body}', system-ui, -apple-system, sans-serif;
 }}
 
 html, body, #root {{
   background-color: var(--bg-color, {bg_color});
   color: var(--text-color, {text_color});
+  font-family: var(--font-sans);
   margin: 0;
   padding: 0;
   width: 100%;
   min-height: 100vh;
+}}
+
+.font-display {{
+  font-family: var(--font-display);
+}}
+
+.font-sans {{
+  font-family: var(--font-sans);
 }}
 
 """
@@ -556,6 +654,8 @@ html, body, #root {{
             css_clean = re.sub(r'@config\s+["\'][^"\']+["\'];?', "", css_clean)
             css_clean = re.sub(r":root\s*\{[^}]*\}", "", css_clean)
             css_clean = re.sub(r"html,\s*body,\s*#root\s*\{[^}]*\}", "", css_clean)
+            css_clean = re.sub(r"\.font-display\s*\{[^}]*\}", "", css_clean)
+            css_clean = re.sub(r"\.font-sans\s*\{[^}]*\}", "", css_clean)
             new_css = root_vars + css_clean.strip()
 
             with open(index_css_path, "w", encoding="utf-8") as f:
@@ -570,19 +670,22 @@ def code_injector_node(
     rpc_adapter: Optional[Callable[[str, str, Dict[str, Any]], None]] = None,
 ) -> Dict[str, Any]:
     """
-    Agente Desenvolvedor / Injetor de Código (Real):
-    Aplica o Niche Profile, grava ai_config.json e .env, gera a LandingPage.jsx e provisiona o esquema SQL.
+    Agente Desenvolvedor / Injetor de Código (Passe 2 — Code Generation):
+    Aplica a Design Direction completa, injeta Google Fonts no index.html e tokens semânticos
+    no index.css, grava ai_config.json, gera a LandingPage.jsx com a skill `/frontend-design`
+    e provisiona o esquema SQL.
     """
-    print("\n--- [Agente: Desenvolvedor / Injetor] ---")
+    print("\n--- [Agente: Desenvolvedor / Injetor — Passe 2: Frontend Design] ---")
     target_path = state.get("target_project_path", "workspace/AppCustomizado")
     template_path = state.get("template_path") or "gold_templates/template_base_app"
-    reqs = state.get("customization_requirements", {})
+    raw_reqs = state.get("customization_requirements", {})
     lead_raw = state.get("lead_raw_json", {})
     last_report = state.get("last_qa_report", {})
 
+    reqs = _merge_with_fallback_direction(raw_reqs, lead_raw)
     app_name = reqs.get("app_name", "AppCustomizado")
 
-    update_project_frontend_entrypoints(target_path, app_name)
+    update_project_frontend_entrypoints(target_path, app_name, reqs=reqs)
     update_project_css_theme(target_path, reqs, lead_raw)
 
     config_file_path = os.path.join(target_path, "frontend", "ai_config.json")
@@ -629,28 +732,45 @@ def code_injector_node(
 
     primary_color = reqs.get("primary_color", "#D4AF37")
     secondary_color = reqs.get("secondary_color", "#1A1A1A")
+    bg_color = reqs.get("bg_color", "#0E0D0C")
+    surface_color = reqs.get("surface_color", "#181614")
+    text_color = reqs.get("text_color", "#F5F4F0")
+    muted_color = reqs.get("muted_color", "#A8A29E")
+    theme = reqs.get("theme", "dark")
+    font_heading = reqs.get("font_heading", "Plus Jakarta Sans")
+    font_body = reqs.get("font_body", "Inter")
+    layout_concept = reqs.get("layout_concept", "")
+    focal_element = reqs.get("focal_element", "")
+    design_critique = reqs.get("design_critique", "")
+    copy_tone = reqs.get("copy_tone", "")
 
-    contexto_arquitetura = f"""Contexto de Arquitetura: {app_name}
-1. Identidade Visual
-Cor Primária: {primary_color}
-
-Cor Secundária: {secondary_color}
+    contexto_arquitetura = f"""Contexto de Arquitetura & Design Direction: {app_name}
+1. Design Direction (Gerada com a Skill /frontend-design)
+Tema: {theme}
+Cor Primária (--primary-color): {primary_color}
+Cor Secundária (--secondary-color): {secondary_color}
+Cor de Fundo (--bg-color): {bg_color}
+Cor de Superfície (--surface-color): {surface_color}
+Cor de Texto Principal (--text-color): {text_color}
+Cor de Texto Secundário (--muted-color): {muted_color}
+Fonte de Títulos (--font-display): {font_heading}
+Fonte de Corpo (--font-sans): {font_body}
+Conceito de Layout: {layout_concept}
+Elemento Focal Único: {focal_element}
+Revisão Anti-Clichê: {design_critique}
+Tom de Escrita UX: {copy_tone}
 
 2. Stack Tecnológica Base
 Frontend: React + Vite
-
-Estilização: TailwindCSS
-
+Estilização: TailwindCSS (usando variáveis semânticas de index.css)
 Backend/Auth/DB: Supabase
 
-3. Regras Estritas de Manutenção (Para IAs)
+3. Regras Estritas de Manutenção (Para Agentes de IA)
 DIRETRIZ 1: Componentes visuais reutilizáveis DEVEM ser criados dentro de 'src/components'.
-
 DIRETRIZ 2: A comunicação com o banco de dados DEVE utilizar estritamente o cliente oficial do Supabase previamente configurado.
-
-DIRETRIZ 3: NENHUMA dependência npm externa (ex: bibliotecas de mapas, carrosséis) deve ser instalada sem aprovação explícita do usuário.
-
-DIRETRIZ 4: Mantenha as rotas protegidas sob o fluxo de autenticação atual.
+DIRETRIZ 3: NENHUMA dependência npm externa deve ser instalada sem aprovação explícita do usuário.
+DIRETRIZ 4: Mantenha as rotas protegidas sob o fluxo de autenticação atual e NÃO duplique o Header/Footer do MainLayout.jsx dentro das páginas filhas.
+DIRETRIZ 5: Toda alteração de interface DEVE seguir os princípios da skill `.agents/skills/frontend-design/SKILL.md` (evitar SaaS-card kit genérico, evitar ALL-CAPS eyebrows repetitivos, usar voz ativa e preservar os tokens semânticos da Design Direction acima).
 """
 
     contexto_path = os.path.join(target_path, "contexto_arquitetura.md")
@@ -662,7 +782,7 @@ DIRETRIZ 4: Mantenha as rotas protegidas sob o fluxo de autenticação atual.
 
     current_logs = state.get("execution_logs", []).copy()
     current_logs.append(
-        "[CodeInjector] Customização injetada fisicamente no ai_config.json e LandingPage.jsx gerada."
+        "[CodeInjector] Design Direction injetada em ai_config.json, index.html, index.css e LandingPage.jsx gerada com a skill frontend-design."
     )
 
     return {"execution_logs": current_logs}

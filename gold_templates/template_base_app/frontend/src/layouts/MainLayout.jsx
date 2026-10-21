@@ -39,33 +39,37 @@ export default function MainLayout() {
   }, []);
 
   const primaryColor = config.primary_color || '#E55A1B';
+  const appName = config.app_name || 'Seu Estabelecimento';
+  const brandInitial = appName.trim().charAt(0).toUpperCase() || 'A';
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-color,#0E0D0C)] text-[var(--text-main,#F5F4F0)]">
+    <div className="min-h-screen flex flex-col bg-[var(--bg-color,#0E0D0C)] text-[var(--text-color,#F5F4F0)] font-sans">
       {/* HEADER / NAVBAR */}
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
+        className={`sticky top-0 z-50 transition-all duration-300 border-b border-[var(--border-color,#2E2924)] ${
           isScrolled
-            ? 'bg-[#0E0D0C]/90 backdrop-blur-md shadow-lg border-b border-[#262320] py-3'
-            : 'bg-transparent border-b border-[#262320]/40 py-4'
+            ? 'bg-[var(--bg-color,#0E0D0C)]/95 backdrop-blur-md shadow-sm py-3'
+            : 'bg-[var(--bg-color,#0E0D0C)] py-4'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           {/* LOGO & BRAND */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div 
-              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md transition-transform group-hover:scale-105"
+          <Link to="/" className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)] rounded-lg">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-105 text-white font-display font-bold text-lg"
               style={{ backgroundColor: primaryColor }}
             >
-              <span className="text-xl">✨</span>
+              {brandInitial}
             </div>
             <div className="flex flex-col">
-              <span className="font-display font-extrabold text-xl tracking-tight text-[#F5F4F0] group-hover:text-[var(--primary-color,#E55A1B)] transition-colors">
-                {config.app_name || 'Seu Estabelecimento'}
+              <span className="font-display font-bold text-xl tracking-tight text-[var(--text-color,#F5F4F0)] group-hover:text-[var(--primary-color,#E55A1B)] transition-colors">
+                {appName}
               </span>
-              <span className="text-[10px] tracking-widest uppercase text-[#A8A29E] font-medium">
-                {config.tagline || 'Experiência & Atendimento'}
-              </span>
+              {config.niche && (
+                <span className="text-xs text-[var(--muted-color,#A8A29E)] font-medium">
+                  {config.niche}
+                </span>
+              )}
             </div>
           </Link>
 
@@ -74,32 +78,34 @@ export default function MainLayout() {
             <Link
               to="/"
               className={`text-sm font-semibold transition-colors ${
-                location.pathname === '/' ? 'text-[var(--primary-color,#E55A1B)]' : 'text-[#A8A29E] hover:text-[#F5F4F0]'
+                location.pathname === '/'
+                  ? 'text-[var(--primary-color,#E55A1B)]'
+                  : 'text-[var(--muted-color,#A8A29E)] hover:text-[var(--text-color,#F5F4F0)]'
               }`}
             >
               Início
             </Link>
             <a
               href="/#destaques"
-              className="text-sm font-semibold text-[#A8A29E] hover:text-[#F5F4F0] transition-colors"
+              className="text-sm font-semibold text-[var(--muted-color,#A8A29E)] hover:text-[var(--text-color,#F5F4F0)] transition-colors"
             >
-              Serviços & Destaques
+              Especialidades
             </a>
             <a
               href="/#sobre"
-              className="text-sm font-semibold text-[#A8A29E] hover:text-[#F5F4F0] transition-colors"
+              className="text-sm font-semibold text-[var(--muted-color,#A8A29E)] hover:text-[var(--text-color,#F5F4F0)] transition-colors"
             >
               Sobre
             </a>
             <a
               href="/#contato"
-              className="text-sm font-semibold text-[#A8A29E] hover:text-[#F5F4F0] transition-colors"
+              className="text-sm font-semibold text-[var(--muted-color,#A8A29E)] hover:text-[var(--text-color,#F5F4F0)] transition-colors"
             >
-              Contato & Horários
+              Contato e horários
             </a>
             <Link
               to="/admin"
-              className="text-xs font-medium text-[#78716C] hover:text-[#A8A29E] transition-colors"
+              className="text-xs font-medium text-[var(--muted-color,#A8A29E)] hover:text-[var(--text-color,#F5F4F0)] transition-colors"
             >
               Painel
             </Link>
@@ -110,12 +116,9 @@ export default function MainLayout() {
             <Link
               to="/agendar"
               style={{ backgroundColor: primaryColor }}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-white shadow-md hover:brightness-110 transition-all duration-200 active:scale-95"
+              className="inline-flex items-center justify-center px-5 py-2.5 min-h-[44px] rounded-xl text-sm font-bold text-white shadow-sm hover:brightness-110 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)]"
             >
-              <span>Agendar Horário</span>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
+              Reservar horário
             </Link>
           </div>
 
@@ -124,14 +127,14 @@ export default function MainLayout() {
             <Link
               to="/agendar"
               style={{ backgroundColor: primaryColor }}
-              className="px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-sm"
+              className="px-3.5 py-2 min-h-[40px] inline-flex items-center rounded-xl text-xs font-bold text-white shadow-sm"
             >
               Agendar
             </Link>
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg bg-[#1F1C19] border border-[#2E2924] text-[#F5F4F0] focus:outline-none"
+              className="p-2 rounded-lg bg-[var(--surface-color,#181614)] border border-[var(--border-color,#2E2924)] text-[var(--text-color,#F5F4F0)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)]"
               aria-label="Abrir Menu"
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -147,44 +150,44 @@ export default function MainLayout() {
 
         {/* MOBILE DRAWER */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-[#171513] border-b border-[#2E2924] px-4 pt-3 pb-6 space-y-3">
+          <div className="md:hidden bg-[var(--surface-color,#181614)] border-b border-[var(--border-color,#2E2924)] px-4 pt-3 pb-6 space-y-3">
             <Link
               to="/"
-              className="block py-2 text-base font-semibold text-[#F5F4F0] hover:text-[var(--primary-color,#E55A1B)]"
+              className="block py-2 text-base font-semibold text-[var(--text-color,#F5F4F0)] hover:text-[var(--primary-color,#E55A1B)]"
             >
               Início
             </Link>
             <a
               href="/#destaques"
-              className="block py-2 text-base font-semibold text-[#A8A29E] hover:text-[#F5F4F0]"
+              className="block py-2 text-base font-semibold text-[var(--muted-color,#A8A29E)] hover:text-[var(--text-color,#F5F4F0)]"
             >
-              Serviços & Destaques
+              Especialidades
             </a>
             <a
               href="/#sobre"
-              className="block py-2 text-base font-semibold text-[#A8A29E] hover:text-[#F5F4F0]"
+              className="block py-2 text-base font-semibold text-[var(--muted-color,#A8A29E)] hover:text-[var(--text-color,#F5F4F0)]"
             >
-              Sobre a Casa
+              Sobre
             </a>
             <a
               href="/#contato"
-              className="block py-2 text-base font-semibold text-[#A8A29E] hover:text-[#F5F4F0]"
+              className="block py-2 text-base font-semibold text-[var(--muted-color,#A8A29E)] hover:text-[var(--text-color,#F5F4F0)]"
             >
-              Contato & Horários
+              Contato e horários
             </a>
             <Link
               to="/admin"
-              className="block py-2 text-sm text-[#78716C] hover:text-[#A8A29E]"
+              className="block py-2 text-sm text-[var(--muted-color,#A8A29E)] hover:text-[var(--text-color,#F5F4F0)]"
             >
-              Painel Administrativo
+              Painel administrativo
             </Link>
             <div className="pt-2">
               <Link
                 to="/agendar"
                 style={{ backgroundColor: primaryColor }}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-center font-bold text-white shadow-md"
+                className="w-full flex items-center justify-center py-3 min-h-[44px] rounded-xl text-center font-bold text-white shadow-sm"
               >
-                Agendar Horário Online
+                Reservar horário online
               </Link>
             </div>
           </div>
@@ -197,90 +200,84 @@ export default function MainLayout() {
       </main>
 
       {/* FOOTER */}
-      <footer className="bg-[#121110] border-t border-[#262320] pt-14 pb-8 text-[#A8A29E] text-sm">
+      <footer className="bg-[var(--surface-color,#181614)] border-t border-[var(--border-color,#2E2924)] pt-14 pb-8 text-[var(--muted-color,#A8A29E)] text-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-[#262320]">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-[var(--border-color,#2E2924)]">
             {/* COL 1: SOBRE */}
-            <div className="md:col-span-1 space-y-4">
-              <div className="flex items-center gap-2.5">
-                <span className="text-xl">✨</span>
-                <span className="font-display font-extrabold text-xl text-[#F5F4F0]">
-                  {config.app_name || 'Seu Estabelecimento'}
-                </span>
-              </div>
-              <p className="text-xs leading-relaxed text-[#A8A29E]">
-                {config.description || 'Excelência em atendimento, profissionais qualificados e agendamento prático para sua comodidade.'}
+            <div className="md:col-span-1 space-y-3">
+              <span className="font-display font-bold text-xl text-[var(--text-color,#F5F4F0)] block">
+                {appName}
+              </span>
+              <p className="text-xs leading-relaxed text-[var(--muted-color,#A8A29E)]">
+                {config.tagline || 'Atendimento com hora marcada e reserva direta pela agenda online.'}
               </p>
             </div>
 
             {/* COL 2: ENDEREÇO */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-[#F5F4F0] text-sm uppercase tracking-wider">
+            <div className="space-y-2">
+              <h4 className="font-semibold text-[var(--text-color,#F5F4F0)] text-sm">
                 Endereço
               </h4>
-              <p className="text-xs leading-relaxed text-[#D6D3D1]">
+              <p className="text-xs leading-relaxed text-[var(--muted-color,#A8A29E)]">
                 {config.address || 'Endereço centralizado da empresa'}
               </p>
               <a
-                href={`https://maps.google.com/?q=${encodeURIComponent(config.address || config.app_name || 'Brasil')}`}
+                href={`https://maps.google.com/?q=${encodeURIComponent(config.address || appName || 'Brasil')}`}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs text-[var(--primary-color,#E55A1B)] hover:underline font-semibold"
               >
-                <span>Ver no Mapa</span>
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
+                <span>Abrir no Google Maps</span>
               </a>
             </div>
 
             {/* COL 3: HORÁRIOS & CONTATO */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-[#F5F4F0] text-sm uppercase tracking-wider">
+            <div className="space-y-2">
+              <h4 className="font-semibold text-[var(--text-color,#F5F4F0)] text-sm">
                 Atendimento
               </h4>
-              <p className="text-xs leading-relaxed text-[#D6D3D1]">
+              <p className="text-xs leading-relaxed text-[var(--muted-color,#A8A29E)]">
                 {config.working_hours || 'Segunda a Sábado em horário comercial'}
               </p>
-              <div className="pt-2">
-                <p className="text-xs text-[#78716C]">Telefone / WhatsApp:</p>
-                <p className="text-xs font-semibold text-[#F5F4F0]">
+              <div className="pt-1">
+                <p className="text-xs text-[var(--muted-color,#A8A29E)]">Telefone / WhatsApp:</p>
+                <p className="text-xs font-semibold text-[var(--text-color,#F5F4F0)]">
                   {config.phone || '(51) 99999-9999'}
                 </p>
               </div>
             </div>
 
             {/* COL 4: RESERVA RÁPIDA */}
-            <div className="space-y-4">
-              <h4 className="font-bold text-[#F5F4F0] text-sm uppercase tracking-wider">
-                Agendamento Digital
+            <div className="space-y-3">
+              <h4 className="font-semibold text-[var(--text-color,#F5F4F0)] text-sm">
+                Agenda online
               </h4>
-              <p className="text-xs text-[#A8A29E] leading-relaxed">
-                Garanta seu atendimento de forma rápida e segura sem complicações.
+              <p className="text-xs text-[var(--muted-color,#A8A29E)] leading-relaxed">
+                Escolha o dia e o horário disponível em poucos segundos.
               </p>
               <Link
                 to="/agendar"
                 style={{ backgroundColor: primaryColor }}
-                className="inline-flex w-full items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-md hover:brightness-110 transition-colors"
+                className="inline-flex w-full items-center justify-center px-4 py-2.5 min-h-[44px] rounded-xl text-xs font-bold text-white shadow-sm hover:brightness-110 transition-colors"
               >
-                <span>Agendar Agora</span>
+                Reservar horário
               </Link>
             </div>
           </div>
 
           {/* BOTTOM BAR */}
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#78716C]">
+          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--muted-color,#A8A29E)]">
             <p>
-              © {new Date().getFullYear()} {config.app_name || 'Seu Estabelecimento'}. Todos os direitos reservados.
+              © {new Date().getFullYear()} {appName}. Todos os direitos reservados.
             </p>
             <div className="flex items-center gap-6">
-              <Link to="/agendar" className="hover:text-[#F5F4F0] transition-colors">
+              <Link to="/agendar" className="hover:text-[var(--text-color,#F5F4F0)] transition-colors">
                 Agendamentos
               </Link>
-              <Link to="/login" className="hover:text-[#F5F4F0] transition-colors">
-                Área Restrita
+              <Link to="/login" className="hover:text-[var(--text-color,#F5F4F0)] transition-colors">
+                Área restrita
               </Link>
-              <Link to="/admin" className="hover:text-[#F5F4F0] transition-colors">
+              <Link to="/admin" className="hover:text-[var(--text-color,#F5F4F0)] transition-colors">
                 Gestão
               </Link>
             </div>

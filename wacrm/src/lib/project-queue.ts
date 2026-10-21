@@ -23,6 +23,19 @@ export interface EnqueueProjectInput {
   branding?: {
     palette_name?: string;
     primary_color_hex?: string;
+    secondary_color_hex?: string;
+    bg_color_hex?: string;
+    surface_color_hex?: string;
+    text_color_hex?: string;
+    muted_color_hex?: string;
+    theme?: string;
+    font_heading?: string;
+    font_body?: string;
+    layout_concept?: string;
+    focal_element?: string;
+    design_critique?: string;
+    copy_tone?: string;
+    [key: string]: unknown;
   };
   modules?: string[];
   reference_links?: Array<{ url: string; type?: string; notes?: string }>;

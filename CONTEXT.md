@@ -1,6 +1,6 @@
 # AI Software Factory & WhatsApp CRM
 
-An integrated ecosystem that captures and qualifies business leads in a WhatsApp CRM, enriches them via multi-agent RAG analysis, and autonomously provisions customized web applications from a Gold Template.
+An integrated ecosystem that captures and qualifies business leads in a WhatsApp CRM, consolidates their Lead Briefing to synthesize a tailored Design Direction, and autonomously provisions customized web applications from a Gold Template.
 
 ## Language
 
@@ -13,6 +13,10 @@ _Avoid_: Payload, prompt text, raw lead
 **Niche Profile**:
 The canonical brand archetype for a market segment (such as Odontologia, Barbearia, Estética, Gastronomia, or Pet), pairing hex color tokens, theme polarity, typography, and curated showcase media.
 _Avoid_: Niche media, fallback colors, theme preset
+
+**Design Direction**:
+The client-specific visual specification derived from a Lead Briefing and Niche Profile before code generation, defining a 4–6 color token palette, display and body typography roles, layout concept, and a single focal design gesture free of generic AI template clichés.
+_Avoid_: Design prompt, style config, theme json, UI prompt
 
 **Project Queue Item**:
 A tracked build lifecycle record in `fila_projetos` linking a CRM Contact to its Lead Briefing, tenant database credentials, status (`pendente`, `processando`, `concluido`, `erro`), and generated configuration.

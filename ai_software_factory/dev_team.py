@@ -17,6 +17,7 @@ if hasattr(sys.stdout, "reconfigure"):
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 from config import ResilientLLM
+from ai_software_factory import skill_loader
 
 load_dotenv()
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
@@ -141,11 +142,13 @@ def frontend_node(state: AgentState):
     time.sleep(obter_delay())
     llm = obter_llm(temperature=0)
     llm_com_ferramentas = llm.bind_tools(ferramentas_dev)
+    coding_skill = skill_loader.get_frontend_coding_skill_prompt()
 
     system_prompt = (
-        f"Você é um Engenheiro Frontend Sênior especialista em React, Vite e TailwindCSS. "
-        f"Sua missão é realizar alterações visuais e estruturais nos componentes do projeto localizado em: {state['project_path']}. "
-        f"Você DEVE OBRIGATORIAMENTE usar a ferramenta 'ler_arquivo_codigo' para ler o arquivo 'contexto_arquitetura.md' na raiz do projeto ANTES de tentar ler ou alterar qualquer outro arquivo."
+        f"Você é um Engenheiro Frontend Sênior e Design Engineer especialista em React, Vite e TailwindCSS. "
+        f"Sua missão é realizar alterações visuais e estruturais nos componentes do projeto localizado em: {state['project_path']}.\n"
+        f"Você DEVE OBRIGATORIAMENTE usar a ferramenta 'ler_arquivo_codigo' para ler o arquivo 'contexto_arquitetura.md' na raiz do projeto ANTES de tentar ler ou alterar qualquer outro arquivo.\n\n"
+        f"{coding_skill}"
     )
 
     novas_messages = executar_agente_com_ferramentas(
