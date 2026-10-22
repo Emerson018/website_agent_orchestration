@@ -4,7 +4,7 @@ import time
 from operator import add
 from typing import Annotated, Literal, Sequence, TypedDict
 from dotenv import load_dotenv
-from langchain_core.messages import BaseMessage, SystemMessage, ToolMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel
 
@@ -15,9 +15,9 @@ if hasattr(sys.stdout, "reconfigure"):
         pass
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import config
-from config import ResilientLLM
-from ai_software_factory import skill_loader
+from ai_software_factory import llm_gateway, skill_loader
+from ai_software_factory.llm_gateway import ResilientLLM
+from ai_software_factory.workspace_provisioner import TenantWorkspace
 
 load_dotenv()
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
@@ -30,7 +30,7 @@ def obter_delay():
 
 
 def obter_llm(model_openai="gpt-4o", model_gemini="gemini-2.5-flash", temperature=0):
-    llm = config.get_llm(
+    llm = llm_gateway.get_llm(
         temperature=temperature, model_openai=model_openai, model_gemini=model_gemini
     )
     if llm is None:
@@ -229,3 +229,37 @@ rotas = {
 
 builder.add_conditional_edges("supervisor", lambda state: state["next"], rotas)
 dev_squad_graph = builder.compile()
+
+
+def refine_tenant_workspace(
+    project_path: str,
+    task: str,
+    initial_prompt: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Passe 3 (Post-Generation Refinement Squad):
+    Aciona a equipe multiagente com ferramentas (frontend, backend, QA e devops)
+    para realizar refinamentos e customizações granulares sobre um Tenant Workspace já provisionado.
+    """
+    workspace = TenantWorkspace(project_path)
+    user_task = initial_prompt or f"Realize a seguinte tarefa no projeto: {task}"
+    initial_messages = [HumanMessage(content=user_task)]
+
+    estado_inicial: AgentState = {
+        "messages": initial_messages,
+        "next": "supervisor",
+        "project_path": workspace.target_path,
+        "task": task,
+        "historico_nos": [],
+    }
+
+    resultado = dev_squad_graph.invoke(estado_inicial)
+    return {
+        "success": True,
+        "project_path": workspace.target_path,
+        "workspace": workspace,
+        "task": task,
+        "messages": resultado.get("messages", []),
+        "historico_nos": resultado.get("historico_nos", []),
+    }
+

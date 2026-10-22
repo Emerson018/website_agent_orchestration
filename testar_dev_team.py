@@ -15,42 +15,31 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from dotenv import load_dotenv
 load_dotenv()
 
-from ai_software_factory.dev_team import dev_squad_graph
+from ai_software_factory.dev_team import refine_tenant_workspace
 
 def rodar_teste():
     project_path = "workspace/Sorriso_perfeito"
     task = "Adicionar uma barra de navegação lateral (Sidebar) elegante e responsiva no frontend do projeto, contendo links para as rotas/seções principais, estilizada de acordo com o design system do projeto."
     
-    print(f"Iniciando o time de desenvolvimento para a tarefa:")
+    print(f"Iniciando o time de desenvolvimento (Passe 3 — Refinement Squad):")
     print(f"Projeto: {project_path}")
     print(f"Tarefa: {task}")
     print("-" * 50)
     
-    # Estado inicial do grafo de agentes
-    estado_inicial = {
-        "messages": [HumanMessage(content=task)],
-        "project_path": project_path,
-        "task": task,
-        "next": "supervisor",
-        "historico_nos": []
-    }
-    
-    # Executa o fluxo de agentes
     try:
-        # Executa o grafo
-        resultado = dev_squad_graph.invoke(estado_inicial)
+        resultado = refine_tenant_workspace(project_path, task)
         
         print("\n" + "=" * 50)
-        print("Execução finalizada!")
+        print("Execução finalizada com sucesso!")
         print("=" * 50)
         
-        # Exibe o histórico de mensagens trocadas
         print("\nHistórico de Mensagens dos Agentes:")
         for msg in resultado.get("messages", []):
             role = "Agente"
-            if msg.type == "human":
+            if hasattr(msg, "type") and msg.type == "human":
                 role = "Sistema/Tarefa"
-            print(f"\n[{role}]: {msg.content}")
+            content = getattr(msg, "content", str(msg))
+            print(f"\n[{role}]: {content}")
             if hasattr(msg, "tool_calls") and msg.tool_calls:
                 print(f"Chamadas de ferramentas: {msg.tool_calls}")
                 

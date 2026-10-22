@@ -261,6 +261,169 @@ class TestAgentsAndRagSeams(unittest.TestCase):
         self.assertFalse(hasattr(rag_pipeline, "get_embed_model"))
         self.assertFalse(hasattr(rag_pipeline, "chunk_text"))
 
+    def test_llm_gateway_structured_synthesis_and_code_generation(self):
+        from ai_software_factory import llm_gateway
+        from ai_software_factory.schemas import ClientConfig
+
+        class MockLLM:
+            def with_structured_output(self, schema, **kwargs):
+                return self
+
+            def invoke(self, messages, **kwargs):
+                return {
+                    "app_name": "Studio Belle",
+                    "primary_color": "#EC4899",
+                    "secondary_color": "#F472B6",
+                    "bg_color": "#FFF1F2",
+                    "surface_color": "#FFFFFF",
+                    "text_color": "#1C1917",
+                    "muted_color": "#57534E",
+                    "theme": "light",
+                    "font_heading": "Cormorant Garamond",
+                    "font_body": "DM Sans",
+                }
+
+        res = llm_gateway.synthesize_structured(
+            system_prompt="Defina o design",
+            user_prompt="Studio Belle estética",
+            schema_class=ClientConfig,
+            adapter=MockLLM(),
+        )
+        self.assertIsInstance(res, ClientConfig)
+        self.assertEqual(res.app_name, "Studio Belle")
+        self.assertEqual(res.primary_color, "#EC4899")
+
+        # Test generate_code strips markdown fences and validates
+        def mock_code_adapter(sys_p, usr_p):
+            return "```jsx\nexport default function Page() { return <h1>Olá</h1>; }\n```"
+
+        code = llm_gateway.generate_code(
+            system_prompt="Gere o componente",
+            user_prompt="Landing page",
+            validator_fn=lambda c: "export default" in c,
+            adapter=mock_code_adapter,
+        )
+        self.assertEqual(code, "export default function Page() { return <h1>Olá</h1>; }")
+
+    def test_tenant_workspace_deep_module(self):
+        from ai_software_factory.workspace_provisioner import TenantWorkspace
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            template_dir = os.path.join(tmpdir, "template")
+            os.makedirs(os.path.join(template_dir, "frontend", "src", "pages"))
+            with open(os.path.join(template_dir, "frontend", "src", "App.jsx"), "w", encoding="utf-8") as f:
+                f.write("import BookingPage from './pages/BookingPage';\nconst routes = [{ index: true, element: <BookingPage /> }];")
+            with open(os.path.join(template_dir, "frontend", "index.html"), "w", encoding="utf-8") as f:
+                f.write("<html><head><title>Old</title></head><body></body></html>")
+            with open(os.path.join(template_dir, "frontend", "src", "index.css"), "w", encoding="utf-8") as f:
+                f.write(":root { --old: 1; }")
+
+            workspace_root = os.path.join(tmpdir, "workspace")
+            ws = TenantWorkspace.provision("Barbearia Dom Pedro", template_path=template_dir, workspace_root=workspace_root)
+            self.assertTrue(os.path.isdir(ws.project_path))
+
+            direction = {
+                "app_name": "Barbearia Dom Pedro",
+                "primary_color": "#D4AF37",
+                "secondary_color": "#1E293B",
+                "bg_color": "#1C1917",
+                "surface_color": "#26221F",
+                "text_color": "#FAFAF9",
+                "font_heading": "Playfair Display",
+                "font_body": "Work Sans",
+            }
+            ws.apply_design_direction(direction)
+
+            with open(os.path.join(ws.project_path, "frontend", "index.html"), "r", encoding="utf-8") as f:
+                html = f.read()
+            self.assertIn("Playfair+Display", html)
+            self.assertIn("<title>Barbearia Dom Pedro</title>", html)
+
+            with open(os.path.join(ws.project_path, "frontend", "src", "index.css"), "r", encoding="utf-8") as f:
+                css = f.read()
+            self.assertIn("--primary-color: #D4AF37;", css)
+            self.assertIn("--surface-color: #26221F;", css)
+
+            # Test landing page writing
+            page_path = ws.write_landing_page("export default function LandingPage() {}")
+            self.assertTrue(os.path.isfile(page_path))
+
+    def test_structured_project_queue_briefing_payload(self):
+        from ai_software_factory import project_queue
+
+        payload = {
+            "project_name": "Pizzaria Napoli",
+            "branding": {
+                "primary_color_hex": "#EAB308",
+                "secondary_color_hex": "#DC2626",
+                "bg_color_hex": "#1C1917",
+                "theme": "dark",
+                "font_heading": "Fraunces",
+                "font_body": "DM Sans",
+            },
+            "client_info": {
+                "phone": "(11) 98888-7777",
+                "email": "contato@napoli.com",
+            },
+        }
+
+        reqs = project_queue.extract_requirements_from_briefing_payload(payload)
+        self.assertEqual(reqs["app_name"], "Pizzaria Napoli")
+        self.assertEqual(reqs["primary_color"], "#EAB308")
+        self.assertEqual(reqs["font_heading"], "Fraunces")
+        self.assertEqual(reqs["phone"], "(11) 98888-7777")
+
+        state = project_queue.build_initial_agent_state(
+            mensagem_lead="Pizzaria artesanal Napoli",
+            supabase_url="https://test.supabase.co",
+            supabase_anon_key="anon-key",
+            supabase_service_role_key="service-role-key",
+            briefing_payload=payload,
+        )
+        self.assertEqual(state["customization_requirements"]["app_name"], "Pizzaria Napoli")
+        self.assertEqual(state["lead_raw_json"]["supabase_service_role_key"], "service-role-key")
+
+    def test_json_repair_and_code_generation_with_validator(self):
+        from ai_software_factory import llm_gateway
+
+        # Test JSON with trailing commas repaired cleanly
+        malformed_json_str = '```json\n{"app_name": "Studio Belle", "services": ["Corte", "Barba",],}\n```'
+        parsed = llm_gateway.extract_json_from_text(malformed_json_str)
+        self.assertIsNotNone(parsed)
+        self.assertEqual(parsed["app_name"], "Studio Belle")
+        self.assertEqual(len(parsed["services"]), 2)
+
+        # Test generate_code validator fallback
+        invalid_code_adapter = lambda sys, usr: "function incomplete() {"
+        res = llm_gateway.generate_code(
+            system_prompt="sys",
+            user_prompt="usr",
+            adapter=invalid_code_adapter,
+            validator_fn=lambda c: "export default" in c,
+            fallback_fn=lambda: "export default function Fallback() { return <div />; }",
+        )
+        self.assertIn("Fallback", res)
+        self.assertIn("export default", res)
+
+    def test_dev_team_refine_tenant_workspace_interface(self):
+        from ai_software_factory import dev_team
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            ws_path = os.path.join(tmp_dir, "workspace", "clinica")
+            os.makedirs(ws_path, exist_ok=True)
+            with unittest.mock.patch.object(
+                dev_team.dev_squad_graph,
+                "invoke",
+                return_value={"messages": ["mocked"], "historico_nos": ["supervisor"]},
+            ):
+                res = dev_team.refine_tenant_workspace(
+                    project_path=ws_path,
+                    task="adicionar botao de agendamento",
+                )
+                self.assertTrue(res["success"])
+                self.assertEqual(res["workspace"].target_path, ws_path.replace("\\", "/"))
+                self.assertEqual(res["workspace"].project_path, ws_path.replace("\\", "/"))
+                self.assertEqual(res["historico_nos"], ["supervisor"])
+
 
 if __name__ == "__main__":
     unittest.main()

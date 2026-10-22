@@ -30,6 +30,15 @@ _Avoid_: Base project, starter kit, boilerplate
 The isolated project directory under `workspace/<slug>` and optional single-tenant Supabase database provisioned for a specific client.
 _Avoid_: Client folder, target folder, output dir
 
+**Generation Lifecycle (The Three Passes)**:
+- **Pass 1 (Design Direction)**: Intake and aesthetic synthesis from Lead Briefing and Niche Profile into `ClientConfig` (`ai_config.json`).
+- **Pass 2 (Factory Provisioning)**: Deterministic code injection and workspace provisioning by `TenantWorkspace` and `code_injector_node`.
+- **Pass 3 (Refinement Squad)**: Granular post-generation iterative enhancements executed by `dev_team.py` (`refine_tenant_workspace`) with code tools.
+
+**LLM Gateway**:
+The deep module (`ai_software_factory/llm_gateway.py`) encapsulating model selection, rate-limit retries, local LM Studio HTTP transport, markdown fence cleanup, and structured schema synthesis behind a unified interface.
+_Avoid_: Raw LLM caller, ChatOpenAI wrapper
+
 ### Scheduling & Client Applications
 
 **Booking**:

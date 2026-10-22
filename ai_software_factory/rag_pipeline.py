@@ -14,7 +14,9 @@ from dotenv import load_dotenv
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
-from ai_software_factory import skill_loader
+from ai_software_factory import llm_gateway, skill_loader
+from ai_software_factory.niche_profiles import resolve_niche_profile
+from ai_software_factory.intake_parser import extract_branding_from_report
 from ai_software_factory.schemas import ClientConfig
 
 # Carrega as variáveis de ambiente do orquestrador
@@ -350,75 +352,55 @@ async def generate_rag_report(
         if isinstance(doc_chunks, list)
         else str(doc_chunks or "")
     )
-    profile = config.resolve_niche_profile(context, app_name=contact_name)
+    profile = resolve_niche_profile(context, app_name=contact_name)
     design_skill_block = skill_loader.get_design_planning_skill_prompt()
 
-    llm_info = config.describe_active_llm()
+    llm_info = llm_gateway.describe_active_llm()
     mecanismo_usado = llm_info["label"]
-    llm = config.get_llm(temperature=0.2, adapter=llm_adapter)
 
-    if llm is not None:
-        try:
-            system_prompt = (
-                "Você é o Design Lead responsável por sintetizar a Design Direction completa de um cliente "
-                "a partir do seu Lead Briefing consolidado.\n\n"
-                f"{design_skill_block}\n\n"
-                "RETORNE ESTRITAMENTE UM OBJETO JSON VÁLIDO correspondente ao schema ClientConfig contendo: "
-                "app_name, primary_color, secondary_color, bg_color, surface_color, text_color, muted_color, "
-                "theme, font_heading, font_body, niche, tagline, color_reasoning, layout_concept, "
-                "focal_element, design_critique, copy_tone."
-            )
-            user_prompt = (
-                f"Cliente / Estabelecimento: {contact_name}\n\n"
-                f"Lead Briefing consolidado:\n{context}"
-            )
+    system_prompt = (
+        "Você é o Design Lead responsável por sintetizar a Design Direction completa de um cliente "
+        "a partir do seu Lead Briefing consolidado.\n\n"
+        f"{design_skill_block}\n\n"
+        "RETORNE ESTRITAMENTE UM OBJETO JSON VÁLIDO correspondente ao schema ClientConfig contendo: "
+        "app_name, primary_color, secondary_color, bg_color, surface_color, text_color, muted_color, "
+        "theme, font_heading, font_body, niche, tagline, color_reasoning, layout_concept, "
+        "focal_element, design_critique, copy_tone."
+    )
+    user_prompt = (
+        f"Cliente / Estabelecimento: {contact_name}\n\n"
+        f"Lead Briefing consolidado:\n{context}"
+    )
 
-            if llm_info["provider"] == "local" and llm_adapter is None:
-                raw_res = llm.invoke(
-                    [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ]
-                )
-                content = raw_res.content if hasattr(raw_res, "content") else str(raw_res)
-                json_match = re.search(r"\{.*\}", content, re.DOTALL)
-                parsed_dir = json.loads(json_match.group(0) if json_match else content)
-            else:
-                structured_llm = llm.with_structured_output(ClientConfig)
-                res_obj = structured_llm.invoke(
-                    [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ]
-                )
-                if hasattr(res_obj, "model_dump"):
-                    parsed_dir = res_obj.model_dump()
-                elif isinstance(res_obj, dict):
-                    parsed_dir = res_obj
-                else:
-                    content = res_obj.content if hasattr(res_obj, "content") else str(res_obj)
-                    json_match = re.search(r"\{.*\}", content, re.DOTALL)
-                    parsed_dir = json.loads(json_match.group(0) if json_match else content)
+    def fallback_action():
+        return profile
 
-            merged_dir = dict(profile)
-            for k, v in (parsed_dir or {}).items():
-                if v is not None and str(v).strip() != "":
-                    merged_dir[k] = v
+    res_obj = llm_gateway.synthesize_structured(
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        schema_class=ClientConfig,
+        temperature=0.2,
+        adapter=llm_adapter,
+        fallback_fn=fallback_action,
+    )
 
-            return render_design_direction_report(
-                contact_name=contact_name,
-                direction=merged_dir,
-                profile=profile,
-                mecanismo_usado=mecanismo_usado,
-            )
-        except Exception as err:
-            print(
-                f"[Design Direction Synthesis] Falha na chamada LLM ({err}). Usando síntese determinística local..."
-            )
-            mecanismo_usado = "Fallback Heurístico Local (Motor Python)"
+    if isinstance(res_obj, ClientConfig):
+        parsed_dir = res_obj.model_dump()
+    elif isinstance(res_obj, dict):
+        parsed_dir = res_obj
+    else:
+        parsed_dir = profile
 
-    return generate_fallback_rag_report(
-        contact_name, context, mecanismo_usado=mecanismo_usado
+    merged_dir = dict(profile)
+    for k, v in (parsed_dir or {}).items():
+        if v is not None and str(v).strip() != "":
+            merged_dir[k] = v
+
+    return render_design_direction_report(
+        contact_name=contact_name,
+        direction=merged_dir,
+        profile=profile,
+        mecanismo_usado=mecanismo_usado,
     )
 
 

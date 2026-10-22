@@ -115,6 +115,7 @@ app.post('/api/projetos', async (req, res) => {
       additional_data,
       supabase_url,
       supabase_anon_key,
+      supabase_service_role_key,
       auto_process
     } = req.body;
 
@@ -261,7 +262,10 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
       console.error('Erro ao resolver contato no CRM antes da fila:', contactLookupErr);
     }
 
-    // Insere no Supabase na tabela fila_projetos com os metadados de conta e contact_id
+    // Higieniza payload do Lead Briefing para armazenar metadados sem duplicar credenciais de banco
+    const { supabase_service_role_key: _srk, supabase_anon_key: _sak, ...cleanBriefing } = req.body;
+
+    // Insere no Supabase na tabela fila_projetos com os metadados de conta, briefing estruturado e contact_id
     const { data, error } = await supabase
       .from('fila_projetos')
       .insert([
@@ -272,7 +276,9 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
             account_id: defaultAccountId,
             user_id: defaultUserId,
             ...(contactId ? { contact_id: contactId } : {}),
-            project_name: project_name
+            project_name: project_name,
+            briefing_payload: cleanBriefing,
+            supabase_service_role_key: supabase_service_role_key || null
           },
           supabase_url: supabase_url || null,
           supabase_anon_key: supabase_anon_key || null
