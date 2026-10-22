@@ -1,3 +1,16 @@
+/**
+ * Normalises a Date or date string (YYYY-MM-DD) into a local Date instance,
+ * avoiding ECMAScript's UTC-midnight rollback in western timezones.
+ */
+export function parseLocalDate(d: Date | string): Date {
+  if (d instanceof Date) return d
+  if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.trim())) {
+    const [y, m, day] = d.trim().split('-').map(Number)
+    return new Date(y, m - 1, day, 12, 0, 0)
+  }
+  return new Date(d)
+}
+
 // Centralised date helpers for the dashboard so every chart / card
 // agrees on what "today", "day boundary", and "day of week" mean.
 // All boundaries are computed in the user's LOCAL timezone — which is
@@ -17,7 +30,7 @@ export function daysAgoStart(days: number): Date {
 
 /** Date-only key (YYYY-MM-DD) for bucketing rows by local calendar day. */
 export function localDayKey(d: Date | string): string {
-  const date = typeof d === 'string' ? new Date(d) : d
+  const date = parseLocalDate(d)
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
@@ -44,8 +57,9 @@ export function lastNDayKeys(n: number): string[] {
  * ISO day-of-week where 0 = Monday … 6 = Sunday. JavaScript's native
  * getDay() uses 0 = Sunday which is awkward for most business charts.
  */
-export function mondayIndex(d: Date): number {
-  const jsDow = d.getDay() // 0..6 with Sunday=0
+export function mondayIndex(d: Date | string): number {
+  const date = parseLocalDate(d)
+  const jsDow = date.getDay() // 0..6 with Sunday=0
   return (jsDow + 6) % 7
 }
 

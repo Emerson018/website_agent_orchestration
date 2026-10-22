@@ -501,7 +501,7 @@ app.post('/api/projetos/:id/processar', async (req, res) => {
   } catch (err) {
     console.error(`Erro ao disparar processamento da fábrica para projeto ${id}:`, err.message);
     if (!res.headersSent) {
-      res.status(550).json({ error: 'Erro ao disparar processamento da fábrica de IA.', details: err.message });
+      res.status(500).json({ error: 'Erro ao disparar processamento da fábrica de IA.', details: err.message });
     }
   }
 });
