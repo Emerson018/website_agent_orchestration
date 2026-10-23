@@ -1,87 +1,101 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-
 @import "tailwindcss";
 
 :root {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --primary: 99 102 241; /* RGB components of Indigo-500 */
-  --primary-glow: rgba(99, 102, 241, 0.15);
-  background-color: #030712; /* gray-950 */
-  color: #f3f4f6; /* gray-100 */
+  --surface-canvas: #12151B;
+  --surface-well: #141820;
+  --surface-panel: #191D26;
+  --surface-elevated: #202632;
+  --ink-primary: #ECEEF2;
+  --ink-muted: #949BA8;
+  --accent-amber: #E59A28;
+  --accent-amber-hover: #D48817;
+  --status-emerald: #22C55E;
+  --border-line: #282F3D;
+  --border-strong: #384152;
+
+  --font-display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 }
 
-/* Custom scrollbars */
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background-color: var(--surface-canvas);
+    color: var(--ink-primary);
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--surface-canvas);
+    color: var(--ink-primary);
+    margin: 0;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
+  }
+
+  code, pre, .font-mono, .tabular-nums {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Subtle CAD grid texture limited to the top specification header */
+.drafting-surface {
+  background-color: var(--surface-canvas);
+  background-image: radial-gradient(#262D3B 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Structural dark slate specification sheet */
+.spec-sheet {
+  background-color: var(--surface-panel);
+  border: 1px solid var(--border-line);
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.35);
+}
+
+.spec-well {
+  background-color: var(--surface-well);
+  border: 1px solid var(--border-line);
+}
+
+/* Custom dark scrollbars */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0b0f19;
+  background: #12151B;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1f2937;
+  background: #282F3D;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+  background: #384152;
 }
 
-/* Custom utilities */
-.glass-panel {
-  background: rgba(17, 24, 39, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Keyboard accessibility focus ring */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent-amber);
+  outline-offset: 2px;
 }
 
-.glass-panel-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.glass-panel-hover:hover {
-  background: rgba(17, 24, 39, 0.85);
-  border-color: rgba(var(--primary), 0.4);
-  box-shadow: 0 10px 30px -10px var(--primary-glow);
-  transform: translateY(-2px);
-}
-
-/* Animations */
-@keyframes float {
-  0%, 100% {
-    transform: translate3d(0, 0, 0);
-  }
-  50% {
-    transform: translate3d(0, -10px, 0);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-  backface-visibility: hidden;
-  will-change: transform;
-}
-
-.ambient-glow {
-  filter: blur(80px);
-  opacity: 0.35;
-  backface-visibility: hidden;
-  transform: translate3d(0, 0, 0);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.4s ease-out forwards;
-}
-
-@keyframes slideUp {
-  from { transform: translateY(12px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.animate-slideUp {
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-

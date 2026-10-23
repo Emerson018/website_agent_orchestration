@@ -506,7 +506,7 @@ app.post('/api/projetos/:id/processar', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`==================================================`);
   console.log(`Servidor Backend rodando com sucesso na porta ${PORT}`);
   console.log(`URL base da API: http://localhost:${PORT}`);
@@ -515,4 +515,16 @@ app.listen(PORT, () => {
   console.log(`Suporte a branding RAG ativo.`);
   console.log(`Suporte a geração offline sem Supabase prévio ativo.`);
   console.log(`==================================================`);
+});
+
+// Evita race condition de ECONNRESET em conexões keep-alive com o proxy do Vite
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000;
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Backend] Unhandled Promise Rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[Backend] Uncaught Exception:', err);
 });
