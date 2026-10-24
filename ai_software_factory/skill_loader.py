@@ -53,7 +53,26 @@ def get_web_design_guidelines_summary() -> str:
         "- Estados de foco de teclado explícitos (`focus-visible:outline-none focus-visible:ring-2`).\n"
         "- Áreas de toque em botões e links interativos com altura mínima confortável no mobile (`py-3` / `min-h-[44px]`).\n"
         "- Largura de linha de leitura contínua limitada a menos de 80 caracteres (`max-w-prose` ou `max-w-2xl`).\n"
-        "- Respeito a movimento reduzido: evite animações não acionadas pelo usuário espalhadas por todos os cards."
+        "- Respeito a movimento reduzido: animações devem ser intencionais, coreografadas e fluidas."
+    )
+
+
+def get_motion_design_system_guidelines() -> str:
+    """
+    Diretrizes canônicas do Motion Design System (baseadas no padrão validado no 20barra9):
+    - Motor: `framer-motion` (import { motion, AnimatePresence } from 'framer-motion')
+    - Coreografia de entrada no Hero: staggerChildren (0.12 a 0.16s) e fade-up suave.
+    - Vitrine / Cards / Seções: whileInView={{ opacity: 1, y: 0 }} com viewport={{ once: true, margin: '-50px' }}.
+    - Microinterações e feedback tátil: whileHover={{ scale: 1.02 }} e whileTap={{ scale: 0.96 }} nos botões principais.
+    - Offset de âncora: Toda `<section id="...">` DEVE conter `scroll-mt-24` para não colidir com o header sticky.
+    """
+    return (
+        "## Motion Design System & Kinetic Layout (Padrão Oficial de Animação — 20barra9)\n"
+        "O template possui suporte nativo a `framer-motion`. Adicione dinamismo autoral e vida ao layout:\n"
+        "1. Coreografia de Entrada do Hero: use `motion.div` com variantes e `staggerChildren` (ex: 0.15s) para o badge, título, subtítulo e CTAs entrarem de forma elegante.\n"
+        "2. Revelação ao Rolar a Página (Scroll Triggers): use `whileInView={{ opacity: 1, y: 0 }}` com `viewport={{ once: true, margin: '-40px' }}` nos cards de serviços/produtos e seções explicativas.\n"
+        "3. Feedback Tátil nos Botões e CTAs: aplique `whileHover={{ scale: 1.02 }}` e `whileTap={{ scale: 0.96 }}` em elementos interativos principais para dar sensação tátil de app nativo.\n"
+        "4. Invariante de Rolagem de Âncoras: TODA seção com `id` (ex: `id=\"inicio\"`, `id=\"destaques\"`, `id=\"sobre\"`, `id=\"contato\"`) DEVE incluir a classe `scroll-mt-24` para compensar a altura do Navbar sticky e nunca sobrepor o título."
     )
 
 
@@ -70,12 +89,13 @@ def get_design_planning_skill_prompt() -> str:
         f"{frontend_skill}\n\n"
         "=== SKILL COMPLEMENTAR: STOP SLOP (ESCRITA HUMANA E DIRETA) ===\n"
         f"{stop_slop}\n\n"
-        "=== REGRAS DE EXECUÇÃO DO PASSE 1 (DESIGN DIRECTION) ===\n"
+        "=== REGRAS DE EXECUÇÃO DO PASSE 1 (DESIGN DIRECTION & MOTION) ===\n"
         "1. Fundamente todas as decisões na matéria-prima real do negócio do cliente (materiais, ambiente físico, vocabulário do setor).\n"
         "2. Defina uma paleta semântica de 6 cores HEX (`primary_color`, `secondary_color`, `bg_color`, `surface_color`, `text_color`, `muted_color`) coerente com a polaridade (`theme`: 'light' ou 'dark').\n"
         "3. Escolha deliberadamente `font_heading` e `font_body` (Google Fonts) com personalidade distinta para o nicho.\n"
         "4. Especifique o `layout_concept` (alinhamento, estrutura editorial/assimétrica/grade) e um único `focal_element` memorável ('Spend your boldness in one place').\n"
-        "5. Execute a revisão crítica (`design_critique`): rejeite os 5 tells de IA listados na skill (creme #F4F1EA + terracota #D97757 sem relação com o briefing, fundo quase preto genérico para clínicas claras, SaaS-card kit de 3 cards idênticos, eyebrows ALL-CAPS em cada seção e setas '→' anexadas a botões)."
+        "5. Motion & Kinetic Polish: planeje a coreografia de abertura (Hero) e a sensação tátil condizente com a energia do estabelecimento.\n"
+        "6. Execute a revisão crítica (`design_critique`): rejeite os 5 tells de IA listados na skill (creme #F4F1EA + terracota #D97757 sem relação com o briefing, fundo quase preto genérico para clínicas claras, SaaS-card kit de 3 cards idênticos, eyebrows ALL-CAPS em cada seção e setas '→' anexadas a botões)."
     )
 
 
@@ -84,11 +104,12 @@ def get_frontend_coding_skill_prompt(
 ) -> str:
     """
     Monta o bloco de instruções da skill `/frontend-design` + `stop-slop` +
-    `web-design-guidelines` para o Passe 2 (Geração e Edição de Código JSX/CSS).
+    `web-design-guidelines` + `motion-design-system` para o Passe 2 (Geração e Edição de Código JSX/CSS).
     """
     frontend_skill = get_frontend_design_skill()
     stop_slop = get_stop_slop_skill()
     web_guidelines = get_web_design_guidelines_summary()
+    motion_guidelines = get_motion_design_system_guidelines()
 
     direction_block = ""
     if design_direction:
@@ -116,6 +137,7 @@ def get_frontend_coding_skill_prompt(
         f"{frontend_skill}\n\n"
         "=== SKILL COMPLEMENTAR: STOP SLOP (UX WRITING & COPY) ===\n"
         f"{stop_slop}\n\n"
-        f"{web_guidelines}\n"
+        f"{web_guidelines}\n\n"
+        f"{motion_guidelines}\n"
         f"{direction_block}"
     )

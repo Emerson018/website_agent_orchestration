@@ -21,6 +21,36 @@ export default function MainLayout() {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
+  // Suporte a scroll suave e navegação por âncoras na mesma rota e entre rotas
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setMobileMenuOpen(false);
+  };
+
+  const handleNavClick = (hashId) => {
+    setMobileMenuOpen(false);
+    if (location.pathname === '/') {
+      const el = document.getElementById(hashId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (location.pathname === '/' && location.hash) {
+      const id = location.hash.replace('#', '');
+      const el = document.getElementById(id);
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }, 80);
+      }
+    } else if (location.pathname !== '/' || !location.hash) {
+      window.scrollTo(0, 0);
+    }
+  }, [location.pathname, location.hash]);
+
   useEffect(() => {
     async function loadConfig() {
       try {
@@ -50,7 +80,7 @@ export default function MainLayout() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           {/* LOGO & BRAND */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/" onClick={scrollToTop} className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E55A1B] to-[#D97706] flex items-center justify-center shadow-md shadow-[#E55A1B]/20 group-hover:scale-105 transition-transform">
               <span className="text-xl">🔥</span>
             </div>
@@ -64,30 +94,36 @@ export default function MainLayout() {
             </div>
           </Link>
 
-          {/* DESKTOP NAV LINKS */}
+          {/* DESKTOP NAV LINKS (ORDEM VISUAL CORRETA: Início -> A Casa -> Cortes & Cardápio -> Contato) */}
           <nav className="hidden md:flex items-center gap-8">
             <Link
               to="/"
+              onClick={scrollToTop}
               className={`text-sm font-semibold transition-colors ${
-                location.pathname === '/' ? 'text-[#E55A1B]' : 'text-[#A8A29E] hover:text-[#F5F4F0]'
+                location.pathname === '/' && (!location.hash || location.hash === '#inicio')
+                  ? 'text-[#E55A1B]'
+                  : 'text-[#A8A29E] hover:text-[#F5F4F0]'
               }`}
             >
               Início
             </Link>
             <a
-              href="/#cardapio"
-              className="text-sm font-semibold text-[#A8A29E] hover:text-[#F5F4F0] transition-colors"
-            >
-              Cortes & Cardápio
-            </a>
-            <a
               href="/#experiencia"
+              onClick={() => handleNavClick('experiencia')}
               className="text-sm font-semibold text-[#A8A29E] hover:text-[#F5F4F0] transition-colors"
             >
               A Casa
             </a>
             <a
+              href="/#cardapio"
+              onClick={() => handleNavClick('cardapio')}
+              className="text-sm font-semibold text-[#A8A29E] hover:text-[#F5F4F0] transition-colors"
+            >
+              Cortes & Cardápio
+            </a>
+            <a
               href="/#contato"
+              onClick={() => handleNavClick('contato')}
               className="text-sm font-semibold text-[#A8A29E] hover:text-[#F5F4F0] transition-colors"
             >
               Contato & Horários
@@ -143,30 +179,35 @@ export default function MainLayout() {
           <div className="md:hidden bg-[#171513] border-b border-[#2E2924] px-4 pt-3 pb-6 space-y-3">
             <Link
               to="/"
+              onClick={scrollToTop}
               className="block py-2 text-base font-semibold text-[#F5F4F0] hover:text-[#E55A1B]"
             >
               Início
             </Link>
             <a
-              href="/#cardapio"
-              className="block py-2 text-base font-semibold text-[#A8A29E] hover:text-[#F5F4F0]"
-            >
-              Cortes & Cardápio
-            </a>
-            <a
               href="/#experiencia"
+              onClick={() => handleNavClick('experiencia')}
               className="block py-2 text-base font-semibold text-[#A8A29E] hover:text-[#F5F4F0]"
             >
               A Casa & Ambiente
             </a>
             <a
+              href="/#cardapio"
+              onClick={() => handleNavClick('cardapio')}
+              className="block py-2 text-base font-semibold text-[#A8A29E] hover:text-[#F5F4F0]"
+            >
+              Cortes & Cardápio
+            </a>
+            <a
               href="/#contato"
+              onClick={() => handleNavClick('contato')}
               className="block py-2 text-base font-semibold text-[#A8A29E] hover:text-[#F5F4F0]"
             >
               Contato & Horários
             </a>
             <Link
               to="/admin"
+              onClick={() => setMobileMenuOpen(false)}
               className="block py-2 text-sm text-[#78716C] hover:text-[#A8A29E]"
             >
               Painel Administrativo
@@ -174,6 +215,7 @@ export default function MainLayout() {
             <div className="pt-2">
               <Link
                 to="/agendar"
+                onClick={() => setMobileMenuOpen(false)}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-center font-bold bg-[#E55A1B] text-white shadow-md"
               >
                 Reservar Horário na Parrilla
@@ -183,20 +225,22 @@ export default function MainLayout() {
         )}
       </header>
 
-      {/* MAIN VIEW CONTENT */}
-      <main className="flex-1 w-full">
+      {/* CONTEÚDO PRINCIPAL (ROTA ATIVA) */}
+      <main className="flex-grow">
         <Outlet />
       </main>
 
-      {/* FOOTER */}
-      <footer className="bg-[#121110] border-t border-[#262320] pt-14 pb-8 text-[#A8A29E] text-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-[#262320]">
-            {/* COL 1: SOBRE */}
-            <div className="md:col-span-1 space-y-4">
-              <div className="flex items-center gap-2.5">
-                <span className="text-xl">🔥</span>
-                <span className="font-display font-extrabold text-xl text-[#F5F4F0]">
+      {/* FOOTER GLOBAL */}
+      <footer className="bg-[#0B0A09] border-t border-[#262320] py-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* COL 1: MARCA */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E55A1B] to-[#D97706] flex items-center justify-center text-lg">
+                  🔥
+                </div>
+                <span className="font-display font-extrabold text-lg text-[#F5F4F0]">
                   {config.app_name || '20barranove'}
                 </span>
               </div>

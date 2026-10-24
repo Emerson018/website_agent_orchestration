@@ -1,8 +1,44 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import config from '../../ai_config.json';
 
+// Variantes para orquestração da entrada do Hero
+const heroContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const heroItemVariants = {
+  hidden: { opacity: 0, y: 28 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.75,
+      ease: [0.16, 1, 0.3, 1], // Curva spring suave natural
+    },
+  },
+};
+
 export default function LandingPage() {
+  const [showFloatingPill, setShowFloatingPill] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      // Exibe a barra de reserva flutuante após rolar 450px
+      setShowFloatingPill(window.scrollY > 450);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const cuts = [
     {
       title: 'O Lendário 20barra9',
@@ -39,49 +75,89 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="w-full bg-[#0E0D0C] text-[#F5F4F0] overflow-hidden">
-      {/* 1. HERO SECTION CINEMATOGRÁFICA */}
-      <section className="relative min-h-[90vh] flex items-center justify-center pt-8 pb-20 px-4 sm:px-6 lg:px-8">
-        {/* Background Image com Scrim e Gradiente Profissional */}
-        <div className="absolute inset-0 z-0">
-          <img
+    <div className="w-full bg-[#0E0D0C] text-[#F5F4F0] overflow-hidden selection:bg-[#E55A1B] selection:text-white">
+      {/* 1. HERO SECTION CINEMATOGRÁFICA COM STAGGER & FIRE GLOW */}
+      <section id="inicio" className="relative min-h-[92vh] flex items-center justify-center pt-10 pb-24 px-4 sm:px-6 lg:px-8 scroll-mt-24">
+        {/* Background Image com Zoom Lento e Scrim Profundo */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <motion.img
+            initial={{ scale: 1.08, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 1.6, ease: 'easeOut' }}
             src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1920&q=85"
             alt="Parrilla e carnes na brasa"
-            className="w-full h-full object-cover object-center filter brightness-[0.38] contrast-[1.1]"
+            className="w-full h-full object-cover object-center filter brightness-[0.36] contrast-[1.12]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0E0D0C] via-[#0E0D0C]/60 to-transparent"></div>
           <div className="absolute inset-0 bg-radial-at-c from-transparent via-[#0E0D0C]/40 to-[#0E0D0C]"></div>
         </div>
 
-        {/* Conteúdo Hero */}
-        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#1F1C19]/80 border border-[#E55A1B]/30 backdrop-blur-md shadow-sm">
-            <span className="text-sm">🔥</span>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#E55A1B]">
-              Fogo no Ponto & Parrilla Acesa
+        {/* Conteúdo Hero com Coreografia de Entrada */}
+        <motion.div
+          variants={heroContainerVariants}
+          initial="hidden"
+          animate="visible"
+          className="relative z-10 max-w-4xl mx-auto text-center space-y-6"
+        >
+          {/* Badge com Pulso Suave */}
+          <motion.div variants={heroItemVariants} className="flex justify-center">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#1F1C19]/80 border border-[#E55A1B]/40 backdrop-blur-md shadow-lg shadow-[#E55A1B]/10">
+              <span className="text-sm animate-pulse">🔥</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#E55A1B]">
+                Fogo no Ponto & Parrilla Acesa
+              </span>
+            </div>
+          </motion.div>
+
+          {/* Título de Impacto */}
+          <motion.h1
+            variants={heroItemVariants}
+            className="font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-[#F5F4F0] leading-[1.08]"
+          >
+            Fogo, brasa e carnes nobres{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E55A1B] via-[#F97316] to-[#D97706]">
+              sem frescura.
             </span>
-          </div>
+          </motion.h1>
 
-          <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-[#F5F4F0] leading-[1.08]">
-            Fogo, brasa e carnes nobres sem frescura.
-          </h1>
-
-          <p className="text-base sm:text-xl text-[#D6D3D1] max-w-2xl mx-auto leading-relaxed font-normal">
+          {/* Subtítulo */}
+          <motion.p
+            variants={heroItemVariants}
+            className="text-base sm:text-xl text-[#D6D3D1] max-w-2xl mx-auto leading-relaxed font-normal"
+          >
             Hambúrgueres artesanais na brasa, cortes especiais na parrilla e torneiras de chopp gelado. O ritual autêntico da carne bem feita em Porto Alegre.
-          </p>
+          </motion.p>
 
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              to="/agendar"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-full text-base font-bold bg-[#E55A1B] hover:bg-[#C2410C] text-white shadow-xl shadow-[#E55A1B]/30 hover:shadow-[#E55A1B]/50 transition-all duration-200 active:scale-95"
+          {/* Ações com Efeito de Pulsação de Brasa (Fire Glow) */}
+          <motion.div
+            variants={heroItemVariants}
+            className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4"
+          >
+            <motion.div
+              animate={{
+                boxShadow: [
+                  '0 0 0px 0px rgba(229, 90, 27, 0.4)',
+                  '0 0 30px 8px rgba(229, 90, 27, 0.35)',
+                  '0 0 0px 0px rgba(229, 90, 27, 0.4)',
+                ],
+              }}
+              transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+              className="w-full sm:w-auto rounded-full"
             >
-              <span>Reservar uma Mesa</span>
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </Link>
+              <Link
+                to="/agendar"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-full text-base font-bold bg-[#E55A1B] hover:bg-[#C2410C] text-white transition-all duration-200 active:scale-95"
+              >
+                <span>Reservar uma Mesa</span>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </Link>
+            </motion.div>
 
-            <a
+            <motion.a
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               href="#cardapio"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full text-base font-semibold bg-[#1F1C19]/90 hover:bg-[#2A2622] text-[#F5F4F0] border border-[#2E2924] backdrop-blur-sm transition-colors"
             >
@@ -89,11 +165,14 @@ export default function LandingPage() {
               <svg className="w-4 h-4 text-[#A8A29E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
               </svg>
-            </a>
-          </div>
+            </motion.a>
+          </motion.div>
 
           {/* Micro Pilares em Linha */}
-          <div className="pt-10 grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-[#262320]/80 max-w-2xl mx-auto text-left">
+          <motion.div
+            variants={heroItemVariants}
+            className="pt-10 grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-[#262320]/80 max-w-2xl mx-auto text-left"
+          >
             <div className="space-y-1">
               <p className="text-xs font-bold text-[#E55A1B] uppercase tracking-wider">100% Angus</p>
               <p className="text-xs text-[#A8A29E]">Cortes nobres com procedência garantida</p>
@@ -106,14 +185,20 @@ export default function LandingPage() {
               <p className="text-xs font-bold text-[#E55A1B] uppercase tracking-wider">Chopps Locais</p>
               <p className="text-xs text-[#A8A29E]">Torneiras artesanais selecionadas</p>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </section>
 
-      {/* 2. SOBRE A CASA / A CULTURA DO FOGO */}
-      <section id="experiencia" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      {/* 2. SOBRE A CASA / A CULTURA DO FOGO COM SCROLL REVEAL */}
+      <section id="experiencia" className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-6 space-y-6">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            className="lg:col-span-6 space-y-6"
+          >
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1A1816] border border-[#2E2924] text-xs font-medium text-[#D97706]">
               <span>Origem Gaúcha</span>
             </div>
@@ -135,16 +220,22 @@ export default function LandingPage() {
                 🥩 Cozinha Aberta com Visão da Grelha
               </span>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="lg:col-span-6 relative">
-            <div className="relative rounded-2xl overflow-hidden border border-[#2E2924] shadow-2xl">
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            className="lg:col-span-6 relative"
+          >
+            <div className="relative rounded-2xl overflow-hidden border border-[#2E2924] shadow-2xl group">
               <img
                 src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1000&q=80"
                 alt="Parrilla e corte especial de carne"
-                className="w-full h-[420px] object-cover hover:scale-105 transition-transform duration-700"
+                className="w-full h-[420px] object-cover group-hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0E0D0C]/80 via-transparent to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0E0D0C]/85 via-transparent to-transparent"></div>
               <div className="absolute bottom-6 left-6 right-6 p-4 rounded-xl bg-[#171513]/90 backdrop-blur-md border border-[#2E2924]/80">
                 <p className="text-xs font-semibold text-[#E55A1B] uppercase tracking-wider">A Promessa da Casa</p>
                 <p className="text-sm text-[#F5F4F0] font-medium mt-1">
@@ -152,14 +243,20 @@ export default function LandingPage() {
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* 3. VITRINE DE CORTES & DESTAQUES (#cardapio) */}
-      <section id="cardapio" className="py-20 bg-[#121110] border-y border-[#262320]">
+      {/* 3. VITRINE DE CORTES & DESTAQUES (#cardapio) COM CARDS ANIMADOS */}
+      <section id="cardapio" className="py-24 bg-[#121110] border-y border-[#262320] scroll-mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-14">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-14"
+          >
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1F1C19] border border-[#2E2924] text-xs font-semibold text-[#E55A1B]">
                 Seleção do Chef
@@ -174,29 +271,34 @@ export default function LandingPage() {
             <div>
               <Link
                 to="/agendar"
-                className="inline-flex items-center gap-2 text-sm font-bold text-[#E55A1B] hover:text-[#C2410C] transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-bold text-[#E55A1B] hover:text-[#F97316] transition-colors group"
               >
                 <span>Garantir Mesa para Provar</span>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
               </Link>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Grid de Cards Refinados */}
+          {/* Grid de Cards com Animação ao Entrar no Viewport e Hover 3D */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {cuts.map((item, idx) => (
-              <div
+              <motion.div
                 key={idx}
-                className="group flex flex-col bg-[#181614] rounded-2xl overflow-hidden border border-[#2E2924] hover:border-[#E55A1B]/50 hover:shadow-xl hover:shadow-[#E55A1B]/10 transition-all duration-300"
+                initial={{ opacity: 0, y: 35 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.55, delay: idx * 0.12 }}
+                whileHover={{ y: -6, transition: { duration: 0.25 } }}
+                className="group flex flex-col bg-[#181614] rounded-2xl overflow-hidden border border-[#2E2924] hover:border-[#E55A1B]/60 hover:shadow-2xl hover:shadow-[#E55A1B]/15 transition-all duration-300"
               >
-                {/* Imagem do Prato */}
+                {/* Imagem do Prato com Zoom Cinemático */}
                 <div className="relative h-52 overflow-hidden bg-[#1F1C19]">
                   <img
                     src={item.image}
                     alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 ease-out"
                   />
                   <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#0E0D0C]/85 backdrop-blur-md border border-[#2E2924] text-[11px] font-bold text-[#E55A1B]">
                     {item.badge}
@@ -221,23 +323,31 @@ export default function LandingPage() {
                     <span className="text-base font-extrabold text-[#F5F4F0]">
                       {item.price}
                     </span>
-                    <Link
-                      to="/agendar"
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#262320] hover:bg-[#E55A1B] hover:text-white text-[#D6D3D1] transition-all"
-                    >
-                      Reservar
-                    </Link>
+                    <motion.div whileTap={{ scale: 0.94 }}>
+                      <Link
+                        to="/agendar"
+                        className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#262320] group-hover:bg-[#E55A1B] group-hover:text-white text-[#D6D3D1] transition-all"
+                      >
+                        Reservar
+                      </Link>
+                    </motion.div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* 4. GALERIA DA EXPERIÊNCIA & AMBIENTE */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto space-y-3 mb-14">
+      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center max-w-2xl mx-auto space-y-3 mb-14"
+        >
           <span className="text-xs font-semibold uppercase tracking-wider text-[#E55A1B]">
             A Atmosfera da Casa
           </span>
@@ -247,54 +357,60 @@ export default function LandingPage() {
           <p className="text-sm text-[#A8A29E]">
             Música boa, atendimento caloroso e luz na medida certa para você curtir momentos memoráveis.
           </p>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="relative rounded-2xl overflow-hidden border border-[#2E2924] group h-72">
-            <img
-              src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80"
-              alt="Ambiente acolhedor e salão"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0E0D0C]/90 via-transparent to-transparent"></div>
-            <div className="absolute bottom-4 left-4 right-4">
-              <p className="text-sm font-bold text-[#F5F4F0]">Salão & Varanda</p>
-              <p className="text-xs text-[#A8A29E]">Espaços ventilados, confortáveis e acolhedores.</p>
-            </div>
-          </div>
-
-          <div className="relative rounded-2xl overflow-hidden border border-[#2E2924] group h-72">
-            <img
-              src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80"
-              alt="Parrilla e preparo ao vivo"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0E0D0C]/90 via-transparent to-transparent"></div>
-            <div className="absolute bottom-4 left-4 right-4">
-              <p className="text-sm font-bold text-[#F5F4F0]">O Espetáculo da Brasa</p>
-              <p className="text-xs text-[#A8A29E]">Cortes preparados na sua frente pelos nossos assadores.</p>
-            </div>
-          </div>
-
-          <div className="relative rounded-2xl overflow-hidden border border-[#2E2924] group h-72">
-            <img
-              src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80"
-              alt="Drinks autorais e chopp"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0E0D0C]/90 via-transparent to-transparent"></div>
-            <div className="absolute bottom-4 left-4 right-4">
-              <p className="text-sm font-bold text-[#F5F4F0]">Coquetelaria & Bar</p>
-              <p className="text-xs text-[#A8A29E]">Drinks clássicos e combinações autorais para o happy hour.</p>
-            </div>
-          </div>
+          {[
+            {
+              title: 'Salão & Varanda',
+              desc: 'Espaços ventilados, confortáveis e acolhedores.',
+              img: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+            },
+            {
+              title: 'O Espetáculo da Brasa',
+              desc: 'Cortes preparados na sua frente pelos nossos assadores.',
+              img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+            },
+            {
+              title: 'Coquetelaria & Bar',
+              desc: 'Drinks clássicos e combinações autorais para o happy hour.',
+              img: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80',
+            },
+          ].map((gal, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: i * 0.15 }}
+              whileHover={{ y: -4 }}
+              className="relative rounded-2xl overflow-hidden border border-[#2E2924] group h-72 shadow-lg"
+            >
+              <img
+                src={gal.img}
+                alt={gal.title}
+                className="w-full h-full object-cover group-hover:scale-106 transition-transform duration-600"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0E0D0C]/90 via-transparent to-transparent"></div>
+              <div className="absolute bottom-4 left-4 right-4">
+                <p className="text-sm font-bold text-[#F5F4F0]">{gal.title}</p>
+                <p className="text-xs text-[#A8A29E]">{gal.desc}</p>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </section>
 
       {/* 5. LOCALIZAÇÃO & RESERVA RÁPIDA (#contato) */}
-      <section id="contato" className="py-20 bg-[#121110] border-t border-[#262320]">
+      <section id="contato" className="py-24 bg-[#121110] border-t border-[#262320] scroll-mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-br from-[#1A1816] to-[#121110] rounded-3xl border border-[#2E2924] p-8 sm:p-12 shadow-2xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="bg-gradient-to-br from-[#1A1816] to-[#121110] rounded-3xl border border-[#2E2924] p-8 sm:p-12 shadow-2xl"
+          >
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-7 space-y-6">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1F1C19] border border-[#2E2924] text-xs font-semibold text-[#E55A1B]">
@@ -334,24 +450,52 @@ export default function LandingPage() {
                   </p>
                 </div>
 
-                <Link
-                  to="/agendar"
-                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm bg-[#E55A1B] hover:bg-[#C2410C] text-white shadow-lg shadow-[#E55A1B]/25 transition-all active:scale-95"
-                >
-                  <span>Reservar Mesa Agora</span>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                </Link>
+                <motion.div whileTap={{ scale: 0.96 }} className="w-full">
+                  <Link
+                    to="/agendar"
+                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm bg-[#E55A1B] hover:bg-[#C2410C] text-white shadow-lg shadow-[#E55A1B]/25 transition-all"
+                  >
+                    <span>Reservar Mesa Agora</span>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </Link>
+                </motion.div>
 
                 <p className="text-[11px] text-[#78716C]">
                   Dúvidas ou grupos maiores? Fale no WhatsApp: <span className="text-[#D6D3D1] font-semibold">{config.phone || '(51) 99320-2009'}</span>
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
+
+      {/* 6. FLOATING RESERVATION PILL (MOBILE ONLY) */}
+      <AnimatePresence>
+        {showFloatingPill && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 40, scale: 0.9 }}
+            transition={{ duration: 0.3 }}
+            className="fixed bottom-5 left-4 right-4 sm:hidden z-50 flex justify-center"
+          >
+            <Link
+              to="/agendar"
+              className="w-full max-w-sm flex items-center justify-between px-5 py-3.5 rounded-full bg-[#E55A1B] text-white font-bold text-sm shadow-2xl shadow-[#E55A1B]/50 active:scale-95 transition-transform border border-white/20 backdrop-blur-md"
+            >
+              <div className="flex items-center gap-2">
+                <span>🔥</span>
+                <span>Reservar Mesa no 20barra9</span>
+              </div>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

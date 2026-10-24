@@ -103,15 +103,16 @@ def requirements_analyst_node(
         fallback_fn=fallback_action,
     )
 
+    provedor_analyst = llm_gateway.get_last_execution_provider()
     if isinstance(result, ClientConfig):
         parsed_dict = result.model_dump()
-        log_msg = "[RequirementsAnalyst] Design Direction (Passe 1) sintetizada com sucesso via LLM Gateway."
+        log_msg = f"[RequirementsAnalyst] Design Direction (Passe 1) sintetizada com sucesso via {provedor_analyst}."
     elif isinstance(result, dict):
         parsed_dict = result
-        log_msg = "[RequirementsAnalyst] Design Direction (Passe 1) sintetizada via LLM Gateway."
+        log_msg = f"[RequirementsAnalyst] Design Direction (Passe 1) sintetizada via {provedor_analyst}."
     else:
         parsed_dict = fallback_action()
-        log_msg = "[RequirementsAnalyst] Design Direction estruturada via Fallback determinístico seguro."
+        log_msg = f"[RequirementsAnalyst] Design Direction estruturada via fallback ({provedor_analyst})."
 
     custom_reqs = _merge_with_fallback_direction(parsed_dict, lead_raw)
     template = state.get("template_path") or "gold_templates/template_base_app"
@@ -123,6 +124,7 @@ def requirements_analyst_node(
         "customization_requirements": custom_reqs,
         "template_path": template,
         "execution_logs": current_logs,
+        "provedor_execucao": provedor_analyst,
     }
 
 
@@ -220,12 +222,19 @@ def generate_fallback_landing_page_code(
 
     return f"""import React from 'react';
 {link_import}
+import {{ motion }} from 'framer-motion';
 
 export default function LandingPage() {{
   return (
-    <div className="w-full bg-[var(--bg-color)] text-[var(--text-color)] font-sans">
-      {{/* Abertura Editorial Assimétrica (Ponto Focal Único) */}}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-20 lg:py-24 border-b border-[var(--border-color)]">
+    <div className="w-full bg-[var(--bg-color)] text-[var(--text-color)] font-sans selection:bg-[var(--primary-color)] selection:text-white">
+      {{/* Abertura Editorial Assimétrica com Motion Hero */}}
+      <section id="inicio" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-20 lg:py-24 border-b border-[var(--border-color)] scroll-mt-24">
+        <motion.div
+          initial={{{{ opacity: 0 }}}}
+          animate={{{{ opacity: 1 }}}}
+          transition={{{{ duration: 0.8 }}}}
+          className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center"
+        >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           <div className="lg:col-span-7 space-y-6 text-left">
             <p className="text-sm font-medium text-[var(--primary-color)]">
@@ -280,8 +289,8 @@ export default function LandingPage() {{
         </div>
       </section>
 
-      {{/* Quadro de Especialidades & Preços (Estrutura Linear Informativa) */}}
-      <section id="destaques" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      {{/* Quadro de Especialidades & Preços (Estrutura Linear Informativa com Motion InView) */}}
+      <section id="destaques" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 scroll-mt-24">
         <div className="max-w-2xl space-y-2 mb-12">
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-[var(--text-color)]">
             Especialidades e atendimento
@@ -297,8 +306,8 @@ export default function LandingPage() {{
       </section>
 
       {{/* Sobre o Estabelecimento & Endereço */}}
-      <section id="sobre" className="bg-[var(--surface-color)] border-t border-[var(--border-color)] py-20">
-        <div id="contato" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+      <section id="sobre" className="bg-[var(--surface-color)] border-t border-[var(--border-color)] py-20 scroll-mt-24">
+        <div id="contato" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start scroll-mt-24">
           <div className="lg:col-span-7 space-y-4">
             <h2 className="font-display text-2xl sm:text-3xl font-bold text-[var(--text-color)]">
               Atendimento com hora marcada no {app_name}
@@ -374,8 +383,10 @@ Sua missão é executar o PASSE 2 (Construção de Interface) gerando o componen
 {coding_skill_prompt}
 
 CONTRATO ARQUITETURAL E INVARIANTES TÉCNICOS DO GOLD TEMPLATE:
-1. O componente `MainLayout.jsx` já envolve a rota `/` com o Header/Navbar global e o Footer global. Portanto, NÃO crie tags `<header>`, `<nav>` ou `<footer>` duplicadas dentro de `LandingPage.jsx`. Concentre 100% da página nas seções de conteúdo (`<section id="destaques">`, `<section id="sobre">`, `<section id="contato">`).
-2. Use as variáveis CSS semânticas já injetadas em `:root` (`var(--bg-color)`, `var(--surface-color)`, `var(--border-color)`, `var(--text-color)`, `var(--muted-color)`, `var(--primary-color)`, `var(--secondary-color)`) e as classes tipográficas `font-display` (títulos) e `font-sans` (corpo).
+1. O componente `MainLayout.jsx` já envolve a rota `/` com o Header/Navbar global e o Footer global. Portanto, NÃO crie tags `<header>`, `<nav>` ou `<footer>` duplicadas dentro de `LandingPage.jsx`. Concentre 100% da página nas seções de conteúdo (`<section id="inicio">`, `<section id="destaques">`, `<section id="sobre">`, `<section id="contato">`).
+2. TODA seção com id DEVE conter `scroll-mt-24` para que o scroll de âncora compense o navbar fixo.
+3. MOTION DESIGN SYSTEM: Utilize `framer-motion` (ex: `motion.div`, `whileInView`, `whileHover`, `whileTap`) com coreografia de entrada suave no Hero e interatividade táctil nos botões de reserva.
+4. Use as variáveis CSS semânticas já injetadas em `:root` (`var(--bg-color)`, `var(--surface-color)`, `var(--border-color)`, `var(--text-color)`, `var(--muted-color)`, `var(--primary-color)`, `var(--secondary-color)`) e as classes tipográficas `font-display` (títulos) e `font-sans` (corpo).
 3. Fotos reais curadas do setor disponíveis para uso:
    - Imagem Principal / Ambiente: '{profile['hero_img']}'
    - Serviço 1: '{profile['services'][0]['name']}' ({profile['services'][0]['price']}) — '{profile['services'][0]['img']}' — {profile['services'][0]['desc']}
@@ -536,11 +547,12 @@ DIRETRIZ 5: Toda alteração de interface DEVE seguir os princípios da skill `.
         print(f"Corrigindo falha reportada pelo QA anterior: {last_report.get('error')}")
 
     current_logs = state.get("execution_logs", []).copy()
+    provedor_code = llm_gateway.get_last_execution_provider()
     current_logs.append(
-        "[CodeInjector] Design Direction injetada em ai_config.json, index.html, index.css e LandingPage.jsx gerada com a skill frontend-design."
+        f"[CodeInjector] Design Direction e LandingPage.jsx geradas com sucesso via provedor '{provedor_code}'."
     )
 
-    return {"execution_logs": current_logs}
+    return {"execution_logs": current_logs, "provedor_execucao": provedor_code}
 
 
 def qa_validator_node(
