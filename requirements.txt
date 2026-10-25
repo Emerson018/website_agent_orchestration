@@ -6,3 +6,7 @@ langchain-openai
 fastapi
 uvicorn
 supabase
+beautifulsoup4
+pillow
+pdfplumber
+pytesseract

@@ -96,6 +96,7 @@ def build_initial_agent_state(
         "last_qa_report": {},
         "build_success": False,
         "execution_logs": [],
+        "provedor_execucao": "none",
     }
 
 
@@ -103,10 +104,11 @@ def merge_project_outcome(
     existing_resultado: Optional[Dict[str, Any]],
     custom_reqs: Dict[str, Any],
     target_project_path: str = "",
+    provedor_execucao: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Preserva os metadados de vínculo com o CRM (account_id, user_id, contact_id, project_name)
-    em resultado_json ao registrar as configurações geradas pela fábrica.
+    em resultado_json ao registrar as configurações geradas pela fábrica e o provedor de IA utilizado.
     """
     merged: Dict[str, Any] = {}
     if isinstance(existing_resultado, dict):
@@ -115,6 +117,8 @@ def merge_project_outcome(
         merged.update(custom_reqs)
     if target_project_path:
         merged["target_project_path"] = target_project_path
+    if provedor_execucao:
+        merged["provedor_execucao"] = provedor_execucao
     return merged
 
 
@@ -126,6 +130,8 @@ def process_queue_item(
     """
     Processa um Project Queue Item da fila (pendente ou específico por ID),
     gerenciando transições de status e preservando metadados de domínio.
+    Em caso de falha crítica irrecuperável, estaciona na fila com status 'falha_critica'
+    para permitir resolução manual pelo operador/agente na IDE.
     """
     item = queue_store.fetch_next(project_id=project_id)
     if not item:
@@ -155,14 +161,30 @@ def process_queue_item(
     try:
         resultado = workflow_runner(initial_state)
         if not resultado.get("build_success", False):
-            queue_store.update(target_id, {"status": "erro"})
-            raise RuntimeError(
-                "O build do projeto falhou nas validações de QA e excedeu o limite de tentativas."
-            )
+            error_details = "O build do projeto falhou nas validações de QA e excedeu o limite de tentativas."
+            error_payload = dict(existing_resultado or {})
+            error_payload["error_details"] = error_details
+            if resultado.get("execution_logs"):
+                error_payload["execution_logs"] = resultado["execution_logs"]
+            queue_store.update(target_id, {"status": "falha_critica", "resultado_json": error_payload})
+            raise RuntimeError(error_details)
 
         custom_reqs = resultado.get("customization_requirements", {})
         target_path = resultado.get("target_project_path", "")
-        merged_json = merge_project_outcome(existing_resultado, custom_reqs, target_path)
+        provedor = resultado.get("provedor_execucao")
+        if not provedor:
+            try:
+                from ai_software_factory import llm_gateway
+                provedor = llm_gateway.get_last_execution_provider()
+            except Exception:
+                provedor = "desconhecido"
+
+        merged_json = merge_project_outcome(
+            existing_resultado=existing_resultado,
+            custom_reqs=custom_reqs,
+            target_project_path=target_path,
+            provedor_execucao=provedor,
+        )
 
         queue_store.update(
             target_id,
@@ -176,9 +198,11 @@ def process_queue_item(
             "mensagem": "Projeto processado e concluído com sucesso",
             "detalhes": merged_json,
         }
-    except Exception:
+    except Exception as ex:
         try:
-            queue_store.update(target_id, {"status": "erro"})
+            error_payload = dict(existing_resultado or {})
+            error_payload["error_details"] = str(ex)
+            queue_store.update(target_id, {"status": "falha_critica", "resultado_json": error_payload})
         except Exception:
             pass
         raise

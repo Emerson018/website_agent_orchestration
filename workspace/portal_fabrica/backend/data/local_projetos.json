@@ -1,0 +1,432 @@
+[
+  {
+    "id": 1792889799823,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Cafeteria Poa'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: cafepoars@gmail.com | WhatsApp/Tel: 3333434343434\n\n\n### CONTEÚDOS E TEXTOS DE APOIO:\n- **Informações Extras para o Agendamento**: Crie um site de uma cafeteria\n\n\n### LINKS DE REFERÊNCIA DO CLIENTE:\n1. Tipo: site - URL: https://www.google.com/maps/place/Caf%C3%A9+Cantante/@-30.0348779,-51.2112277,17z/data=!3m1!4b1!4m6!3m5!1s0x951979ad5a658b71:0xe76d6099f1c80e21!8m2!3d-30.0348779!4d-51.2112277!16s%2Fg%2F1yfjf1f1r?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D \n",
+    "status": "falha_critica",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Cafeteria Poa",
+      "briefing_payload": {
+        "project_name": "Cafeteria Poa",
+        "branding": {
+          "palette_name": "Definida via Direção de Design"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "reference_links": [
+          {
+            "url": "https://www.google.com/maps/place/Caf%C3%A9+Cantante/@-30.0348779,-51.2112277,17z/data=!3m1!4b1!4m6!3m5!1s0x951979ad5a658b71:0xe76d6099f1c80e21!8m2!3d-30.0348779!4d-51.2112277!16s%2Fg%2F1yfjf1f1r?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D",
+            "type": "site",
+            "notes": ""
+          }
+        ],
+        "client_info": {
+          "email": "cafepoars@gmail.com",
+          "phone": "3333434343434"
+        },
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "ai_analysis": "",
+        "additional_data": {
+          "files": [],
+          "links": [
+            {
+              "label": "Referência (site)",
+              "url": "https://www.google.com/maps/place/Caf%C3%A9+Cantante/@-30.0348779,-51.2112277,17z/data=!3m1!4b1!4m6!3m5!1s0x951979ad5a658b71:0xe76d6099f1c80e21!8m2!3d-30.0348779!4d-51.2112277!16s%2Fg%2F1yfjf1f1r?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D"
+            }
+          ],
+          "texts": [
+            {
+              "label": "Informações Extras para o Agendamento",
+              "text": "Crie um site de uma cafeteria"
+            }
+          ]
+        },
+        "auto_process": true,
+        "timestamp": "2026-10-25T00:56:39.769Z"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-25T00:56:39.823Z",
+    "is_local": true,
+    "error_details": "Fábrica de IA retornou HTTP 500: {\"detail\":\"Erro interno do servidor ao gerar site: O build do projeto falhou nas validações de QA e excedeu o limite de tentativas.\"}"
+  },
+  {
+    "id": 1792888487636,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Cafeteria Poa'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: cafeteriapoa@gmail.com | WhatsApp/Tel: 23422342323\n\n\n### CONTEÚDOS E TEXTOS DE APOIO:\n- **Informações Extras para o Agendamento**: Crie um site profissional de uma cafeteria\n\n\n### LINKS DE REFERÊNCIA DO CLIENTE:\n1. Tipo: site - URL: https://www.google.com/maps/place/Caf%C3%A9+Cantante/@-30.0348779,-51.2112277,17z/data=!3m1!4b1!4m6!3m5!1s0x951979ad5a658b71:0xe76d6099f1c80e21!8m2!3d-30.0348779!4d-51.2112277!16s%2Fg%2F1yfjf1f1r?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D \n",
+    "status": "concluido",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Cafeteria Poa",
+      "briefing_payload": {
+        "project_name": "Cafeteria Poa",
+        "branding": {
+          "palette_name": "Definida via Direção de Design"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "reference_links": [
+          {
+            "url": "https://www.google.com/maps/place/Caf%C3%A9+Cantante/@-30.0348779,-51.2112277,17z/data=!3m1!4b1!4m6!3m5!1s0x951979ad5a658b71:0xe76d6099f1c80e21!8m2!3d-30.0348779!4d-51.2112277!16s%2Fg%2F1yfjf1f1r?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D",
+            "type": "site",
+            "notes": ""
+          }
+        ],
+        "client_info": {
+          "email": "cafeteriapoa@gmail.com",
+          "phone": "23422342323"
+        },
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "ai_analysis": "",
+        "additional_data": {
+          "files": [],
+          "links": [
+            {
+              "label": "Referência (site)",
+              "url": "https://www.google.com/maps/place/Caf%C3%A9+Cantante/@-30.0348779,-51.2112277,17z/data=!3m1!4b1!4m6!3m5!1s0x951979ad5a658b71:0xe76d6099f1c80e21!8m2!3d-30.0348779!4d-51.2112277!16s%2Fg%2F1yfjf1f1r?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D"
+            }
+          ],
+          "texts": [
+            {
+              "label": "Informações Extras para o Agendamento",
+              "text": "Crie um site profissional de uma cafeteria"
+            }
+          ]
+        },
+        "auto_process": true,
+        "timestamp": "2026-10-25T00:34:47.606Z"
+      },
+      "supabase_service_role_key": null,
+      "customization_requirements": {
+        "app_name": "Cafeteria Poa",
+        "primary_color": "#1E3A2F",
+        "secondary_color": "#C27A38",
+        "bg_color": "#FAF8F5",
+        "surface_color": "#FFFFFF",
+        "text_color": "#1B1917",
+        "muted_color": "#6E6A63",
+        "theme": "light",
+        "font_heading": "Fraunces",
+        "font_body": "DM Sans",
+        "logo_url": "/logo.png",
+        "address": "Rua Fernandes Vieira, 615 - Bom Fim, Porto Alegre - RS, 90035-091",
+        "working_hours": "Terça a sábado, 09h às 20h. Domingo, 10h às 18h.",
+        "phone": "(51) 98422-3423",
+        "niche": "Cafeteria de especialidade e espaço cultural",
+        "tagline": "Café bem tirado, pão de fermentação lenta e conversas sem pressa no Bom Fim.",
+        "color_reasoning": "A paleta foge do marrom genérico e do par creme com terracota típico de templates de inteligência artificial. O verde profundo (#1E3A2F) reproduz as luminárias de ferro fundido e as portas de madeira maciça comuns nos casarões do Bom Fim em Porto Alegre. O cobre tostado (#C27A38) evoca o contato térmico da água com o pó no porta-filtro e a crosta dourada das fornadas da estufa. O fundo linho claro (#FAF8F5) preserva a luz natural das janelas amplas, enquanto o carvão (#1B1917) garante contraste visual rigoroso para leitura confortável de cardápios e horários.",
+        "layout_concept": "Estrutura editorial assimétrica inspirada em cardápios impressos de bistrôs e cafés históricos. A coluna esquerda fixa apresenta a identidade, o grão em serviço e o atalho direto para reservas. A coluna direita rola o conteúdo substantivo: métodos de extração, fornadas do dia e agenda de encontros acústicos.\n\nASCII Wireframe:\n+-------------------------------------------------------------+\n|  CAFETERIA POA [Bom Fim]                     [Reservar mesa]|\n+-----------------------------+-------------------------------+\n| [COLUNA FIXA ESQUERDA]      | [COLUNA ROLÁVEL DIREITA]      |\n|                             |                               |\n| Lote em destaque:           | MÉTODOS E GRÃOS               |\n| Catuaí Vermelho 86 pts      | V60 / Prensa / Espresso duplo |\n| Notas: Ameixa e melaço      |                               |\n|                             | FORNADA DO DIA                |\n| [Ver métodos da casa]       | Sourdough, queijo da serra    |\n| [Ver mesas disponíveis]     | e geleia artesanal            |\n|                             |                               |\n| Ocupação no momento:        | AGENDAMENTO DIRETO            |\n| 3 mesas livres no salão     | Escolha turno, data e pessoas |\n+-----------------------------+-------------------------------+\n| Rua Fernandes Vieira, 615   | Terça a Domingo, 09h às 20h   |\n+-------------------------------------------------------------+",
+        "focal_element": "Quadro vivo da barra de extração no topo do site. O componente exibe o grão em moagem no dia, a altitude da fazenda produtora, o perfil de torra e o status de mesas em tempo real. O visitante seleciona o método de extração pretendido e visualiza o tempo de preparo estimado antes de concluir a reserva.",
+        "design_critique": "Rejeição deliberada aos cinco vícios visuais mais comuns da web atual:\n1. Banimento do fundo creme padrão #F4F1EA com acento terracota #D97757, substituído pelo verde botânico de casarão com cobre queimado.\n2. Rejeição do tema escuro com verde neon, inadequado para a luz natural e o ritual matinal de uma cafeteria de bairro.\n3. Eliminação do conjunto de três cartões flutuantes com cantos arredondados iguais e sombra suave. A organização usa linhas divisórias sólidas e ritmo tipográfico.\n4. Supressão de rótulos em caixa alta espaçada acima dos títulos. O texto vai direto ao assunto sem introduções decorativas.\n5. Corte de setas automáticas em botões e numerações artificiais (01, 02, 03). Cada botão declara unicamente a ação que executa.",
+        "copy_tone": "Linguagem humana, concisa e direta. Verbos no infinitivo ou imperativo funcional guiam as ações do visitante ('Reservar mesa', 'Ver grãos de hoje'). Sem adjetivos inflados, superlativos ou clichês publicitários. O texto comunica dados concretos: variedade do café, torrefação, endereço físico e horários reais de atendimento.",
+        "recommended_sections": [
+          "Barra de serviço e lote do dia",
+          "Métodos de extração e perfil sensorial",
+          "Agendamento de mesa e degustação guiada",
+          "Fornadas e cozinha artesanal",
+          "Espaço cultural, endereço e horários"
+        ]
+      },
+      "target_project_path": "workspace/cafeteria_poa",
+      "provedor_execucao": "fallback_deterministic"
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-25T00:34:47.636Z",
+    "is_local": true
+  },
+  {
+    "id": 1792887483567,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Cafeteria'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: cafeteria123@gmail.com | WhatsApp/Tel: 51987656767\n\n\n### CONTEÚDOS E TEXTOS DE APOIO:\n- **Informações Extras para o Agendamento**: Crie um  site profissional de uma cafeteria.\n\n\n",
+    "status": "falha_critica",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Cafeteria",
+      "briefing_payload": {
+        "project_name": "Cafeteria",
+        "branding": {
+          "palette_name": "Definida via Direção de Design"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "reference_links": [],
+        "client_info": {
+          "email": "cafeteria123@gmail.com",
+          "phone": "51987656767"
+        },
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "ai_analysis": "",
+        "additional_data": {
+          "files": [],
+          "links": [],
+          "texts": [
+            {
+              "label": "Informações Extras para o Agendamento",
+              "text": "Crie um  site profissional de uma cafeteria."
+            }
+          ]
+        },
+        "auto_process": true,
+        "timestamp": "2026-10-25T00:18:03.516Z"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-25T00:18:03.567Z",
+    "is_local": true,
+    "error_details": "request to http://localhost:8000/gerar-site failed, reason: "
+  },
+  {
+    "id": 1792881487189,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Massagista viv bem poa'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: massagem123@gmail.com | WhatsApp/Tel: 2222222222\n\n\n### CONTEÚDOS E TEXTOS DE APOIO:\n- **Informações Extras para o Agendamento**: a ideia é ter um  site de massagem profissional para porto alegre\n\n\n",
+    "status": "concluido",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Massagista viv bem poa",
+      "briefing_payload": {
+        "project_name": "Massagista viv bem poa",
+        "branding": {
+          "palette_name": "Definida via Direção de Design"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "reference_links": [],
+        "client_info": {
+          "email": "massagem123@gmail.com",
+          "phone": "2222222222"
+        },
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "ai_analysis": "",
+        "additional_data": {
+          "files": [],
+          "links": [],
+          "texts": [
+            {
+              "label": "Informações Extras para o Agendamento",
+              "text": "a ideia é ter um  site de massagem profissional para porto alegre"
+            }
+          ]
+        },
+        "auto_process": true,
+        "timestamp": "2026-10-24T22:38:07.171Z"
+      },
+      "supabase_service_role_key": null,
+      "customization_requirements": {
+        "app_name": "Massagista viv bem poa",
+        "primary_color": "#6366F1",
+        "secondary_color": "#1A1A1A",
+        "bg_color": "#0F172A",
+        "surface_color": "#1E293B",
+        "text_color": "#F8FAFC",
+        "muted_color": "#94A3B8",
+        "theme": "dark",
+        "font_heading": "Space Grotesk",
+        "font_body": "Plus Jakarta Sans",
+        "logo_url": "/logo.png",
+        "address": "Av. Principal, 1000 - Centro - Porto Alegre/RS",
+        "working_hours": "Segunda a Sábado das 9h às 18h",
+        "phone": "2222222222",
+        "niche": "Serviços Especializados",
+        "tagline": "Atendimento com hora marcada na Massagista viv bem poa",
+        "color_reasoning": "Paleta Indigo Tech Moderno ancorada no universo de Serviços Especializados.",
+        "layout_concept": "Grade assimétrica objetiva com foco em serviços sob hora marcada, endereço e canais diretos de atendimento.",
+        "focal_element": "Painel tipográfico de abertura com chamada direta para reserva de horário online.",
+        "design_critique": "Removidos jargões genéricos de IA e decorações supérfluas; foco em clareza de escopo, horários e reserva.",
+        "copy_tone": "Objetivo, claro e orientado à ação do cliente.",
+        "recommended_sections": [
+          "Hero Autoral",
+          "Especialidades e Preços",
+          "Contexto da Casa",
+          "Localização e Horários"
+        ]
+      }
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-24T22:38:07.189Z",
+    "is_local": true
+  },
+  {
+    "id": 1792877322530,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Barbearia Teste Resiliente'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: teste@barbearia.com | WhatsApp/Tel: 11999999999\n\n\n\n\n",
+    "status": "pendente",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Barbearia Teste Resiliente",
+      "briefing_payload": {
+        "project_name": "Barbearia Teste Resiliente",
+        "client_info": {
+          "email": "teste@barbearia.com",
+          "phone": "11999999999"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "auto_process": false
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-24T21:28:42.530Z",
+    "is_local": true
+  },
+  {
+    "id": 1792875599517,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'dentista'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: dentistapoa@gmail.com | WhatsApp/Tel: 54545454545\n\n\n### CONTEÚDOS E TEXTOS DE APOIO:\n\n\n\n",
+    "status": "concluido",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "dentista",
+      "briefing_payload": {
+        "project_name": "dentista",
+        "branding": {
+          "palette_name": "Definida via Direção de Design"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "reference_links": [],
+        "client_info": {
+          "email": "dentistapoa@gmail.com",
+          "phone": "54545454545"
+        },
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "ai_analysis": "",
+        "additional_data": {
+          "files": [],
+          "links": [],
+          "texts": [
+            {
+              "label": "Informações Extras para o Agendamento",
+              "text": ""
+            }
+          ]
+        },
+        "auto_process": true,
+        "timestamp": "2026-10-24T20:59:59.486Z"
+      },
+      "supabase_service_role_key": null,
+      "customization_requirements": {
+        "app_name": "dentista",
+        "primary_color": "#0EA5E9",
+        "secondary_color": "#1A1A1A",
+        "bg_color": "#F8FAFC",
+        "surface_color": "#FFFFFF",
+        "text_color": "#0F172A",
+        "muted_color": "#475569",
+        "theme": "light",
+        "font_heading": "Plus Jakarta Sans",
+        "font_body": "Source Sans 3",
+        "logo_url": "/logo.png",
+        "address": "Av. Principal, 1000 - Centro - Porto Alegre/RS",
+        "working_hours": "Segunda a Sábado das 9h às 18h",
+        "phone": "54545454545",
+        "niche": "Odontologia & Saúde",
+        "tagline": "Cuidado odontológico completo e humanizado na dentista",
+        "color_reasoning": "Paleta Azul Clínico Confiável ancorada no universo de Odontologia & Saúde.",
+        "layout_concept": "Composição split-hero editorial com respiro amplo, cartões de procedimentos com bordas suaves e foco em credibilidade médica.",
+        "focal_element": "Bloco de apresentação da equipe clínica com selo de registro profissional e tipografia humanista de alto contraste.",
+        "design_critique": "Evitados degradês espalhafatosos e sombras pesadas de templates SaaS genéricos; paleta clara transmite higiene, assepsia e tranquilidade.",
+        "copy_tone": "Técnico, acolhedor e focado na saúde e bem-estar preventivo dos pacientes.",
+        "recommended_sections": [
+          "Hero Autoral",
+          "Especialidades e Preços",
+          "Contexto da Casa",
+          "Localização e Horários"
+        ]
+      }
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-24T20:59:59.518Z",
+    "is_local": true
+  },
+  {
+    "id": 1792875068072,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Barbearia Teste Resiliente'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: teste@barbearia.com | WhatsApp/Tel: 11999999999\n\n\n\n\n",
+    "status": "pendente",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Barbearia Teste Resiliente",
+      "briefing_payload": {
+        "project_name": "Barbearia Teste Resiliente",
+        "client_info": {
+          "email": "teste@barbearia.com",
+          "phone": "11999999999"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "auto_process": false
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-24T20:51:08.072Z",
+    "is_local": true
+  },
+  {
+    "id": 1792875038813,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Barbearia Teste Resiliente'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: teste@barbearia.com | WhatsApp/Tel: 11999999999\n\n\n\n\n",
+    "status": "pendente",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Barbearia Teste Resiliente",
+      "briefing_payload": {
+        "project_name": "Barbearia Teste Resiliente",
+        "client_info": {
+          "email": "teste@barbearia.com",
+          "phone": "11999999999"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "auto_process": false
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-24T20:50:38.813Z",
+    "is_local": true
+  }
+]

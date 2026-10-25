@@ -63,6 +63,56 @@ class TestProjectQueue(unittest.TestCase):
             "workspace/sorriso_perfeito",
         )
 
+    def test_process_queue_item_records_execution_provider_in_resultado_json(self):
+        store = FakeQueueStore(
+            [
+                {
+                    "id": 101,
+                    "status": "pendente",
+                    "mensagem_lead": "Hamburgueria Marcianos",
+                    "resultado_json": {"project_name": "Marcianos"},
+                }
+            ]
+        )
+
+        def fake_workflow_runner(initial_state):
+            return {
+                "build_success": True,
+                "target_project_path": "workspace/Marcianos",
+                "customization_requirements": {"app_name": "Marcianos"},
+                "provedor_execucao": "antigravity_cli",
+            }
+
+        res = project_queue.process_queue_item(store, fake_workflow_runner, project_id=101)
+        self.assertEqual(res["status"], "sucesso")
+        updated_row = store.items[101]
+        self.assertEqual(updated_row["resultado_json"]["provedor_execucao"], "antigravity_cli")
+
+    def test_process_queue_item_transitions_to_falha_critica_on_build_failure(self):
+        store = FakeQueueStore(
+            [
+                {
+                    "id": 102,
+                    "status": "pendente",
+                    "mensagem_lead": "Lead com erro",
+                    "resultado_json": {"project_name": "ErroTest"},
+                }
+            ]
+        )
+
+        def failing_workflow_runner(initial_state):
+            return {
+                "build_success": False,
+                "execution_logs": ["Erro no build"],
+            }
+
+        with self.assertRaises(RuntimeError):
+            project_queue.process_queue_item(store, failing_workflow_runner, project_id=102)
+
+        updated_row = store.items[102]
+        self.assertEqual(updated_row["status"], "falha_critica")
+        self.assertIn("error_details", updated_row["resultado_json"])
+
 
 if __name__ == "__main__":
     unittest.main()
