@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Optional
+from typing import Any, Dict, Optional
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,7 +28,10 @@ supabase_url = os.environ.get("SUPABASE_URL", "")
 supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
 if supabase_url and supabase_key:
-    supabase_client = create_client(supabase_url, supabase_key)
+    try:
+        supabase_client = create_client(supabase_url, supabase_key)
+    except Exception:
+        supabase_client = None
 else:
     supabase_client = None
 
@@ -45,6 +48,7 @@ from ai_software_factory.project_queue import (
 )
 from ai_software_factory.rag_pipeline import run_rag_analysis_pipeline
 from ai_software_factory.state import AgentState
+from ai_software_factory import llm_gateway
 
 workflow = StateGraph(AgentState)
 workflow.add_node("analista", requirements_analyst_node)
@@ -98,21 +102,28 @@ app_api.add_middleware(
 
 class WebhookPayload(BaseModel):
     mensagem: str
+    briefing_payload: Optional[Dict[str, Any]] = None
 
 
 @app_api.post("/gerar-site")
 async def gerar_site(payload: WebhookPayload):
-    estado_inicial = build_initial_agent_state(mensagem_lead=payload.mensagem)
+    estado_inicial = build_initial_agent_state(
+        mensagem_lead=payload.mensagem,
+        briefing_payload=payload.briefing_payload,
+    )
     try:
         resultado = app.invoke(estado_inicial)
         if not resultado.get("build_success", False):
             raise Exception(
                 "O build do projeto falhou nas validações de QA e excedeu o limite de tentativas."
             )
+        provedor = resultado.get("provedor_execucao") or llm_gateway.get_last_execution_provider()
         return {
             "status": "sucesso",
             "mensagem": "Projeto gerado e validado com sucesso",
             "detalhes": resultado.get("customization_requirements"),
+            "target_project_path": resultado.get("target_project_path"),
+            "provedor_execucao": provedor,
         }
     except Exception as e:
         raise HTTPException(

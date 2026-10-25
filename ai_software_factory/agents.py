@@ -235,7 +235,6 @@ export default function LandingPage() {{
           transition={{{{ duration: 0.8 }}}}
           className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center"
         >
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           <div className="lg:col-span-7 space-y-6 text-left">
             <p className="text-sm font-medium text-[var(--primary-color)]">
               {profile['niche']} · {app_name}
@@ -286,7 +285,7 @@ export default function LandingPage() {{
               />
             </div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {{/* Quadro de Especialidades & Preços (Estrutura Linear Informativa com Motion InView) */}}
