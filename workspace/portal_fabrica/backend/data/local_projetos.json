@@ -1,5 +1,95 @@
 [
   {
+    "id": 1792893131766,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'cafe 018'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: caffe018@gmail.com | WhatsApp/Tel: 3434343434\n\n\n### CONTEÚDOS E TEXTOS DE APOIO:\n- **Informações Extras para o Agendamento**: crie um site profissional para uma cafeteria \n\n\n### LINKS DE REFERÊNCIA DO CLIENTE:\n1. Tipo: site - URL: https://www.google.com/maps/place/Caf%C3%A9+Cantante/@-30.0348779,-51.2112277,17z/data=!3m1!4b1!4m6!3m5!1s0x951979ad5a658b71:0xe76d6099f1c80e21!8m2!3d-30.0348779!4d-51.2112277!16s%2Fg%2F1yfjf1f1r?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D \n",
+    "status": "concluido",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "cafe 018",
+      "briefing_payload": {
+        "project_name": "cafe 018",
+        "branding": {
+          "palette_name": "Definida via Direção de Design"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "reference_links": [
+          {
+            "url": "https://www.google.com/maps/place/Caf%C3%A9+Cantante/@-30.0348779,-51.2112277,17z/data=!3m1!4b1!4m6!3m5!1s0x951979ad5a658b71:0xe76d6099f1c80e21!8m2!3d-30.0348779!4d-51.2112277!16s%2Fg%2F1yfjf1f1r?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D",
+            "type": "site",
+            "notes": ""
+          }
+        ],
+        "client_info": {
+          "email": "caffe018@gmail.com",
+          "phone": "3434343434"
+        },
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "ai_analysis": "",
+        "additional_data": {
+          "files": [],
+          "links": [
+            {
+              "label": "Referência (site)",
+              "url": "https://www.google.com/maps/place/Caf%C3%A9+Cantante/@-30.0348779,-51.2112277,17z/data=!3m1!4b1!4m6!3m5!1s0x951979ad5a658b71:0xe76d6099f1c80e21!8m2!3d-30.0348779!4d-51.2112277!16s%2Fg%2F1yfjf1f1r?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D"
+            }
+          ],
+          "texts": [
+            {
+              "label": "Informações Extras para o Agendamento",
+              "text": "crie um site profissional para uma cafeteria "
+            }
+          ]
+        },
+        "auto_process": true,
+        "timestamp": "2026-10-25T01:52:11.745Z"
+      },
+      "supabase_service_role_key": null,
+      "customization_requirements": {
+        "app_name": "Café 018",
+        "primary_color": "#8C3B24",
+        "secondary_color": "#2C4233",
+        "bg_color": "#FAF6F0",
+        "surface_color": "#EFE8DD",
+        "text_color": "#1E1612",
+        "muted_color": "#6E5D53",
+        "theme": "light",
+        "font_heading": "Fraunces",
+        "font_body": "Plus Jakarta Sans",
+        "logo_url": "/logo.png",
+        "address": "Bom Fim, Porto Alegre - RS",
+        "working_hours": "Terça a Domingo, das 08h30 às 20h00",
+        "phone": "3434343434",
+        "niche": "Cafeteria Especial & Torrefação Urbana",
+        "tagline": "Torra fresca, extração precisa e mesa posta no ritmo do bairro.",
+        "color_reasoning": "A paleta nasce da matéria-prima da bancada de extração e da arquitetura boêmia de Porto Alegre (inspirada na referência do bairro Bom Fim): o marrom-espresso profundo (#1E1612) para leitura nítida, o tom de cereja de café madura e cobre oxidado (#8C3B24) como ponto de calor, o verde-folha de cafeeiro sombreado (#2C4233) para contraste botânico, sobre superfícies que lembram papel filtro de algodão não branqueado (#FAF6F0) e crema de leite vaporizado (#EFE8DD). Evita-se o creme acinzentado (#F4F1EA) e o terracota alaranjado padrão de IA (#D97757).",
+        "layout_concept": "Estrutura editorial assimétrica inspirada em cardápios de degustação impressos em tipografia artesanal e fichas técnicas de torra. O alinhamento é predominantemente à esquerda com colunas de larguras desiguais (proporção 7:5 no desktop), criando respiro generoso ao redor da fotografia de produto e tabelas de grãos com linhas divisórias finas que organizam notas sensoriais, origem e métodos de preparo (V60, Prensa, Espresso) sem recorrer a grids de cartões idênticos.",
+        "focal_element": "Painel interativo 'Perfil da Torra do Dia' no Hero: um mostrador tipográfico e sensorial em destaque que apresenta o lote em moinho no momento (origem, altitude, notas de degustação e tempo ideal de extração), acompanhado de chamada direta para reserva de mesa ou encomenda de grãos.",
+        "design_critique": "Na revisão contra padrões genéricos de IA, descartamos o layout de três cards arredondados com sombra difusa para listar 'Qualidade, Ambiente e Atendimento'. Substituímos por um índice de cardápio vivo com preços reais, métodos de filtragem e notas de torra. Removemos etiquetas em caixa-alta espaçadas acima dos títulos, setas '→' nos botões e qualquer contraste binário artificial no texto. O movimento limita-se a uma revelação suave da ficha de extração no carregamento inicial e transições táteis rápidas ao alternar entre métodos de preparo e horários de reserva.",
+        "copy_tone": "Direto, sensorial e acolhedor. Usa verbos ativos e vocabulário real de barismo e panificação artesanal (moagem na hora, fermentação natural, água filtrada a 92°C) sem adjetivos vazios, clichês publicitários ou travessões dramáticos. Fala diretamente com quem busca um café bem tirado ou uma mesa tranquila para trabalhar e conversar.",
+        "recommended_sections": [
+          "hero_torra_do_dia",
+          "cardapio_extracoes_e_forno",
+          "experiencia_e_espaco",
+          "agendamento_mesa_e_eventos",
+          "localizacao_e_horarios"
+        ]
+      },
+      "target_project_path": "workspace/caf_018",
+      "provedor_execucao": "fallback_deterministic"
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-25T01:52:11.766Z",
+    "is_local": true
+  },
+  {
     "id": 1792889799823,
     "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Cafeteria Poa'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: cafepoars@gmail.com | WhatsApp/Tel: 3333434343434\n\n\n### CONTEÚDOS E TEXTOS DE APOIO:\n- **Informações Extras para o Agendamento**: Crie um site de uma cafeteria\n\n\n### LINKS DE REFERÊNCIA DO CLIENTE:\n1. Tipo: site - URL: https://www.google.com/maps/place/Caf%C3%A9+Cantante/@-30.0348779,-51.2112277,17z/data=!3m1!4b1!4m6!3m5!1s0x951979ad5a658b71:0xe76d6099f1c80e21!8m2!3d-30.0348779!4d-51.2112277!16s%2Fg%2F1yfjf1f1r?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D \n",
     "status": "falha_critica",
