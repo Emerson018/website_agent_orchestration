@@ -4,6 +4,12 @@ Ecossistema completo e automatizado para **captação de leads via WhatsApp CRM*
 
 O sistema opera com uma equipe de agentes de inteligência artificial construídos sobre **LangGraph** (com autorrecuperação cíclica e validação de QA com build real), suporte nativo a **LLMs Locais via LM Studio (Google Gemma)** ou nuvem, e persistência serverless via **Supabase**.
 
+> 📚 **Documentação Complementar**:
+> - [Guia Detalhado de Inicialização (Como Rodar)](docs/como-rodar.md)
+> - [Especificação Técnica de Arquitetura](docs/architecture.md)
+> - [Glossário de Domínio Canônico](GLOSSARY.md)
+> - [Registros de Decisões de Arquitetura (ADRs)](docs/adr/)
+
 ---
 
 ## 🗺️ Arquitetura do Ecossistema

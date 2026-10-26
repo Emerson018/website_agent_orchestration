@@ -8,12 +8,13 @@ if hasattr(sys.stdout, 'reconfigure'):
     except Exception:
         pass
 
-# Adiciona o diretório atual ao PYTHONPATH
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Adiciona a raiz do repositório ao PYTHONPATH
+_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT_DIR)
 
 # Carrega dotenv na raiz para garantir as chaves
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(os.path.join(_ROOT_DIR, ".env"))
 
 from ai_software_factory.dev_team import refine_tenant_workspace
 
