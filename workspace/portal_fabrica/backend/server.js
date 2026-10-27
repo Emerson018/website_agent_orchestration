@@ -171,74 +171,50 @@ app.post('/api/upload', async (req, res) => {
   }
 });
 
-// Helper para disparar processamento assíncrono na Fábrica de IA
+// Helper para despachar projeto para o Agente Antigravity no Chat ou Fábrica
 async function dispatchProjectToFactory(projectId, projectRecord = null) {
   try {
     const targetProject = projectRecord || getLocalProjectById(projectId);
-    console.log(`[Backend] Despachando projeto #${projectId} para a Fábrica de IA...`);
+    console.log(`[Backend] Despachando projeto #${projectId} para o Agente Antigravity no chat...`);
 
-    // 1. Se a fábrica tiver fila conectada no Supabase e o projeto não for estritamente local
-    if (!targetProject?.is_local) {
-      try {
-        const response = await fetch(`${SOFTWARE_FACTORY_API_URL}/processar-fila`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ project_id: parseInt(projectId, 10) }),
-        });
-        if (response.ok) {
-          const result = await response.json();
-          console.log(`Resultado da fila disparada para o projeto ${projectId}:`, result);
-          return result;
-        }
-      } catch (err) {
-        console.warn(`[Backend] Falha ao acionar /processar-fila (${err.message}). Acionando rota direta /gerar-site...`);
-      }
+    // 1. Marca status local como 'aguardando_agente'
+    if (targetProject?.is_local) {
+      updateLocalProject(projectId, { status: 'aguardando_agente' });
     }
 
-    // 2. Fallback direto para a rota autônoma /gerar-site (zero dependência de Supabase na fábrica)
+    // 2. Grava o job em .agents/queue/pending_job.json para o watcher do chat
+    try {
+      const queueDir = path.resolve(__dirname, '../../../.agents/queue');
+      if (!fs.existsSync(queueDir)) {
+        fs.mkdirSync(queueDir, { recursive: true });
+      }
+      const pendingFile = path.join(queueDir, 'pending_job.json');
+      fs.writeFileSync(pendingFile, JSON.stringify(targetProject, null, 2), 'utf-8');
+      console.log(`[Backend] Job gravado em ${pendingFile} para o Agente Antigravity.`);
+    } catch (fsErr) {
+      console.warn('[Backend] Aviso ao gravar arquivo de fila do agente:', fsErr.message);
+    }
+
+    // 3. Notifica a Fábrica de IA assincronamente (se conectada)
     if (targetProject?.mensagem_lead) {
-      console.log(`[Backend] Executando /gerar-site para projeto #${projectId} (${targetProject.resultado_json?.project_name || 'Projeto'})...`);
       const payload = {
         mensagem: targetProject.mensagem_lead,
         briefing_payload: targetProject.resultado_json?.briefing_payload || null,
+        project_id: parseInt(projectId, 10),
       };
 
-      const response = await fetch(`${SOFTWARE_FACTORY_API_URL}/gerar-site`, {
+      fetch(`${SOFTWARE_FACTORY_API_URL}/gerar-site`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+      }).catch(() => {
+        // Fábrica desacoplada: processamento ativo pelo Agente Antigravity no chat
       });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Fábrica de IA retornou HTTP ${response.status}: ${errText}`);
-      }
-
-      const result = await response.json();
-      console.log(`[Backend] Projeto #${projectId} gerado e validado com sucesso!`, result);
-
-      if (targetProject.is_local) {
-        updateLocalProject(projectId, {
-          status: 'concluido',
-          resultado_json: {
-            ...(targetProject.resultado_json || {}),
-            customization_requirements: result.detalhes,
-            target_project_path: result.target_project_path,
-            provedor_execucao: result.provedor_execucao,
-          },
-        });
-      }
-      return result;
     }
+
+    return { status: 'aguardando_agente', mensagem: 'Projeto encaminhado para o Agente Antigravity no chat' };
   } catch (err) {
-    console.error(`Erro ao disparar processamento da fábrica para projeto ${projectId}:`, err.message);
-    if (projectRecord?.is_local) {
-      updateLocalProject(projectId, {
-        status: 'falha_critica',
-        error_details: err.message,
-      });
-    }
-    return null;
+    console.error(`Erro ao despachar projeto ${projectId}:`, err.message);
   }
 }
 
@@ -542,10 +518,10 @@ app.post('/api/projetos/:id/processar', async (req, res) => {
     }
 
     if (local) {
-      updateLocalProject(id, { status: 'processando' });
+      updateLocalProject(id, { status: 'aguardando_agente' });
     }
 
-    res.json({ status: 'processando', mensagem: 'Compilação iniciada no orquestrador da Fábrica de IA.' });
+    res.json({ status: 'aguardando_agente', mensagem: 'Compilação iniciada no Agente Antigravity no chat.' });
 
     // Executa em segundo plano
     dispatchProjectToFactory(id, projeto);

@@ -19,8 +19,12 @@ The client-specific visual specification derived from a Lead Briefing and Niche 
 _Avoid_: Design prompt, style config, theme json, UI prompt
 
 **Project Queue Item**:
-A tracked build lifecycle record in `fila_projetos` linking a CRM Contact to its Lead Briefing, tenant database credentials, status (`pendente`, `processando`, `concluido`, `erro`), and generated configuration.
+A tracked build lifecycle record in `fila_projetos` linking a CRM Contact to its Lead Briefing, tenant database credentials, status (`pendente`, `aguardando_agente`, `processando`, `concluido`, `erro`), and generated configuration.
 _Avoid_: Job, task, build ticket
+
+**Chat Agent Worker Loop**:
+The execution pattern where the pair-programming Antigravity assistant directly acts as the active generation worker, receiving queued tenant briefs, authoring component code, and reporting progress live in the chat.
+_Avoid_: Background daemon, phantom runner, blackbox CLI
 
 **Gold Template**:
 The canonical reference application in `gold_templates/template_base_app` cloned and customized to produce each client's application.
@@ -38,10 +42,6 @@ _Avoid_: Client folder, target folder, output dir
 **LLM Gateway**:
 The deep module (`ai_software_factory/llm_gateway.py`) encapsulating model selection, rate-limit retries, local LM Studio HTTP transport, markdown fence cleanup, and structured schema synthesis behind a unified interface.
 _Avoid_: Raw LLM caller, ChatOpenAI wrapper
-
-**Tiered Fallback Cascade**:
-A multi-level execution sequence (Local LM Studio -> Antigravity CLI -> Cloud API -> Manual Parking) ensuring site generation resilience.
-_Avoid_: Retry loop, backup plan
 
 **Motion Choreography**:
 Orchestrated, physics-based UI transitions and scroll-triggered reveals tailored to client brand identity.
