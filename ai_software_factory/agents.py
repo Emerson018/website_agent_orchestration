@@ -443,6 +443,18 @@ CONTRATO ARQUITETURAL E INVARIANTES TÉCNICOS DO GOLD TEMPLATE:
     ws = workspace or TenantWorkspace(target_path)
     landing_page_path = ws.write_landing_page(code)
     print(f"Landing Page gerada com sucesso em: {landing_page_path}")
+
+    if llm_gateway.get_last_execution_provider() == "manual_prompt_generated":
+        manual_prompt = llm_gateway.get_last_manual_prompt()
+        if manual_prompt:
+            prompt_file = os.path.join(ws.workspace_root, "manual_prompt_LandingPage.md")
+            try:
+                with open(prompt_file, "w", encoding="utf-8") as f:
+                    f.write(manual_prompt)
+                print(f"[Desenvolvedor] Prompt manual salvo com sucesso em: {prompt_file}")
+            except Exception as e:
+                print(f"[Desenvolvedor] Erro ao gravar prompt manual: {e}")
+
     return landing_page_path
 
 
@@ -551,7 +563,16 @@ DIRETRIZ 5: Toda alteração de interface DEVE seguir os princípios da skill `.
         f"[CodeInjector] Design Direction e LandingPage.jsx geradas com sucesso via provedor '{provedor_code}'."
     )
 
-    return {"execution_logs": current_logs, "provedor_execucao": provedor_code}
+    manual_prompt = (
+        llm_gateway.get_last_manual_prompt()
+        if provedor_code == "manual_prompt_generated"
+        else None
+    )
+    return {
+        "execution_logs": current_logs,
+        "provedor_execucao": provedor_code,
+        "manual_prompt": manual_prompt,
+    }
 
 
 def qa_validator_node(

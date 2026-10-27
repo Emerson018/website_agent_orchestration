@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0005
 ---
 
 # Tiered Fallback Cascade with Antigravity CLI and Gemini 3.8 Flash

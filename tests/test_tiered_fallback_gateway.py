@@ -10,79 +10,71 @@ class SimpleSchema(BaseModel):
     status: str
 
 
-def test_describe_active_llm_supports_gemini_38_flash():
-    with patch.dict(os.environ, {"GOOGLE_API_KEY": "test-google-key", "OPENAI_API_KEY": "", "USE_LOCAL_LLM": "false"}):
-        info = llm_gateway.describe_active_llm()
-        assert info["provider"] == "google"
-        assert info["model"] == "gemini-3.8-flash"
-
-
-def test_generate_code_tier_1_local_success():
+def test_generate_code_tier_1_antigravity_cli_success():
     llm_gateway.set_last_execution_provider("none")
-    with patch("ai_software_factory.llm_gateway.invoke_local_lm_studio_http", return_value="export default function App() {}"):
-        code = llm_gateway.generate_code(
-            system_prompt="sys",
-            user_prompt="usr",
-            tier1_local_fn=lambda s, u: "export default function App() {}",
-        )
-        assert code == "export default function App() {}"
-        assert llm_gateway.get_last_execution_provider() == "local_lm_studio"
-
-
-def test_generate_code_tier_2_antigravity_cli_fallback():
-    llm_gateway.set_last_execution_provider("none")
-    # Tier 1 fails (returns None)
-    # Tier 2 succeeds
+    llm_gateway.set_last_manual_prompt("")
     code = llm_gateway.generate_code(
         system_prompt="sys",
         user_prompt="usr",
-        tier1_local_fn=lambda s, u: None,
-        tier2_antigravity_fn=lambda s, u: "export default function AgApp() {}",
+        tier1_antigravity_fn=lambda p, s: "export default function AgApp() { return <div>Ok</div>; }",
     )
-    assert code == "export default function AgApp() {}"
+    assert "export default function AgApp()" in code
     assert llm_gateway.get_last_execution_provider() == "antigravity_cli"
+    assert llm_gateway.get_last_manual_prompt() == ""
 
 
-def test_generate_code_tier_3_cloud_api_fallback():
+def test_generate_code_tier_2_manual_prompt_generation_when_cli_fails():
     llm_gateway.set_last_execution_provider("none")
-    # Tier 1 fails
-    # Tier 2 fails
-    # Tier 3 succeeds
+    llm_gateway.set_last_manual_prompt("")
+    
+    # Tier 1 fails (returns None) -> Tier 2 generates full manual prompt and executes fallback if available
     code = llm_gateway.generate_code(
         system_prompt="sys",
         user_prompt="usr",
-        tier1_local_fn=lambda s, u: None,
-        tier2_antigravity_fn=lambda s, u: None,
-        tier3_cloud_fn=lambda s, u: "export default function CloudApp() {}",
+        tier1_antigravity_fn=lambda p, s: None,
+        fallback_fn=lambda: "export default function EmergencyFallback() {}",
     )
-    assert code == "export default function CloudApp() {}"
-    assert llm_gateway.get_last_execution_provider() == "cloud_gemini_3.8_flash"
+    assert code == "export default function EmergencyFallback() {}"
+    assert llm_gateway.get_last_execution_provider() == "manual_prompt_generated"
+    manual_prompt = llm_gateway.get_last_manual_prompt()
+    assert "# [MANUAL TASK]" in manual_prompt
+    assert "sys" in manual_prompt
+    assert "usr" in manual_prompt
 
 
-def test_generate_code_tier_4_deterministic_fallback_when_all_fail():
+def test_synthesize_structured_tier_1_antigravity_cli_success():
     llm_gateway.set_last_execution_provider("none")
-    code = llm_gateway.generate_code(
-        system_prompt="sys",
-        user_prompt="usr",
-        tier1_local_fn=lambda s, u: None,
-        tier2_antigravity_fn=lambda s, u: None,
-        tier3_cloud_fn=lambda s, u: None,
-        fallback_fn=lambda: "export default function FallbackApp() {}",
-    )
-    assert code == "export default function FallbackApp() {}"
-    assert llm_gateway.get_last_execution_provider() == "fallback_deterministic"
-
-
-def test_synthesize_structured_tiered_progression():
-    llm_gateway.set_last_execution_provider("none")
-    # Test Tier 2 antigravity fallback for structured output
+    llm_gateway.set_last_manual_prompt("")
     result = llm_gateway.synthesize_structured(
         system_prompt="sys",
         user_prompt="usr",
         schema_class=SimpleSchema,
-        tier1_local_fn=lambda s, u: None,
-        tier2_antigravity_fn=lambda s, u: '{"title": "AG Title", "status": "active"}',
+        tier1_antigravity_fn=lambda p, s: '{"title": "AG Title", "status": "active"}',
     )
     assert isinstance(result, SimpleSchema)
     assert result.title == "AG Title"
     assert llm_gateway.get_last_execution_provider() == "antigravity_cli"
+
+
+def test_synthesize_structured_tier_2_manual_prompt_when_cli_fails():
+    llm_gateway.set_last_execution_provider("none")
+    llm_gateway.set_last_manual_prompt("")
+    
+    fallback_obj = SimpleSchema(title="Fallback Title", status="offline")
+    result = llm_gateway.synthesize_structured(
+        system_prompt="sys",
+        user_prompt="usr",
+        schema_class=SimpleSchema,
+        tier1_antigravity_fn=lambda p, s: None,
+        fallback_fn=lambda: fallback_obj,
+    )
+    assert result == fallback_obj
+    assert llm_gateway.get_last_execution_provider() == "manual_prompt_generated"
+    manual_prompt = llm_gateway.get_last_manual_prompt()
+    assert "# [MANUAL TASK]" in manual_prompt
+    assert "SimpleSchema" in manual_prompt or "JSON" in manual_prompt
+
+
+def test_lm_studio_is_completely_excluded():
+    # Verify that LM Studio is no longer a dependency or tier in llm_gateway
+    assert not hasattr(llm_gateway, "invoke_local_lm_studio_http")

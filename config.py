@@ -14,15 +14,24 @@ from ai_software_factory.intake_parser import (
     parse_lead_briefing,
 )
 
-# Re-exporta Seam de LLM e Gateway Resiliente
+# Re-exporta Seam de LLM e Gateway Resiliente de 2 Tiers (Antigravity CLI + Prompt Manual)
+from ai_software_factory.antigravity_runner import (
+    build_manual_prompt,
+    find_antigravity_cli_path,
+    invoke_antigravity_cli,
+    is_antigravity_cli_available,
+)
 from ai_software_factory.llm_gateway import (
     ResilientLLM,
     describe_active_llm,
     extract_json_from_text,
     generate_code,
+    get_last_execution_provider,
+    get_last_manual_prompt,
     get_llm,
     invoke_code_llm,
-    invoke_local_lm_studio_http,
+    set_last_execution_provider,
+    set_last_manual_prompt,
     strip_code_fences,
     synthesize_structured,
 )
@@ -36,9 +45,16 @@ __all__ = [
     "describe_active_llm",
     "get_llm",
     "strip_code_fences",
-    "invoke_local_lm_studio_http",
     "invoke_code_llm",
     "synthesize_structured",
     "generate_code",
     "extract_json_from_text",
+    "build_manual_prompt",
+    "invoke_antigravity_cli",
+    "is_antigravity_cli_available",
+    "find_antigravity_cli_path",
+    "get_last_execution_provider",
+    "set_last_execution_provider",
+    "get_last_manual_prompt",
+    "set_last_manual_prompt",
 ]

@@ -185,6 +185,8 @@ def process_queue_item(
             target_project_path=target_path,
             provedor_execucao=provedor,
         )
+        if resultado.get("manual_prompt"):
+            merged_json["manual_prompt"] = resultado["manual_prompt"]
 
         queue_store.update(
             target_id,

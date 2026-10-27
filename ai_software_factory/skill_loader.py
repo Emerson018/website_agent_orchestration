@@ -6,7 +6,10 @@ _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _FRONTEND_DESIGN_SKILL_PATH = os.path.join(
     _ROOT_DIR, ".agents", "skills", "frontend-design", "SKILL.md"
 )
-_STOP_SLOP_SKILL_PATH = os.path.join(_ROOT_DIR, "stop_slop.md")
+_STOP_SLOP_SKILL_PATH = os.path.join(
+    _ROOT_DIR, ".agents", "skills", "stop-slop", "SKILL.md"
+)
+_LEGACY_STOP_SLOP_PATH = os.path.join(_ROOT_DIR, "stop_slop.md")
 
 
 def _strip_yaml_frontmatter(markdown_text: str) -> str:
@@ -38,8 +41,11 @@ def get_frontend_design_skill() -> str:
 
 
 def get_stop_slop_skill() -> str:
-    """Carrega o conteúdo oficial de stop_slop.md."""
-    return load_skill_markdown(_STOP_SLOP_SKILL_PATH)
+    """Carrega o conteúdo oficial de .agents/skills/stop-slop/SKILL.md (ou stop_slop.md legado)."""
+    content = load_skill_markdown(_STOP_SLOP_SKILL_PATH)
+    if not content:
+        content = load_skill_markdown(_LEGACY_STOP_SLOP_PATH)
+    return content
 
 
 def get_web_design_guidelines_summary() -> str:
