@@ -1,5 +1,60 @@
 [
   {
+    "id": 42,
+    "status": "concluido",
+    "resultado_json": {
+      "customization_requirements": {
+        "app_name": "Agridoce Café",
+        "niche": "Cafeteria & Confeitaria Artesanal de Experiência",
+        "primary_color": "#8C4A2F",
+        "secondary_color": "#385E46",
+        "bg_color": "#FAF6F0",
+        "surface_color": "#FFFFFF",
+        "text_color": "#211915",
+        "muted_color": "#6E5F57",
+        "font_heading": "Playfair Display",
+        "font_body": "Plus Jakarta Sans",
+        "address": "Rua Sarmento Leite, 1024 - Cidade Baixa, Porto Alegre - RS",
+        "working_hours": "Terça a Domingo, das 11h às 20h",
+        "phone": "(51) 99876-5432",
+        "tagline": "Um refúgio de café especial, memória e confeitaria artesanal.",
+        "layout_concept": "Abertura editorial acolhedora com tipografia clássica e cardápio de estufa interativo",
+        "focal_element": "Mostrador visual com lote de torra fresca e cartas temáticas de barismo"
+      },
+      "target_project_path": "workspace/agridoce_cafeteria",
+      "provedor_execucao": "antigravity_chat_agent",
+      "preview_url": "http://localhost:5176"
+    },
+    "is_local": true
+  },
+  {
+    "id": 1793068411831,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Barbearia Teste Resiliente'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: teste@barbearia.com | WhatsApp/Tel: 11999999999\n\n\n\n\n",
+    "status": "pendente",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Barbearia Teste Resiliente",
+      "briefing_payload": {
+        "project_name": "Barbearia Teste Resiliente",
+        "client_info": {
+          "email": "teste@barbearia.com",
+          "phone": "11999999999"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "auto_process": false
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-27T02:33:31.831Z",
+    "is_local": true
+  },
+  {
     "id": 1792893131766,
     "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'cafe 018'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: caffe018@gmail.com | WhatsApp/Tel: 3434343434\n\n\n### CONTEÚDOS E TEXTOS DE APOIO:\n- **Informações Extras para o Agendamento**: crie um site profissional para uma cafeteria \n\n\n### LINKS DE REFERÊNCIA DO CLIENTE:\n1. Tipo: site - URL: https://www.google.com/maps/place/Caf%C3%A9+Cantante/@-30.0348779,-51.2112277,17z/data=!3m1!4b1!4m6!3m5!1s0x951979ad5a658b71:0xe76d6099f1c80e21!8m2!3d-30.0348779!4d-51.2112277!16s%2Fg%2F1yfjf1f1r?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D \n",
     "status": "concluido",
