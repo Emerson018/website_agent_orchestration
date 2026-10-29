@@ -99,6 +99,29 @@ describe('project-queue utilities', () => {
     expect(status.progressPercentage).toBe(0);
   });
 
+  it('determines project status as pending without active processing loop', () => {
+    const projects: ProjectQueueItem[] = [
+      {
+        id: 44,
+        created_at: '2026-10-28T10:00:00Z',
+        mensagem_lead: 'Briefing barb',
+        status: 'pendente',
+        resultado_json: {
+          contact_id: 'contact-uuid-123',
+        },
+        supabase_url: null,
+        supabase_anon_key: null,
+      },
+    ];
+
+    const status = getContactProjectStatus(projects);
+    expect(status.isGenerated).toBe(false);
+    expect(status.isProcessing).toBe(false);
+    expect(status.status).toBe('pendente');
+    expect(status.progressPercentage).toBe(0);
+    expect(status.statusMessage).toContain('fila de produção');
+  });
+
   it('retrieves correct generation stages based on percentage', () => {
     expect(PWA_GENERATION_STAGES.length).toBeGreaterThanOrEqual(5);
     const stage1 = getStageByProgress(15);

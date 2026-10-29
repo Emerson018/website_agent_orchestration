@@ -1,0 +1,77 @@
+{
+  "app_name": "Espaço Mesclado Café",
+  "primary_color": "#382215",
+  "secondary_color": "#4E6E58",
+  "supabase_url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co",
+  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM",
+  "logo_url": "/logo.png",
+  "address": "Consulte nossa localização pelo mapa interativo ou WhatsApp",
+  "phone": "(12) 12112-1212",
+  "working_hours": "Terça a Domingo, das 08h30 às 19h30",
+  "n8n_webhook_url": "http://localhost:5678/webhook-test/booking",
+  "bg_color": "#FAF8F3",
+  "surface_color": "#F0ECE1",
+  "text_color": "#1E1916",
+  "muted_color": "#73675E",
+  "theme": "light",
+  "font_heading": "Fraunces",
+  "font_body": "Plus Jakarta Sans",
+  "niche": "Cafeteria Especial, Brunch & Espaço de Convivência",
+  "tagline": "Torra fresca, massa mãe e tempo para ficar.",
+  "brand_essence": "O ponto de encontro entre a extração técnica do café especial e a pausa descomplicada ao redor da mesa.",
+  "value_proposition": "Cafés extraídos sob medida, fornadas artesanais diárias e mesas reserváveis para trabalhar com calma ou reunir amigos sem olhar no relógio.",
+  "target_audience": "Apreciadores de cafés filtrados e espressos bem tirados, profissionais em trabalho remoto em busca de boas mesas com tomada e grupos que valorizam brunch artesanal.",
+  "brand_pillars": [
+    "Grãos brasileiros de torra fresca e extração precisa",
+    "Panificação de fermentação lenta feita na casa",
+    "Ambiente acolhedor pensado para conversas ou foco",
+    "Reserva simples de mesas, bancadas e degustações"
+  ],
+  "real_services": [
+    "Reserva de Mesa para Brunch & Café (Salão ou Jardim)",
+    "Estação de Trabalho Compartilhada (Mesas com Energia e Wi-Fi + Café Filtrado)",
+    "Degustação Guiada de Métodos Filtrados (V60, Chemex e Prensa Francesa)",
+    "Reserva de Espaço para Pequenos Encontros e Reuniões"
+  ],
+  "color_reasoning": "A paleta parte da matéria-prima da xícara e da arquitetura de cafeteria botânica: '#382215' (Torra Média-Escura / Crema de Espresso) assume o papel principal com contraste profundo; '#4E6E58' (Folha de Cafeeiro e Louça Cerâmica Verde) entra como cor secundária de frescor orgânico; '#FAF8F3' (Leite Vaporizado / Papel Filtro Branco) e '#F0ECE1' (Farinha de Trigo Integral / Cerâmica Crua) constroem planos claros e luminosos sem cair no creme amarelado #F4F1EA de IA; '#1E1916' e '#73675E' garantem leitura nítida inspirada em tinta de cardápio impresso.",
+  "layout_archetype": "Editorial de Balcão & Cardápio de Fornada",
+  "layout_concept": "Alinhamento à esquerda com composição assimétrica inspirada em cardápios de cafeterias independentes e revistas de cultura gastronômica. Em vez de blocos centralizados, a página divide a tela entre uma coluna de narrativa sensorial fixa e um quadro vivo de fornadas, métodos de extração e disponibilidade de mesas.",
+  "focal_element": "Quadro Interativo 'Fornada & Extração do Dia' no Hero: um painel tipográfico e tátil que cruza a nota sensorial do grão em moinho hoje com o seletor rápido de reserva de mesa ou bancada de trabalho.",
+  "design_critique": "Rejeitamos o clichê #F4F1EA com terracota #D97757 (tell clássico de IA) usando um fundo de leite vaporizado #FAF8F3 combinado ao marrom espresso #382215 e verde botânico #4E6E58. Eliminamos o kit SaaS de 3 cards idênticos em favor de uma lista de cardápio com preços e notas de torra alinhados por tabulação editorial. Removemos eyebrows em ALL-CAPS, separadores com ponto médio e setas '→' nos botões, adotando verbos diretos na primeira ação ('Reservar mesa', 'Ver cardápio do dia').",
+  "copy_tone": "Conversacional, sensorial e direto. Fala de temperatura, moagem na hora, manteiga dourada e lugares confortáveis para sentar, sem adjetivos vazios como 'experiência única' ou 'incomparável'.",
+  "section_blueprint": [
+    {
+      "id": "hero",
+      "title": "Abertura e Painel de Extração do Dia",
+      "purpose": "Colocar o visitante dentro do aroma e da rotina do Espaço Mesclado com acesso imediato à reserva de mesa ou bancada."
+    },
+    {
+      "id": "menu_rituals",
+      "title": "Na Xícara e no Forno",
+      "purpose": "Apresentar os métodos de extração (Espresso, V60, Prensa) e os itens de fornada em formato de cardápio impresso legível, com notas reais e faixas de preço claras."
+    },
+    {
+      "id": "space_modes",
+      "title": "Seu Ritmo no Mesclado",
+      "purpose": "Mostrar os dois usos reais da casa: mesas ensolaradas para brunch em grupo e bancadas tranquilas com tomadas para leitura ou trabalho remoto."
+    },
+    {
+      "id": "booking_pwa",
+      "title": "Reserva de Mesa e Experiências",
+      "purpose": "Integrar o agendador PWA para escolha rápida de horário, número de pessoas ou sessão de degustação sem fila de espera."
+    },
+    {
+      "id": "location_hours",
+      "title": "Onde Estamos e Horários de Fornada",
+      "purpose": "Exibir endereço, link direto para a rota no Google Maps, horários de funcionamento e contato rápido via WhatsApp."
+    }
+  ],
+  "recommended_sections": [
+    "hero",
+    "menu_rituals",
+    "space_modes",
+    "booking_pwa",
+    "location_hours"
+  ],
+  "execution_engine": "Antigravity CLI (Headless)"
+}

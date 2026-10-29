@@ -1,5 +1,391 @@
 [
   {
+    "id": 75,
+    "created_at": "2026-10-29T19:55:58.130196+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Lead Teste Diag 1793303756803'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: lead_diag_1793303756803@test.com | WhatsApp/Tel: (11) 963226699\n\n\n\n\n### LINKS DE REFERÊNCIA DO CLIENTE:\n1. Tipo: site - URL: https://example.com \n",
+    "status": "pendente",
+    "resultado_json": {
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "75a20607-681b-4785-b041-21536f814094",
+      "project_name": "Lead Teste Diag 1793303756803",
+      "briefing_payload": {
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "client_info": {
+          "email": "lead_diag_1793303756803@test.com",
+          "phone": "(11) 963226699"
+        },
+        "auto_process": false,
+        "project_name": "Lead Teste Diag 1793303756803",
+        "reference_links": [
+          {
+            "url": "https://example.com",
+            "type": "site"
+          }
+        ]
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 73,
+    "created_at": "2026-10-29T16:52:04.522298+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Lead Teste Diag 1793292723104'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: lead_diag_1793292723104@test.com | WhatsApp/Tel: (11) 983187198\n\n\n\n\n### LINKS DE REFERÊNCIA DO CLIENTE:\n1. Tipo: site - URL: https://example.com \n",
+    "status": "pendente",
+    "resultado_json": {
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "cd508530-80a6-45bb-8d82-eb449e3d0ab4",
+      "project_name": "Lead Teste Diag 1793292723104",
+      "briefing_payload": {
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "client_info": {
+          "email": "lead_diag_1793292723104@test.com",
+          "phone": "(11) 983187198"
+        },
+        "auto_process": false,
+        "project_name": "Lead Teste Diag 1793292723104",
+        "reference_links": [
+          {
+            "url": "https://example.com",
+            "type": "site"
+          }
+        ]
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 1793292722962,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Barbearia Teste Resiliente'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: teste@barbearia.com | WhatsApp/Tel: 11999999999\n\n\n\n\n",
+    "status": "pendente",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Barbearia Teste Resiliente",
+      "briefing_payload": {
+        "project_name": "Barbearia Teste Resiliente",
+        "client_info": {
+          "email": "teste@barbearia.com",
+          "phone": "11999999999"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "auto_process": false
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-29T16:52:02.962Z",
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 74
+  },
+  {
+    "id": 72,
+    "created_at": "2026-10-29T16:20:40.025867+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Lead Teste Diag 1793290839091'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: lead_diag_1793290839090@test.com | WhatsApp/Tel: (11) 987422436\n\n\n\n\n### LINKS DE REFERÊNCIA DO CLIENTE:\n1. Tipo: site - URL: https://example.com \n",
+    "status": "pendente",
+    "resultado_json": {
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "73cf6c53-48bd-4fe5-af1d-1581d58d5c62",
+      "project_name": "Lead Teste Diag 1793290839091",
+      "briefing_payload": {
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "client_info": {
+          "email": "lead_diag_1793290839090@test.com",
+          "phone": "(11) 987422436"
+        },
+        "auto_process": false,
+        "project_name": "Lead Teste Diag 1793290839091",
+        "reference_links": [
+          {
+            "url": "https://example.com",
+            "type": "site"
+          }
+        ]
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 1793290777440,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Barbearia Teste Resiliente'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: teste@barbearia.com | WhatsApp/Tel: 11999999999\n\n\n\n\n",
+    "status": "pendente",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Barbearia Teste Resiliente",
+      "briefing_payload": {
+        "project_name": "Barbearia Teste Resiliente",
+        "client_info": {
+          "email": "teste@barbearia.com",
+          "phone": "11999999999"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "auto_process": false
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-29T16:19:37.440Z",
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 71
+  },
+  {
+    "id": 70,
+    "created_at": "2026-10-29T16:19:28.423695+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Lead Teste Diag 1793290767002'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: lead_diag_1793290767002@test.com | WhatsApp/Tel: (11) 959666552\n\n\n\n\n### LINKS DE REFERÊNCIA DO CLIENTE:\n1. Tipo: site - URL: https://example.com \n",
+    "status": "pendente",
+    "resultado_json": {
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "c43e0623-7bf4-4488-bfc6-eabcf1369c41",
+      "project_name": "Lead Teste Diag 1793290767002",
+      "briefing_payload": {
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "client_info": {
+          "email": "lead_diag_1793290767002@test.com",
+          "phone": "(11) 959666552"
+        },
+        "auto_process": false,
+        "project_name": "Lead Teste Diag 1793290767002",
+        "reference_links": [
+          {
+            "url": "https://example.com",
+            "type": "site"
+          }
+        ]
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 69,
+    "created_at": "2026-10-29T16:18:53.822158+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Lead Teste Diag 1793290732869'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: lead_diag_1793290732869@test.com | WhatsApp/Tel: (11) 98765-4321\n\n\n\n\n### LINKS DE REFERÊNCIA DO CLIENTE:\n1. Tipo: site - URL: https://example.com \n",
+    "status": "pendente",
+    "resultado_json": {
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "3607ef01-5fea-4a02-8bf3-9a485520178a",
+      "project_name": "Lead Teste Diag 1793290732869",
+      "briefing_payload": {
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "client_info": {
+          "email": "lead_diag_1793290732869@test.com",
+          "phone": "(11) 98765-4321"
+        },
+        "auto_process": false,
+        "project_name": "Lead Teste Diag 1793290732869",
+        "reference_links": [
+          {
+            "url": "https://example.com",
+            "type": "site"
+          }
+        ]
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 1793290459749,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Barbearia Teste Resiliente'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: teste@barbearia.com | WhatsApp/Tel: 11999999999\n\n\n\n\n",
+    "status": "pendente",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Barbearia Teste Resiliente",
+      "briefing_payload": {
+        "project_name": "Barbearia Teste Resiliente",
+        "client_info": {
+          "email": "teste@barbearia.com",
+          "phone": "11999999999"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "auto_process": false
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-29T16:14:19.749Z",
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 52
+  },
+  {
+    "id": 1793290363804,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Lead Teste Diag 1793290363747'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: lead_diag_1793290363747@test.com | WhatsApp/Tel: (11) 98765-4321\n\n\n\n\n### LINKS DE REFERÊNCIA DO CLIENTE:\n1. Tipo: site - URL: https://example.com \n",
+    "status": "pendente",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Lead Teste Diag 1793290363747",
+      "briefing_payload": {
+        "project_name": "Lead Teste Diag 1793290363747",
+        "client_info": {
+          "email": "lead_diag_1793290363747@test.com",
+          "phone": "(11) 98765-4321"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "reference_links": [
+          {
+            "url": "https://example.com",
+            "type": "site"
+          }
+        ],
+        "auto_process": false
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-29T16:12:43.804Z",
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 54
+  },
+  {
+    "id": 1793289746180,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Espaço Mesclado Café'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: mescladocafe@gmail.com | WhatsApp/Tel: (12) 12112-1212\n\n\n### CONTEÚDOS E TEXTOS DE APOIO:\n\n\n\n### LINKS DE REFERÊNCIA DO CLIENTE:\n1. Tipo: outro - URL: https://maps.app.goo.gl/Zrz3apDnVidavagz8 (Notas: Nome, preço, avaliações, local)\n",
+    "status": "pendente",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Espaço Mesclado Café",
+      "briefing_payload": {
+        "project_name": "Espaço Mesclado Café",
+        "branding": {
+          "palette_name": "Definida via Direção de Design"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "reference_links": [
+          {
+            "url": "https://maps.app.goo.gl/Zrz3apDnVidavagz8",
+            "type": "outro",
+            "notes": "Nome, preço, avaliações, local"
+          }
+        ],
+        "client_info": {
+          "email": "mescladocafe@gmail.com",
+          "phone": "(12) 12112-1212"
+        },
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "ai_analysis": "",
+        "additional_data": {
+          "files": [],
+          "links": [
+            {
+              "label": "Referência (outro) - Nome, preço, avaliações, local",
+              "url": "https://maps.app.goo.gl/Zrz3apDnVidavagz8"
+            }
+          ],
+          "texts": [
+            {
+              "label": "Informações Extras para o Agendamento",
+              "text": ""
+            }
+          ]
+        },
+        "auto_process": false,
+        "timestamp": "2026-10-29T16:02:26.116Z"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-29T16:02:26.180Z",
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 55
+  },
+  {
     "id": 1793236707480,
     "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Barbearia Teste Resiliente'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: teste@barbearia.com | WhatsApp/Tel: 11999999999\n\n\n\n\n",
     "status": "pendente",
@@ -24,7 +410,9 @@
     "supabase_url": null,
     "supabase_anon_key": null,
     "created_at": "2026-10-29T01:18:27.480Z",
-    "is_local": true
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 56
   },
   {
     "id": 1793236603821,
@@ -51,7 +439,9 @@
     "supabase_url": null,
     "supabase_anon_key": null,
     "created_at": "2026-10-29T01:16:43.821Z",
-    "is_local": true
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 57
   },
   {
     "id": 1793236100370,
@@ -78,7 +468,9 @@
     "supabase_url": null,
     "supabase_anon_key": null,
     "created_at": "2026-10-29T01:08:20.370Z",
-    "is_local": true
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 58
   },
   {
     "id": 42,
@@ -133,7 +525,9 @@
     "supabase_url": null,
     "supabase_anon_key": null,
     "created_at": "2026-10-27T02:33:31.831Z",
-    "is_local": true
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 59
   },
   {
     "id": 1792893131766,
@@ -223,7 +617,9 @@
     "supabase_url": null,
     "supabase_anon_key": null,
     "created_at": "2026-10-25T01:52:11.766Z",
-    "is_local": true
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 60
   },
   {
     "id": 1792889799823,
@@ -281,8 +677,10 @@
     "supabase_url": null,
     "supabase_anon_key": null,
     "created_at": "2026-10-25T00:56:39.823Z",
-    "is_local": true,
-    "error_details": "Fábrica de IA retornou HTTP 500: {\"detail\":\"Erro interno do servidor ao gerar site: O build do projeto falhou nas validações de QA e excedeu o limite de tentativas.\"}"
+    "is_local": false,
+    "error_details": "Fábrica de IA retornou HTTP 500: {\"detail\":\"Erro interno do servidor ao gerar site: O build do projeto falhou nas validações de QA e excedeu o limite de tentativas.\"}",
+    "supabase_synced": true,
+    "supabase_id": 61
   },
   {
     "id": 1792888487636,
@@ -372,7 +770,9 @@
     "supabase_url": null,
     "supabase_anon_key": null,
     "created_at": "2026-10-25T00:34:47.636Z",
-    "is_local": true
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 62
   },
   {
     "id": 1792887483567,
@@ -419,8 +819,10 @@
     "supabase_url": null,
     "supabase_anon_key": null,
     "created_at": "2026-10-25T00:18:03.567Z",
-    "is_local": true,
-    "error_details": "request to http://localhost:8000/gerar-site failed, reason: "
+    "is_local": false,
+    "error_details": "request to http://localhost:8000/gerar-site failed, reason: ",
+    "supabase_synced": true,
+    "supabase_id": 63
   },
   {
     "id": 1792881487189,
@@ -496,7 +898,9 @@
     "supabase_url": null,
     "supabase_anon_key": null,
     "created_at": "2026-10-24T22:38:07.189Z",
-    "is_local": true
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 64
   },
   {
     "id": 1792877322530,
@@ -523,7 +927,9 @@
     "supabase_url": null,
     "supabase_anon_key": null,
     "created_at": "2026-10-24T21:28:42.530Z",
-    "is_local": true
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 65
   },
   {
     "id": 1792875599517,
@@ -599,7 +1005,9 @@
     "supabase_url": null,
     "supabase_anon_key": null,
     "created_at": "2026-10-24T20:59:59.518Z",
-    "is_local": true
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 66
   },
   {
     "id": 1792875068072,
@@ -626,7 +1034,9 @@
     "supabase_url": null,
     "supabase_anon_key": null,
     "created_at": "2026-10-24T20:51:08.072Z",
-    "is_local": true
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 67
   },
   {
     "id": 1792875038813,
@@ -653,6 +1063,8 @@
     "supabase_url": null,
     "supabase_anon_key": null,
     "created_at": "2026-10-24T20:50:38.813Z",
-    "is_local": true
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 68
   }
 ]

@@ -10,8 +10,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Carrega as variáveis de ambiente
+// Carrega as variáveis de ambiente com prioridade e fallback
 dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../wacrm/.env.local') });
 dotenv.config();
 
 const app = express();
@@ -84,7 +86,7 @@ function getLocalProjectById(id) {
 }
 
 // Inicializa o cliente do Supabase
-const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 const isPlaceholderUrl =
@@ -339,6 +341,12 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
           if (!incomingContactId && !ai_analysis) {
             contactUpdatePayload.rag_status = 'idle';
           }
+          if (email && email !== 'Não informado') {
+            contactUpdatePayload.email = email;
+          }
+          if (contactName) {
+            contactUpdatePayload.name = contactName;
+          }
           await supabase
             .from('contacts')
             .update(contactUpdatePayload)
@@ -460,28 +468,41 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
 
           const dealValue = summary?.total_setup_price || 0;
 
-          const { error: dealError } = await supabase
+          const { data: existingDeal } = await supabase
             .from('deals')
-            .insert([
-              {
-                user_id: defaultUserId,
-                account_id: defaultAccountId,
-                pipeline_id: pipelineId,
-                stage_id: stageId,
-                contact_id: contactId,
-                conversation_id: conversationId,
-                title: `Projeto - ${project_name}`,
-                value: dealValue,
-                currency: 'BRL',
-                notes: `Módulos: ${modules?.join(', ') || 'site'}`,
-                status: 'open'
-              }
-            ]);
+            .select('id')
+            .eq('account_id', defaultAccountId)
+            .eq('contact_id', contactId)
+            .eq('title', `Projeto - ${project_name}`)
+            .limit(1)
+            .maybeSingle();
 
-          if (dealError) {
-            console.warn('[Backend] Erro ao criar Oportunidade (Deal) no CRM:', dealError.message);
+          if (!existingDeal) {
+            const { error: dealError } = await supabase
+              .from('deals')
+              .insert([
+                {
+                  user_id: defaultUserId,
+                  account_id: defaultAccountId,
+                  pipeline_id: pipelineId,
+                  stage_id: stageId,
+                  contact_id: contactId,
+                  conversation_id: conversationId,
+                  title: `Projeto - ${project_name}`,
+                  value: dealValue,
+                  currency: 'BRL',
+                  notes: `Módulos: ${modules?.join(', ') || 'site'}`,
+                  status: 'open'
+                }
+              ]);
+
+            if (dealError) {
+              console.warn('[Backend] Erro ao criar Oportunidade (Deal) no CRM:', dealError.message);
+            } else {
+              console.log(`[Backend] Oportunidade (Deal) criada com sucesso no funil do CRM no valor de R$ ${dealValue}!`);
+            }
           } else {
-            console.log(`[Backend] Oportunidade (Deal) criada com sucesso no funil do CRM no valor de R$ ${dealValue}!`);
+            console.log(`[Backend] Oportunidade (Deal) já existente no CRM para ${project_name} (ID: ${existingDeal.id}).`);
           }
         }
       } catch (crmResolveErr) {
@@ -520,6 +541,15 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
           console.warn('[Backend] Erro no Supabase fila_projetos (' + insertError.message + '). Ativando fila local resiliente...');
         } else {
           data = inserted;
+          // Salva também na cópia local para consistência e inspeção offline
+          try {
+            const localMirror = {
+              ...inserted[0],
+              is_local: false,
+              supabase_synced: true,
+            };
+            saveLocalProject(localMirror);
+          } catch {}
         }
       } catch (insertEx) {
         console.warn('[Backend] Exceção ao gravar no Supabase (' + insertEx.message + '). Ativando fila local resiliente...');
@@ -689,6 +719,193 @@ app.post('/api/projetos/:id/processar', async (req, res) => {
   }
 });
 
+// Sincroniza projetos acumulados localmente com o Supabase ao iniciar
+async function syncUnsyncedLocalProjects() {
+  if (!isSupabaseActive) return;
+  const localProjects = getLocalProjects();
+  let modified = false;
+
+  for (let i = 0; i < localProjects.length; i++) {
+    const p = localProjects[i];
+    if (p.is_local && !p.supabase_synced && p.mensagem_lead) {
+      try {
+        const payload = p.resultado_json?.briefing_payload || {};
+        const projectName = payload.project_name || p.resultado_json?.project_name;
+        if (!projectName) continue;
+
+        console.log(`[Sync] Sincronizando projeto local acumulado #${p.id} ("${projectName}") para o Supabase...`);
+
+        let defaultUserId = '2b66650c-a300-4239-b922-2aab9bccac6f';
+        let defaultAccountId = '98006e91-88b1-44ea-9178-50c257cd973f';
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_id, account_id')
+          .eq('email', 'admin@wacrm.com')
+          .maybeSingle();
+
+        if (profile?.user_id) defaultUserId = profile.user_id;
+        if (profile?.account_id) defaultAccountId = profile.account_id;
+
+        const phone = payload.client_info?.phone || 'Não informado';
+        const phone_normalized = phone.replace(/\D/g, '');
+        const email = payload.client_info?.email || 'Não informado';
+
+        let contactId = null;
+        if (phone_normalized) {
+          const { data: existingContact } = await supabase
+            .from('contacts')
+            .select('id')
+            .eq('account_id', defaultAccountId)
+            .eq('phone_normalized', phone_normalized)
+            .limit(1)
+            .maybeSingle();
+
+          if (existingContact) {
+            contactId = existingContact.id;
+          }
+        }
+
+        if (!contactId && phone !== 'Não informado') {
+          const { data: newContact } = await supabase
+            .from('contacts')
+            .insert([{
+              user_id: defaultUserId,
+              account_id: defaultAccountId,
+              phone: phone,
+              name: projectName,
+              email: email,
+              additional_data: payload.additional_data || {},
+              rag_status: 'idle',
+            }])
+            .select('id')
+            .single();
+
+          if (newContact) contactId = newContact.id;
+        }
+
+        let conversationId = null;
+        if (contactId) {
+          const { data: existingConv } = await supabase
+            .from('conversations')
+            .select('id')
+            .eq('account_id', defaultAccountId)
+            .eq('contact_id', contactId)
+            .eq('status', 'open')
+            .limit(1)
+            .maybeSingle();
+
+          if (existingConv) {
+            conversationId = existingConv.id;
+          } else {
+            const { data: newConv } = await supabase
+              .from('conversations')
+              .insert([{
+                user_id: defaultUserId,
+                account_id: defaultAccountId,
+                contact_id: contactId,
+                status: 'open',
+                last_message_text: `Projeto - ${projectName}`,
+                last_message_at: new Date().toISOString(),
+                unread_count: 1,
+              }])
+              .select('id')
+              .single();
+
+            if (newConv) {
+              conversationId = newConv.id;
+              await supabase.from('messages').insert([{
+                conversation_id: conversationId,
+                sender_type: 'customer',
+                content_type: 'text',
+                content_text: p.mensagem_lead,
+                status: 'sent',
+              }]);
+            }
+          }
+        }
+
+        if (contactId) {
+          let pipelineId = '0a1969dd-bc7e-4a99-a854-a925f32ad923';
+          let stageId = 'e15c3092-f3f9-4550-baa4-88a6f27b6eaa';
+          try {
+            const { data: stages } = await supabase
+              .from('pipeline_stages')
+              .select('id, pipeline_id, position, pipelines!inner(account_id)')
+              .eq('pipelines.account_id', defaultAccountId)
+              .order('position', { ascending: true })
+              .limit(1);
+
+            if (stages && stages.length > 0) {
+              stageId = stages[0].id;
+              pipelineId = stages[0].pipeline_id;
+            }
+          } catch {}
+
+          const dealVal = payload.summary?.total_setup_price || 0;
+          const { data: existingDeal } = await supabase
+            .from('deals')
+            .select('id')
+            .eq('account_id', defaultAccountId)
+            .eq('contact_id', contactId)
+            .eq('title', `Projeto - ${projectName}`)
+            .limit(1)
+            .maybeSingle();
+
+          if (!existingDeal) {
+            await supabase.from('deals').insert([{
+              user_id: defaultUserId,
+              account_id: defaultAccountId,
+              pipeline_id: pipelineId,
+              stage_id: stageId,
+              contact_id: contactId,
+              conversation_id: conversationId,
+              title: `Projeto - ${projectName}`,
+              value: dealVal,
+              currency: 'BRL',
+              notes: `Módulos: ${payload.modules?.join(', ') || 'site'}`,
+              status: 'open',
+            }]);
+          }
+        }
+
+        // Insere na fila_projetos
+        const { data: insertedFila } = await supabase
+          .from('fila_projetos')
+          .insert([{
+            mensagem_lead: p.mensagem_lead,
+            status: p.status || 'pendente',
+            resultado_json: {
+              ...(p.resultado_json || {}),
+              account_id: defaultAccountId,
+              user_id: defaultUserId,
+              ...(contactId ? { contact_id: contactId } : {}),
+            },
+            supabase_url: p.supabase_url || null,
+            supabase_anon_key: p.supabase_anon_key || null,
+          }])
+          .select('id')
+          .single();
+
+        localProjects[i] = {
+          ...p,
+          is_local: false,
+          supabase_synced: true,
+          supabase_id: insertedFila?.id || null,
+        };
+        modified = true;
+        console.log(`[Sync] Projeto #${p.id} sincronizado com sucesso no Supabase! ID Fila: #${insertedFila?.id}`);
+      } catch (syncErr) {
+        console.warn(`[Sync] Falha ao sincronizar projeto #${p.id}:`, syncErr.message);
+      }
+    }
+  }
+
+  if (modified) {
+    fs.writeFileSync(LOCAL_PROJECTS_FILE, JSON.stringify(localProjects, null, 2), 'utf-8');
+  }
+}
+
 const server = app.listen(PORT, () => {
   console.log(`==================================================`);
   console.log(`Servidor Backend rodando com sucesso na porta ${PORT}`);
@@ -696,6 +913,9 @@ const server = app.listen(PORT, () => {
   console.log(`Fábrica de IA conectada em: ${SOFTWARE_FACTORY_API_URL}`);
   console.log(`Status Supabase: ${isSupabaseActive ? supabaseUrl : 'Modo Fila Local Resiliente'}`);
   console.log(`==================================================`);
+  syncUnsyncedLocalProjects().catch((err) =>
+    console.warn('[Backend] Erro ao sincronizar projetos locais:', err.message)
+  );
 });
 
 server.keepAliveTimeout = 65000;

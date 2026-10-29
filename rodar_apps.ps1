@@ -1,5 +1,6 @@
 $ErrorActionPreference = "Continue"
-$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$root = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+if (-not $root) { $root = Get-Location }
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "  Iniciando Ecossistema Fábrica de Software + Projetos" -ForegroundColor Cyan

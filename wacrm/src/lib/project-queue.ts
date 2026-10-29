@@ -269,17 +269,17 @@ export function getContactProjectStatus(contactProjects: ProjectQueueItem[]): Co
     };
   }
 
-  // 3. Procura por projeto pendente
+  // 3. Procura por projeto pendente (aguardando disparo de produção)
   const pending = contactProjects.find((p) => p.status === 'pendente');
   if (pending) {
     return {
       isGenerated: false,
-      isProcessing: true,
+      isProcessing: false,
       hasError: false,
       activeProject: pending,
       status: 'pendente',
-      progressPercentage: 20,
-      statusMessage: 'Projeto na fila de produção, aguardando início...',
+      progressPercentage: 0,
+      statusMessage: 'Briefing registrado na fila de produção. Pronto para iniciar geração.',
     };
   }
 

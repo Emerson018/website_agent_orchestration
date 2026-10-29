@@ -1,0 +1,60 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+:root {
+  /* Semantic Design Direction Tokens */
+  --primary-color: #382215;
+  --secondary-color: #4E6E58;
+  --bg-color: #FAF8F3;
+  --surface-color: #F0ECE1;
+  --border-color: #26221F;
+  --text-color: #1E1916;
+  --muted-color: #73675E;
+  --font-display: 'Fraunces', sans-serif;
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--bg-color, #0E0D0C);
+  color: var(--text-main, #F5F4F0);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: var(--bg-color, #0E0D0C);
+  color: var(--text-main, #F5F4F0);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, .font-display {
+  font-family: 'Syne', 'Plus Jakarta Sans', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Scrollbar refinada e discreta */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2E2924 #0E0D0C;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0E0D0C;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2E2924;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color, #E55A1B);
+}
