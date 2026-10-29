@@ -1,11 +1,39 @@
-from typing import Optional
+from typing import List, Literal, Optional
 from pydantic import BaseModel, Field
+
+
+LayoutArchetype = Literal[
+    "editorial_asymmetric",
+    "bento_modular",
+    "cinematic_immersive",
+    "swiss_typographic_catalog",
+    "narrative_scrollytelling",
+]
+
+
+class ServiceItem(BaseModel):
+    """Serviço ou especialidade real extraída do briefing do cliente."""
+
+    name: str = Field(..., description="Nome do serviço, corte, prato ou procedimento.")
+    price: str = Field(
+        "Sob consulta",
+        description="Valor ou faixa de preço praticada pelo estabelecimento (ex: R$ 85, Consulte).",
+    )
+    description: str = Field(
+        ...,
+        description="Descrição autoral, objetiva e específica do serviço sem adjetivos genéricos.",
+    )
+    badge: Optional[str] = Field(
+        None,
+        description="Selo curto opcional que destaca a especificidade técnica do item.",
+    )
 
 
 class ClientConfig(BaseModel):
     """
-    Modelo de dados para a Design Direction e configuração customizada gerada pela IA (Passe 1),
-    mapeando as chaves esperadas pelo frontend no arquivo ai_config.json.
+    Contrato Canônico `BrandDesignSpec` / `ClientConfig` (Passe 1 — Diagnóstico de Marca & Design Direction):
+    Reúne identidade de negócio, serviços reais, essência editorial, paleta de 6 tokens,
+    tipografia e o arquétipo estrutural único de layout para geração de `LandingPage.jsx`.
     """
 
     app_name: str = Field(
@@ -70,11 +98,38 @@ class ClientConfig(BaseModel):
     )
     tagline: Optional[str] = Field(
         None,
-        description="Subtítulo curto, direto e sem clichês de IA que descreve o que a casa faz na perspectiva do cliente.",
+        description="Título principal (Hero headline) autoral, direto e sem clichês de IA que expressa a proposta real da casa.",
+    )
+    brand_essence: Optional[str] = Field(
+        None,
+        description="Síntese autoral da história, matéria-prima, ritual de atendimento e personalidade real da marca extraída do briefing.",
+    )
+    value_proposition: Optional[str] = Field(
+        None,
+        description="Proposta de valor concreta e verificável do estabelecimento para o cliente final.",
+    )
+    target_audience: Optional[str] = Field(
+        None,
+        description="Perfil específico do público-alvo real atendido pelo negócio, baseado nas conversas, notas e referências.",
+    )
+    brand_pillars: Optional[List[str]] = Field(
+        None,
+        description="Lista de 3 a 4 diferenciais operacionais ou técnicos reais da marca.",
+    )
+    real_services: Optional[List[ServiceItem]] = Field(
+        None,
+        description="Lista estruturada de serviços, especialidades ou produtos reais extraídos do briefing do cliente.",
     )
     color_reasoning: Optional[str] = Field(
         None,
         description="Justificativa da paleta de 6 cores ancorada na matéria-prima e ambiente físico do estabelecimento.",
+    )
+    layout_archetype: Optional[str] = Field(
+        None,
+        description=(
+            "Arquétipo estrutural único da página: 'editorial_asymmetric', 'bento_modular', "
+            "'cinematic_immersive', 'swiss_typographic_catalog' ou 'narrative_scrollytelling'."
+        ),
     )
     layout_concept: Optional[str] = Field(
         None,
@@ -92,7 +147,18 @@ class ClientConfig(BaseModel):
         None,
         description="Diretriz de escrita UX (voz ativa, verbos simples, sentence case, zero adjetivos vazios).",
     )
-    recommended_sections: Optional[list[str]] = Field(
+    section_blueprint: Optional[List[str]] = Field(
+        None,
+        description="Blueprint ordenado das seções exclusivas da LandingPage, descrevendo a mecânica visual de cada bloco.",
+    )
+    recommended_sections: Optional[List[str]] = Field(
         None,
         description="Lista de seções específicas para o negócio do cliente.",
     )
+    execution_engine: Optional[str] = Field(
+        None,
+        description="Motor e modelo de IA que realizou a síntese (ex: 'Gemini CLI (gemini-2.5-pro)', 'Google Gemini API (gemini-3.8-flash)').",
+    )
+
+
+BrandDesignSpec = ClientConfig

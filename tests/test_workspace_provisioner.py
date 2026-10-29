@@ -58,6 +58,37 @@ class TestWorkspaceProvisioner(unittest.TestCase):
             # Second file had DROP TABLE so it was sanitized to a comment and not executed as destructive SQL
             self.assertEqual(len(recorded_calls), 1)
 
+    def test_run_frontend_build_installs_when_declared_dependency_missing_from_existing_node_modules(self):
+        import json
+        import subprocess
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            frontend_dir = os.path.join(tmpdir, "frontend")
+            # node_modules already exists (e.g. from an older template snapshot),
+            # and has 'react' installed, but 'framer-motion' in package.json is missing.
+            os.makedirs(os.path.join(frontend_dir, "node_modules", "react"))
+            with open(os.path.join(frontend_dir, "package.json"), "w", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        "name": "20barranove-frontend",
+                        "dependencies": {
+                            "react": "^18.2.0",
+                            "framer-motion": "^14.6.0",
+                        },
+                    },
+                    f,
+                )
+
+            executed_commands = []
+
+            def fake_runner(cmd: str, cwd: str) -> subprocess.CompletedProcess:
+                executed_commands.append(cmd)
+                return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="ok", stderr="")
+
+            res = workspace_provisioner.run_frontend_build(tmpdir, command_runner=fake_runner)
+            self.assertTrue(res["build_success"])
+            self.assertEqual(executed_commands, ["npm install", "npm run build"])
+
 
 if __name__ == "__main__":
     unittest.main()

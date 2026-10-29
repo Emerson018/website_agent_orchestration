@@ -11,6 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Carrega as variáveis de ambiente
+dotenv.config({ path: path.join(__dirname, '.env') });
 dotenv.config();
 
 const app = express();
@@ -182,6 +183,17 @@ async function dispatchProjectToFactory(projectId, projectRecord = null) {
       updateLocalProject(projectId, { status: 'aguardando_agente' });
     }
 
+    if (isSupabaseActive) {
+      try {
+        await supabase
+          .from('fila_projetos')
+          .update({ status: 'aguardando_agente' })
+          .eq('id', projectId);
+      } catch (sbErr) {
+        console.warn('[Backend] Aviso ao atualizar status no Supabase:', sbErr.message);
+      }
+    }
+
     // 2. Grava o job em .agents/queue/pending_job.json para o watcher do chat
     try {
       const queueDir = path.resolve(__dirname, '../../../.agents/queue');
@@ -304,6 +316,7 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
         const email = client_info?.email || 'Não informado';
         const contactName = project_name;
 
+        // 1. Busca ou cria Contato no WACRM
         if (!contactId && phone_normalized) {
           const { data: existingContact } = await supabase
             .from('contacts')
@@ -318,7 +331,16 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
           }
         }
 
-        if (!contactId) {
+        if (contactId) {
+          await supabase
+            .from('contacts')
+            .update({
+              additional_data: additional_data || {},
+              rag_status: 'idle',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', contactId);
+        } else {
           const { data: newContact, error: contactError } = await supabase
             .from('contacts')
             .insert([
@@ -337,6 +359,126 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
 
           if (!contactError && newContact) {
             contactId = newContact.id;
+            console.log(`[Backend] Contato registrado no CRM com sucesso! ID: ${contactId}`);
+          } else if (contactError) {
+            console.warn('[Backend] Erro ao criar contato no CRM:', contactError.message);
+          }
+        }
+
+        // 2. Busca ou cria Conversa aberta no Inbox do WACRM
+        let conversationId = null;
+        if (contactId) {
+          const { data: existingConversation } = await supabase
+            .from('conversations')
+            .select('id')
+            .eq('account_id', defaultAccountId)
+            .eq('contact_id', contactId)
+            .eq('status', 'open')
+            .limit(1)
+            .maybeSingle();
+
+          if (existingConversation) {
+            conversationId = existingConversation.id;
+            await supabase
+              .from('conversations')
+              .update({
+                last_message_text: `Projeto - ${project_name}`,
+                last_message_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', conversationId);
+          } else {
+            const { data: newConversation, error: convError } = await supabase
+              .from('conversations')
+              .insert([
+                {
+                  user_id: defaultUserId,
+                  account_id: defaultAccountId,
+                  contact_id: contactId,
+                  status: 'open',
+                  last_message_text: `Projeto - ${project_name}`,
+                  last_message_at: new Date().toISOString(),
+                  unread_count: 1
+                }
+              ])
+              .select('id')
+              .single();
+
+            if (!convError && newConversation) {
+              conversationId = newConversation.id;
+              console.log(`[Backend] Conversa aberta criada no CRM! ID: ${conversationId}`);
+            } else if (convError) {
+              console.warn('[Backend] Erro ao criar conversa no CRM:', convError.message);
+            }
+          }
+        }
+
+        // 3. Insere a mensagem detalhada do lead no Chat do WACRM
+        if (conversationId) {
+          const { error: msgError } = await supabase
+            .from('messages')
+            .insert([
+              {
+                conversation_id: conversationId,
+                sender_type: 'customer',
+                content_type: 'text',
+                content_text: mensagem_lead,
+                status: 'sent'
+              }
+            ]);
+
+          if (msgError) {
+            console.warn('[Backend] Erro ao inserir mensagem no chat do CRM:', msgError.message);
+          } else {
+            console.log('[Backend] Mensagem de lead inserida com sucesso no Inbox do CRM.');
+          }
+        }
+
+        // 4. Cria Oportunidade (Deal) no Funil de Vendas (Kanban) do WACRM
+        if (contactId) {
+          let pipelineId = '0a1969dd-bc7e-4a99-a854-a925f32ad923';
+          let stageId = 'e15c3092-f3f9-4550-baa4-88a6f27b6eaa';
+
+          try {
+            const { data: stages } = await supabase
+              .from('pipeline_stages')
+              .select('id, pipeline_id, position, pipelines!inner(account_id)')
+              .eq('pipelines.account_id', defaultAccountId)
+              .order('position', { ascending: true })
+              .limit(1);
+
+            if (stages && stages.length > 0) {
+              stageId = stages[0].id;
+              pipelineId = stages[0].pipeline_id;
+            }
+          } catch (stageErr) {
+            console.warn('[Backend] Falha ao consultar pipeline stages:', stageErr.message);
+          }
+
+          const dealValue = summary?.total_setup_price || 0;
+
+          const { error: dealError } = await supabase
+            .from('deals')
+            .insert([
+              {
+                user_id: defaultUserId,
+                account_id: defaultAccountId,
+                pipeline_id: pipelineId,
+                stage_id: stageId,
+                contact_id: contactId,
+                conversation_id: conversationId,
+                title: `Projeto - ${project_name}`,
+                value: dealValue,
+                currency: 'BRL',
+                notes: `Módulos: ${modules?.join(', ') || 'site'}`,
+                status: 'open'
+              }
+            ]);
+
+          if (dealError) {
+            console.warn('[Backend] Erro ao criar Oportunidade (Deal) no CRM:', dealError.message);
+          } else {
+            console.log(`[Backend] Oportunidade (Deal) criada com sucesso no funil do CRM no valor de R$ ${dealValue}!`);
           }
         }
       } catch (crmResolveErr) {
@@ -519,6 +661,17 @@ app.post('/api/projetos/:id/processar', async (req, res) => {
 
     if (local) {
       updateLocalProject(id, { status: 'aguardando_agente' });
+    }
+
+    if (isSupabaseActive) {
+      try {
+        await supabase
+          .from('fila_projetos')
+          .update({ status: 'aguardando_agente' })
+          .eq('id', id);
+      } catch (sbUpdateErr) {
+        console.warn('[Backend] Erro ao atualizar status no Supabase /processar:', sbUpdateErr.message);
+      }
     }
 
     res.json({ status: 'aguardando_agente', mensagem: 'Compilação iniciada no Agente Antigravity no chat.' });

@@ -7,6 +7,9 @@ import {
   enqueueAndTriggerBuild,
   filterProjectsForContact,
   extractProjectBrandName,
+  getContactProjectStatus,
+  getStageByProgress,
+  PWA_GENERATION_STAGES,
   type ProjectQueueItem,
 } from "@/lib/project-queue";
 import { useAuth } from "@/hooks/use-auth";
@@ -34,10 +37,12 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import { FilaProjetosModal } from "@/components/projects/fila-projetos-modal";
 import { format } from "date-fns";
 
@@ -65,6 +70,9 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
   const [isEditingReport, setIsEditingReport] = useState(false);
   const [editedReport, setEditedReport] = useState("");
   const [generatingAI, setGeneratingAI] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [generationStageText, setGenerationStageText] = useState("");
+  const [allowForceRegenerate, setAllowForceRegenerate] = useState(false);
   const [sidebarSupabaseUrl, setSidebarSupabaseUrl] = useState("");
   const [sidebarSupabaseAnonKey, setSidebarSupabaseAnonKey] = useState("");
   const [isConnectionValidated, setIsConnectionValidated] = useState(false);
@@ -76,6 +84,9 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
     const currentId = contact?.id || null;
     if (currentId !== lastContactIdRef.current) {
       lastContactIdRef.current = currentId;
+      setGenerationProgress(0);
+      setGenerationStageText("");
+      setAllowForceRegenerate(false);
       if (contact) {
         setRagStatus(contact.rag_status || "idle");
         setRagReport(contact.rag_report || null);
@@ -244,52 +255,8 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
     }
   }, [contact, sidebarSupabaseUrl, sidebarSupabaseAnonKey, onContactUpdate]);
 
-  const handleGenerateAISiteFromSidebar = useCallback(async () => {
-    if (!contact) return;
-
-    if (!sidebarSupabaseUrl.trim() || !sidebarSupabaseAnonKey.trim()) {
-      toast.info("Gerando PWA sem credenciais do Supabase. Você poderá vinculá-las a qualquer momento após a criação.");
-    }
-
-    setGeneratingAI(true);
-
-    try {
-      const ragBranding = (contact.additional_data as Record<string, any>)?.branding;
-      const paletteName = ragBranding?.palette_name || "Definida via RAG";
-      const primaryHex = ragBranding?.primary_color_hex;
-
-      await enqueueAndTriggerBuild({
-        project_name: contact.name || "Projeto Sem Nome",
-        contact_id: contact.id,
-        branding: {
-          palette_name: paletteName,
-          ...(primaryHex ? { primary_color_hex: primaryHex } : {})
-        },
-        modules: ["agendador_pwa"],
-        reference_links: contact.additional_data?.links?.map(l => ({ url: l.url, type: "site", notes: l.label })) || [],
-        client_info: {
-          email: contact.email || "",
-          phone: contact.phone || ""
-        },
-        supabase_url: sidebarSupabaseUrl.trim(),
-        supabase_anon_key: sidebarSupabaseAnonKey.trim(),
-        supabase_service_role_key: contact.supabase_service_role_key?.trim() || "",
-        ai_analysis: ragReport || "",
-        additional_data: (contact.additional_data as Record<string, unknown>) || { files: [], links: [], texts: [] }
-      });
-
-      toast.success("Geração de site por IA iniciada com sucesso!");
-      fetchContactData();
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Erro na integração com a Fábrica de IA.");
-    } finally {
-      setGeneratingAI(false);
-    }
-  }, [contact, ragReport, sidebarSupabaseUrl, sidebarSupabaseAnonKey]);
-
   const fetchContactData = useCallback(async () => {
-    if (!contact) return;
+    if (!contact) return [];
 
     const supabase = createClient();
 
@@ -328,8 +295,109 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
     }
     if (projectsRes.data) {
       setProjects(projectsRes.data);
+      return projectsRes.data;
     }
+    return [];
   }, [contact]);
+
+  const handleGenerateAISiteFromSidebar = useCallback(async () => {
+    if (!contact) return;
+
+    if (!sidebarSupabaseUrl.trim() || !sidebarSupabaseAnonKey.trim()) {
+      toast.info("Gerando PWA sem credenciais do Supabase. Você poderá vinculá-las a qualquer momento após a criação.");
+    }
+
+    setGeneratingAI(true);
+    setGenerationProgress(15);
+    setGenerationStageText(PWA_GENERATION_STAGES[0].title);
+
+    // Barra de progresso animada com etapas reais da fábrica de IA
+    const progressTimer = setInterval(() => {
+      setGenerationProgress((curr) => {
+        if (curr < 35) {
+          setGenerationStageText(PWA_GENERATION_STAGES[1].title);
+          return 35;
+        }
+        if (curr < 60) {
+          setGenerationStageText(PWA_GENERATION_STAGES[2].title);
+          return 60;
+        }
+        if (curr < 80) {
+          setGenerationStageText(PWA_GENERATION_STAGES[3].title);
+          return 80;
+        }
+        if (curr < 94) {
+          setGenerationStageText(PWA_GENERATION_STAGES[4].title);
+          return 94;
+        }
+        return curr;
+      });
+    }, 2000);
+
+    try {
+      const ragBranding = (contact.additional_data as Record<string, any>)?.branding;
+      const paletteName = ragBranding?.palette_name || "Definida via RAG";
+      const primaryHex = ragBranding?.primary_color_hex;
+
+      const { projectId } = await enqueueAndTriggerBuild({
+        project_name: contact.name || "Projeto Sem Nome",
+        contact_id: contact.id,
+        branding: {
+          palette_name: paletteName,
+          ...(primaryHex ? { primary_color_hex: primaryHex } : {})
+        },
+        modules: ["agendador_pwa"],
+        reference_links: contact.additional_data?.links?.map(l => ({ url: l.url, type: "site", notes: l.label })) || [],
+        client_info: {
+          email: contact.email || "",
+          phone: contact.phone || ""
+        },
+        supabase_url: sidebarSupabaseUrl.trim(),
+        supabase_anon_key: sidebarSupabaseAnonKey.trim(),
+        supabase_service_role_key: contact.supabase_service_role_key?.trim() || "",
+        ai_analysis: ragReport || "",
+        additional_data: (contact.additional_data as Record<string, unknown>) || { files: [], links: [], texts: [] }
+      });
+
+      toast.success("Geração de site por IA iniciada com sucesso!");
+      setAllowForceRegenerate(false);
+
+      // Polling ativo para verificar quando a fábrica conclui o projeto
+      let attempts = 0;
+      const maxAttempts = 20;
+      const pollInterval = setInterval(async () => {
+        attempts += 1;
+        const freshProjects = await fetchContactData();
+        const contactProjectsNow = filterProjectsForContact(freshProjects || [], contact);
+        const completedNow = contactProjectsNow.find(
+          (p) => p.status === "concluido" || (projectId && p.id === projectId && p.status === "concluido")
+        );
+
+        if (completedNow) {
+          clearInterval(pollInterval);
+          clearInterval(progressTimer);
+          setGenerationProgress(100);
+          setGenerationStageText(PWA_GENERATION_STAGES[5].title);
+          toast.success("PWA gerado e concluído com sucesso!");
+          setTimeout(() => {
+            setGeneratingAI(false);
+          }, 1000);
+        } else if (attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+          clearInterval(progressTimer);
+          setGeneratingAI(false);
+        }
+      }, 2500);
+
+    } catch (err: any) {
+      clearInterval(progressTimer);
+      console.error(err);
+      toast.error(err.message || "Erro na integração com a Fábrica de IA.");
+      setGeneratingAI(false);
+      setGenerationProgress(0);
+      setGenerationStageText("");
+    }
+  }, [contact, ragReport, sidebarSupabaseUrl, sidebarSupabaseAnonKey, fetchContactData]);
 
   // Load on contact change. setContactData/setTags run inside async
   // Supabase callbacks, not synchronously in the effect body.
@@ -471,6 +539,14 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
           {/* Projetos do Cliente (IA) */}
           {(() => {
             const contactProjects = filterProjectsForContact(projects, contact);
+            const projectStatus = getContactProjectStatus(contactProjects);
+            const effectiveProgress = generatingAI
+              ? generationProgress
+              : projectStatus.isProcessing
+              ? Math.max(generationProgress, projectStatus.progressPercentage)
+              : projectStatus.isGenerated
+              ? 100
+              : 0;
 
             return (
               <div>
@@ -511,7 +587,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
                           case 'concluido':
                             return (
                               <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 gap-1 font-semibold text-[10px] px-1.5 py-0">
-                                <CheckCircle2 className="size-3" /> Concluído
+                                <CheckCircle2 className="size-3 text-emerald-400" /> OK • Concluído
                               </Badge>
                             );
                           case 'processando':
@@ -554,6 +630,20 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
                             <p className="mt-0.5 truncate text-[10px] text-primary font-mono">
                               {p.supabase_url}
                             </p>
+                          )}
+                          {(p.status === 'processando' || (p.status as string) === 'aguardando_agente') && (
+                            <div className="mt-1.5 pt-1.5 border-t border-border/40">
+                              <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+                                <span>Compilação em andamento...</span>
+                                <span className="font-mono text-primary font-bold">
+                                  {effectiveProgress > 0 ? `${effectiveProgress}%` : 'Processando'}
+                                </span>
+                              </div>
+                              <Progress
+                                value={effectiveProgress || 45}
+                                className="h-1.5 bg-muted/80"
+                              />
+                            </div>
                           )}
                         </div>
                       );
@@ -826,31 +916,175 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
                       </Button>
                     </div>
 
-                    <div className="pt-3 border-t border-border/60">
-                      <Button
-                        onClick={handleGenerateAISiteFromSidebar}
-                        disabled={generatingAI}
-                        size="sm"
-                        className="w-full bg-primary hover:bg-primary/95 text-primary-foreground flex items-center justify-center gap-1.5 font-bold"
-                      >
-                        {generatingAI ? (
-                          <>
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            <span>Processando Cópia & Geração...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-3.5 w-3.5" />
-                            <span>Iniciar Geração do PWA (IA)</span>
-                          </>
-                        )}
-                      </Button>
-                      <p className="text-[10px] text-muted-foreground mt-1 text-center font-medium">
-                        {isConnectionValidated 
-                          ? "Conexão Supabase validada." 
-                          : "Você pode gerar o PWA agora e vincular o Supabase a qualquer momento."}
-                      </p>
-                    </div>
+                    {(() => {
+                      const contactProjects = filterProjectsForContact(projects, contact);
+                      const projectStatus = getContactProjectStatus(contactProjects);
+                      const completedProject = projectStatus.completedProject;
+                      const isAlreadyGenerated = projectStatus.isGenerated;
+                      const isCurrentlyProcessing = generatingAI || projectStatus.isProcessing;
+                      const effectiveProgress = generatingAI
+                        ? generationProgress
+                        : projectStatus.isProcessing
+                        ? Math.max(generationProgress, projectStatus.progressPercentage)
+                        : projectStatus.isGenerated
+                        ? 100
+                        : 0;
+                      const effectiveStageText = generatingAI
+                        ? generationStageText || PWA_GENERATION_STAGES[0].title
+                        : projectStatus.isProcessing
+                        ? getStageByProgress(effectiveProgress).title
+                        : projectStatus.statusMessage;
+
+                      return (
+                        <div className="pt-3 border-t border-border/60 space-y-2.5">
+                          {/* 1. Barra de Loading de Acompanhamento (durante geração ativa) */}
+                          {isCurrentlyProcessing && (
+                            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2 animate-fadeIn">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                                  <span>Acompanhamento da Linha de Produção (IA)</span>
+                                </div>
+                                <span className="text-xs font-mono font-bold text-primary">
+                                  {effectiveProgress}%
+                                </span>
+                              </div>
+                              <Progress
+                                value={effectiveProgress}
+                                className="h-2.5 bg-muted/80"
+                                indicatorClassName="bg-gradient-to-r from-violet-500 via-indigo-500 to-primary"
+                              />
+                              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
+                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-ping" />
+                                <span>{effectiveStageText}</span>
+                              </p>
+                            </div>
+                          )}
+
+                          {/* 2. Projeto Já Gerado com Sucesso (Status OK) */}
+                          {!isCurrentlyProcessing && isAlreadyGenerated && !allowForceRegenerate && (
+                            <div className="space-y-2.5 animate-fadeIn">
+                              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-400">
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+                                    <span>PWA Gerado com Sucesso (Status: OK)</span>
+                                  </div>
+                                  <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px] font-bold">
+                                    STATUS: OK
+                                  </Badge>
+                                </div>
+                                <div className="text-xs text-muted-foreground space-y-1">
+                                  <p>
+                                    <strong className="text-foreground">Projeto:</strong>{" "}
+                                    {completedProject
+                                      ? extractProjectBrandName(completedProject)
+                                      : contact.name || "PWA do Cliente"}
+                                  </p>
+                                  {completedProject?.created_at && (
+                                    <p className="text-[11px]">
+                                      Finalizado em{" "}
+                                      {new Date(completedProject.created_at).toLocaleDateString("pt-BR")}{" "}
+                                      às{" "}
+                                      {new Date(completedProject.created_at).toLocaleTimeString("pt-BR", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
+                                    </p>
+                                  )}
+                                  {Boolean(completedProject?.resultado_json?.preview_url) && (
+                                    <a
+                                      href={String(completedProject?.resultado_json?.preview_url)}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-semibold mt-1"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5" />
+                                      Abrir Aplicação PWA ({String(completedProject?.resultado_json?.preview_url)})
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+
+                              <Button
+                                disabled={true}
+                                size="sm"
+                                className="w-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 cursor-not-allowed flex items-center justify-center gap-1.5 font-bold"
+                              >
+                                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                                <span>PWA Já Gerado (Concluído)</span>
+                              </Button>
+
+                              <div className="flex items-center justify-between px-0.5 text-[10px] text-muted-foreground">
+                                <span>✓ Projeto bloqueado contra nova geração acidental.</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setAllowForceRegenerate(true)}
+                                  className="text-primary hover:underline cursor-pointer ml-1 font-medium"
+                                >
+                                  Regerar PWA?
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 3. Botão Ativo para Geração Inicial ou Regeração Forçada */}
+                          {(isCurrentlyProcessing || (!isAlreadyGenerated || allowForceRegenerate)) && (
+                            <div className="space-y-2">
+                              {allowForceRegenerate && (
+                                <div className="flex items-center justify-between p-2 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px]">
+                                  <span>Atenção: Modo de regeração ativo.</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setAllowForceRegenerate(false)}
+                                    className="underline hover:text-amber-300 ml-2"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              )}
+
+                              <Button
+                                onClick={handleGenerateAISiteFromSidebar}
+                                disabled={isCurrentlyProcessing}
+                                size="sm"
+                                className={cn(
+                                  "w-full flex items-center justify-center gap-1.5 font-bold transition-all",
+                                  isCurrentlyProcessing
+                                    ? "bg-primary/40 text-primary-foreground cursor-wait"
+                                    : allowForceRegenerate
+                                    ? "bg-amber-600 hover:bg-amber-700 text-white"
+                                    : "bg-primary hover:bg-primary/95 text-primary-foreground"
+                                )}
+                              >
+                                {isCurrentlyProcessing ? (
+                                  <>
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    <span>Geração do PWA em Andamento ({effectiveProgress}%)...</span>
+                                  </>
+                                ) : allowForceRegenerate ? (
+                                  <>
+                                    <RefreshCw className="h-3.5 w-3.5" />
+                                    <span>Regerar PWA do Cliente (IA)</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="h-3.5 w-3.5" />
+                                    <span>Iniciar Geração do PWA (IA)</span>
+                                  </>
+                                )}
+                              </Button>
+
+                              <p className="text-[10px] text-muted-foreground text-center font-medium">
+                                {isConnectionValidated 
+                                  ? "Conexão Supabase validada." 
+                                  : "Você pode gerar o PWA agora e vincular o Supabase a qualquer momento."}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </>
                 )}
               </div>

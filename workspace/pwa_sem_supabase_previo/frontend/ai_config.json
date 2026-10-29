@@ -1,0 +1,32 @@
+{
+  "app_name": "PWA Sem Supabase Previo",
+  "primary_color": "#6366F1",
+  "secondary_color": "#1A1A1A",
+  "supabase_url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co",
+  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM",
+  "logo_url": "/logo.png",
+  "address": "Av. Principal, 1000 - Centro - Porto Alegre/RS",
+  "phone": "51999999999",
+  "working_hours": "Segunda a Sábado das 9h às 18h",
+  "n8n_webhook_url": "http://localhost:5678/webhook-test/booking",
+  "bg_color": "#0F172A",
+  "surface_color": "#1E293B",
+  "text_color": "#F8FAFC",
+  "muted_color": "#94A3B8",
+  "theme": "dark",
+  "font_heading": "Space Grotesk",
+  "font_body": "Plus Jakarta Sans",
+  "niche": "Serviços Especializados",
+  "tagline": "Atendimento com hora marcada na PWA Sem Supabase Previo",
+  "color_reasoning": "Paleta Indigo Tech Moderno ancorada no universo de Serviços Especializados.",
+  "layout_concept": "Grade assimétrica objetiva com foco em serviços sob hora marcada, endereço e canais diretos de atendimento.",
+  "focal_element": "Painel tipográfico de abertura com chamada direta para reserva de horário online.",
+  "design_critique": "Removidos jargões genéricos de IA e decorações supérfluas; foco em clareza de escopo, horários e reserva.",
+  "copy_tone": "Objetivo, claro e orientado à ação do cliente.",
+  "recommended_sections": [
+    "Hero Autoral",
+    "Especialidades e Preços",
+    "Contexto da Casa",
+    "Localização e Horários"
+  ]
+}

@@ -215,6 +215,39 @@ def deploy_tenant_database(
     }
 
 
+def has_missing_frontend_dependencies(frontend_dir: str) -> bool:
+    """
+    Verifica se a pasta node_modules está ausente ou se alguma dependência declarada
+    em package.json (dependencies / devDependencies) ainda não está instalada em node_modules.
+    """
+    node_modules_path = os.path.join(frontend_dir, "node_modules")
+    if not os.path.exists(node_modules_path):
+        return True
+
+    package_json_path = os.path.join(frontend_dir, "package.json")
+    if not os.path.isfile(package_json_path):
+        return False
+
+    try:
+        with open(package_json_path, "r", encoding="utf-8") as f:
+            pkg_data = json.load(f)
+    except Exception:
+        return False
+
+    declared_packages = {}
+    if isinstance(pkg_data.get("dependencies"), dict):
+        declared_packages.update(pkg_data["dependencies"])
+    if isinstance(pkg_data.get("devDependencies"), dict):
+        declared_packages.update(pkg_data["devDependencies"])
+
+    for pkg_name in declared_packages:
+        pkg_dir = os.path.join(node_modules_path, *pkg_name.split("/"))
+        if not os.path.exists(pkg_dir):
+            return True
+
+    return False
+
+
 def run_frontend_build(
     target_project_path: str,
     command_runner: Optional[Callable[[str, str], subprocess.CompletedProcess]] = None,
@@ -230,8 +263,7 @@ def run_frontend_build(
 
     runner = command_runner or _default_runner
 
-    node_modules_path = os.path.join(frontend_dir, "node_modules")
-    if not os.path.exists(node_modules_path):
+    if has_missing_frontend_dependencies(frontend_dir):
         runner("npm install", frontend_dir)
 
     build_proc = runner("npm run build", frontend_dir)

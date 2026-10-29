@@ -1,0 +1,55 @@
+{
+  "id": 50,
+  "created_at": "2026-10-29T01:29:21.688102+00:00",
+  "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Dentista poa'\n- **Módulos Solicitados**: [agendador_pwa]\n- **Contato do Cliente**: E-mail: dentistapoa@gmail.com | WhatsApp/Tel: (54) 54454-5454\n\n### ANÁLISE DE MARCA & ARQUITETURA DA IA:\n### ⚡ 0. Mecanismo de IA Utilizado\n- **Motor de Processamento**: `Antigravity CLI (Headless)`\n\n---\n\n### 🔬 1. Diagnóstico de Marca & Público (UX Researcher)\n- **Nicho de Atuação**: Saúde & Odontologia\n- **Público-Alvo**: Clientes do estabelecimento 'Dentista poa' buscando agendamento digital direto.\n- **Vibe & Atmosfera Emocional**: Clínico, Confiável, Limpo e Acolhedor.\n- **Pilares da Marca**: Qualidade técnica, pontualidade no atendimento e clareza de horários.\n- **Diretrizes para a Interface**: Técnico, acolhedor e focado na saúde e bem-estar preventivo dos pacientes.\n\n---\n\n### 🎨 2. Especificações Visuais & UX/UI (UI Designer — Design Direction)\n- **Tema Padrão**: light\n- **Paleta de Cores (6 Tokens)**: Primária #0EA5E9, Secundária #0284C7, Fundo #F8FAFC, Superfície #FFFFFF, Texto #0F172A, Secundário #475569.\n- **Tipografia**: Títulos em Plus Jakarta Sans, Corpo em Source Sans 3.\n- **Conceito de Layout**: Composição split-hero editorial com respiro amplo, cartões de procedimentos com bordas suaves e foco em credibilidade médica.\n- **Elemento Focal Único**: Bloco de apresentação da equipe clínica com selo de registro profissional e tipografia humanista de alto contraste.\n- **Crítica Anti-Clichê (`frontend-design`)**: Evitados degradês espalhafatosos e sombras pesadas de templates SaaS genéricos; paleta clara transmite higiene, assepsia e tranquilidade.\n- **Estilo de Componentes**: Bordas rounded-xl, Botões estilo flat, Sombras shadow-sm.\n- **Requisitos de Mídia**: Imagens iluminadas, ambientes clínicos limpos e sorrisos naturais.\n\n---\n\n### ⚙️ 3. Configuração de Arquitetura (AI Engineer - Schema JSON)\n```json\n{\n  \"tema\": \"light\",\n  \"paleta_cores\": {\n    \"cor_primaria_hex\": \"#0EA5E9\",\n    \"cor_secundaria_hex\": \"#0284C7\",\n    \"cor_fundo_hex\": \"#F8FAFC\",\n    \"cor_superficie_hex\": \"#FFFFFF\",\n    \"cor_texto_hex\": \"#0F172A\",\n    \"cor_texto_secundario_hex\": \"#475569\"\n  },\n  \"tipografia\": {\n    \"fonte_titulos\": \"Plus Jakarta Sans\",\n    \"fonte_corpo\": \"Source Sans 3\"\n  },\n  \"direcao_design\": {\n    \"conceito_layout\": \"Composição split-hero editorial com respiro amplo, cartões de procedimentos com bordas suaves e foco em credibilidade médica.\",\n    \"elemento_focal\": \"Bloco de apresentação da equipe clínica com selo de registro profissional e tipografia humanista de alto contraste.\",\n    \"critica_anti_cliche\": \"Evitados degradês espalhafatosos e sombras pesadas de templates SaaS genéricos; paleta clara transmite higiene, assepsia e tranquilidade.\",\n    \"tom_escrita\": \"Técnico, acolhedor e focado na saúde e bem-estar preventivo dos pacientes.\"\n  },\n  \"estilo_botoes\": {\n    \"formato_borda\": \"rounded-xl\",\n    \"estilo_visual\": \"flat\",\n    \"sombra\": \"shadow-sm\"\n  },\n  \"requisitos_fotos\": {\n    \"estilo_visual\": \"Imagens iluminadas, ambientes clínicos limpos e sorrisos naturais\",\n    \"filtro_recomendado\": \"Tratamento de contraste e saturação otimizados\"\n  }\n}\n```\n\n### CONTEÚDOS E TEXTOS DE APOIO:\n- **Informações Extras para o Agendamento**: preciso de um site profissional para uma consultório odontológico\n\n\n### LINKS DE REFERÊNCIA DO CLIENTE:\n1. Tipo: site - URL: https://clinicabiehl.com.br/?gad_source=1&gad_campaignid=20318375725&gbraid=0AAAAADLsTTJxlCnm-BPh5VJrxW_xrYayI&gclid=CjwKCAjwuobXBhBXEiwAYUaIlZHnOwe_bJlXjQoQnrbPrihqaxE8XUhTrHoM5OwDjeu9NlFz_n4SmxoCfm0QAvD_BwE (Notas: Referência (site))\n",
+  "status": "pendente",
+  "resultado_json": {
+    "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+    "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+    "contact_id": "87f97182-5a3a-46a0-893c-53221661e96e",
+    "project_name": "Dentista poa",
+    "briefing_payload": {
+      "modules": [
+        "agendador_pwa"
+      ],
+      "branding": {
+        "palette_name": "Definida via RAG"
+      },
+      "contact_id": "87f97182-5a3a-46a0-893c-53221661e96e",
+      "ai_analysis": "### ⚡ 0. Mecanismo de IA Utilizado\n- **Motor de Processamento**: `Antigravity CLI (Headless)`\n\n---\n\n### 🔬 1. Diagnóstico de Marca & Público (UX Researcher)\n- **Nicho de Atuação**: Saúde & Odontologia\n- **Público-Alvo**: Clientes do estabelecimento 'Dentista poa' buscando agendamento digital direto.\n- **Vibe & Atmosfera Emocional**: Clínico, Confiável, Limpo e Acolhedor.\n- **Pilares da Marca**: Qualidade técnica, pontualidade no atendimento e clareza de horários.\n- **Diretrizes para a Interface**: Técnico, acolhedor e focado na saúde e bem-estar preventivo dos pacientes.\n\n---\n\n### 🎨 2. Especificações Visuais & UX/UI (UI Designer — Design Direction)\n- **Tema Padrão**: light\n- **Paleta de Cores (6 Tokens)**: Primária #0EA5E9, Secundária #0284C7, Fundo #F8FAFC, Superfície #FFFFFF, Texto #0F172A, Secundário #475569.\n- **Tipografia**: Títulos em Plus Jakarta Sans, Corpo em Source Sans 3.\n- **Conceito de Layout**: Composição split-hero editorial com respiro amplo, cartões de procedimentos com bordas suaves e foco em credibilidade médica.\n- **Elemento Focal Único**: Bloco de apresentação da equipe clínica com selo de registro profissional e tipografia humanista de alto contraste.\n- **Crítica Anti-Clichê (`frontend-design`)**: Evitados degradês espalhafatosos e sombras pesadas de templates SaaS genéricos; paleta clara transmite higiene, assepsia e tranquilidade.\n- **Estilo de Componentes**: Bordas rounded-xl, Botões estilo flat, Sombras shadow-sm.\n- **Requisitos de Mídia**: Imagens iluminadas, ambientes clínicos limpos e sorrisos naturais.\n\n---\n\n### ⚙️ 3. Configuração de Arquitetura (AI Engineer - Schema JSON)\n```json\n{\n  \"tema\": \"light\",\n  \"paleta_cores\": {\n    \"cor_primaria_hex\": \"#0EA5E9\",\n    \"cor_secundaria_hex\": \"#0284C7\",\n    \"cor_fundo_hex\": \"#F8FAFC\",\n    \"cor_superficie_hex\": \"#FFFFFF\",\n    \"cor_texto_hex\": \"#0F172A\",\n    \"cor_texto_secundario_hex\": \"#475569\"\n  },\n  \"tipografia\": {\n    \"fonte_titulos\": \"Plus Jakarta Sans\",\n    \"fonte_corpo\": \"Source Sans 3\"\n  },\n  \"direcao_design\": {\n    \"conceito_layout\": \"Composição split-hero editorial com respiro amplo, cartões de procedimentos com bordas suaves e foco em credibilidade médica.\",\n    \"elemento_focal\": \"Bloco de apresentação da equipe clínica com selo de registro profissional e tipografia humanista de alto contraste.\",\n    \"critica_anti_cliche\": \"Evitados degradês espalhafatosos e sombras pesadas de templates SaaS genéricos; paleta clara transmite higiene, assepsia e tranquilidade.\",\n    \"tom_escrita\": \"Técnico, acolhedor e focado na saúde e bem-estar preventivo dos pacientes.\"\n  },\n  \"estilo_botoes\": {\n    \"formato_borda\": \"rounded-xl\",\n    \"estilo_visual\": \"flat\",\n    \"sombra\": \"shadow-sm\"\n  },\n  \"requisitos_fotos\": {\n    \"estilo_visual\": \"Imagens iluminadas, ambientes clínicos limpos e sorrisos naturais\",\n    \"filtro_recomendado\": \"Tratamento de contraste e saturação otimizados\"\n  }\n}\n```",
+      "client_info": {
+        "email": "dentistapoa@gmail.com",
+        "phone": "(54) 54454-5454"
+      },
+      "auto_process": true,
+      "project_name": "Dentista poa",
+      "supabase_url": "",
+      "additional_data": {
+        "files": [],
+        "links": [
+          {
+            "url": "https://clinicabiehl.com.br/?gad_source=1&gad_campaignid=20318375725&gbraid=0AAAAADLsTTJxlCnm-BPh5VJrxW_xrYayI&gclid=CjwKCAjwuobXBhBXEiwAYUaIlZHnOwe_bJlXjQoQnrbPrihqaxE8XUhTrHoM5OwDjeu9NlFz_n4SmxoCfm0QAvD_BwE",
+            "label": "Referência (site)"
+          }
+        ],
+        "texts": [
+          {
+            "text": "preciso de um site profissional para uma consultório odontológico",
+            "label": "Informações Extras para o Agendamento"
+          }
+        ]
+      },
+      "reference_links": [
+        {
+          "url": "https://clinicabiehl.com.br/?gad_source=1&gad_campaignid=20318375725&gbraid=0AAAAADLsTTJxlCnm-BPh5VJrxW_xrYayI&gclid=CjwKCAjwuobXBhBXEiwAYUaIlZHnOwe_bJlXjQoQnrbPrihqaxE8XUhTrHoM5OwDjeu9NlFz_n4SmxoCfm0QAvD_BwE",
+          "type": "site",
+          "notes": "Referência (site)"
+        }
+      ]
+    },
+    "supabase_service_role_key": null
+  },
+  "supabase_url": null,
+  "supabase_anon_key": null,
+  "supabase_service_role_key": null
+}

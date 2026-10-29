@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiFetch } from '../lib/api';
+import { apiFetch, formatBrazilianPhone, isValidBrazilianPhone } from '../lib/api';
 
 const MODULES_DATA = [
   {
@@ -234,6 +234,11 @@ export default function LandingPage() {
       return;
     }
 
+    if (!isValidBrazilianPhone(clientPhone)) {
+      setSubmissionError('Informe um número de WhatsApp/celular válido com DDD (10 ou 11 dígitos, ex: (51) 99999-9999).');
+      return;
+    }
+
     setSubmissionError('');
 
     const additional_data = {
@@ -264,19 +269,19 @@ export default function LandingPage() {
       },
       ai_analysis: '',
       additional_data,
-      auto_process: true,
+      auto_process: false,
       timestamp: new Date().toISOString()
     };
 
     setGeneratedPayload(payload);
     setIsSimulating(true);
     setSimStep(1);
-    setSimLogs(['[1/3] Iniciando envio do caderno de especificação...']);
+    setSimLogs(['[1/2] Iniciando envio do caderno de especificação...']);
 
     try {
       setSimLogs((prev) => [
         ...prev,
-        '[2/3] Gravando especificação do projeto na fila do Supabase...'
+        '[2/2] Registrando lead e briefing no WhatsApp CRM...'
       ]);
       const saveResponse = await apiFetch('/projetos', {
         method: 'POST',
@@ -303,30 +308,11 @@ export default function LandingPage() {
 
       setSimLogs((prev) => [
         ...prev,
-        `Pedido registrado com sucesso na fila: código #${project.id}.`,
-        '[3/3] Acionando orquestrador para compilação autônoma do código...'
+        `Briefing #${project.id} registrado com sucesso!`,
+        'Sua solicitação foi encaminhada para a equipe comercial no WhatsApp CRM.',
+        'Nosso time entrará em contato para alinhar os detalhes antes de iniciar a produção do seu site.',
+        'Você pode acompanhar o status na tabela da Fila de Produção abaixo.'
       ]);
-
-      try {
-        let dispatched = Boolean(project.auto_dispatched);
-        if (!dispatched) {
-          const processRes = await apiFetch(`/projetos/${project.id}/processar`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-          });
-          dispatched = processRes.ok;
-        }
-        if (dispatched) {
-          setSimLogs((prev) => [
-            ...prev,
-            'Orquestração iniciada na fábrica de software.',
-            'As referências e módulos foram entregues aos agentes e o código está sendo gerado em segundo plano.',
-            'Acompanhe o status na tabela da Fila de Produção abaixo.'
-          ]);
-        }
-      } catch (procErr) {
-        console.warn('Erro ao disparar processamento imediato:', procErr);
-      }
 
       setSimStep(8);
       fetchRecentProjects();
@@ -822,9 +808,11 @@ export default function LandingPage() {
                       <input
                         id="client-phone"
                         type="tel"
+                        inputMode="numeric"
+                        maxLength={15}
                         required
                         value={clientPhone}
-                        onChange={(e) => setClientPhone(e.target.value)}
+                        onChange={(e) => setClientPhone(formatBrazilianPhone(e.target.value))}
                         placeholder="(00) 90000-0000"
                         className="w-full bg-[#12151B] border border-[#282F3D] rounded-md px-3.5 py-2.5 text-sm text-[#ECEEF2] placeholder-[#949BA8]/50 focus:border-[#E59A28]"
                       />

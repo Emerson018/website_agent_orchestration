@@ -190,3 +190,119 @@ export function extractProjectBrandName(project: ProjectQueueItem): string {
   }
   return `Projeto #${project.id}`;
 }
+
+export interface GenerationStage {
+  stage: number;
+  title: string;
+  percentage: number;
+}
+
+export const PWA_GENERATION_STAGES: GenerationStage[] = [
+  { stage: 1, title: 'Registrando briefing e qualificando requisitos...', percentage: 15 },
+  { stage: 2, title: 'Clonando Gold Template PWA e estruturando workspace...', percentage: 35 },
+  { stage: 3, title: 'Injetando identidade visual, paleta RAG e tipografia...', percentage: 60 },
+  { stage: 4, title: 'Provisionando banco de dados e políticas de segurança...', percentage: 80 },
+  { stage: 5, title: 'Compilando assets e validando integridade do PWA...', percentage: 95 },
+  { stage: 6, title: 'PWA gerado e pronto para uso!', percentage: 100 },
+];
+
+export function getStageByProgress(percentage: number): GenerationStage {
+  const sorted = [...PWA_GENERATION_STAGES].sort((a, b) => b.percentage - a.percentage);
+  for (const s of sorted) {
+    if (percentage >= s.percentage) {
+      return s;
+    }
+  }
+  return PWA_GENERATION_STAGES[0];
+}
+
+export interface ContactProjectStatusResult {
+  isGenerated: boolean;
+  isProcessing: boolean;
+  hasError: boolean;
+  completedProject?: ProjectQueueItem;
+  activeProject?: ProjectQueueItem;
+  status: 'idle' | 'pendente' | 'processando' | 'aguardando_agente' | 'concluido' | 'erro';
+  progressPercentage: number;
+  statusMessage: string;
+}
+
+export function getContactProjectStatus(contactProjects: ProjectQueueItem[]): ContactProjectStatusResult {
+  if (!contactProjects || contactProjects.length === 0) {
+    return {
+      isGenerated: false,
+      isProcessing: false,
+      hasError: false,
+      status: 'idle',
+      progressPercentage: 0,
+      statusMessage: 'Nenhum projeto registrado para este cliente.',
+    };
+  }
+
+  // 1. Procura primeiro por projeto concluído (status OK)
+  const completed = contactProjects.find((p) => p.status === 'concluido');
+  if (completed) {
+    return {
+      isGenerated: true,
+      isProcessing: false,
+      hasError: false,
+      completedProject: completed,
+      status: 'concluido',
+      progressPercentage: 100,
+      statusMessage: 'PWA gerado com sucesso (Status: OK).',
+    };
+  }
+
+  // 2. Procura por projeto em processamento ativo
+  const processing = contactProjects.find(
+    (p) => p.status === 'processando' || (p.status as string) === 'aguardando_agente'
+  );
+  if (processing) {
+    return {
+      isGenerated: false,
+      isProcessing: true,
+      hasError: false,
+      activeProject: processing,
+      status: (processing.status as any),
+      progressPercentage: 65,
+      statusMessage: 'Geração do PWA em andamento na Fábrica de IA...',
+    };
+  }
+
+  // 3. Procura por projeto pendente
+  const pending = contactProjects.find((p) => p.status === 'pendente');
+  if (pending) {
+    return {
+      isGenerated: false,
+      isProcessing: true,
+      hasError: false,
+      activeProject: pending,
+      status: 'pendente',
+      progressPercentage: 20,
+      statusMessage: 'Projeto na fila de produção, aguardando início...',
+    };
+  }
+
+  // 4. Se tiver erro
+  const errored = contactProjects.find((p) => p.status === 'erro');
+  if (errored) {
+    return {
+      isGenerated: false,
+      isProcessing: false,
+      hasError: true,
+      activeProject: errored,
+      status: 'erro',
+      progressPercentage: 0,
+      statusMessage: 'Ocorreu um erro na geração do PWA.',
+    };
+  }
+
+  return {
+    isGenerated: false,
+    isProcessing: false,
+    hasError: false,
+    status: 'idle',
+    progressPercentage: 0,
+    statusMessage: 'Nenhum projeto ativo.',
+  };
+}

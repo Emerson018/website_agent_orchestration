@@ -76,3 +76,20 @@ export async function apiFetch(endpoint, options = {}, config = {}) {
   }
   throw lastError || new Error(`Não foi possível conectar ao servidor para ${endpoint}.`);
 }
+
+export function formatBrazilianPhone(rawValue = '') {
+  const digits = String(rawValue).replace(/\D/g, '').slice(0, 11);
+
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6, 10)}`;
+  }
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+}
+
+export function isValidBrazilianPhone(value = '') {
+  const digits = String(value).replace(/\D/g, '');
+  return digits.length === 10 || digits.length === 11;
+}

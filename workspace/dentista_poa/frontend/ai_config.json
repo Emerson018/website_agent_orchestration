@@ -1,0 +1,32 @@
+{
+  "app_name": "Dentista poa",
+  "primary_color": "#0EA5E9",
+  "secondary_color": "#0284C7",
+  "supabase_url": "https://hcqlcufgwxpfgwkbgxbu.supabase.co",
+  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcWxjdWZnd3hwZmd3a2JneGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTIyNDIsImV4cCI6MjA5NzgyODI0Mn0.qoInyo4FLicZWTQmD0Ny4sR6tI1EL0lZlKDcK3-mZsM",
+  "logo_url": "/logo.png",
+  "address": "Av. Principal, 1000 - Centro - Porto Alegre/RS",
+  "phone": "(54) 54454-5454",
+  "working_hours": "Segunda a Sábado das 9h às 18h",
+  "n8n_webhook_url": "http://localhost:5678/webhook-test/booking",
+  "bg_color": "#F8FAFC",
+  "surface_color": "#FFFFFF",
+  "text_color": "#0F172A",
+  "muted_color": "#475569",
+  "theme": "light",
+  "font_heading": "Plus Jakarta Sans",
+  "font_body": "Source Sans 3",
+  "niche": "Odontologia & Saúde",
+  "tagline": "Cuidado odontológico completo e humanizado na Dentista poa",
+  "color_reasoning": "Paleta Azul Clínico Confiável ancorada no universo de Odontologia & Saúde.",
+  "layout_concept": "Composição split-hero editorial com respiro amplo, cartões de procedimentos com bordas suaves e foco em credibilidade médica.",
+  "focal_element": "Bloco de apresentação da equipe clínica com selo de registro profissional e tipografia humanista de alto contraste.",
+  "design_critique": "Evitados degradês espalhafatosos e sombras pesadas de templates SaaS genéricos; paleta clara transmite higiene, assepsia e tranquilidade.",
+  "copy_tone": "Técnico, acolhedor e focado na saúde e bem-estar preventivo dos pacientes.",
+  "recommended_sections": [
+    "Hero Autoral",
+    "Especialidades e Preços",
+    "Contexto da Casa",
+    "Localização e Horários"
+  ]
+}

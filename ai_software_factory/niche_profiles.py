@@ -1,6 +1,107 @@
+import hashlib
 import re
 import unicodedata
-from typing import Any, Dict
+from typing import Any, Dict, List
+
+
+LAYOUT_ARCHETYPES: Dict[str, Dict[str, Any]] = {
+    "editorial_asymmetric": {
+        "id": "editorial_asymmetric",
+        "label": "Editorial Split-Screen Assimétrico",
+        "description": (
+            "Abertura em coluna assimétrica 7/5 estilo revista impressa com manifesto da casa à esquerda, "
+            "retrato vertical emoldurado à direita e catálogo numerado (01, 02, 03) em linhas horizontais."
+        ),
+        "section_blueprint": [
+            "1. Hero Editorial 7/5: Headline tipográfica de grande escala + Manifesto da marca + Retrato vertical emoldurado",
+            "2. Índice Numerado de Especialidades: Linhas horizontais com índice tipográfico (01..0N), descrição técnica, valor e ação direta para /agendar",
+            "3. Dossiê de Ofício & Bastidores: Bloco assimétrico destacando os 3 pilares reais do estabelecimento",
+            "4. Ficha de Visita & Reserva: Painel arquitetônico com endereço, expediente e chamada final para agendamento",
+        ],
+    },
+    "bento_modular": {
+        "id": "bento_modular",
+        "label": "Bento Grid Modular de Alta Precisão",
+        "description": (
+            "Composição em mosaico técnico de células assimétricas (col-span-8 + col-span-4), "
+            "combinando vitrine principal, células de métricas/horários ao vivo e grade modular de serviços."
+        ),
+        "section_blueprint": [
+            "1. Bento Hero Mosaico: Célula principal (8 colunas) com proposta de valor + 2 células laterais (4 colunas) com horário e localização rápida",
+            "2. Matriz Modular de Serviços: Grid assimétrico em células com bordas expostas, badge técnico, preço em destaque e link para /agendar",
+            "3. Painel de Diferenciais Operacionais: 3 células técnicas lado a lado detalhando os pilares reais da marca",
+            "4. Barra de Ação & Atendimento Direto: Bloco compacto de conversão imediata para a agenda online",
+        ],
+    },
+    "cinematic_immersive": {
+        "id": "cinematic_immersive",
+        "label": "Vitrine Cinematográfica Imersiva",
+        "description": (
+            "Abertura em tela cheia com imagem atmosférica em scrim profundo, tipografia dramática centralizada, "
+            "barra flutuante de reserva e galeria de especialidades em cartões horizontais panorâmicos."
+        ),
+        "section_blueprint": [
+            "1. Palco Cinematográfico Full-Bleed: Fotografia ambiente com scrim graduado, título monumental e dupla de botões de reserva",
+            "2. Vitrine Panorâmica da Casa: Cartões largos com fotografia em close-up, selo de especialidade, preço e botão para /agendar",
+            "3. Manifesto & Ritual da Casa: Seção de contraste profundo narrando a essência do negócio e seus pilares",
+            "4. Coordenadas & Recepção: Bloco de endereço, telefone e reserva com hora marcada",
+        ],
+    },
+    "swiss_typographic_catalog": {
+        "id": "swiss_typographic_catalog",
+        "label": "Catálogo Tipográfico Swiss-Grid",
+        "description": (
+            "Grade suíça rigorosa com filetes divisórios de 1px expostos, forte hierarquia tipográfica, "
+            "tabela técnica de serviços e preços estilo cardápio/ateliê de precisão e zero ornamentos supérfluos."
+        ),
+        "section_blueprint": [
+            "1. Cabeçalho Tipográfico Swiss-Grid: Grid de 12 colunas com filetes visíveis, título em escala máxima e metadados de expediente no topo",
+            "2. Tabela Canônica de Serviços & Valores: Estrutura tabular estilo bancada/ateliê com nome, especificação, valor alinhado e botão /agendar",
+            "3. Princípios da Casa em Colunas: 3 colunas divididas por filetes verticais apresentando os pilares reais do negócio",
+            "4. Terminal de Localização & Agendamento: Rodapé funcional de seção com dados de visita e link direto para /agendar",
+        ],
+    },
+    "narrative_scrollytelling": {
+        "id": "narrative_scrollytelling",
+        "label": "Jornada Narrativa em Etapas (Scrollytelling)",
+        "description": (
+            "Fluxo progressivo que conduz o visitante pela história e proposta da marca, apresenta como funciona "
+            "o atendimento em etapas numeradas e exibe o portfólio de serviços com reserva integrada."
+        ),
+        "section_blueprint": [
+            "1. Abertura Narrativa & Proposta de Valor: Composição dividida com destaque para a transformação entregue ao cliente e imagem âncora",
+            "2. A Experiência Passo a Passo: Trilha visual dos 3 pilares de atendimento da marca com animações de entrada suaves",
+            "3. Cardápio Completo de Especialidades: Lista detalhada dos serviços reais com preços transparentes e ação para /agendar",
+            "4. Convite de Agendamento & Endereço: Fechamento acolhedor com horários de funcionamento e botão principal de reserva",
+        ],
+    },
+}
+
+
+def select_layout_archetype(
+    app_name: str, context: str = "", niche_key: str = "servicos"
+) -> Dict[str, Any]:
+    """
+    Seleciona de forma determinística e contextual um dos 5 arquétipos estruturais de layout,
+    garantindo que estabelecimentos diferentes (mesmo dentro do mesmo nicho) recebam
+    estruturas de página distintas e coerentes com seu briefing.
+    """
+    norm = strip_accents(f"{app_name} {context}".lower())
+
+    if re.search(r"\b(catalogo|tabela|minimalista|suico|swiss|precisao|clinico|protocolo)\b", norm):
+        chosen_key = "swiss_typographic_catalog"
+    elif re.search(r"\b(bento|modular|mosaico|tecnologia|moderno|dashboard|express|studio)\b", norm):
+        chosen_key = "bento_modular"
+    elif re.search(r"\b(brasa|fogo|parrilla|cinema|imersivo|noite|bar|chopp|gourmet|artesanal)\b", norm):
+        chosen_key = "cinematic_immersive"
+    elif re.search(r"\b(historia|jornada|etapas|cuidado|bem-estar|terapia|familia|pet)\b", norm):
+        chosen_key = "narrative_scrollytelling"
+    else:
+        keys = list(LAYOUT_ARCHETYPES.keys())
+        digest = int(hashlib.sha256(f"{app_name.strip().lower()}:{niche_key}".encode("utf-8")).hexdigest(), 16)
+        chosen_key = keys[digest % len(keys)]
+
+    return dict(LAYOUT_ARCHETYPES[chosen_key])
 
 
 def strip_accents(text: str) -> str:

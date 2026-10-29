@@ -3,7 +3,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { getContactById } from '@/lib/crm-repository';
-import { normalizeTenantSupabaseUrl, enqueueAndTriggerBuild } from '@/lib/project-queue';
+import {
+  normalizeTenantSupabaseUrl,
+  enqueueAndTriggerBuild,
+  filterProjectsForContact,
+  extractProjectBrandName,
+  getContactProjectStatus,
+  getStageByProgress,
+  PWA_GENERATION_STAGES,
+  type ProjectQueueItem,
+} from '@/lib/project-queue';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { formatCurrency } from '@/lib/currency';
 import { toast } from 'sonner';
@@ -37,6 +48,8 @@ import {
   DollarSign,
   Sparkles,
   Database,
+  CheckCircle2,
+  RefreshCw,
 } from 'lucide-react';
 
 interface ContactDetailViewProps {
@@ -69,6 +82,10 @@ export function ContactDetailView({
   const [supabaseServiceRoleKey, setSupabaseServiceRoleKey] = useState('');
   const [savingDetails, setSavingDetails] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [generationStageText, setGenerationStageText] = useState('');
+  const [allowForceRegenerate, setAllowForceRegenerate] = useState(false);
+  const [projects, setProjects] = useState<ProjectQueueItem[]>([]);
 
   // Database Deploy tab states
   const [baseSql, setBaseSql] = useState<string | null>(null);
@@ -186,6 +203,19 @@ export function ContactDetailView({
     setLoadingDeals(false);
   }, [contactId, supabase]);
 
+  const fetchProjects = useCallback(async () => {
+    if (!contactId) return [];
+    const { data } = await supabase
+      .from('fila_projetos')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (data) {
+      setProjects(data);
+      return data;
+    }
+    return [];
+  }, [contactId, supabase]);
+
   useEffect(() => {
     if (open && contactId) {
       fetchContact();
@@ -193,6 +223,10 @@ export function ContactDetailView({
       fetchNotes();
       fetchCustomFields();
       fetchDeals();
+      fetchProjects();
+      setGenerationProgress(0);
+      setGenerationStageText('');
+      setAllowForceRegenerate(false);
       setBaseSql(null);
       setExtensionSql(null);
       setSqlError(null);
@@ -200,7 +234,7 @@ export function ContactDetailView({
       setDeployError(null);
       setShowSetupInstruction(false);
     }
-  }, [open, contactId, fetchContact, fetchTags, fetchNotes, fetchCustomFields, fetchDeals]);
+  }, [open, contactId, fetchContact, fetchTags, fetchNotes, fetchCustomFields, fetchDeals, fetchProjects]);
 
   async function copyPhone() {
     if (!contact) return;
@@ -318,6 +352,30 @@ export function ContactDetailView({
     }
 
     setGeneratingAI(true);
+    setGenerationProgress(15);
+    setGenerationStageText(PWA_GENERATION_STAGES[0].title);
+
+    const progressTimer = setInterval(() => {
+      setGenerationProgress((curr) => {
+        if (curr < 35) {
+          setGenerationStageText(PWA_GENERATION_STAGES[1].title);
+          return 35;
+        }
+        if (curr < 60) {
+          setGenerationStageText(PWA_GENERATION_STAGES[2].title);
+          return 60;
+        }
+        if (curr < 80) {
+          setGenerationStageText(PWA_GENERATION_STAGES[3].title);
+          return 80;
+        }
+        if (curr < 94) {
+          setGenerationStageText(PWA_GENERATION_STAGES[4].title);
+          return 94;
+        }
+        return curr;
+      });
+    }, 2000);
 
     try {
       // Find custom field values by name mapping (case-insensitive)
@@ -337,7 +395,7 @@ export function ContactDetailView({
       
       const aiAnalysis = getVal("mensagem lead") || getVal("lead message") || getVal("analise ia") || contact.rag_report || "Gerado automaticamente via botão CRM.";
 
-      await enqueueAndTriggerBuild({
+      const { projectId } = await enqueueAndTriggerBuild({
         project_name: editName || contact.name || "Projeto Sem Nome",
         contact_id: contactId,
         branding: {
@@ -357,11 +415,39 @@ export function ContactDetailView({
       });
 
       toast.success("Geração de site por IA iniciada com sucesso!");
+      setAllowForceRegenerate(false);
+
+      let attempts = 0;
+      const pollTimer = setInterval(async () => {
+        attempts += 1;
+        const freshProjects = await fetchProjects();
+        const contactProjectsNow = filterProjectsForContact(freshProjects, contact);
+        const completedNow = contactProjectsNow.find(
+          (p) => p.status === 'concluido' || (projectId && p.id === projectId && p.status === 'concluido')
+        );
+
+        if (completedNow) {
+          clearInterval(pollTimer);
+          clearInterval(progressTimer);
+          setGenerationProgress(100);
+          setGenerationStageText(PWA_GENERATION_STAGES[5].title);
+          toast.success("PWA gerado e concluído com sucesso!");
+          setTimeout(() => {
+            setGeneratingAI(false);
+          }, 1000);
+        } else if (attempts >= 20) {
+          clearInterval(pollTimer);
+          clearInterval(progressTimer);
+          setGeneratingAI(false);
+        }
+      }, 2500);
     } catch (err: any) {
+      clearInterval(progressTimer);
       console.error(err);
       toast.error(err.message || "Erro na integração com a Fábrica de IA.");
-    } finally {
       setGeneratingAI(false);
+      setGenerationProgress(0);
+      setGenerationStageText('');
     }
   }
 
@@ -674,19 +760,130 @@ export function ContactDetailView({
                     )}
                     Save Changes
                   </Button>
-                  <Button
-                    onClick={handleGenerateAISite}
-                    disabled={generatingAI}
-                    className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white w-full mt-2 gap-2"
-                    size="sm"
-                  >
-                    {generatingAI ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="size-3.5" />
-                    )}
-                    Gerar Site com IA
-                  </Button>
+                  {(() => {
+                    const contactProjects = filterProjectsForContact(projects, contact);
+                    const projectStatus = getContactProjectStatus(contactProjects);
+                    const isAlreadyGenerated = projectStatus.isGenerated;
+                    const isCurrentlyProcessing = generatingAI || projectStatus.isProcessing;
+                    const effectiveProgress = generatingAI
+                      ? generationProgress
+                      : projectStatus.isProcessing
+                      ? Math.max(generationProgress, projectStatus.progressPercentage)
+                      : projectStatus.isGenerated
+                      ? 100
+                      : 0;
+                    const effectiveStageText = generatingAI
+                      ? generationStageText || PWA_GENERATION_STAGES[0].title
+                      : projectStatus.isProcessing
+                      ? getStageByProgress(effectiveProgress).title
+                      : projectStatus.statusMessage;
+
+                    return (
+                      <div className="mt-3 space-y-2">
+                        {isCurrentlyProcessing && (
+                          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2 animate-fadeIn">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                                <Loader2 className="size-3.5 animate-spin text-primary" />
+                                Acompanhamento da Geração (IA)
+                              </span>
+                              <span className="text-xs font-mono font-bold text-primary">
+                                {effectiveProgress}%
+                              </span>
+                            </div>
+                            <Progress
+                              value={effectiveProgress}
+                              className="h-2 bg-muted/80"
+                              indicatorClassName="bg-gradient-to-r from-violet-500 to-indigo-500"
+                            />
+                            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
+                              <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-ping" />
+                              <span>{effectiveStageText}</span>
+                            </p>
+                          </div>
+                        )}
+
+                        {!isCurrentlyProcessing && isAlreadyGenerated && !allowForceRegenerate && (
+                          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-2 animate-fadeIn">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                                <CheckCircle2 className="size-4 text-emerald-500" />
+                                PWA Gerado com Sucesso (Status: OK)
+                              </span>
+                              <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">
+                                OK
+                              </Badge>
+                            </div>
+                            <Button
+                              disabled={true}
+                              size="sm"
+                              className="w-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 cursor-not-allowed flex items-center justify-center gap-1.5 font-bold"
+                            >
+                              <CheckCircle2 className="size-3.5 text-emerald-400" />
+                              PWA Já Gerado (Concluído)
+                            </Button>
+                            <div className="flex items-center justify-between px-0.5 text-[10px] text-muted-foreground">
+                              <span>✓ Bloqueado contra nova geração acidental.</span>
+                              <button
+                                type="button"
+                                onClick={() => setAllowForceRegenerate(true)}
+                                className="text-primary hover:underline cursor-pointer font-medium"
+                              >
+                                Regerar PWA?
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {(isCurrentlyProcessing || (!isAlreadyGenerated || allowForceRegenerate)) && (
+                          <div className="space-y-1.5">
+                            {allowForceRegenerate && (
+                              <div className="flex items-center justify-between p-2 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px]">
+                                <span>Modo de regeração ativo.</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setAllowForceRegenerate(false)}
+                                  className="underline hover:text-amber-300"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            )}
+                            <Button
+                              onClick={handleGenerateAISite}
+                              disabled={isCurrentlyProcessing}
+                              className={cn(
+                                "w-full gap-2 font-medium",
+                                isCurrentlyProcessing
+                                  ? "bg-primary/40 text-primary-foreground cursor-wait"
+                                  : allowForceRegenerate
+                                  ? "bg-amber-600 hover:bg-amber-700 text-white"
+                                  : "bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white"
+                              )}
+                              size="sm"
+                            >
+                              {isCurrentlyProcessing ? (
+                                <>
+                                  <Loader2 className="size-3.5 animate-spin" />
+                                  <span>Gerando PWA ({effectiveProgress}%)...</span>
+                                </>
+                              ) : allowForceRegenerate ? (
+                                <>
+                                  <RefreshCw className="size-3.5" />
+                                  <span>Regerar Site / PWA com IA</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="size-3.5" />
+                                  <span>Gerar Site com IA</span>
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </TabsContent>
 

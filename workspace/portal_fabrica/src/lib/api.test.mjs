@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { apiFetch } from './api.js';
+import { apiFetch, formatBrazilianPhone, isValidBrazilianPhone } from './api.js';
 
 test('apiFetch recovers from Vite proxy ECONNRESET (500/502) and transient backend restart window', async () => {
   let backendOnline = false;
@@ -80,4 +80,13 @@ test('apiFetch returns genuine 400 application error immediately without retryin
   } finally {
     server.close();
   }
+});
+
+test('formatBrazilianPhone limits input to 11 digits and applies (DD) 9XXXX-XXXX mask', () => {
+  assert.equal(formatBrazilianPhone('5199876543299999'), '(51) 99876-5432');
+  assert.equal(formatBrazilianPhone('5133445566'), '(51) 3344-5566');
+  assert.equal(formatBrazilianPhone('abc51def988776655xyz'), '(51) 98877-6655');
+  assert.equal(isValidBrazilianPhone('(51) 99876-5432'), true);
+  assert.equal(isValidBrazilianPhone('(51) 3344-5566'), true);
+  assert.equal(isValidBrazilianPhone('(51) 9987'), false);
 });

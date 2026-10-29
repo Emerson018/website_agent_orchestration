@@ -32,6 +32,29 @@ export function FilaProjetosModal({ open, onOpenChange }: FilaProjetosModalProps
   const [projetos, setProjetos] = useState<FilaProjeto[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedProjeto, setSelectedProjeto] = useState<FilaProjeto | null>(null);
+  const [triggeringId, setTriggeringId] = useState<number | null>(null);
+
+  async function handleTriggerProjeto(id: number) {
+    setTriggeringId(id);
+    try {
+      const res = await fetch(`/api/projetos/${id}/processar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Projeto colocado para rodar! O Agente da Fábrica foi acionado.");
+        setSelectedProjeto((prev) => (prev ? { ...prev, status: "processando" } : null));
+        fetchProjetos();
+      } else {
+        toast.error(data.error || "Erro ao iniciar geração do projeto.");
+      }
+    } catch (err: any) {
+      toast.error("Erro de conexão ao acionar a fábrica.");
+    } finally {
+      setTriggeringId(null);
+    }
+  }
 
   const fetchProjetos = useCallback(async () => {
     setLoading(true);
@@ -201,6 +224,28 @@ export function FilaProjetosModal({ open, onOpenChange }: FilaProjetosModalProps
                       <div className="p-2.5 bg-muted/40 rounded-lg text-xs text-foreground font-mono truncate border border-border/50">
                         {selectedProjeto.supabase_url}
                       </div>
+                    </div>
+                  )}
+
+                  {selectedProjeto.status === 'pendente' && (
+                    <div className="pt-3 border-t border-border flex items-center justify-between">
+                      <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <Clock className="size-3.5 text-blue-400" />
+                        <span>Lead qualificado. Pronto para compilação.</span>
+                      </div>
+                      <Button
+                        onClick={() => handleTriggerProjeto(selectedProjeto.id)}
+                        disabled={triggeringId === selectedProjeto.id}
+                        className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white gap-2 font-medium"
+                        size="sm"
+                      >
+                        {triggeringId === selectedProjeto.id ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="size-3.5" />
+                        )}
+                        Colocar Projeto para Rodar (Fábrica IA)
+                      </Button>
                     </div>
                   )}
                 </>
