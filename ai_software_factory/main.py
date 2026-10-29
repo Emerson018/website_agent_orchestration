@@ -46,7 +46,7 @@ from ai_software_factory.project_queue import (
     build_initial_agent_state,
     process_queue_item,
 )
-from ai_software_factory.rag_pipeline import run_rag_analysis_pipeline
+from ai_software_factory.brand_analyzer import run_brand_analysis_pipeline
 from ai_software_factory.state import AgentState
 from ai_software_factory import llm_gateway
 
@@ -88,7 +88,7 @@ app = workflow.compile()
 
 app_api = FastAPI(
     title="Fábrica de Software API",
-    description="Endpoint HTTP para disparo automatizado de geração de sites baseados em templates ouro.",
+    description="Endpoint HTTP para diagnóstico de marca e geração automatizada de sites com layouts únicos.",
 )
 
 app_api.add_middleware(
@@ -118,12 +118,14 @@ async def gerar_site(payload: WebhookPayload):
                 "O build do projeto falhou nas validações de QA e excedeu o limite de tentativas."
             )
         provedor = resultado.get("provedor_execucao") or llm_gateway.get_last_execution_provider()
+        modelo_label = llm_gateway.get_last_execution_model_label()
         return {
             "status": "sucesso",
-            "mensagem": "Projeto gerado e validado com sucesso",
+            "mensagem": f"Projeto gerado e validado com sucesso via {modelo_label}",
             "detalhes": resultado.get("customization_requirements"),
             "target_project_path": resultado.get("target_project_path"),
             "provedor_execucao": provedor,
+            "modelo_utilizado": modelo_label,
         }
     except Exception as e:
         raise HTTPException(
@@ -165,12 +167,15 @@ async def processar_fila(req_data: Optional[ProcessarFilaRequest] = None):
         )
 
 
+@app_api.post("/api/analisar-marca/{contact_id}")
 @app_api.post("/api/analisar-rag/{contact_id}")
-async def analisar_rag(contact_id: str, background_tasks: BackgroundTasks):
-    background_tasks.add_task(run_rag_analysis_pipeline, contact_id)
+async def analisar_marca(contact_id: str, background_tasks: BackgroundTasks):
+    active_info = llm_gateway.describe_active_llm()
+    background_tasks.add_task(run_brand_analysis_pipeline, contact_id)
     return {
         "status": "processing",
-        "message": f"Pipeline RAG iniciado em segundo plano para o contato {contact_id}",
+        "engine": active_info["label"],
+        "message": f"Análise de marca e conteúdo iniciada em segundo plano para o contato {contact_id} ({active_info['label']})",
     }
 
 

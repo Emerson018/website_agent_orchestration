@@ -47,7 +47,13 @@ def _write_local_projects(projects: List[Dict[str, Any]]) -> bool:
 
 
 def fetch_pending_project() -> Optional[Dict[str, Any]]:
-    """Localiza o primeiro projeto pendente no pending_job.json, Supabase ou local_projetos.json."""
+    """Localiza o primeiro projeto pendente no local_projetos.json, pending_job.json ou Supabase."""
+    projects = _read_local_projects()
+    for p in projects:
+        status = str(p.get("status", "")).lower()
+        if status in ("aguardando_agente", "processando"):
+            return p
+
     if os.path.exists(PENDING_JOB_FILE):
         try:
             with open(PENDING_JOB_FILE, "r", encoding="utf-8") as f:
@@ -71,11 +77,6 @@ def fetch_pending_project() -> Optional[Dict[str, Any]]:
         except Exception:
             pass
 
-    projects = _read_local_projects()
-    for p in projects:
-        status = str(p.get("status", "")).lower()
-        if status in ("aguardando_agente", "processando"):
-            return p
     return None
 
 

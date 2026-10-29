@@ -356,6 +356,33 @@ export default function LandingPage() {
 
   return (
     <div className="pb-24">
+      {/* Popup Flutuante de Erro */}
+      {submissionError && (
+        <div
+          role="alertdialog"
+          aria-live="assertive"
+          className="fixed top-5 right-5 z-50 max-w-md w-full bg-[#191D26] border-2 border-rose-600 rounded-lg shadow-2xl p-4 flex items-start gap-3 animate-fadeIn"
+        >
+          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-rose-950 text-rose-400 font-mono text-xs font-bold shrink-0 mt-0.5">
+            !
+          </span>
+          <div className="flex-1 space-y-1">
+            <p className="text-xs font-mono font-bold uppercase tracking-wider text-rose-400">
+              Falha na Operação
+            </p>
+            <p className="text-sm text-[#ECEEF2] leading-relaxed">{submissionError}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSubmissionError('')}
+            aria-label="Fechar aviso de erro"
+            className="text-[#949BA8] hover:text-[#ECEEF2] font-mono text-sm px-1.5 py-0.5 rounded hover:bg-[#282F3D] cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* 1. Studio Specification Header */}
       <section className="drafting-surface border-b border-[#282F3D] pt-12 pb-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -944,8 +971,25 @@ export default function LandingPage() {
                           <td className="py-3.5 px-4 font-medium text-[#ECEEF2] whitespace-nowrap">
                             {name}
                           </td>
-                          <td className="py-3.5 px-4 text-xs text-[#949BA8] max-w-md">
+                          <td className="py-3.5 px-4 text-xs text-[#949BA8] max-w-md space-y-1">
                             <p className="line-clamp-2 leading-relaxed">{proj.mensagem_lead}</p>
+                            {(proj.resultado_json?.modelo_utilizado ||
+                              proj.resultado_json?.execution_engine ||
+                              proj.resultado_json?.layout_archetype) && (
+                              <div className="flex flex-wrap items-center gap-1.5 pt-1 font-mono text-[11px]">
+                                {(proj.resultado_json?.modelo_utilizado ||
+                                  proj.resultado_json?.execution_engine) && (
+                                  <span className="px-2 py-0.5 rounded bg-[#141820] border border-[#282F3D] text-[#E59A28]">
+                                    Motor: {proj.resultado_json.modelo_utilizado || proj.resultado_json.execution_engine}
+                                  </span>
+                                )}
+                                {proj.resultado_json?.layout_archetype && (
+                                  <span className="px-2 py-0.5 rounded bg-[#141820] border border-[#282F3D] text-[#ECEEF2]">
+                                    Layout: {proj.resultado_json.layout_archetype}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </td>
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <div className="flex items-center gap-2 font-mono text-xs text-[#949BA8]">

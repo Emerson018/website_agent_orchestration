@@ -332,13 +332,16 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
         }
 
         if (contactId) {
+          const contactUpdatePayload = {
+            additional_data: additional_data || {},
+            updated_at: new Date().toISOString()
+          };
+          if (!incomingContactId && !ai_analysis) {
+            contactUpdatePayload.rag_status = 'idle';
+          }
           await supabase
             .from('contacts')
-            .update({
-              additional_data: additional_data || {},
-              rag_status: 'idle',
-              updated_at: new Date().toISOString()
-            })
+            .update(contactUpdatePayload)
             .eq('id', contactId);
         } else {
           const { data: newContact, error: contactError } = await supabase

@@ -24,17 +24,15 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 
 
 def obter_delay():
-    if os.environ.get("USE_LOCAL_LLM", "false").lower() == "true":
-        return 0.1
-    return 4.0
+    return 1.5
 
 
-def obter_llm(model_openai="gpt-4o", model_gemini="gemini-2.5-flash", temperature=0):
+def obter_llm(model_openai="gpt-4o", model_gemini="gemini-3.8-flash", temperature=0):
     llm = llm_gateway.get_llm(
         temperature=temperature, model_openai=model_openai, model_gemini=model_gemini
     )
     if llm is None:
-        raise ValueError("Nenhuma chave de API ou LLM local configurada.")
+        raise ValueError("Nenhuma chave de API do Gemini/OpenAI configurada.")
     return llm
 
 

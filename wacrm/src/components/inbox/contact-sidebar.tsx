@@ -64,9 +64,9 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
   const [newNote, setNewNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
 
-  // RAG States
-  const [ragStatus, setRagStatus] = useState<string | null>(null);
-  const [ragReport, setRagReport] = useState<string | null>(null);
+  // Brand Analysis & Design Direction States
+  const [brandStatus, setBrandStatus] = useState<string | null>(null);
+  const [brandReport, setBrandReport] = useState<string | null>(null);
   const [isEditingReport, setIsEditingReport] = useState(false);
   const [editedReport, setEditedReport] = useState("");
   const [generatingAI, setGeneratingAI] = useState(false);
@@ -88,16 +88,16 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
       setGenerationStageText("");
       setAllowForceRegenerate(false);
       if (contact) {
-        setRagStatus(contact.rag_status || "idle");
-        setRagReport(contact.rag_report || null);
+        setBrandStatus(contact.rag_status || "idle");
+        setBrandReport(contact.rag_report || null);
         setEditedReport(contact.rag_report || "");
         setSidebarSupabaseUrl(contact.supabase_url || "");
         setSidebarSupabaseAnonKey(contact.supabase_anon_key || "");
         setIsConnectionValidated(false);
         setIsEditingReport(false);
       } else {
-        setRagStatus(null);
-        setRagReport(null);
+        setBrandStatus(null);
+        setBrandReport(null);
         setEditedReport("");
         setSidebarSupabaseUrl("");
         setSidebarSupabaseAnonKey("");
@@ -107,9 +107,9 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
     }
   }, [contact]);
 
-  // Polling for RAG status updates
+  // Polling for Brand Analysis status updates
   useEffect(() => {
-    if (!contact || ragStatus !== "processing") return;
+    if (!contact || brandStatus !== "processing") return;
 
     let intervalId: NodeJS.Timeout;
 
@@ -117,24 +117,37 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
       const supabase = createClient();
       const { data, error } = await supabase
         .from("contacts")
-        .select("rag_status, rag_report")
+        .select("rag_status, rag_report, additional_data")
         .eq("id", contact.id)
         .single();
 
-      if (!error && data) {
-        if (data.rag_status !== "processing") {
-          setRagStatus(data.rag_status);
-          setRagReport(data.rag_report);
-          setEditedReport(data.rag_report || "");
-          if (onContactUpdate) {
-            onContactUpdate({
-              ...contact,
-              rag_status: data.rag_status,
-              rag_report: data.rag_report
-            });
-          }
-          clearInterval(intervalId);
+      if (error) {
+        toast.error("Erro ao consultar status da análise de marca: " + error.message);
+        return;
+      }
+
+      if (data && data.rag_status !== "processing") {
+        setBrandStatus(data.rag_status);
+        setBrandReport(data.rag_report);
+        setEditedReport(data.rag_report || "");
+        if (onContactUpdate) {
+          onContactUpdate({
+            ...contact,
+            rag_status: data.rag_status,
+            rag_report: data.rag_report,
+            additional_data: data.additional_data || contact.additional_data
+          });
         }
+        if (data.rag_status === "completed") {
+          const engineUsed =
+            (data.additional_data as Record<string, any>)?.last_execution_engine ||
+            (data.additional_data as Record<string, any>)?.brand_direction?.execution_engine ||
+            "Gemini (gemini-3.8-flash)";
+          toast.success(`Análise de marca concluída! Motor utilizado: ${engineUsed}`);
+        } else if (data.rag_status === "failed") {
+          toast.error(data.rag_report || "Falha ao executar a análise de marca e conteúdo.");
+        }
+        clearInterval(intervalId);
       }
     };
 
@@ -142,11 +155,11 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
     intervalId = setInterval(checkStatus, 3000);
 
     return () => clearInterval(intervalId);
-  }, [contact, ragStatus, onContactUpdate]);
+  }, [contact, brandStatus, onContactUpdate]);
 
-  const handleTriggerRag = useCallback(async () => {
+  const handleTriggerBrandAnalysis = useCallback(async () => {
     if (!contact) return;
-    setRagStatus("processing");
+    setBrandStatus("processing");
     if (onContactUpdate) {
       onContactUpdate({
         ...contact,
@@ -155,19 +168,30 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
     }
 
     try {
-      console.log(`Disparando pipeline RAG para o contato ${contact.id}`);
-      const response = await fetch(`http://localhost:8000/api/analisar-rag/${contact.id}`, {
+      console.log(`Disparando análise de marca para o contato ${contact.id}`);
+      const response = await fetch(`http://localhost:8000/api/analisar-marca/${contact.id}`, {
         method: "POST",
       });
 
       if (!response.ok) {
-        throw new Error("Erro ao disparar análise RAG no backend.");
+        let detailMsg = "Erro ao disparar análise de marca no orquestrador (porta 8000).";
+        try {
+          const errJson = await response.json();
+          if (errJson?.detail) detailMsg = errJson.detail;
+        } catch {
+          // Resposta não-JSON
+        }
+        throw new Error(detailMsg);
       }
 
-      console.log("Pipeline RAG disparado com sucesso!");
-    } catch (err) {
+      const resData = await response.json();
+      toast.info(resData?.engine ? `Análise iniciada via ${resData.engine}...` : "Análise de marca iniciada...");
+    } catch (err: any) {
       console.error(err);
-      setRagStatus("failed");
+      setBrandStatus("failed");
+      toast.error(
+        err?.message || "Não foi possível conectar ao Orquestrador de IA na porta 8000 para analisar a marca."
+      );
       if (onContactUpdate) {
         onContactUpdate({
           ...contact,
@@ -187,8 +211,9 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
       .eq("id", contact.id);
 
     if (!error) {
-      setRagReport(editedReport);
+      setBrandReport(editedReport);
       setIsEditingReport(false);
+      toast.success("Dossiê de marca atualizado com sucesso!");
       if (onContactUpdate) {
         onContactUpdate({
           ...contact,
@@ -196,7 +221,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
         });
       }
     } else {
-      alert("Erro ao salvar o relatório: " + error.message);
+      toast.error("Erro ao salvar o dossiê de marca: " + error.message);
     }
   }, [contact, editedReport, onContactUpdate]);
 
@@ -335,14 +360,17 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
     }, 2000);
 
     try {
-      const ragBranding = (contact.additional_data as Record<string, any>)?.branding;
-      const paletteName = ragBranding?.palette_name || "Definida via RAG";
-      const primaryHex = ragBranding?.primary_color_hex;
+      const brandDirection =
+        (contact.additional_data as Record<string, any>)?.brand_direction ||
+        (contact.additional_data as Record<string, any>)?.branding;
+      const paletteName = brandDirection?.palette_name || "Definida via Direção de Marca Gemini";
+      const primaryHex = brandDirection?.primary_color_hex || brandDirection?.primary_color;
 
       const { projectId } = await enqueueAndTriggerBuild({
         project_name: contact.name || "Projeto Sem Nome",
         contact_id: contact.id,
         branding: {
+          ...(brandDirection || {}),
           palette_name: paletteName,
           ...(primaryHex ? { primary_color_hex: primaryHex } : {})
         },
@@ -355,7 +383,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
         supabase_url: sidebarSupabaseUrl.trim(),
         supabase_anon_key: sidebarSupabaseAnonKey.trim(),
         supabase_service_role_key: contact.supabase_service_role_key?.trim() || "",
-        ai_analysis: ragReport || "",
+        ai_analysis: brandReport || "",
         additional_data: (contact.additional_data as Record<string, unknown>) || { files: [], links: [], texts: [] }
       });
 
@@ -372,13 +400,30 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
         const completedNow = contactProjectsNow.find(
           (p) => p.status === "concluido" || (projectId && p.id === projectId && p.status === "concluido")
         );
+        const failedNow = contactProjectsNow.find(
+          (p) => (projectId && p.id === projectId) && (p.status === "falha_critica" || p.status === "erro")
+        );
 
-        if (completedNow) {
+        if (failedNow) {
+          clearInterval(pollInterval);
+          clearInterval(progressTimer);
+          setGeneratingAI(false);
+          setGenerationProgress(0);
+          setGenerationStageText("");
+          const errReason =
+            (failedNow as any).resultado_json?.error_details ||
+            "Falha durante a compilação do site na Fábrica de IA.";
+          toast.error(`Erro na geração do site: ${errReason}`);
+        } else if (completedNow) {
           clearInterval(pollInterval);
           clearInterval(progressTimer);
           setGenerationProgress(100);
           setGenerationStageText(PWA_GENERATION_STAGES[5].title);
-          toast.success("PWA gerado e concluído com sucesso!");
+          const modelLabel =
+            (completedNow as any).resultado_json?.modelo_utilizado ||
+            (completedNow as any).resultado_json?.provedor_execucao ||
+            "Gemini (gemini-3.8-flash)";
+          toast.success(`Site gerado com sucesso! Motor utilizado: ${modelLabel}`);
           setTimeout(() => {
             setGeneratingAI(false);
           }, 1000);
@@ -397,7 +442,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
       setGenerationProgress(0);
       setGenerationStageText("");
     }
-  }, [contact, ragReport, sidebarSupabaseUrl, sidebarSupabaseAnonKey, fetchContactData]);
+  }, [contact, brandReport, sidebarSupabaseUrl, sidebarSupabaseAnonKey, fetchContactData]);
 
   // Load on contact change. setContactData/setTags run inside async
   // Supabase callbacks, not synchronously in the effect body.
@@ -701,30 +746,30 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
           {/* Divider */}
           <div className="my-4 border-t border-border" />
 
-          {/* RAG Section */}
+          {/* Brand Analysis & Design Direction Section */}
           <div className="mb-4">
             <div className="flex items-center justify-between px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-3 w-3 text-primary animate-pulse" />
-                Análise RAG IA
+                Direção de Marca & Design IA
               </div>
-              {ragStatus && (
+              {brandStatus && (
                 <span className={cn(
                   "rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase",
-                  ragStatus === "idle" && "bg-muted text-muted-foreground",
-                  ragStatus === "processing" && "bg-yellow-500/10 text-yellow-500 animate-pulse",
-                  ragStatus === "completed" && "bg-emerald-500/10 text-emerald-500",
-                  ragStatus === "failed" && "bg-red-500/10 text-red-500"
+                  brandStatus === "idle" && "bg-muted text-muted-foreground",
+                  brandStatus === "processing" && "bg-yellow-500/10 text-yellow-500 animate-pulse",
+                  brandStatus === "completed" && "bg-emerald-500/10 text-emerald-500",
+                  brandStatus === "failed" && "bg-red-500/10 text-red-500"
                 )}>
-                  {ragStatus === "idle" && "Inativo"}
-                  {ragStatus === "processing" && "Analisando..."}
-                  {ragStatus === "completed" && "Concluído"}
-                  {ragStatus === "failed" && "Erro"}
+                  {brandStatus === "idle" && "Inativo"}
+                  {brandStatus === "processing" && "Analisando..."}
+                  {brandStatus === "completed" && "Concluído"}
+                  {brandStatus === "failed" && "Erro"}
                 </span>
               )}
             </div>
 
-            {/* RAG Attachments & Links */}
+            {/* Attachments & Links */}
             {contact.additional_data && (
               <div className="mt-2 space-y-2 rounded-lg border border-border/65 bg-muted/30 p-2.5 text-xs">
                 {/* Files */}
@@ -787,15 +832,15 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
             {/* Trigger Button */}
             <div className="mt-3">
               <Button
-                onClick={handleTriggerRag}
-                disabled={ragStatus === "processing"}
+                onClick={handleTriggerBrandAnalysis}
+                disabled={brandStatus === "processing"}
                 size="sm"
                 className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center gap-1.5 font-bold"
               >
-                {ragStatus === "processing" ? (
+                {brandStatus === "processing" ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>Analisando com IA...</span>
+                    <span>Analisando com Gemini...</span>
                   </>
                 ) : (
                   <>
@@ -807,12 +852,12 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
             </div>
 
             {/* Report Result Section */}
-            {ragReport && (
+            {brandReport && (
               <div className="mt-3 rounded-lg border border-border bg-card p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-foreground flex items-center gap-1">
                     <File className="h-3.5 w-3.5 text-primary" />
-                    Relatório Gerado
+                    Dossiê de Marca & Layout
                   </span>
                   {!isEditingReport ? (
                     <Button
@@ -829,7 +874,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
                         variant="ghost"
                         onClick={() => {
                           setIsEditingReport(false);
-                          setEditedReport(ragReport);
+                          setEditedReport(brandReport);
                         }}
                         className="h-7 px-2 text-xs"
                       >
@@ -856,7 +901,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
                 ) : (
                   <>
                     <div className="rounded-md bg-muted/40 p-2.5 text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed border border-border/40">
-                      {ragReport}
+                      {brandReport}
                     </div>
 
                     <div className="pt-3 border-t border-border/60 space-y-2.5 text-left">

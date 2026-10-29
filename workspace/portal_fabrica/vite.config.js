@@ -18,11 +18,6 @@ export default defineConfig({
         timeout: 30000,
         proxyTimeout: 30000,
       },
-      '/api-lm': {
-        target: 'http://localhost:1234',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api-lm/, ''),
-      },
     },
   },
 })

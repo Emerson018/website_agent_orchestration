@@ -424,6 +424,45 @@ class TestAgentsAndRagSeams(unittest.TestCase):
                 self.assertEqual(res["workspace"].project_path, ws_path.replace("\\", "/"))
                 self.assertEqual(res["historico_nos"], ["supervisor"])
 
+    def test_brand_analyzer_and_structured_prompt_pack_with_unique_layout_archetypes(self):
+        from ai_software_factory import brand_analyzer, llm_gateway
+
+        # 1. Verifica que o modelo padrão da API Gemini é gemini-3.8-flash
+        self.assertEqual(llm_gateway.DEFAULT_GEMINI_API_MODEL, "gemini-3.8-flash")
+
+        # 2. Verifica extração contextual real de serviços, preços e arquétipo sem frases fixas genéricas
+        context_text = (
+            "[chat]: Olá! Somos a Barbearia Dom Navalha.\n"
+            "Corte na Tesoura - R$ 75 - Acabamento clássico na navalha\n"
+            "Barboterapia com Vapor de Ozônio - R$ 65 - Toalha quente e óleos essenciais\n"
+            "Queremos um visual estilo bento modular moderno."
+        )
+        dossier = brand_analyzer.generate_fallback_brand_report("Barbearia Dom Navalha", context_text)
+        self.assertIn("gemini-3.8-flash", dossier)
+        self.assertIn("Corte na Tesoura", dossier)
+        self.assertIn("R$ 75", dossier)
+        self.assertIn("Barboterapia com Vapor de Ozônio", dossier)
+        self.assertIn("bento_modular", dossier)
+
+        # 3. Verifica que arquétipos diferentes geram estruturas de código JSX distintas
+        bento_jsx = agents.generate_fallback_landing_page_code(
+            app_name="Barbearia Dom Navalha",
+            primary_color="#D4AF37",
+            secondary_color="#1E293B",
+            mensagem=context_text,
+            design_direction={"layout_archetype": "bento_modular"},
+        )
+        editorial_jsx = agents.generate_fallback_landing_page_code(
+            app_name="Barbearia Dom Navalha",
+            primary_color="#D4AF37",
+            secondary_color="#1E293B",
+            mensagem=context_text,
+            design_direction={"layout_archetype": "editorial_asymmetric"},
+        )
+        self.assertNotEqual(bento_jsx, editorial_jsx)
+        self.assertIn("md:col-span-7", bento_jsx)
+        self.assertIn("Corte na Tesoura", bento_jsx)
+
 
 if __name__ == "__main__":
     unittest.main()

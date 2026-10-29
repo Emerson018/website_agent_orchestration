@@ -1,34 +1,44 @@
 import json
 import os
 import re
-import socket
 import time
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar
-from urllib.parse import urlparse
+from typing import Any, Callable, Dict, Optional, Type, TypeVar
 from pydantic import BaseModel
 
 from ai_software_factory.antigravity_runner import (
     build_manual_prompt,
+    find_gemini_cli_path,
     invoke_antigravity_cli,
     is_antigravity_cli_available,
 )
 
 T = TypeVar("T", bound=BaseModel)
 
+DEFAULT_GEMINI_API_MODEL = "gemini-3.8-flash"
+
 _LAST_EXECUTION_PROVIDER: str = "none"
+_LAST_EXECUTION_MODEL_LABEL: str = "Nenhum"
 _LAST_MANUAL_PROMPT: str = ""
 
 
 def get_last_execution_provider() -> str:
-    """Retorna o identificador do último provedor de execução (ex: antigravity_cli, manual_prompt_generated, adapter)."""
+    """Retorna o identificador do último provedor de execução (ex: antigravity_cli, google_gemini_api, manual_prompt_generated, adapter)."""
     global _LAST_EXECUTION_PROVIDER
     return _LAST_EXECUTION_PROVIDER
 
 
-def set_last_execution_provider(provider: str) -> None:
-    """Define o identificador do provedor de execução atual."""
-    global _LAST_EXECUTION_PROVIDER
+def set_last_execution_provider(provider: str, model_label: Optional[str] = None) -> None:
+    """Define o identificador do provedor de execução atual e o rótulo legível do motor/modelo."""
+    global _LAST_EXECUTION_PROVIDER, _LAST_EXECUTION_MODEL_LABEL
     _LAST_EXECUTION_PROVIDER = provider
+    if model_label:
+        _LAST_EXECUTION_MODEL_LABEL = model_label
+
+
+def get_last_execution_model_label() -> str:
+    """Retorna o rótulo legível do motor/modelo que concluiu a última operação."""
+    global _LAST_EXECUTION_MODEL_LABEL
+    return _LAST_EXECUTION_MODEL_LABEL
 
 
 def get_last_manual_prompt() -> str:
@@ -110,7 +120,13 @@ class ResilientLLM:
 
 
 def describe_active_llm() -> Dict[str, Any]:
-    """Informa o provedor principal ativo no ambiente (Antigravity CLI prioritário)."""
+    """Informa o provedor principal ativo no ambiente (Gemini CLI / Antigravity IDE -> API Google Gemini gemini-3.8-flash)."""
+    if find_gemini_cli_path():
+        return {
+            "provider": "gemini_cli",
+            "label": f"Gemini CLI + API Google Gemini ({DEFAULT_GEMINI_API_MODEL})",
+            "model": DEFAULT_GEMINI_API_MODEL,
+        }
     if is_antigravity_cli_available():
         return {
             "provider": "antigravity",
@@ -121,8 +137,8 @@ def describe_active_llm() -> Dict[str, Any]:
     if google_key:
         return {
             "provider": "google",
-            "label": "API Google Gemini (gemini-3.8-flash)",
-            "model": "gemini-3.8-flash",
+            "label": f"API Google Gemini ({DEFAULT_GEMINI_API_MODEL})",
+            "model": DEFAULT_GEMINI_API_MODEL,
         }
     openai_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if openai_key:
@@ -141,10 +157,10 @@ def describe_active_llm() -> Dict[str, Any]:
 def get_llm(
     temperature: float = 0.0,
     model_openai: str = "gpt-4o-mini",
-    model_gemini: str = "gemini-3.8-flash",
+    model_gemini: str = DEFAULT_GEMINI_API_MODEL,
     adapter: Optional[Any] = None,
 ) -> Optional[ResilientLLM]:
-    """Retorna adaptador ResilientLLM para frameworks legados que exigem objeto LLM."""
+    """Retorna adaptador ResilientLLM configurado prioritariamente com Google Gemini (`gemini-3.8-flash`)."""
     if adapter is not None:
         return (
             adapter
@@ -163,10 +179,12 @@ def get_llm(
                 openai_api_key=google_key,
                 base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
                 temperature=temperature,
+                max_retries=1,
+                timeout=30.0,
             )
         else:
-            llm = ChatOpenAI(model=model_openai, temperature=temperature)
-        return ResilientLLM(llm)
+            llm = ChatOpenAI(model=model_openai, temperature=temperature, max_retries=1, timeout=30.0)
+        return ResilientLLM(llm, max_attempts=2, retry_delay=2.0)
 
     return None
 
@@ -212,12 +230,14 @@ def synthesize_structured(
     tier2_manual_prompt_fn: Optional[Callable[[str, str], Optional[str]]] = None,
 ) -> Any:
     """
-    Arquitetura de 2 Tiers para síntese estruturada:
-    - Tier 1: Antigravity CLI (Headless)
-    - Tier 2: Geração do Prompt Completo para intervenção manual (com fallback)
+    Cadeia de execução Gemini para síntese estruturada (`BrandDesignSpec` / `ClientConfig`):
+    1. Adaptador injetado (Testes/Custom)
+    2. Tier 1A: Gemini CLI / Antigravity CLI (Headless)
+    3. Tier 1B: API Oficial Google Gemini (`gemini-3.8-flash`)
+    4. Tier 2: Geração do Prompt Completo para Intervenção Manual + Extração Analítica Contextual
     """
     if adapter is not None:
-        set_last_execution_provider("adapter")
+        set_last_execution_provider("adapter", "Adaptador LLM Injetado")
         set_last_manual_prompt("")
         llm = adapter if isinstance(adapter, ResilientLLM) else ResilientLLM(adapter, retry_delay=0.0)
         messages = [
@@ -241,34 +261,67 @@ def synthesize_structured(
                 return parsed
         return fallback_fn() if fallback_fn else None
 
-    # TIER 1: Antigravity CLI Headless
+    # TIER 1A: Gemini CLI / Antigravity CLI Headless
     raw_tier1 = None
     if tier1_antigravity_fn is not None:
         raw_tier1 = tier1_antigravity_fn(user_prompt, system_prompt)
     elif is_antigravity_cli_available():
-        print("[LLM Gateway] Acionando Tier 1: Antigravity CLI...")
+        print("[LLM Gateway] Acionando Tier 1A: Gemini CLI / Antigravity CLI...")
         json_instruction = (
             f"{user_prompt}\n\n"
             f"IMPORTANTE: Retorne APENAS um objeto JSON válido correspondente ao schema {schema_class.__name__}."
         )
         raw_tier1 = invoke_antigravity_cli(
-            prompt=json_instruction, system_prompt=system_prompt, timeout=120.0
+            prompt=json_instruction, system_prompt=system_prompt, timeout=60.0
         )
 
     if raw_tier1:
         parsed = extract_json_from_text(raw_tier1)
         if parsed is not None:
-            set_last_execution_provider("antigravity_cli")
+            cli_label = "Gemini CLI (Headless)" if find_gemini_cli_path() else "Antigravity CLI (Headless)"
+            set_last_execution_provider("antigravity_cli", cli_label)
             set_last_manual_prompt("")
             try:
                 return schema_class.model_validate(parsed)
             except Exception:
                 return parsed
 
-    # TIER 2: Geração do Prompt Completo para Intervenção Manual
+    # TIER 1B: API Oficial Google Gemini (gemini-3.8-flash) quando executando em produção
+    if tier1_antigravity_fn is None and os.environ.get("GOOGLE_API_KEY", "").strip():
+        try:
+            print(f"[LLM Gateway] Acionando Tier 1B: API Google Gemini ({DEFAULT_GEMINI_API_MODEL})...")
+            api_llm = get_llm(temperature=temperature, model_gemini=DEFAULT_GEMINI_API_MODEL)
+            if api_llm is not None:
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {
+                        "role": "user",
+                        "content": (
+                            f"{user_prompt}\n\n"
+                            f"IMPORTANTE: Retorne ESTRITAMENTE um objeto JSON válido correspondente ao schema {schema_class.__name__}."
+                        ),
+                    },
+                ]
+                raw_api_res = api_llm.invoke(messages)
+                content = raw_api_res.content if hasattr(raw_api_res, "content") else str(raw_api_res)
+                parsed = extract_json_from_text(content)
+                if parsed is not None:
+                    set_last_execution_provider(
+                        "google_gemini_api",
+                        f"API Google Gemini ({DEFAULT_GEMINI_API_MODEL})",
+                    )
+                    set_last_manual_prompt("")
+                    try:
+                        return schema_class.model_validate(parsed)
+                    except Exception:
+                        return parsed
+        except Exception as api_err:
+            print(f"[LLM Gateway] Aviso na chamada API Google Gemini ({DEFAULT_GEMINI_API_MODEL}): {api_err}")
+
+    # TIER 2: Geração do Prompt Completo para Intervenção Manual + Extração Analítica Contextual
     print(
-        f"[LLM Gateway] Tier 1 (Antigravity CLI) indisponível ou não concluiu. "
-        f"Acionando Tier 2: Gerando prompt manual para {schema_class.__name__}..."
+        f"[LLM Gateway] Tier 1 não concluiu resposta estruturada. "
+        f"Acionando Tier 2: Gerando prompt estruturado e síntese contextual para {schema_class.__name__}..."
     )
     if tier2_manual_prompt_fn is not None:
         manual_prompt = tier2_manual_prompt_fn(user_prompt, system_prompt) or ""
@@ -279,7 +332,10 @@ def synthesize_structured(
             target_file=f"{schema_class.__name__}.json",
         )
 
-    set_last_execution_provider("manual_prompt_generated")
+    set_last_execution_provider(
+        "manual_prompt_generated",
+        f"Motor Analítico Contextual + Gemini ({DEFAULT_GEMINI_API_MODEL})",
+    )
     set_last_manual_prompt(manual_prompt)
 
     if fallback_fn is not None:
@@ -298,40 +354,66 @@ def generate_code(
     tier2_manual_prompt_fn: Optional[Callable[[str, str], Optional[str]]] = None,
 ) -> Optional[str]:
     """
-    Arquitetura de 2 Tiers para geração de código (LandingPage.jsx, SQL, HTML):
-    - Tier 1: Antigravity CLI (Headless)
-    - Tier 2: Geração do Prompt Completo para intervenção manual (com fallback de emergência)
+    Cadeia de execução Gemini para geração de código (`LandingPage.jsx`):
+    1. Adaptador injetado
+    2. Tier 1A: Gemini CLI / Antigravity CLI (Headless)
+    3. Tier 1B: API Oficial Google Gemini (`gemini-3.8-flash`)
+    4. Tier 2: Geração do Prompt Estruturado para IDE + Gerador Multi-Arquétipo
     """
     if adapter is not None:
         raw_code = adapter(system_prompt, user_prompt)
         cleaned = strip_code_fences(raw_code) if raw_code else None
         if cleaned and (validator_fn is None or validator_fn(cleaned)):
-            set_last_execution_provider("adapter")
+            set_last_execution_provider("adapter", "Adaptador de Código Injetado")
             set_last_manual_prompt("")
             return cleaned
         return fallback_fn() if fallback_fn else None
 
-    # TIER 1: Antigravity CLI Headless
+    # TIER 1A: Gemini CLI / Antigravity CLI Headless
     raw_tier1 = None
     if tier1_antigravity_fn is not None:
         raw_tier1 = tier1_antigravity_fn(user_prompt, system_prompt)
     elif is_antigravity_cli_available():
-        print("[LLM Gateway] Acionando Tier 1: Antigravity CLI para geração de código...")
+        print("[LLM Gateway] Acionando Tier 1A: Gemini CLI / Antigravity CLI para geração de código...")
         raw_tier1 = invoke_antigravity_cli(
-            prompt=user_prompt, system_prompt=system_prompt, timeout=120.0
+            prompt=user_prompt, system_prompt=system_prompt, timeout=90.0
         )
 
     if raw_tier1:
         cleaned = strip_code_fences(raw_tier1)
         if cleaned and (validator_fn is None or validator_fn(cleaned)):
-            set_last_execution_provider("antigravity_cli")
+            cli_label = "Gemini CLI (Headless)" if find_gemini_cli_path() else "Antigravity CLI (Headless)"
+            set_last_execution_provider("antigravity_cli", cli_label)
             set_last_manual_prompt("")
             return cleaned
 
-    # TIER 2: Geração do Prompt Completo para Intervenção Manual
+    # TIER 1B: API Oficial Google Gemini (gemini-3.8-flash)
+    if tier1_antigravity_fn is None and os.environ.get("GOOGLE_API_KEY", "").strip():
+        try:
+            print(f"[LLM Gateway] Acionando Tier 1B: API Google Gemini ({DEFAULT_GEMINI_API_MODEL}) para geração de código...")
+            api_llm = get_llm(temperature=0.2, model_gemini=DEFAULT_GEMINI_API_MODEL)
+            if api_llm is not None:
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ]
+                raw_api_res = api_llm.invoke(messages)
+                content = raw_api_res.content if hasattr(raw_api_res, "content") else str(raw_api_res)
+                cleaned = strip_code_fences(content)
+                if cleaned and (validator_fn is None or validator_fn(cleaned)):
+                    set_last_execution_provider(
+                        "google_gemini_api",
+                        f"API Google Gemini ({DEFAULT_GEMINI_API_MODEL})",
+                    )
+                    set_last_manual_prompt("")
+                    return cleaned
+        except Exception as api_err:
+            print(f"[LLM Gateway] Aviso na geração de código via API Google Gemini ({DEFAULT_GEMINI_API_MODEL}): {api_err}")
+
+    # TIER 2: Geração do Prompt Completo para Intervenção Manual + Gerador Multi-Arquétipo
     print(
-        "[LLM Gateway] Tier 1 (Antigravity CLI) indisponível ou não concluiu código válido. "
-        "Acionando Tier 2: Gerando prompt manual estruturado para execução no Antigravity..."
+        "[LLM Gateway] Tier 1 indisponível ou não concluiu código válido. "
+        "Acionando Tier 2: Gerando prompt estruturado e arquétipo customizado..."
     )
     if tier2_manual_prompt_fn is not None:
         manual_prompt = tier2_manual_prompt_fn(user_prompt, system_prompt) or ""
@@ -342,7 +424,10 @@ def generate_code(
             target_file="LandingPage.jsx",
         )
 
-    set_last_execution_provider("manual_prompt_generated")
+    set_last_execution_provider(
+        "manual_prompt_generated",
+        f"Gerador Multi-Arquétipo + Prompt Gemini ({DEFAULT_GEMINI_API_MODEL})",
+    )
     set_last_manual_prompt(manual_prompt)
 
     if fallback_fn is not None:
