@@ -1,5 +1,304 @@
 [
   {
+    "id": 84,
+    "created_at": "2026-10-30T15:05:42.179429+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Maria Souza\n- **Empresa / Marca**: 'Estética Renascer 1793372741812'\n- **WhatsApp/Tel**: (51) 941843506\n- **E-mail**: lead_5f_1793372741812@test.com\n- **Site Oficial**: https://esteticarenascer.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://esteticarenascer.com.br (Site Oficial do Lead)\n",
+    "status": "pendente",
+    "resultado_json": {
+      "email": "lead_5f_1793372741812@test.com",
+      "phone": "(51) 941843506",
+      "company": "Estética Renascer 1793372741812",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://esteticarenascer.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "bdc60ad5-da6d-4b66-b382-02c58307bb69",
+      "contact_name": "Maria Souza",
+      "project_name": "Estética Renascer 1793372741812",
+      "briefing_payload": {
+        "name": "Maria Souza",
+        "email": "lead_5f_1793372741812@test.com",
+        "phone": "(51) 941843506",
+        "company": "Estética Renascer 1793372741812",
+        "website": "https://esteticarenascer.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 83,
+    "created_at": "2026-10-30T15:05:42.128398+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Lead Teste Diag 1793372741892\n- **Empresa / Marca**: 'Lead Teste Diag 1793372741892'\n- **WhatsApp/Tel**: (11) 997027625\n- **E-mail**: lead_diag_1793372741892@test.com\n- **Site Oficial**: https://example.com\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://example.com \n",
+    "status": "pendente",
+    "resultado_json": {
+      "email": "lead_diag_1793372741892@test.com",
+      "phone": "(11) 997027625",
+      "company": "Lead Teste Diag 1793372741892",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://example.com",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "2b756c99-e5fe-47a2-947f-0a3b181c248f",
+      "contact_name": "Lead Teste Diag 1793372741892",
+      "project_name": "Lead Teste Diag 1793372741892",
+      "briefing_payload": {
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "client_info": {
+          "email": "lead_diag_1793372741892@test.com",
+          "phone": "(11) 997027625"
+        },
+        "auto_process": false,
+        "project_name": "Lead Teste Diag 1793372741892",
+        "reference_links": [
+          {
+            "url": "https://example.com",
+            "type": "site"
+          }
+        ]
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 80,
+    "created_at": "2026-10-30T15:01:12.938516+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Maria Souza\n- **Empresa / Marca**: 'Estética Renascer 1793372472241'\n- **WhatsApp/Tel**: (51) 953770626\n- **E-mail**: lead_5f_1793372472241@test.com\n- **Site Oficial**: https://esteticarenascer.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://esteticarenascer.com.br (Site Oficial do Lead)\n",
+    "status": "pendente",
+    "resultado_json": {
+      "email": "lead_5f_1793372472241@test.com",
+      "phone": "(51) 953770626",
+      "company": "Estética Renascer 1793372472241",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://esteticarenascer.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "4ee00558-6b44-4bd3-9f7a-78a4cc25fa52",
+      "contact_name": "Maria Souza",
+      "project_name": "Estética Renascer 1793372472241",
+      "briefing_payload": {
+        "name": "Maria Souza",
+        "email": "lead_5f_1793372472241@test.com",
+        "phone": "(51) 953770626",
+        "company": "Estética Renascer 1793372472241",
+        "website": "https://esteticarenascer.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 79,
+    "created_at": "2026-10-30T15:01:12.873526+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Lead Teste Diag 1793372472319\n- **Empresa / Marca**: 'Lead Teste Diag 1793372472319'\n- **WhatsApp/Tel**: (11) 968536146\n- **E-mail**: lead_diag_1793372472319@test.com\n- **Site Oficial**: https://example.com\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://example.com \n",
+    "status": "pendente",
+    "resultado_json": {
+      "email": "lead_diag_1793372472319@test.com",
+      "phone": "(11) 968536146",
+      "company": "Lead Teste Diag 1793372472319",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://example.com",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "3bc900af-9dd9-4156-9fad-43a27e94b573",
+      "contact_name": "Lead Teste Diag 1793372472319",
+      "project_name": "Lead Teste Diag 1793372472319",
+      "briefing_payload": {
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "client_info": {
+          "email": "lead_diag_1793372472319@test.com",
+          "phone": "(11) 968536146"
+        },
+        "auto_process": false,
+        "project_name": "Lead Teste Diag 1793372472319",
+        "reference_links": [
+          {
+            "url": "https://example.com",
+            "type": "site"
+          }
+        ]
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 1793372472162,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Barbearia Teste Resiliente\n- **Empresa / Marca**: 'Barbearia Teste Resiliente'\n- **WhatsApp/Tel**: 11999999999\n- **E-mail**: teste@barbearia.com\n- **Site Oficial**: Nenhum site informado\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n",
+    "status": "pendente",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Barbearia Teste Resiliente",
+      "briefing_payload": {
+        "project_name": "Barbearia Teste Resiliente",
+        "client_info": {
+          "email": "teste@barbearia.com",
+          "phone": "11999999999"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "auto_process": false
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-10-30T15:01:12.162Z",
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 82
+  },
+  {
+    "id": 78,
+    "created_at": "2026-10-30T15:01:00.016681+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Maria Souza\n- **Empresa / Marca**: 'Estética Renascer 1793372459072'\n- **WhatsApp/Tel**: (51) 989588624\n- **E-mail**: lead_5f_1793372459072@test.com\n- **Site Oficial**: https://esteticarenascer.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://esteticarenascer.com.br (Site Oficial do Lead)\n",
+    "status": "pendente",
+    "resultado_json": {
+      "email": "lead_5f_1793372459072@test.com",
+      "phone": "(51) 989588624",
+      "company": "Estética Renascer 1793372459072",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://esteticarenascer.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "2bffd5ae-f97f-4cae-89e8-3612995a27ab",
+      "contact_name": "Maria Souza",
+      "project_name": "Estética Renascer 1793372459072",
+      "briefing_payload": {
+        "name": "Maria Souza",
+        "email": "lead_5f_1793372459072@test.com",
+        "phone": "(51) 989588624",
+        "company": "Estética Renascer 1793372459072",
+        "website": "https://esteticarenascer.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 77,
+    "created_at": "2026-10-30T14:59:03.891919+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Maria Souza\n- **Empresa / Marca**: 'Estética Renascer 1793372343703'\n- **WhatsApp/Tel**: (51) 967043536\n- **E-mail**: lead_5f_1793372343703@test.com\n- **Site Oficial**: https://esteticarenascer.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://esteticarenascer.com.br (Site Oficial do Lead)\n",
+    "status": "pendente",
+    "resultado_json": {
+      "email": "lead_5f_1793372343703@test.com",
+      "phone": "(51) 967043536",
+      "company": "Estética Renascer 1793372343703",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://esteticarenascer.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_name": "Maria Souza",
+      "project_name": "Estética Renascer 1793372343703",
+      "briefing_payload": {
+        "name": "Maria Souza",
+        "email": "lead_5f_1793372343703@test.com",
+        "phone": "(51) 967043536",
+        "company": "Estética Renascer 1793372343703",
+        "website": "https://esteticarenascer.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 76,
+    "created_at": "2026-10-30T13:44:33.999072+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Ghezzi'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: ghezzi@gmail.com | WhatsApp/Tel: (11) 11111-1111\n\n\n### CONTEÚDOS E TEXTOS DE APOIO:\n\n\n\n### LINKS DE REFERÊNCIA DO CLIENTE:\n1. Tipo: site - URL: https://maps.app.goo.gl/u2YXtCGQjkW7xh25A \n",
+    "status": "pendente",
+    "resultado_json": {
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "f8e66c81-ddb3-4755-824d-cb37327db654",
+      "project_name": "Ghezzi",
+      "briefing_payload": {
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "branding": {
+          "palette_name": "Definida via Direção de Design"
+        },
+        "timestamp": "2026-10-30T13:44:32.298Z",
+        "ai_analysis": "",
+        "client_info": {
+          "email": "ghezzi@gmail.com",
+          "phone": "(11) 11111-1111"
+        },
+        "auto_process": false,
+        "project_name": "Ghezzi",
+        "additional_data": {
+          "files": [],
+          "links": [
+            {
+              "url": "https://maps.app.goo.gl/u2YXtCGQjkW7xh25A",
+              "label": "Referência (site)"
+            }
+          ],
+          "texts": [
+            {
+              "text": "",
+              "label": "Informações Extras para o Agendamento"
+            }
+          ]
+        },
+        "reference_links": [
+          {
+            "url": "https://maps.app.goo.gl/u2YXtCGQjkW7xh25A",
+            "type": "site",
+            "notes": ""
+          }
+        ]
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
     "id": 75,
     "created_at": "2026-10-29T19:55:58.130196+00:00",
     "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Nome do Estabelecimento / Marca**: 'Lead Teste Diag 1793303756803'\n- **Módulos Solicitados**: [agendador_pwa, site]\n- **Contato do Cliente**: E-mail: lead_diag_1793303756803@test.com | WhatsApp/Tel: (11) 963226699\n\n\n\n\n### LINKS DE REFERÊNCIA DO CLIENTE:\n1. Tipo: site - URL: https://example.com \n",

@@ -21,13 +21,17 @@ Start-Process powershell -WorkingDirectory "$root\wacrm" -ArgumentList "-NoExit"
 Write-Host "[5/6] Iniciando Campeiro Fogo - Frontend (Vite - Porta 5174)..." -ForegroundColor Yellow
 Start-Process powershell -WorkingDirectory "$root\workspace\campeiro_fogo\frontend" -ArgumentList "-NoExit", "-Command", "npm run dev -- --port 5174"
 
-Write-Host "[6/6] Iniciando 20barranove - Frontend (Vite - Porta 5175)..." -ForegroundColor Yellow
+Write-Host "[6/7] Iniciando 20barranove - Frontend (Vite - Porta 5175)..." -ForegroundColor Yellow
 Start-Process powershell -WorkingDirectory "$root\workspace\20barranove\frontend" -ArgumentList "-NoExit", "-Command", "npm run dev -- --port 5175"
 
-Write-Host "`nTodos os 6 serviços foram iniciados!" -ForegroundColor Green
-Write-Host "- Orquestrador IA:         http://localhost:8000"
-Write-Host "- Portal Fábrica Backend:  http://localhost:5000"
-Write-Host "- Portal Fábrica Frontend: http://localhost:5173"
-Write-Host "- WhatsApp CRM:            http://localhost:3000"
-Write-Host "- Campeiro Fogo Frontend:  http://localhost:5174"
-Write-Host "- 20barranove Frontend:    http://localhost:5175"
+Write-Host "[7/7] Iniciando Espaço Mesclado Café - Frontend (Vite - Porta 5176)..." -ForegroundColor Yellow
+Start-Process powershell -WorkingDirectory "$root\workspace\espao_mesclado_caf\frontend" -ArgumentList "-NoExit", "-Command", "npm run dev -- --port 5176"
+
+Write-Host "`nTodos os 7 serviços foram iniciados!" -ForegroundColor Green
+Write-Host "- Orquestrador IA:              http://localhost:8000"
+Write-Host "- Portal Fábrica Backend:       http://localhost:5000"
+Write-Host "- Portal Fábrica Frontend:      http://localhost:5173"
+Write-Host "- WhatsApp CRM:                 http://localhost:3000"
+Write-Host "- Campeiro Fogo Frontend:       http://localhost:5174"
+Write-Host "- 20barranove Frontend:         http://localhost:5175"
+Write-Host "- Espaço Mesclado Café Frontend: http://localhost:5176"

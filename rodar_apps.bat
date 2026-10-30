@@ -22,16 +22,20 @@ start "WhatsApp CRM (3000)" /D "%ROOT%\wacrm" cmd /k "npm run dev"
 echo [5/6] Iniciando Campeiro Fogo - Frontend (Vite - Porta 5174)...
 start "Campeiro Fogo Frontend (5174)" /D "%ROOT%\workspace\campeiro_fogo\frontend" cmd /k "npm run dev -- --port 5174"
 
-echo [6/6] Iniciando 20barranove - Frontend (Vite - Porta 5175)...
+echo [6/7] Iniciando 20barranove - Frontend (Vite - Porta 5175)...
 start "20barranove Frontend (5175)" /D "%ROOT%\workspace\20barranove\frontend" cmd /k "npm run dev -- --port 5175"
 
+echo [7/7] Iniciando Espaco Mesclado Cafe - Frontend (Vite - Porta 5176)...
+start "Espaco Mesclado Cafe (5176)" /D "%ROOT%\workspace\espao_mesclado_caf\frontend" cmd /k "npm run dev -- --port 5176"
+
 echo.
-echo Todos os 6 servicos foram disparados em janelas dedicadas!
-echo - Orquestrador IA:         http://localhost:8000
-echo - Portal Fabrica Backend:  http://localhost:5000
-echo - Portal Fabrica Frontend: http://localhost:5173
-echo - WhatsApp CRM:            http://localhost:3000
-echo - Campeiro Fogo Frontend:  http://localhost:5174
-echo - 20barranove Frontend:    http://localhost:5175
+echo Todos os 7 servicos foram disparados em janelas dedicadas!
+echo - Orquestrador IA:              http://localhost:8000
+echo - Portal Fabrica Backend:       http://localhost:5000
+echo - Portal Fabrica Frontend:      http://localhost:5173
+echo - WhatsApp CRM:                 http://localhost:3000
+echo - Campeiro Fogo Frontend:       http://localhost:5174
+echo - 20barranove Frontend:         http://localhost:5175
+echo - Espaco Mesclado Cafe Frontend: http://localhost:5176
 echo.
 pause

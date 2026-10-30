@@ -232,11 +232,61 @@ async function dispatchProjectToFactory(projectId, projectRecord = null) {
   }
 }
 
+
+async function attachTagToContact(contactId, tagName, accountId, userId) {
+  if (!supabase || !isSupabaseActive || !contactId) return;
+  try {
+    let { data: tag } = await supabase
+      .from('tags')
+      .select('id')
+      .eq('account_id', accountId)
+      .eq('name', tagName)
+      .maybeSingle();
+
+    if (!tag) {
+      const { data: newTag, error: tagErr } = await supabase
+        .from('tags')
+        .insert([{
+          user_id: userId,
+          account_id: accountId,
+          name: tagName,
+          color: '#10b981'
+        }])
+        .select('id')
+        .maybeSingle();
+      if (!tagErr && newTag) tag = newTag;
+    }
+
+    if (tag?.id) {
+      const { data: existingLink } = await supabase
+        .from('contact_tags')
+        .select('id')
+        .eq('contact_id', contactId)
+        .eq('tag_id', tag.id)
+        .maybeSingle();
+
+      if (!existingLink) {
+        await supabase
+          .from('contact_tags')
+          .insert([{ contact_id: contactId, tag_id: tag.id }]);
+      }
+    }
+  } catch (err) {
+    console.warn('[Backend] Falha ao associar tag ao contato:', err.message);
+  }
+}
+
 // 1. Criar novo projeto (Lead) no Supabase ou Fila Local Resiliente
 app.post('/api/projetos', async (req, res) => {
   try {
     const {
-      project_name,
+      project_name: raw_project_name,
+      name,
+      contact_name,
+      company,
+      company_name,
+      website: raw_website,
+      site,
       contact_id: incomingContactId,
       branding,
       modules,
@@ -251,8 +301,36 @@ app.post('/api/projetos', async (req, res) => {
       auto_process,
     } = req.body;
 
-    if (!project_name) {
-      return res.status(400).json({ error: 'O nome do projeto (project_name) é obrigatório.' });
+    const contactName =
+      name ||
+      contact_name ||
+      client_info?.name ||
+      raw_project_name ||
+      'Novo Contato';
+
+    const companyName =
+      company ||
+      company_name ||
+      raw_project_name ||
+      'Projeto Fábrica';
+
+    const project_name = companyName;
+
+    if (!raw_project_name && !company && !name && !contact_name) {
+      return res.status(400).json({ error: 'Informe ao menos o nome do responsável ou da empresa.' });
+    }
+
+    const phone = req.body.phone || client_info?.phone || 'Não informado';
+    const email = req.body.email || client_info?.email || 'Não informado';
+    const website = raw_website || site || (reference_links?.[0]?.url) || null;
+
+    let finalAdditionalData = additional_data ? { ...additional_data } : {};
+    if (website) {
+      const existingLinks = Array.isArray(finalAdditionalData.links) ? [...finalAdditionalData.links] : [];
+      if (!existingLinks.some((l) => l.url === website)) {
+        existingLinks.push({ label: 'Site Oficial', url: website });
+      }
+      finalAdditionalData.links = existingLinks;
     }
 
     let linksStr = 'Nenhum link fornecido.';
@@ -260,34 +338,21 @@ app.post('/api/projetos', async (req, res) => {
       linksStr = reference_links
         .map((l, i) => `${i + 1}. Tipo: ${l.type} - URL: ${l.url} ${l.notes ? `(Notas: ${l.notes})` : ''}`)
         .join('\n');
+    } else if (website) {
+      linksStr = `1. Tipo: site - URL: ${website} (Site Oficial do Lead)`;
     }
 
-    const modulosStr = modules && modules.length > 0 ? modules.join(', ') : 'agendador_pwa';
-
-    let textosStr = 'Nenhum material ou texto de apoio fornecido.';
-    if (additional_data && additional_data.texts && additional_data.texts.length > 0) {
-      textosStr = additional_data.texts
-        .filter((t) => t.text && t.text.trim() !== '')
-        .map((t) => `- **${t.label}**: ${t.text}`)
-        .join('\n');
-    }
-
-    let arquivosStr = 'Nenhum arquivo de apoio fornecido.';
-    if (additional_data && additional_data.files && additional_data.files.length > 0) {
-      arquivosStr = additional_data.files
-        .map((f, i) => `${i + 1}. Nome: ${f.name} - URL: ${f.url}`)
-        .join('\n');
-    }
+    const modulosStr = modules && modules.length > 0 ? modules.join(', ') : 'site_institucional';
 
     const mensagem_lead = `### BRIEFING DO PROJETO DE CLIENTE
-- **Nome do Estabelecimento / Marca**: '${project_name}'
+- **Responsável / Contato**: ${contactName}
+- **Empresa / Marca**: '${companyName}'
+- **WhatsApp/Tel**: ${phone}
+- **E-mail**: ${email}
+- **Site Oficial**: ${website || 'Nenhum site informado'}
 - **Módulos Solicitados**: [${modulosStr}]
-- **Contato do Cliente**: E-mail: ${client_info?.email || 'Não informado'} | WhatsApp/Tel: ${client_info?.phone || 'Não informado'}
 
-${ai_analysis ? `### ANÁLISE DE MARCA & ARQUITETURA DA IA:\n${ai_analysis}\n` : ''}
-${textosStr !== 'Nenhum material ou texto de apoio fornecido.' ? `### CONTEÚDOS E TEXTOS DE APOIO:\n${textosStr}\n` : ''}
-${arquivosStr !== 'Nenhum arquivo de apoio fornecido.' ? `### ARQUIVOS ANEXADOS:\n${arquivosStr}\n` : ''}
-${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\n${linksStr}\n` : ''}`;
+${ai_analysis ? `### ANÁLISE DE MARCA & ARQUITETURA DA IA:\n${ai_analysis}\n` : ''}${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA:\n${linksStr}\n` : ''}`;
 
     let defaultUserId = '2b66650c-a300-4239-b922-2aab9bccac6f';
     let defaultAccountId = '98006e91-88b1-44ea-9178-50c257cd973f';
@@ -313,10 +378,7 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
         if (profile?.user_id) defaultUserId = profile.user_id;
         if (profile?.account_id) defaultAccountId = profile.account_id;
 
-        const phone = client_info?.phone || 'Não informado';
         const phone_normalized = phone.replace(/\D/g, '');
-        const email = client_info?.email || 'Não informado';
-        const contactName = project_name;
 
         // 1. Busca ou cria Contato no WACRM
         if (!contactId && phone_normalized) {
@@ -335,7 +397,9 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
 
         if (contactId) {
           const contactUpdatePayload = {
-            additional_data: additional_data || {},
+            name: contactName,
+            company: companyName,
+            additional_data: finalAdditionalData,
             updated_at: new Date().toISOString()
           };
           if (!incomingContactId && !ai_analysis) {
@@ -344,29 +408,50 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
           if (email && email !== 'Não informado') {
             contactUpdatePayload.email = email;
           }
-          if (contactName) {
-            contactUpdatePayload.name = contactName;
+          if (website) {
+            contactUpdatePayload.website = website;
           }
-          await supabase
+          let { error: updateError } = await supabase
             .from('contacts')
             .update(contactUpdatePayload)
             .eq('id', contactId);
+
+          if (updateError && updateError.message && updateError.message.includes("'website' column")) {
+            delete contactUpdatePayload.website;
+            await supabase
+              .from('contacts')
+              .update(contactUpdatePayload)
+              .eq('id', contactId);
+          }
         } else {
-          const { data: newContact, error: contactError } = await supabase
+          const newContactPayload = {
+            user_id: defaultUserId,
+            account_id: defaultAccountId,
+            phone: phone,
+            name: contactName,
+            company: companyName,
+            email: email,
+            website: website || null,
+            additional_data: finalAdditionalData,
+            rag_status: 'idle',
+          };
+
+          let { data: newContact, error: contactError } = await supabase
             .from('contacts')
-            .insert([
-              {
-                user_id: defaultUserId,
-                account_id: defaultAccountId,
-                phone: phone,
-                name: contactName,
-                email: email,
-                additional_data: additional_data || {},
-                rag_status: 'idle',
-              },
-            ])
+            .insert([newContactPayload])
             .select('id')
             .single();
+
+          if (contactError && contactError.message && contactError.message.includes("'website' column")) {
+            delete newContactPayload.website;
+            const retry = await supabase
+              .from('contacts')
+              .insert([newContactPayload])
+              .select('id')
+              .single();
+            newContact = retry.data;
+            contactError = retry.error;
+          }
 
           if (!contactError && newContact) {
             contactId = newContact.id;
@@ -376,76 +461,12 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
           }
         }
 
-        // 2. Busca ou cria Conversa aberta no Inbox do WACRM
-        let conversationId = null;
+        // 2. Associa tag 'Fábrica de Sites' ao contato
         if (contactId) {
-          const { data: existingConversation } = await supabase
-            .from('conversations')
-            .select('id')
-            .eq('account_id', defaultAccountId)
-            .eq('contact_id', contactId)
-            .eq('status', 'open')
-            .limit(1)
-            .maybeSingle();
-
-          if (existingConversation) {
-            conversationId = existingConversation.id;
-            await supabase
-              .from('conversations')
-              .update({
-                last_message_text: `Projeto - ${project_name}`,
-                last_message_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', conversationId);
-          } else {
-            const { data: newConversation, error: convError } = await supabase
-              .from('conversations')
-              .insert([
-                {
-                  user_id: defaultUserId,
-                  account_id: defaultAccountId,
-                  contact_id: contactId,
-                  status: 'open',
-                  last_message_text: `Projeto - ${project_name}`,
-                  last_message_at: new Date().toISOString(),
-                  unread_count: 1
-                }
-              ])
-              .select('id')
-              .single();
-
-            if (!convError && newConversation) {
-              conversationId = newConversation.id;
-              console.log(`[Backend] Conversa aberta criada no CRM! ID: ${conversationId}`);
-            } else if (convError) {
-              console.warn('[Backend] Erro ao criar conversa no CRM:', convError.message);
-            }
-          }
+          await attachTagToContact(contactId, 'Fábrica de Sites', defaultAccountId, defaultUserId);
         }
 
-        // 3. Insere a mensagem detalhada do lead no Chat do WACRM
-        if (conversationId) {
-          const { error: msgError } = await supabase
-            .from('messages')
-            .insert([
-              {
-                conversation_id: conversationId,
-                sender_type: 'customer',
-                content_type: 'text',
-                content_text: mensagem_lead,
-                status: 'sent'
-              }
-            ]);
-
-          if (msgError) {
-            console.warn('[Backend] Erro ao inserir mensagem no chat do CRM:', msgError.message);
-          } else {
-            console.log('[Backend] Mensagem de lead inserida com sucesso no Inbox do CRM.');
-          }
-        }
-
-        // 4. Cria Oportunidade (Deal) no Funil de Vendas (Kanban) do WACRM
+        // 3. Cria Oportunidade (Deal) no Funil de Vendas do WACRM (Sem conversa no Inbox)
         if (contactId) {
           let pipelineId = '0a1969dd-bc7e-4a99-a854-a925f32ad923';
           let stageId = 'e15c3092-f3f9-4550-baa4-88a6f27b6eaa';
@@ -473,7 +494,7 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
             .select('id')
             .eq('account_id', defaultAccountId)
             .eq('contact_id', contactId)
-            .eq('title', `Projeto - ${project_name}`)
+            .eq('title', `Projeto - ${companyName}`)
             .limit(1)
             .maybeSingle();
 
@@ -487,11 +508,10 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
                   pipeline_id: pipelineId,
                   stage_id: stageId,
                   contact_id: contactId,
-                  conversation_id: conversationId,
-                  title: `Projeto - ${project_name}`,
+                  title: `Projeto - ${companyName}`,
                   value: dealValue,
                   currency: 'BRL',
-                  notes: `Módulos: ${modules?.join(', ') || 'site'}`,
+                  notes: `Responsável: ${contactName} | Site: ${website || 'Não informado'}`,
                   status: 'open'
                 }
               ]);
@@ -502,7 +522,7 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
               console.log(`[Backend] Oportunidade (Deal) criada com sucesso no funil do CRM no valor de R$ ${dealValue}!`);
             }
           } else {
-            console.log(`[Backend] Oportunidade (Deal) já existente no CRM para ${project_name} (ID: ${existingDeal.id}).`);
+            console.log(`[Backend] Oportunidade (Deal) já existente no CRM para ${companyName} (ID: ${existingDeal.id}).`);
           }
         }
       } catch (crmResolveErr) {
@@ -527,7 +547,12 @@ ${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA DO CLIENTE:\
                 account_id: defaultAccountId,
                 user_id: defaultUserId,
                 ...(contactId ? { contact_id: contactId } : {}),
-                project_name: project_name,
+                contact_name: contactName,
+                company: companyName,
+                email: email,
+                phone: phone,
+                website: website || null,
+                project_name: companyName,
                 briefing_payload: cleanBriefing,
                 supabase_service_role_key: supabase_service_role_key || null,
               },
@@ -784,45 +809,9 @@ async function syncUnsyncedLocalProjects() {
           if (newContact) contactId = newContact.id;
         }
 
-        let conversationId = null;
+        // Não criamos conversas/mensagens no Inbox para leads web
         if (contactId) {
-          const { data: existingConv } = await supabase
-            .from('conversations')
-            .select('id')
-            .eq('account_id', defaultAccountId)
-            .eq('contact_id', contactId)
-            .eq('status', 'open')
-            .limit(1)
-            .maybeSingle();
-
-          if (existingConv) {
-            conversationId = existingConv.id;
-          } else {
-            const { data: newConv } = await supabase
-              .from('conversations')
-              .insert([{
-                user_id: defaultUserId,
-                account_id: defaultAccountId,
-                contact_id: contactId,
-                status: 'open',
-                last_message_text: `Projeto - ${projectName}`,
-                last_message_at: new Date().toISOString(),
-                unread_count: 1,
-              }])
-              .select('id')
-              .single();
-
-            if (newConv) {
-              conversationId = newConv.id;
-              await supabase.from('messages').insert([{
-                conversation_id: conversationId,
-                sender_type: 'customer',
-                content_type: 'text',
-                content_text: p.mensagem_lead,
-                status: 'sent',
-              }]);
-            }
-          }
+          await attachTagToContact(contactId, 'Fábrica de Sites', defaultAccountId, defaultUserId);
         }
 
         if (contactId) {
@@ -859,7 +848,6 @@ async function syncUnsyncedLocalProjects() {
               pipeline_id: pipelineId,
               stage_id: stageId,
               contact_id: contactId,
-              conversation_id: conversationId,
               title: `Projeto - ${projectName}`,
               value: dealVal,
               currency: 'BRL',

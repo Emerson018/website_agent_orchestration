@@ -52,6 +52,7 @@ export function ContactForm({
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
+  const [website, setWebsite] = useState('');
   const [saving, setSaving] = useState(false);
 
   // Duplicate-phone detection for NEW contacts. `exact` (same digits)
@@ -73,6 +74,8 @@ export function ContactForm({
       setPhone(contact?.phone ?? '');
       setEmail(contact?.email ?? '');
       setCompany(contact?.company ?? '');
+      const initialWebsite = contact?.website ?? (contact?.additional_data?.links?.find((l: any) => l.label === 'Site Oficial' || l.url)?.url ?? '');
+      setWebsite(initialWebsite);
       setSelectedTagIds(contactTags.map((ct) => ct.tag_id));
       setDupMatch(null);
       fetchTags();
@@ -154,6 +157,7 @@ export function ContactForm({
             phone: phone.trim(),
             email: email.trim() || null,
             company: company.trim() || null,
+            website: website.trim() || null,
             updated_at: new Date().toISOString(),
           })
           .eq('id', contactId);
@@ -168,6 +172,7 @@ export function ContactForm({
             phone: phone.trim(),
             email: email.trim() || null,
             company: company.trim() || null,
+            website: website.trim() || null,
           })
           .select('id')
           .single();
@@ -320,6 +325,19 @@ export function ContactForm({
               value={company}
               onChange={(e) => setCompany(e.target.value)}
               placeholder="Acme Inc."
+              className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="cf-website" className="text-muted-foreground">
+              Website
+            </Label>
+            <Input
+              id="cf-website"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              placeholder="https://exemplo.com.br"
               className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>

@@ -7,8 +7,8 @@ An integrated ecosystem that captures and qualifies business leads in a WhatsApp
 ### AI Software Factory & Orchestration
 
 **Lead Briefing**:
-A structured intake specification capturing a prospective business's name, contact details, reference links, and requested capabilities (`mensagem_lead`).
-_Avoid_: Payload, prompt text, raw lead
+A structured intake specification capturing a prospective business's contact name, company name, email, phone number, and optional website URL (`mensagem_lead`), ingested directly into CRM Contacts and Deals without polluting the WhatsApp chat inbox with synthetic conversations.
+_Avoid_: Payload, prompt text, raw lead, inbox message lead
 
 **Niche Profile**:
 The canonical brand archetype for a market segment (such as Odontologia, Barbearia, Estética, Gastronomia, or Pet), pairing hex color tokens, theme polarity, typography, and curated showcase media.
@@ -60,5 +60,17 @@ _Avoid_: Calendar settings, business hours
 ### WhatsApp CRM (WACRM)
 
 **CRM Contact**:
-A business lead or customer record in WACRM (`contacts`), enriched with custom fields, tags, RAG brand reports, conversations, and sales pipeline deals.
+A business lead or customer record in WACRM (`contacts`), enriched with contact name (`name`), company name (`company`), email, phone, website (`website`), custom fields, tags, RAG brand reports, and sales pipeline deals.
 _Avoid_: Client, user, account
+
+**Contact Name**:
+The individual stakeholder or interlocutor representing the lead (`contacts.name`).
+_Avoid_: User name, project name
+
+**Company Name**:
+The commercial enterprise, establishment, or brand represented by the lead (`contacts.company`), used as the deal title and project namespace.
+_Avoid_: Contact name, lead owner
+
+**Website Field**:
+The first-class optional public web URL of the business (`contacts.website`), persisted directly in the CRM contact record.
+_Avoid_: Link json, metadata url

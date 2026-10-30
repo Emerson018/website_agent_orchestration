@@ -19,6 +19,7 @@ import type { Contact, Deal, ContactNote, Tag } from "@/types";
 import {
   Phone,
   Mail,
+  Globe,
   Copy,
   Check,
   User,
@@ -547,6 +548,23 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
                 <span className="truncate">{contact.email}</span>
               </div>
             )}
+
+            {(() => {
+              const displaySite = contact.website || contact.additional_data?.links?.find((l: any) => l.label === 'Site Oficial' || l.url)?.url;
+              if (!displaySite) return null;
+              return (
+                <a
+                  href={displaySite.startsWith('http') ? displaySite : `https://${displaySite}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-primary hover:underline hover:bg-muted"
+                >
+                  <Globe className="h-4 w-4" />
+                  <span className="flex-1 truncate text-left">{displaySite}</span>
+                  <ExternalLink className="h-3 w-3 opacity-70" />
+                </a>
+              );
+            })()}
           </div>
 
           {/* Divider */}

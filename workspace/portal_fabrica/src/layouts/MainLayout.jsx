@@ -22,26 +22,23 @@ export default function MainLayout({ children }) {
           </a>
 
           <nav aria-label="Navegação principal" className="hidden md:flex items-center gap-6 text-sm font-medium text-[#949BA8]">
-            <a href="#configurador" className="hover:text-[#ECEEF2] transition-colors">
-              Caderno de escopo
+            <a href="#formulario" className="hover:text-[#ECEEF2] transition-colors">
+              Solicitar Orçamento
             </a>
-            <a href="#fila-producao" className="hover:text-[#ECEEF2] transition-colors">
-              Fila de produção
+            <a href="#diferenciais" className="hover:text-[#ECEEF2] transition-colors">
+              Diferenciais
             </a>
-            <a href="#arquitetura-entrega" className="hover:text-[#ECEEF2] transition-colors">
-              Fluxo de compilação
-            </a>
-            <a href="#projetos-homologados" className="hover:text-[#ECEEF2] transition-colors">
-              Projetos homologados
+            <a href="#cases" className="hover:text-[#ECEEF2] transition-colors">
+              Cases Homologados
             </a>
           </nav>
 
           <div className="flex items-center gap-3">
             <a
-              href="#configurador"
+              href="#formulario"
               className="px-4 py-2 rounded-md bg-[#E59A28] hover:bg-[#D48817] text-[#12151B] text-sm font-semibold transition-colors"
             >
-              Configurar pedido
+              Solicitar Proposta
             </a>
           </div>
         </div>

@@ -97,6 +97,7 @@ export interface Contact {
   name?: string;
   email?: string;
   company?: string;
+  website?: string;
   avatar_url?: string;
   additional_data?: {
     files?: Array<{ name: string; url: string }>;

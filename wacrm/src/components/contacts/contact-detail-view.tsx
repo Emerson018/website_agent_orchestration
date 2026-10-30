@@ -38,6 +38,7 @@ import {
   Phone,
   Mail,
   Building2,
+  Globe,
   Copy,
   Check,
   Loader2,
@@ -77,6 +78,7 @@ export function ContactDetailView({
   const [editPhone, setEditPhone] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editCompany, setEditCompany] = useState('');
+  const [editWebsite, setEditWebsite] = useState('');
   const [supabaseUrl, setSupabaseUrl] = useState('');
   const [supabaseAnonKey, setSupabaseAnonKey] = useState('');
   const [supabaseServiceRoleKey, setSupabaseServiceRoleKey] = useState('');
@@ -133,6 +135,8 @@ export function ContactDetailView({
       setEditPhone(data.phone);
       setEditEmail(data.email ?? '');
       setEditCompany(data.company ?? '');
+      const initialWebsite = data.website ?? (data.additional_data?.links?.find((l: any) => l.label === 'Site Oficial' || l.url)?.url ?? '');
+      setEditWebsite(initialWebsite);
       setSupabaseUrl(data.supabase_url ?? '');
       setSupabaseAnonKey(data.supabase_anon_key ?? '');
       setSupabaseServiceRoleKey(data.supabase_service_role_key ?? '');
@@ -324,6 +328,7 @@ export function ContactDetailView({
         phone: editPhone.trim(),
         email: editEmail.trim() || null,
         company: editCompany.trim() || null,
+        website: editWebsite.trim() || null,
         supabase_url: normUrl || null,
         supabase_anon_key: supabaseAnonKey.trim() || null,
         supabase_service_role_key: supabaseServiceRoleKey.trim() || null,
@@ -619,6 +624,21 @@ export function ContactDetailView({
                         {contact.company}
                       </span>
                     )}
+                    {(() => {
+                      const displaySite = contact.website || contact.additional_data?.links?.find((l: any) => l.label === 'Site Oficial' || l.url)?.url;
+                      if (!displaySite) return null;
+                      return (
+                        <a
+                          href={displaySite.startsWith('http') ? displaySite : `https://${displaySite}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-primary hover:underline"
+                        >
+                          <Globe className="size-3" />
+                          {displaySite.replace(/^https?:\/\/(www\.)?/, '')}
+                        </a>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -707,6 +727,15 @@ export function ContactDetailView({
                     <Input
                       value={editCompany}
                       onChange={(e) => setEditCompany(e.target.value)}
+                      className="bg-muted border-border text-foreground h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground text-xs">Website</Label>
+                    <Input
+                      value={editWebsite}
+                      onChange={(e) => setEditWebsite(e.target.value)}
+                      placeholder="https://exemplo.com.br"
                       className="bg-muted border-border text-foreground h-8 text-sm"
                     />
                   </div>
