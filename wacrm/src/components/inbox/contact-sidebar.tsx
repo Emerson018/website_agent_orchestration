@@ -41,6 +41,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LeadDossierCard } from "@/components/contacts/lead-dossier-card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
@@ -867,6 +868,31 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
                   </>
                 )}
               </Button>
+            </div>
+
+            {/* Dossiê Comercial Google Maps & Decision Gate */}
+            <div className="mt-3">
+              <LeadDossierCard
+                dossie={(contact as any)?.additional_data?.dossie}
+                companyName={contact.company || contact.name}
+                targetUrl={contact.website || (contact as any)?.additional_data?.links?.[0]?.url}
+                onTriggerPwaGeneration={handleGenerateAISiteFromSidebar}
+                isGeneratingPwa={generatingAI}
+                onDossierEnriched={(newDossie) => {
+                  if (contact.id) {
+                    const sb = createClient();
+                    sb.from('contacts')
+                      .update({
+                        additional_data: {
+                          ...(contact.additional_data || {}),
+                          dossie: newDossie,
+                        },
+                      })
+                      .eq('id', contact.id)
+                      .then(() => fetchContactData());
+                  }
+                }}
+              />
             </div>
 
             {/* Report Result Section */}

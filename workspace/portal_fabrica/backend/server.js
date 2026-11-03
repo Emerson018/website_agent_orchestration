@@ -6,6 +6,7 @@ import fetch from 'node-fetch';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { buildLeadDossier, extractPlaceQueryFromUrl } from './places_service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -542,7 +543,7 @@ ${ai_analysis ? `### ANÁLISE DE MARCA & ARQUITETURA DA IA:\n${ai_analysis}\n` :
           .insert([
             {
               mensagem_lead,
-              status: 'pendente',
+              status: 'aguardando_decisao',
               resultado_json: {
                 account_id: defaultAccountId,
                 user_id: defaultUserId,
@@ -586,7 +587,7 @@ ${ai_analysis ? `### ANÁLISE DE MARCA & ARQUITETURA DA IA:\n${ai_analysis}\n` :
       const localProject = {
         id: Date.now(),
         mensagem_lead,
-        status: 'pendente',
+        status: 'aguardando_decisao',
         resultado_json: {
           account_id: defaultAccountId,
           user_id: defaultUserId,
@@ -609,14 +610,12 @@ ${ai_analysis ? `### ANÁLISE DE MARCA & ARQUITETURA DA IA:\n${ai_analysis}\n` :
 
     const createdProject = {
       ...data[0],
-      auto_dispatched: Boolean(auto_process),
+      status: 'aguardando_decisao',
+      auto_dispatched: false,
     };
 
+    console.log(`[Backend] Lead #${data[0].id} retido no Decision Gate com status 'aguardando_decisao'. Auto-build desativado.`);
     res.status(201).json(createdProject);
-
-    if (auto_process) {
-      dispatchProjectToFactory(data[0].id, data[0]);
-    }
   } catch (err) {
     console.error('Erro na rota POST /api/projetos:', err);
     res.status(500).json({ error: 'Erro interno do servidor.', details: err.message });
@@ -693,6 +692,102 @@ app.get('/api/projetos/:id', async (req, res) => {
 });
 
 // 4. Disparar processamento da fila (Fábrica de IA)
+// Rota de consulta direta ao Google Places
+app.post('/api/dossie/consultar', async (req, res) => {
+  try {
+    const { query, url } = req.body;
+    const target = url || query;
+    if (!target) {
+      return res.status(400).json({ error: 'Informe a URL ou nome do estabelecimento para consulta.' });
+    }
+    const result = await buildLeadDossier(target, process.env.GOOGLE_MAPS_API_KEY);
+    if (!result.success) {
+      return res.status(result.code === 'MISSING_API_KEY' ? 412 : 400).json(result);
+    }
+    return res.json(result);
+  } catch (err) {
+    console.error('Erro na rota /api/dossie/consultar:', err.message);
+    res.status(500).json({ error: 'Erro ao consultar Google Places.', details: err.message });
+  }
+});
+
+// Rota de enriquecimento de Lead com Dossiê
+app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
+  const { id } = req.params;
+  try {
+    let projeto = getLocalProjectById(id);
+    if (!projeto && isSupabaseActive) {
+      const { data } = await supabase
+        .from('fila_projetos')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (data) projeto = data;
+    }
+
+    if (!projeto) {
+      return res.status(404).json({ error: 'Lead não encontrado na fila de projetos.' });
+    }
+
+    const payload = projeto.resultado_json || {};
+    const candidateQuery =
+      req.body.query ||
+      payload.website ||
+      payload.briefing_payload?.website ||
+      payload.briefing_payload?.company ||
+      payload.project_name ||
+      '';
+
+    if (!candidateQuery) {
+      return res.status(400).json({ error: 'Lead não possui site, link do Google Maps ou nome de empresa para enriquecimento.' });
+    }
+
+    const result = await buildLeadDossier(candidateQuery, process.env.GOOGLE_MAPS_API_KEY);
+    if (!result.success) {
+      return res.status(result.code === 'MISSING_API_KEY' ? 412 : 400).json(result);
+    }
+
+    const updatedResultado = {
+      ...payload,
+      dossie: result.dossie,
+    };
+
+    updateLocalProject(id, { resultado_json: updatedResultado });
+
+    if (isSupabaseActive) {
+      await supabase
+        .from('fila_projetos')
+        .update({ resultado_json: updatedResultado })
+        .eq('id', id);
+
+      const contactId = payload.contact_id;
+      if (contactId) {
+        const { data: contact } = await supabase
+          .from('contacts')
+          .select('additional_data')
+          .eq('id', contactId)
+          .maybeSingle();
+
+        const currentAddData = contact?.additional_data || {};
+        await supabase
+          .from('contacts')
+          .update({
+            additional_data: {
+              ...currentAddData,
+              dossie: result.dossie,
+            },
+          })
+          .eq('id', contactId);
+      }
+    }
+
+    return res.json({ success: true, dossie: result.dossie });
+  } catch (err) {
+    console.error(`Erro ao enriquecer dossiê do lead ${id}:`, err.message);
+    res.status(500).json({ error: 'Erro ao gerar dossiê do lead.', details: err.message });
+  }
+});
+
 app.post('/api/projetos/:id/processar', async (req, res) => {
   const { id } = req.params;
   console.log(`Recebida solicitação de compilação para o projeto ID: ${id}`);

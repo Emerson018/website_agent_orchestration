@@ -17,7 +17,7 @@ interface FilaProjeto {
   id: number;
   created_at: string;
   mensagem_lead: string;
-  status: 'pendente' | 'processando' | 'concluido' | 'erro';
+  status: 'aguardando_decisao' | 'pendente' | 'processando' | 'concluido' | 'erro';
   resultado_json: any;
   supabase_url: string | null;
   supabase_anon_key: string | null;
@@ -82,6 +82,12 @@ export function FilaProjetosModal({ open, onOpenChange }: FilaProjetosModalProps
 
   function getStatusBadge(status: FilaProjeto['status']) {
     switch (status) {
+      case 'aguardando_decisao':
+        return (
+          <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20 gap-1 font-semibold">
+            <Clock className="size-3" /> Aguardando Decisão
+          </Badge>
+        );
       case 'concluido':
         return (
           <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 gap-1 font-semibold">

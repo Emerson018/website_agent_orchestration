@@ -99,6 +99,28 @@ describe('project-queue utilities', () => {
     expect(status.progressPercentage).toBe(0);
   });
 
+  it('determines project status as aguardando_decisao when awaiting operator decision gate', () => {
+    const projects: ProjectQueueItem[] = [
+      {
+        id: 45,
+        created_at: '2026-11-02T22:00:00Z',
+        mensagem_lead: 'Briefing aguardando decisao',
+        status: 'aguardando_decisao',
+        resultado_json: {
+          contact_id: 'contact-uuid-123',
+        },
+        supabase_url: null,
+        supabase_anon_key: null,
+      },
+    ];
+
+    const status = getContactProjectStatus(projects);
+    expect(status.isGenerated).toBe(false);
+    expect(status.isProcessing).toBe(false);
+    expect(status.status).toBe('aguardando_decisao');
+    expect(status.statusMessage).toContain('Aguardando análise do Dossiê');
+  });
+
   it('determines project status as pending without active processing loop', () => {
     const projects: ProjectQueueItem[] = [
       {

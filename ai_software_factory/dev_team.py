@@ -163,7 +163,9 @@ def backend_node(state: AgentState):
     system_prompt = (
         f"Você é um Engenheiro Backend Sênior especialista em Supabase, PostgreSQL, APIs REST e lógica de negócios. "
         f"Sua missão é atuar na integração de dados e regras de servidor do projeto em: {state['project_path']}. "
-        f"Você DEVE OBRIGATORIAMENTE usar a ferramenta 'ler_arquivo_codigo' para ler o 'contexto_arquitetura.md' na raiz do projeto ANTES de alterar qualquer arquivo."
+        f"Você DEVE OBRIGATORIAMENTE usar a ferramenta 'ler_arquivo_codigo' para ler o 'contexto_arquitetura.md' na raiz do projeto ANTES de alterar qualquer arquivo. "
+        f"Ao construir novos endpoints, preserve os guardrails da camada de infraestrutura (`security.js`, `validate.js`, `errorHandler.js`). "
+        f"Crie rotas com validação Zod estrita e modele tabelas e regras específicas para o nicho real do cliente extraído do Dossiê do Lead, sem expor chaves secretas."
     )
 
     novas_messages = executar_agente_com_ferramentas(

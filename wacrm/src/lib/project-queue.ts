@@ -2,7 +2,7 @@ export interface ProjectQueueItem {
   id: number;
   created_at: string;
   mensagem_lead: string;
-  status: 'pendente' | 'processando' | 'concluido' | 'erro';
+  status: 'aguardando_decisao' | 'pendente' | 'processando' | 'aguardando_agente' | 'concluido' | 'erro';
   resultado_json: {
     account_id?: string;
     user_id?: string;
@@ -222,7 +222,7 @@ export interface ContactProjectStatusResult {
   hasError: boolean;
   completedProject?: ProjectQueueItem;
   activeProject?: ProjectQueueItem;
-  status: 'idle' | 'pendente' | 'processando' | 'aguardando_agente' | 'concluido' | 'erro';
+  status: 'idle' | 'aguardando_decisao' | 'pendente' | 'processando' | 'aguardando_agente' | 'concluido' | 'erro';
   progressPercentage: number;
   statusMessage: string;
 }
@@ -266,6 +266,20 @@ export function getContactProjectStatus(contactProjects: ProjectQueueItem[]): Co
       status: (processing.status as any),
       progressPercentage: 65,
       statusMessage: 'Geração do PWA em andamento na Fábrica de IA...',
+    };
+  }
+
+  // 2.5 Procura por projeto aguardando análise e decisão do operador
+  const awaitingDecision = contactProjects.find((p) => (p.status as string) === 'aguardando_decisao');
+  if (awaitingDecision) {
+    return {
+      isGenerated: false,
+      isProcessing: false,
+      hasError: false,
+      activeProject: awaitingDecision,
+      status: 'aguardando_decisao',
+      progressPercentage: 10,
+      statusMessage: 'Lead recebido. Aguardando análise do Dossiê para decidir próximo passo.',
     };
   }
 

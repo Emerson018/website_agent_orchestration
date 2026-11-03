@@ -89,7 +89,8 @@ test('Lead 5-fields intake registers Contact with website and tag, Deal, Queue, 
       .maybeSingle();
 
     assert.ok(queueItem, 'Project was not recorded in Supabase fila_projetos');
-    assert.equal(queueItem.status, 'pendente', 'Initial status should be pendente');
+    assert.equal(queueItem.status, 'aguardando_decisao', 'Initial status should be aguardando_decisao (Decision Gate)');
+    assert.equal(responseData.auto_dispatched, false, 'Auto-dispatch should be explicitly disabled');
     assert.equal(queueItem.resultado_json.company, testCompany);
 
     // 5. CRITICAL: Verify NO conversation or messages exist for this contact

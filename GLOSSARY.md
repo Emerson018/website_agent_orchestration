@@ -10,6 +10,18 @@ An integrated ecosystem that captures and qualifies business leads in a WhatsApp
 A structured intake specification capturing a prospective business's contact name, company name, email, phone number, and optional website URL (`mensagem_lead`), ingested directly into CRM Contacts and Deals without polluting the WhatsApp chat inbox with synthetic conversations.
 _Avoid_: Payload, prompt text, raw lead, inbox message lead
 
+**Lead Dossier**:
+An enriched business intelligence profile synthesized from Google Places API and public web sources, detailing verified name, operating hours, star rating, review sentiment breakdown (customer praises and pain points), photo gallery, and niche classification.
+_Avoid_: Scraping dump, raw places json, info sheet
+
+**Decision Gate**:
+The mandatory human evaluation checkpoint in the CRM and Factory Portal where an operator inspects the Lead Dossier to choose between initiating PWA generation, generating an AI sales pitch, or disqualifying the lead.
+_Avoid_: Auto-builder, silent pipeline, background generator
+
+**Composable Backend Blueprint**:
+A standardized, hardened application skeleton featuring pre-configured security guardrails (Helmet, strict CORS, rate limiting, and Zod input validation) into which tailored database schemas and business endpoints are synthesized on-demand per client niche.
+_Avoid_: Generic fixed backend, template clone, rigid monolithic API
+
 **Niche Profile**:
 The canonical brand archetype for a market segment (such as Odontologia, Barbearia, Estética, Gastronomia, or Pet), pairing hex color tokens, theme polarity, typography, and curated showcase media.
 _Avoid_: Niche media, fallback colors, theme preset
@@ -19,7 +31,7 @@ The client-specific visual specification derived from a Lead Briefing and Niche 
 _Avoid_: Design prompt, style config, theme json, UI prompt
 
 **Project Queue Item**:
-A tracked build lifecycle record in `fila_projetos` linking a CRM Contact to its Lead Briefing, tenant database credentials, status (`pendente`, `aguardando_agente`, `processando`, `concluido`, `erro`), and generated configuration.
+A tracked build lifecycle record in `fila_projetos` linking a CRM Contact to its Lead Briefing, tenant database credentials, status (`aguardando_decisao`, `pendente`, `aguardando_agente`, `processando`, `concluido`, `erro`), and generated configuration.
 _Avoid_: Job, task, build ticket
 
 **Chat Agent Worker Loop**:

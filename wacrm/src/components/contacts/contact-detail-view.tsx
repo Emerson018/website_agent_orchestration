@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { LeadDossierCard } from '@/components/contacts/lead-dossier-card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -789,6 +790,31 @@ export function ContactDetailView({
                     )}
                     Save Changes
                   </Button>
+                  {/* Dossiê Comercial Google Maps & Decision Gate */}
+                  <div className="mt-3">
+                    <LeadDossierCard
+                      dossie={(contact as any)?.additional_data?.dossie}
+                      companyName={contact?.company || contact?.name}
+                      targetUrl={contact?.website || (contact as any)?.additional_data?.links?.[0]?.url}
+                      onTriggerPwaGeneration={handleGenerateAISite}
+                      isGeneratingPwa={generatingAI}
+                      onDossierEnriched={(newDossie) => {
+                        if (contact?.id) {
+                          supabase
+                            .from('contacts')
+                            .update({
+                              additional_data: {
+                                ...(contact.additional_data || {}),
+                                dossie: newDossie,
+                              },
+                            })
+                            .eq('id', contact.id)
+                            .then(() => fetchProjects());
+                        }
+                      }}
+                    />
+                  </div>
+
                   {(() => {
                     const contactProjects = filterProjectsForContact(projects, contact);
                     const projectStatus = getContactProjectStatus(contactProjects);
