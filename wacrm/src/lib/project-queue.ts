@@ -199,8 +199,8 @@ export interface GenerationStage {
 
 export const PWA_GENERATION_STAGES: GenerationStage[] = [
   { stage: 1, title: 'Registrando briefing e qualificando requisitos...', percentage: 15 },
-  { stage: 2, title: 'Clonando Gold Template PWA e estruturando workspace...', percentage: 35 },
-  { stage: 3, title: 'Injetando identidade visual, paleta RAG e tipografia...', percentage: 60 },
+  { stage: 2, title: 'Clonando Modular Tenant Stack e estruturando workspace...', percentage: 35 },
+  { stage: 3, title: 'Injetando identidade visual, direção de marca e tipografia...', percentage: 60 },
   { stage: 4, title: 'Provisionando banco de dados e políticas de segurança...', percentage: 80 },
   { stage: 5, title: 'Compilando assets e validando integridade do PWA...', percentage: 95 },
   { stage: 6, title: 'PWA gerado e pronto para uso!', percentage: 100 },
@@ -239,8 +239,13 @@ export function getContactProjectStatus(contactProjects: ProjectQueueItem[]): Co
     };
   }
 
-  // 1. Procura primeiro por projeto concluído (status OK)
-  const completed = contactProjects.find((p) => p.status === 'concluido');
+  // 1. Procura primeiro por projeto concluído (status OK ou outcome provisionado)
+  const completed = contactProjects.find(
+    (p) =>
+      p.status === 'concluido' ||
+      p.resultado_json?.status === 'concluido' ||
+      Boolean(p.resultado_json?.preview_url)
+  );
   if (completed) {
     return {
       isGenerated: true,

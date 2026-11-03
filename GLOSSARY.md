@@ -38,8 +38,16 @@ _Avoid_: Job, task, build ticket
 The execution pattern where the pair-programming Antigravity assistant directly acts as the active generation worker, receiving queued tenant briefs, authoring component code, and reporting progress live in the chat.
 _Avoid_: Background daemon, phantom runner, blackbox CLI
 
-**Gold Template**:
-The canonical reference application in `gold_templates/template_base_app` cloned and customized to produce each client's application.
+**Modular Tenant Stack**:
+The modern two-tier tenant architecture (`workspace/<slug>/`) provisioning an isolated Composable Backend Blueprint (`backend/` with audited security guardrails and on-demand synthesized niche routes) alongside a clean, dynamic Frontend PWA (`frontend/` mounting niche-tailored modules selected from the Lead Dossier).
+_Avoid_: Monolithic template, hardcoded scheduling app, generic cloned site
+
+**Niche-Driven Module Selection**:
+The deterministic assignment of frontend pages and backend endpoints (such as Menu/Orders for gastronomy, Bookings/Services for appointments, Catalog/Cart for retail) driven by the Lead Dossier's verified Google Maps niche classification.
+_Avoid_: Forced appointment booking, one-size-fits-all pages
+
+**Gold Template (Legacy)**:
+The superseded monolithic application template in `gold_templates/template_base_app` that hardcoded appointment scheduling pages across all client domains.
 _Avoid_: Base project, starter kit, boilerplate
 
 **Tenant Workspace**:

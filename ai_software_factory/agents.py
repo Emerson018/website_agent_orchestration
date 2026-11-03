@@ -153,10 +153,19 @@ def infra_cloner_node(state: AgentState, workspace_root: str = "workspace") -> D
     print("\n--- [Agente: Infraestrutura / Clonador] ---")
     template = state.get("template_path") or "gold_templates/template_base_app"
     reqs = state.get("customization_requirements", {})
+    lead_raw = state.get("lead_raw_json", {})
+    briefing = lead_raw.get("briefing_payload") if isinstance(lead_raw.get("briefing_payload"), dict) else {}
+    dossie = briefing.get("dossie") if isinstance(briefing.get("dossie"), dict) else {}
+    niche = (
+        reqs.get("nicho_detectado")
+        or lead_raw.get("nicho_detectado")
+        or dossie.get("nicho_detectado")
+        or briefing.get("nicho_detectado")
+    )
     app_name = reqs.get("app_name", "AppCustomizado")
 
     workspace = TenantWorkspace.provision(
-        app_name=app_name, template_path=template, workspace_root=workspace_root
+        app_name=app_name, template_path=template, workspace_root=workspace_root, niche=niche
     )
     target_project = workspace.project_path
     print(f"Template Ouro provisionado de '{template}' para '{target_project}'.")

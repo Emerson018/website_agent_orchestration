@@ -62,16 +62,101 @@ def resolve_workspace_path(app_name_or_path: str, workspace_root: str = "workspa
     return canonical_path
 
 
+def provision_modular_tenant_stack(
+    app_name: str,
+    frontend_template_path: str = "gold_templates/template_base_app/frontend",
+    backend_blueprint_path: str = "gold_templates/composable_backend_blueprint",
+    workspace_root: str = "workspace",
+    niche: Optional[str] = None,
+) -> str:
+    """
+    Provisiona um Tenant Workspace biescalável (Modular Tenant Stack) contendo:
+    - frontend/ : PWA modular em React + Vite + Tailwind + Framer Motion
+    - backend/  : Blueprint Node.js/Express com guardrails congelados de segurança
+    - database/ : Diretório para migrações DDL isoladas
+    """
+    slug = sanitize_workspace_slug(app_name)
+    target_project = os.path.join(workspace_root, slug)
+    os.makedirs(target_project, exist_ok=True)
+
+    # 1. Copia Frontend modular
+    target_frontend = os.path.join(target_project, "frontend")
+    if os.path.isdir(frontend_template_path):
+        shutil.copytree(
+            frontend_template_path,
+            target_frontend,
+            dirs_exist_ok=True,
+            ignore=shutil.ignore_patterns("node_modules", "dist", ".git"),
+        )
+
+    # 2. Copia Backend Composable Blueprint
+    target_backend = os.path.join(target_project, "backend")
+    if os.path.isdir(backend_blueprint_path):
+        shutil.copytree(
+            backend_blueprint_path,
+            target_backend,
+            dirs_exist_ok=True,
+            ignore=shutil.ignore_patterns("node_modules", ".git"),
+        )
+
+    # 3. Garante pasta database/
+    os.makedirs(os.path.join(target_project, "database"), exist_ok=True)
+
+    # 4. Contexto arquitetural atualizado para o monorepo do tenant
+    contexto_path = os.path.join(target_project, "contexto_arquitetura.md")
+    if not os.path.isfile(contexto_path):
+        with open(contexto_path, "w", encoding="utf-8") as f:
+            f.write(f"""# Contexto Arquitetural do Tenant: {app_name}
+
+Este projeto utiliza a **Modular Tenant Stack**:
+1. `backend/`: API Express com guardrails congelados (`security.js`, `validate.js`, `errorHandler.js`, `db.js`).
+   As rotas de negócio vivem em `backend/routes/` e usam validação Zod via `validateRequest()`.
+2. `frontend/`: PWA React + Vite + Tailwind CSS + Framer Motion consumindo o backend local.
+3. `database/`: Migrações SQL executadas no Supabase do cliente.
+""")
+
+    # 5. Sintetiza rotas de negocio e schemas adaptados ao nicho detectado
+    try:
+        from ai_software_factory.niche_backend_synthesizer import synthesize_niche_backend, normalize_niche_family
+        synthesize_niche_backend(target_project, niche=niche, company_name=app_name)
+
+        family = normalize_niche_family(niche)
+        cfg_path = os.path.join(target_frontend, "ai_config.json")
+        if os.path.exists(target_frontend):
+            cfg_data = {}
+            if os.path.exists(cfg_path):
+                try:
+                    with open(cfg_path, "r", encoding="utf-8") as f:
+                        cfg_data = json.load(f)
+                except Exception:
+                    cfg_data = {}
+            cfg_data["app_name"] = app_name
+            cfg_data["nicho_detectado"] = family
+            if family == "gastronomia":
+                cfg_data["modules"] = ["cardapio", "pedidos"]
+            elif family == "varejo":
+                cfg_data["modules"] = ["produtos", "carrinho"]
+            else:
+                cfg_data["modules"] = ["servicos", "agendar"]
+            with open(cfg_path, "w", encoding="utf-8") as f:
+                json.dump(cfg_data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[ModularTenantStack] Aviso ao sintetizar rotas de nicho: {e}")
+
+
+
+    return target_project.replace("\\", "/")
+
+
 def clone_gold_template(
     app_name: str,
     template_path: str = "gold_templates/template_base_app",
     workspace_root: str = "workspace",
+    niche: Optional[str] = None,
 ) -> str:
-    """Clona o Gold Template para o Tenant Workspace correspondente."""
-    slug = sanitize_workspace_slug(app_name)
-    target_project = os.path.join(workspace_root, slug)
-    shutil.copytree(template_path, target_project, dirs_exist_ok=True)
-    return target_project.replace("\\", "/")
+    """Clona o Gold Template para o Tenant Workspace correspondente (delega para Modular Tenant Stack)."""
+    return provision_modular_tenant_stack(app_name=app_name, workspace_root=workspace_root, niche=niche)
+
 
 
 def validate_and_sanitize_sql(sql_code: str) -> str:
@@ -306,9 +391,10 @@ class TenantWorkspace:
         app_name: str,
         template_path: str = "gold_templates/template_base_app",
         workspace_root: str = "workspace",
+        niche: Optional[str] = None,
     ) -> "TenantWorkspace":
-        target = clone_gold_template(
-            app_name=app_name, template_path=template_path, workspace_root=workspace_root
+        target = provision_modular_tenant_stack(
+            app_name=app_name, workspace_root=workspace_root, niche=niche
         )
         return cls(target)
 
@@ -442,6 +528,22 @@ class TenantWorkspace:
             except Exception:
                 config_data = {}
         config_data.update(direction)
+        detected_niche = (
+            direction.get("nicho_detectado")
+            or lead.get("nicho_detectado")
+            or config_data.get("nicho_detectado")
+        )
+        if detected_niche:
+            from ai_software_factory.niche_backend_synthesizer import normalize_niche_family
+            n_family = normalize_niche_family(detected_niche)
+            config_data["nicho_detectado"] = n_family
+            if n_family == "gastronomia":
+                config_data["modules"] = ["cardapio", "pedidos"]
+            elif n_family == "varejo":
+                config_data["modules"] = ["produtos", "carrinho"]
+            else:
+                config_data["modules"] = ["servicos", "agendar"]
+
         os.makedirs(os.path.dirname(config_file_path), exist_ok=True)
         with open(config_file_path, "w", encoding="utf-8") as f:
             json.dump(config_data, f, indent=2, ensure_ascii=False)

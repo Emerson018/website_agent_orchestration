@@ -160,16 +160,115 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
   }
 
   try {
-    // 1. Text Search para obter o place_id
+    // 1. Tenta primeiro a Places API (New) v1 (https://places.googleapis.com/v1/places:searchText)
+    const v1FieldMask = [
+      'places.id',
+      'places.displayName',
+      'places.formattedAddress',
+      'places.nationalPhoneNumber',
+      'places.internationalPhoneNumber',
+      'places.rating',
+      'places.userRatingCount',
+      'places.reviews',
+      'places.photos',
+      'places.regularOpeningHours',
+      'places.websiteUri',
+      'places.types',
+      'places.googleMapsUri',
+      'places.priceLevel',
+    ].join(',');
+
+    const v1Res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': cleanKey,
+        'X-Goog-FieldMask': v1FieldMask,
+      },
+      body: JSON.stringify({
+        textQuery: searchQuery,
+        languageCode: 'pt-BR',
+      }),
+    });
+
+    const v1Data = await v1Res.json();
+
+    if (v1Res.ok) {
+      const placesList = Array.isArray(v1Data.places) ? v1Data.places : [];
+      if (placesList.length === 0) {
+        return {
+          success: false,
+          code: 'NOT_FOUND',
+          error: `Nenhum estabelecimento encontrado no Google Maps para o termo: "${searchQuery}".`,
+          dossie: null,
+        };
+      }
+
+      const place = placesList[0];
+      const placeId = place.id;
+      const verifiedName = place.displayName?.text || searchQuery;
+
+      const normalizedReviews = Array.isArray(place.reviews)
+        ? place.reviews.map((rev) => ({
+            author_name: rev.authorAttribution?.displayName || 'Cliente',
+            rating: rev.rating || 5,
+            text: rev.text?.text || rev.originalText?.text || '',
+          }))
+        : [];
+
+      const photos = Array.isArray(place.photos)
+        ? place.photos.slice(0, 6).map((photoRef, index) => ({
+            id: index + 1,
+            width: photoRef.widthPx || 800,
+            height: photoRef.heightPx || 600,
+            photo_url: `https://places.googleapis.com/v1/${photoRef.name}/media?maxWidthPx=800&key=${cleanKey}`,
+            attribution: photoRef.authorAttributions?.[0]?.displayName || '',
+          }))
+        : [];
+
+      const sentiment = await synthesizeSentimentAndPitch({
+        name: verifiedName,
+        rating: place.rating,
+        user_ratings_total: place.userRatingCount,
+        reviews: normalizedReviews,
+        types: place.types,
+        address: place.formattedAddress,
+      });
+
+      const dossie = {
+        place_id: placeId,
+        nome_verificado: verifiedName,
+        endereco_formatado: place.formattedAddress || '',
+        telefone: place.nationalPhoneNumber || place.internationalPhoneNumber || '',
+        site_oficial: place.websiteUri || '',
+        google_maps_url: place.googleMapsUri || `https://www.google.com/maps/place/?q=place_id:${placeId}`,
+        nota: place.rating || null,
+        total_avaliacoes: place.userRatingCount || 0,
+        horarios_funcionamento: place.regularOpeningHours?.weekdayDescriptions || [],
+        aberto_agora: Boolean(place.regularOpeningHours?.openNow),
+        fotos: photos,
+        categorias: place.types || [],
+        ...sentiment,
+        consultado_em: new Date().toISOString(),
+      };
+
+      return {
+        success: true,
+        dossie,
+      };
+    }
+
+    // 2. Fallback para Places API (Legacy) caso o projeto use apenas a API legada
     const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${cleanKey}&language=pt-BR`;
     const searchRes = await fetch(searchUrl);
     const searchData = await searchRes.json();
 
     if (searchData.status === 'REQUEST_DENIED') {
+      const v1ErrorMsg = v1Data?.error?.message || searchData.error_message;
       return {
         success: false,
         code: 'API_DENIED',
-        error: `Acesso negado pela Google Places API: ${searchData.error_message || 'Chave inválida ou serviço desativado no Google Cloud.'}`,
+        error: `Acesso negado pela Google Places API: ${v1ErrorMsg || 'Chave inválida ou serviço desativado no Google Cloud.'}`,
         dossie: null,
       };
     }
@@ -186,7 +285,7 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
     const firstResult = searchData.results[0];
     const placeId = firstResult.place_id;
 
-    // 2. Place Details completo
+    // Place Details completo (Legado)
     const detailsFields = [
       'name',
       'formatted_address',

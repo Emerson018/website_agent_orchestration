@@ -1,0 +1,74 @@
+{
+  "app_name": "Emerson Viçosa",
+  "nicho_detectado": "servicos",
+  "modules": [
+    "servicos",
+    "agendar"
+  ],
+  "primary_color": "#6366F1",
+  "secondary_color": "#1A1A1A",
+  "bg_color": "#0F172A",
+  "font_heading": "Space Grotesk",
+  "font_body": "Plus Jakarta Sans",
+  "layout_archetype": "swiss_typographic_catalog",
+  "backend_port": 5148,
+  "frontend_port": 5271,
+  "preview_url": "http://localhost:5271",
+  "backend_url": "http://localhost:5148",
+  "updated_at": "2026-11-03T18:12:46.596Z",
+  "surface_color": "#1E293B",
+  "text_color": "#F8FAFC",
+  "muted_color": "#94A3B8",
+  "theme": "dark",
+  "logo_url": "/logo.png",
+  "address": "Av. Principal, 1000 - Centro - Porto Alegre/RS",
+  "working_hours": "Segunda a Sábado das 9h às 18h",
+  "phone": "(51) 99999-9999",
+  "niche": "Serviços Especializados",
+  "tagline": "Atendimento com hora marcada na Emerson Viçosa",
+  "brand_essence": "Emerson Viçosa posiciona-se no segmento de Serviços Especializados combinando domínio técnico em Atendimento Individual, Avaliação e Diagnóstico e Agendamento Online Direto com uma atmosfera moderno, tecnológico, dinâmico e profissional. Contexto capturado do cliente: Consultoria e Atendimento Especializado Emerson Viçosa",
+  "value_proposition": "Oferecer Atendimento Individual, Avaliação e Diagnóstico e Agendamento Online Direto no Emerson Viçosa com agendamento digital sem fila de espera, preparo prévio da equipe e transparência de valores e horários.",
+  "target_audience": "Clientes de Emerson Viçosa que buscam atendimento individual, avaliação e diagnóstico e agendamento online direto com pontualidade, atendimento personalizado e confirmação imediata pelo celular ou computador.",
+  "brand_pillars": [
+    "Especialização em Atendimento Individual com padrão consistente de entrega",
+    "Arquitetura visual Catálogo Tipográfico Swiss-Grid desenhada para leitura rápida e decisão imediata",
+    "Reserva online integrada em tempo real com confirmação direta de data e horário"
+  ],
+  "real_services": [
+    {
+      "name": "Atendimento Individual",
+      "price": "Sob consulta",
+      "description": "Sessão dedicada com horário reservado exclusivamente para a sua demanda.",
+      "badge": "Mais procurado"
+    },
+    {
+      "name": "Avaliação e Diagnóstico",
+      "price": "Sob consulta",
+      "description": "Análise técnica detalhada com apresentação de etapas e prazos claros.",
+      "badge": "Hora marcada"
+    },
+    {
+      "name": "Agendamento Online Direto",
+      "price": "Online",
+      "description": "Seleção imediata de data e horário disponível com confirmação automática.",
+      "badge": "Hora marcada"
+    }
+  ],
+  "color_reasoning": "Paleta 'Indigo Tech Moderno' (#6366F1 sobre #0F172A) calibrada para sustentar a identidade de Emerson Viçosa em tema dark.",
+  "layout_concept": "Catálogo Tipográfico Swiss-Grid: Grade suíça rigorosa com filetes divisórios de 1px expostos, forte hierarquia tipográfica, tabela técnica de serviços e preços estilo cardápio/ateliê de precisão e zero ornamentos supérfluos.",
+  "focal_element": "Painel tipográfico de abertura com chamada direta para reserva de horário online.",
+  "design_critique": "Removidos jargões genéricos de IA e decorações supérfluas; foco em clareza de escopo, horários e reserva.",
+  "copy_tone": "Objetivo, claro e orientado à ação do cliente.",
+  "section_blueprint": [
+    "1. Cabeçalho Tipográfico Swiss-Grid: Grid de 12 colunas com filetes visíveis, título em escala máxima e metadados de expediente no topo",
+    "2. Tabela Canônica de Serviços & Valores: Estrutura tabular estilo bancada/ateliê com nome, especificação, valor alinhado e botão /agendar",
+    "3. Princípios da Casa em Colunas: 3 colunas divididas por filetes verticais apresentando os pilares reais do negócio",
+    "4. Terminal de Localização & Agendamento: Rodapé funcional de seção com dados de visita e link direto para /agendar"
+  ],
+  "recommended_sections": [
+    "1. Cabeçalho Tipográfico Swiss-Grid: Grid de 12 colunas com filetes visíveis, título em escala máxima e metadados de expediente no topo",
+    "2. Tabela Canônica de Serviços & Valores: Estrutura tabular estilo bancada/ateliê com nome, especificação, valor alinhado e botão /agendar",
+    "3. Princípios da Casa em Colunas: 3 colunas divididas por filetes verticais apresentando os pilares reais do negócio",
+    "4. Terminal de Localização & Agendamento: Rodapé funcional de seção com dados de visita e link direto para /agendar"
+  ]
+}

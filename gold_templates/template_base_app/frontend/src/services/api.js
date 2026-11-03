@@ -1,20 +1,20 @@
 import { supabase } from '../lib/supabase';
 
 export const DEFAULT_AGENDA_CONFIG = {
-  dias_funcionamento: [2, 3, 4, 5, 6, 0], // Terça a Domingo
-  horarios_disponiveis: ['18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00'],
+  dias_funcionamento: [1, 2, 3, 4, 5, 6], // Segunda a Sábado
+  horarios_disponiveis: ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
   vagas_padrao: 5,
   limites_customizados: {},
   campo_observacoes_ativo: true,
-  antecedencia_maxima_dias: 7,
+  antecedencia_maxima_dias: 30,
   acessos_pagina_agenda: 0,
-  app_name: 'Marcianos',
+  app_name: 'Empresa',
   description:
-    'O maior rodízio de mini burgers do universo, com boliche e diversão garantida para toda a família!',
-  address: 'Av. Padre Cacique, 580 - Menino Deus - Porto Alegre/RS',
-  phone: '(51) 99523-9876',
+    'Atendimento e serviços de excelência para você e seu negócio.',
+  address: 'Consulte nossa localização de atendimento.',
+  phone: '',
   phone2: '',
-  emoji_app: '🛸',
+  emoji_app: '✨',
   emoji_address: '📍',
   emoji_contact: '📞',
 };

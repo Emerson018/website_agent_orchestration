@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { buildLeadDossier, extractPlaceQueryFromUrl } from './places_service.js';
+import { orchestrateModularTenantStack } from './modular_orchestrator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -179,21 +180,24 @@ app.post('/api/upload', async (req, res) => {
 async function dispatchProjectToFactory(projectId, projectRecord = null) {
   try {
     const targetProject = projectRecord || getLocalProjectById(projectId);
+    const alreadyCompleted = targetProject?.status === 'concluido';
     console.log(`[Backend] Despachando projeto #${projectId} para o Agente Antigravity no chat...`);
 
-    // 1. Marca status local como 'aguardando_agente'
-    if (targetProject?.is_local) {
-      updateLocalProject(projectId, { status: 'aguardando_agente' });
-    }
+    // 1. Marca status como 'aguardando_agente' apenas se ainda não estiver 'concluido'
+    if (!alreadyCompleted) {
+      if (targetProject?.is_local) {
+        updateLocalProject(projectId, { status: 'aguardando_agente' });
+      }
 
-    if (isSupabaseActive) {
-      try {
-        await supabase
-          .from('fila_projetos')
-          .update({ status: 'aguardando_agente' })
-          .eq('id', projectId);
-      } catch (sbErr) {
-        console.warn('[Backend] Aviso ao atualizar status no Supabase:', sbErr.message);
+      if (isSupabaseActive) {
+        try {
+          await supabase
+            .from('fila_projetos')
+            .update({ status: 'aguardando_agente' })
+            .eq('id', projectId);
+        } catch (sbErr) {
+          console.warn('[Backend] Aviso ao atualizar status no Supabase:', sbErr.message);
+        }
       }
     }
 
@@ -812,29 +816,71 @@ app.post('/api/projetos/:id/processar', async (req, res) => {
       return res.status(404).json({ error: 'Projeto não encontrado na fila.' });
     }
 
+    // 1. Marca status transitório como 'processando'
     if (local) {
-      updateLocalProject(id, { status: 'aguardando_agente' });
+      updateLocalProject(id, { status: 'processando' });
     }
 
     if (isSupabaseActive) {
       try {
         await supabase
           .from('fila_projetos')
-          .update({ status: 'aguardando_agente' })
+          .update({ status: 'processando' })
           .eq('id', id);
       } catch (sbUpdateErr) {
         console.warn('[Backend] Erro ao atualizar status no Supabase /processar:', sbUpdateErr.message);
       }
     }
 
-    res.json({ status: 'aguardando_agente', mensagem: 'Compilação iniciada no Agente Antigravity no chat.' });
+    // 2. Orquestração imediata da Modular Tenant Stack
+    const outcome = await orchestrateModularTenantStack(id, projeto);
 
-    // Executa em segundo plano
-    dispatchProjectToFactory(id, projeto);
+    // 3. Atualiza status final para 'concluido'
+    const updatedResultado = {
+      ...(projeto.resultado_json || {}),
+      ...outcome,
+    };
+
+    if (local) {
+      updateLocalProject(id, {
+        status: 'concluido',
+        resultado_json: updatedResultado,
+      });
+    }
+
+    if (isSupabaseActive) {
+      try {
+        await supabase
+          .from('fila_projetos')
+          .update({
+            status: 'concluido',
+            resultado_json: updatedResultado,
+          })
+          .eq('id', id);
+      } catch (sbConcluidoErr) {
+        console.warn('[Backend] Erro ao marcar como concluido no Supabase:', sbConcluidoErr.message);
+      }
+    }
+
+    // Despacha notificação para a fila do agente
+    dispatchProjectToFactory(id, { ...projeto, ...outcome, status: 'concluido' });
+
+    res.json({
+      success: true,
+      status: 'concluido',
+      mensagem: 'Modular Tenant Stack provisionada com sucesso!',
+      resultado: outcome,
+    });
   } catch (err) {
     console.error(`Erro ao disparar processamento da fábrica para projeto ${id}:`, err.message);
+    updateLocalProject(id, { status: 'erro' });
+    if (isSupabaseActive) {
+      try {
+        await supabase.from('fila_projetos').update({ status: 'erro' }).eq('id', id);
+      } catch {}
+    }
     if (!res.headersSent) {
-      res.status(500).json({ error: 'Erro ao disparar processamento da fábrica de IA.', details: err.message });
+      res.status(500).json({ error: 'Erro ao processar projeto.', details: err.message });
     }
   }
 });

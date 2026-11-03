@@ -34,9 +34,20 @@ def extract_requirements_from_briefing_payload(payload: Optional[Dict[str, Any]]
         return {}
     brand_spec = payload.get("brand_direction") or payload.get("branding") or {}
     client_info = payload.get("client_info") or {}
+    dossie = payload.get("dossie") or payload.get("lead_dossier") or {}
     reqs: Dict[str, Any] = {}
     if payload.get("project_name"):
         reqs["app_name"] = payload["project_name"]
+    
+    nicho = (
+        payload.get("nicho_detectado")
+        or brand_spec.get("nicho_detectado")
+        or dossie.get("nicho_detectado")
+        or client_info.get("nicho")
+        or client_info.get("tipo_negocio")
+    )
+    if nicho:
+        reqs["nicho_detectado"] = nicho
     if brand_spec.get("primary_color") or brand_spec.get("primary_color_hex"):
         reqs["primary_color"] = brand_spec.get("primary_color") or brand_spec.get("primary_color_hex")
     if brand_spec.get("secondary_color") or brand_spec.get("secondary_color_hex"):
@@ -104,6 +115,8 @@ def build_initial_agent_state(
         lead_raw["briefing_payload"] = briefing_payload
         if custom_reqs.get("app_name"):
             lead_raw["app_name"] = custom_reqs["app_name"]
+        if custom_reqs.get("nicho_detectado"):
+            lead_raw["nicho_detectado"] = custom_reqs["nicho_detectado"]
 
     return {
         "lead_raw_json": lead_raw,

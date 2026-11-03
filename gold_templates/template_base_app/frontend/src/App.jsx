@@ -4,29 +4,52 @@ import config from '../ai_config.json';
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/LandingPage';
 import BookingPage from './pages/BookingPage';
+import ServicosPage from './pages/ServicosPage';
+import CardapioPage from './pages/CardapioPage';
+import PedidosPage from './pages/PedidosPage';
+import ProdutosPage from './pages/ProdutosPage';
+import CarrinhoPage from './pages/CarrinhoPage';
 import AdminDashboard from './pages/AdminDashboard';
 import LoginPage from './pages/LoginPage';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import { buildDynamicRouteSpecs } from './lib/routesHelper';
+
+const COMPONENT_MAP = {
+  LandingPage: <LandingPage />,
+  LoginPage: <LoginPage />,
+  AdminDashboard: (
+    <ProtectedRoute>
+      <AdminDashboard />
+    </ProtectedRoute>
+  ),
+  CardapioPage: <CardapioPage />,
+  PedidosPage: <PedidosPage />,
+  ServicosPage: <ServicosPage />,
+  BookingPage: <BookingPage />,
+  ProdutosPage: <ProdutosPage />,
+  CarrinhoPage: <CarrinhoPage />,
+};
+
+function getRouterChildren() {
+  const specs = buildDynamicRouteSpecs(config);
+  return specs.map((spec) => {
+    if (spec.index) {
+      return { index: true, element: COMPONENT_MAP[spec.component] };
+    }
+    return {
+      path: spec.path.replace(/^\//, ''),
+      element: COMPONENT_MAP[spec.component],
+    };
+  });
+}
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <MainLayout />,
-    children: [
-      { index: true, element: <LandingPage /> },
-      { path: "agendar", element: <BookingPage /> },
-      { path: "login", element: <LoginPage /> },
-      {
-        path: "admin",
-        element: (
-          <ProtectedRoute>
-            <AdminDashboard />
-          </ProtectedRoute>
-        )
-      }
-    ]
-  }
+    children: getRouterChildren(),
+  },
 ]);
 
 function App() {

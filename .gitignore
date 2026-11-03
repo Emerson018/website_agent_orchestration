@@ -71,3 +71,5 @@ out/
 scratch/
 testar_lmstudio_tools.py
 testando.py
+
+.agents/queue/*.json

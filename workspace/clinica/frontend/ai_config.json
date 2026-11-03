@@ -1,0 +1,74 @@
+{
+  "app_name": "Clínica",
+  "nicho_detectado": "servicos",
+  "modules": [
+    "servicos",
+    "agendar"
+  ],
+  "primary_color": "#0EA5E9",
+  "secondary_color": "#1A1A1A",
+  "bg_color": "#F8FAFC",
+  "font_heading": "Plus Jakarta Sans",
+  "font_body": "Source Sans 3",
+  "layout_archetype": "cinematic_immersive",
+  "backend_port": 5150,
+  "frontend_port": 5273,
+  "preview_url": "http://localhost:5273",
+  "backend_url": "http://localhost:5150",
+  "updated_at": "2026-11-03T18:42:42.813Z",
+  "surface_color": "#FFFFFF",
+  "text_color": "#0F172A",
+  "muted_color": "#475569",
+  "theme": "light",
+  "logo_url": "/logo.png",
+  "address": "Av. Principal, 1000 - Centro - Porto Alegre/RS",
+  "working_hours": "Segunda a Sábado das 9h às 18h",
+  "phone": "(51) 99999-9999",
+  "niche": "Odontologia & Saúde",
+  "tagline": "Cuidado odontológico completo e humanizado na Clínica",
+  "brand_essence": "Clínica posiciona-se no segmento de Odontologia & Saúde combinando domínio técnico em Clareamento Dental Avançado, Alinhadores Transparentes e Check-up Preventivo Completo com uma atmosfera clínico, confiável, limpo e acolhedor. Contexto capturado do cliente: ### BRIEFING DO PROJETO DE CLIENTE - **Responsável / Contato**: Clínica - **Empresa / Marca**: 'Clínica'",
+  "value_proposition": "Oferecer Clareamento Dental Avançado, Alinhadores Transparentes e Check-up Preventivo Completo no Clínica com agendamento digital sem fila de espera, preparo prévio da equipe e transparência de valores e horários.",
+  "target_audience": "Clientes de Clínica que buscam clareamento dental avançado, alinhadores transparentes e check-up preventivo completo com pontualidade, atendimento personalizado e confirmação imediata pelo celular ou computador.",
+  "brand_pillars": [
+    "Especialização em Clareamento Dental Avançado com padrão consistente de entrega",
+    "Arquitetura visual Vitrine Cinematográfica Imersiva desenhada para leitura rápida e decisão imediata",
+    "Reserva online integrada em tempo real com confirmação direta de data e horário"
+  ],
+  "real_services": [
+    {
+      "name": "Clareamento Dental Avançado",
+      "price": "Consulte",
+      "description": "Procedimento seguro a laser para devolver o brilho e a tonalidade natural dos dentes.",
+      "badge": "Mais procurado"
+    },
+    {
+      "name": "Alinhadores Transparentes",
+      "price": "Consulte",
+      "description": "Correção ortodôntica moderna com aparelhos invisíveis, removíveis e imperceptíveis.",
+      "badge": "Hora marcada"
+    },
+    {
+      "name": "Check-up Preventivo Completo",
+      "price": "Consulte",
+      "description": "Avaliação detalhada, limpeza ultrassônica e orientações completas de saúde bucal.",
+      "badge": "Hora marcada"
+    }
+  ],
+  "color_reasoning": "Paleta 'Azul Clínico Confiável' (#0EA5E9 sobre #F8FAFC) calibrada para sustentar a identidade de Clínica em tema light.",
+  "layout_concept": "Vitrine Cinematográfica Imersiva: Abertura em tela cheia com imagem atmosférica em scrim profundo, tipografia dramática centralizada, barra flutuante de reserva e galeria de especialidades em cartões horizontais panorâmicos.",
+  "focal_element": "Bloco de apresentação da equipe clínica com selo de registro profissional e tipografia humanista de alto contraste.",
+  "design_critique": "Evitados degradês espalhafatosos e sombras pesadas de templates SaaS genéricos; paleta clara transmite higiene, assepsia e tranquilidade.",
+  "copy_tone": "Técnico, acolhedor e focado na saúde e bem-estar preventivo dos pacientes.",
+  "section_blueprint": [
+    "1. Palco Cinematográfico Full-Bleed: Fotografia ambiente com scrim graduado, título monumental e dupla de botões de reserva",
+    "2. Vitrine Panorâmica da Casa: Cartões largos com fotografia em close-up, selo de especialidade, preço e botão para /agendar",
+    "3. Manifesto & Ritual da Casa: Seção de contraste profundo narrando a essência do negócio e seus pilares",
+    "4. Coordenadas & Recepção: Bloco de endereço, telefone e reserva com hora marcada"
+  ],
+  "recommended_sections": [
+    "1. Palco Cinematográfico Full-Bleed: Fotografia ambiente com scrim graduado, título monumental e dupla de botões de reserva",
+    "2. Vitrine Panorâmica da Casa: Cartões largos com fotografia em close-up, selo de especialidade, preço e botão para /agendar",
+    "3. Manifesto & Ritual da Casa: Seção de contraste profundo narrando a essência do negócio e seus pilares",
+    "4. Coordenadas & Recepção: Bloco de endereço, telefone e reserva com hora marcada"
+  ]
+}

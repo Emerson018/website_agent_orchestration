@@ -1,5 +1,190 @@
 [
   {
+    "id": 100,
+    "created_at": "2026-11-03T18:42:42.756196+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Clínica\n- **Empresa / Marca**: 'Clínica'\n- **WhatsApp/Tel**: (34) 52345-3563\n- **E-mail**: clinicafisio@gmail.com\n- **Site Oficial**: Nenhum site informado\n- **Módulos Solicitados**: [site]\n\n### ANÁLISE DE MARCA & ARQUITETURA DA IA:\nGerado automaticamente via botão CRM.\n",
+    "status": "concluido",
+    "resultado_json": {
+      "email": "clinicafisio@gmail.com",
+      "phone": "(34) 52345-3563",
+      "company": "Clínica",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": null,
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "294ba723-fc51-48ce-ae3d-6a867cc68896",
+      "contact_name": "Clínica",
+      "project_name": "Clínica",
+      "briefing_payload": {
+        "modules": [
+          "site"
+        ],
+        "branding": {
+          "palette_name": "Definida via Direção de Marca Gemini"
+        },
+        "contact_id": "294ba723-fc51-48ce-ae3d-6a867cc68896",
+        "ai_analysis": "Gerado automaticamente via botão CRM.",
+        "client_info": {
+          "email": "clinicafisio@gmail.com",
+          "phone": "(34) 52345-3563"
+        },
+        "auto_process": true,
+        "project_name": "Clínica",
+        "supabase_url": "",
+        "additional_data": {
+          "links": [
+            {
+              "url": "https://maps.app.goo.gl/Vdc29RruhhdLxBvB8",
+              "label": "Site Oficial"
+            }
+          ]
+        },
+        "reference_links": []
+      },
+      "supabase_service_role_key": null,
+      "success": true,
+      "status": "concluido",
+      "modelo_utilizado": "Gemini (gemini-3.8-flash)",
+      "target_project_path": "workspace/clinica",
+      "project_slug": "clinica",
+      "nicho_detectado": "servicos",
+      "backend_port": 5150,
+      "frontend_port": 5273,
+      "backend_url": "http://localhost:5150",
+      "preview_url": "http://localhost:5273",
+      "dossie": null,
+      "modules": [
+        "servicos",
+        "agendar"
+      ],
+      "provisioned_at": "2026-11-03T18:42:42.815Z"
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 99,
+    "created_at": "2026-11-03T18:41:27.826431+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Sayrix Viçosa\n- **Empresa / Marca**: 'Clínica'\n- **WhatsApp/Tel**: (34) 52345-3563\n- **E-mail**: clinicafisio@gmail.com\n- **Site Oficial**: https://maps.app.goo.gl/Vdc29RruhhdLxBvB8\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://maps.app.goo.gl/Vdc29RruhhdLxBvB8 (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "clinicafisio@gmail.com",
+      "phone": "(34) 52345-3563",
+      "company": "Clínica",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://maps.app.goo.gl/Vdc29RruhhdLxBvB8",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "294ba723-fc51-48ce-ae3d-6a867cc68896",
+      "contact_name": "Sayrix Viçosa",
+      "project_name": "Clínica",
+      "briefing_payload": {
+        "name": "Sayrix Viçosa",
+        "email": "clinicafisio@gmail.com",
+        "phone": "(34) 52345-3563",
+        "company": "Clínica",
+        "website": "https://maps.app.goo.gl/Vdc29RruhhdLxBvB8"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 98,
+    "created_at": "2026-11-03T17:52:52.571165+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Emerson Viçosa\n- **Empresa / Marca**: 'Emerson Viçosa'\n- **WhatsApp/Tel**: (51) 44444-4334\n- **E-mail**: casa5silva@gmail.com\n- **Site Oficial**: Nenhum site informado\n- **Módulos Solicitados**: [site]\n\n### ANÁLISE DE MARCA & ARQUITETURA DA IA:\nGerado automaticamente via botão CRM.\n",
+    "status": "concluido",
+    "resultado_json": {
+      "email": "casa5silva@gmail.com",
+      "phone": "(51) 44444-4334",
+      "company": "Emerson Viçosa",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": null,
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "1c02870d-8411-4c0c-9934-c3ffd57a45b5",
+      "contact_name": "Emerson Viçosa",
+      "project_name": "Emerson Viçosa",
+      "briefing_payload": {
+        "modules": [
+          "site"
+        ],
+        "branding": {
+          "palette_name": "Definida via RAG"
+        },
+        "contact_id": "1c02870d-8411-4c0c-9934-c3ffd57a45b5",
+        "ai_analysis": "Gerado automaticamente via botão CRM.",
+        "client_info": {
+          "email": "casa5silva@gmail.com",
+          "phone": "(51) 44444-4334"
+        },
+        "auto_process": true,
+        "project_name": "Emerson Viçosa",
+        "supabase_url": "",
+        "reference_links": []
+      },
+      "supabase_service_role_key": null,
+      "success": true,
+      "status": "concluido",
+      "modelo_utilizado": "Gemini (gemini-3.8-flash)",
+      "target_project_path": "workspace/emerson_vicosa",
+      "project_slug": "emerson_vicosa",
+      "nicho_detectado": "servicos",
+      "backend_port": 5148,
+      "frontend_port": 5271,
+      "backend_url": "http://localhost:5148",
+      "preview_url": "http://localhost:5271",
+      "dossie": null,
+      "modules": [
+        "servicos",
+        "agendar"
+      ],
+      "provisioned_at": "2026-11-03T18:12:46.598Z"
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": "88801",
+    "mensagem_lead": "Gostaria de um cardápio digital para a Pizzaria Nonna",
+    "status": "concluido",
+    "resultado_json": {
+      "project_name": "Pizzaria Nonna E2E",
+      "dossie": {
+        "place_id": "ChIJTESTE2E99",
+        "nome_verificado": "Pizzaria da Nonna E2E",
+        "nicho_detectado": "restaurant",
+        "rating_score": 4.8,
+        "total_reviews": 120,
+        "pitch_comercial_sugerido": "Proposta digital para pizzaria"
+      },
+      "success": true,
+      "status": "concluido",
+      "target_project_path": "workspace/pizzaria_nonna_e2e",
+      "project_slug": "pizzaria_nonna_e2e",
+      "nicho_detectado": "gastronomia",
+      "backend_port": 5051,
+      "frontend_port": 5174,
+      "backend_url": "http://localhost:5051",
+      "preview_url": "http://localhost:5174",
+      "modules": [
+        "cardapio",
+        "pedidos"
+      ],
+      "provisioned_at": "2026-11-03T17:38:43.418Z"
+    },
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 97
+  },
+  {
     "id": 95,
     "created_at": "2026-11-03T02:17:19.919763+00:00",
     "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Maria Souza\n- **Empresa / Marca**: 'Estética Renascer 1793672238083'\n- **WhatsApp/Tel**: (51) 956656005\n- **E-mail**: lead_5f_1793672238083@test.com\n- **Site Oficial**: https://esteticarenascer.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://esteticarenascer.com.br (Site Oficial do Lead)\n",
@@ -99,7 +284,9 @@
     "supabase_url": null,
     "supabase_anon_key": null,
     "created_at": "2026-11-03T02:17:18.040Z",
-    "is_local": true
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 96
   },
   {
     "id": 93,

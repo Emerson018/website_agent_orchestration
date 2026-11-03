@@ -390,9 +390,11 @@ export function ContactDetailView({
         return f ? customValues[f.id] : undefined;
       };
 
-      const ragBranding = (contact.additional_data as Record<string, any>)?.branding;
-      const primaryColor = getVal("cor principal") || getVal("primary color") || ragBranding?.primary_color_hex;
-      const paletteName = getVal("paleta") || getVal("palette") || ragBranding?.palette_name || "Definida via RAG";
+      const brandDirection =
+        (contact.additional_data as Record<string, any>)?.brand_direction ||
+        (contact.additional_data as Record<string, any>)?.branding;
+      const primaryColor = getVal("cor principal") || getVal("primary color") || brandDirection?.primary_color_hex;
+      const paletteName = getVal("paleta") || getVal("palette") || brandDirection?.palette_name || "Definida via Direção de Marca Gemini";
       const modulesStr = getVal("modulos") || getVal("modules") || "site";
       const modules = modulesStr.split(",").map(m => m.trim()).filter(Boolean);
       
@@ -402,9 +404,10 @@ export function ContactDetailView({
       const aiAnalysis = getVal("mensagem lead") || getVal("lead message") || getVal("analise ia") || contact.rag_report || "Gerado automaticamente via botão CRM.";
 
       const { projectId } = await enqueueAndTriggerBuild({
-        project_name: editName || contact.name || "Projeto Sem Nome",
+        project_name: editCompany || contact.company || editName || contact.name || "Projeto Sem Nome",
         contact_id: contactId,
         branding: {
+          ...(brandDirection || {}),
           palette_name: paletteName,
           ...(primaryColor ? { primary_color_hex: primaryColor } : {})
         },
@@ -418,6 +421,7 @@ export function ContactDetailView({
         supabase_anon_key: supabaseAnonKey.trim(),
         supabase_service_role_key: supabaseServiceRoleKey.trim(),
         ai_analysis: aiAnalysis,
+        additional_data: (contact.additional_data as Record<string, unknown>) || { files: [], links: [], texts: [] },
       });
 
       toast.success("Geração de site por IA iniciada com sucesso!");
@@ -429,15 +433,36 @@ export function ContactDetailView({
         const freshProjects = await fetchProjects();
         const contactProjectsNow = filterProjectsForContact(freshProjects, contact);
         const completedNow = contactProjectsNow.find(
-          (p) => p.status === 'concluido' || (projectId && p.id === projectId && p.status === 'concluido')
+          (p) =>
+            p.status === 'concluido' ||
+            p.resultado_json?.status === 'concluido' ||
+            Boolean(p.resultado_json?.preview_url) ||
+            (projectId && p.id === projectId && p.status === 'concluido')
+        );
+        const failedNow = contactProjectsNow.find(
+          (p) => (projectId && p.id === projectId) && (p.status === 'erro' || (p.status as string) === 'falha_critica')
         );
 
-        if (completedNow) {
+        if (failedNow) {
+          clearInterval(pollTimer);
+          clearInterval(progressTimer);
+          setGeneratingAI(false);
+          setGenerationProgress(0);
+          setGenerationStageText('');
+          const errReason =
+            (failedNow as any).resultado_json?.error_details ||
+            'Falha durante a compilação do PWA na Fábrica de IA.';
+          toast.error(`Erro na geração do PWA: ${errReason}`);
+        } else if (completedNow) {
           clearInterval(pollTimer);
           clearInterval(progressTimer);
           setGenerationProgress(100);
           setGenerationStageText(PWA_GENERATION_STAGES[5].title);
-          toast.success("PWA gerado e concluído com sucesso!");
+          const modelLabel =
+            (completedNow as any).resultado_json?.modelo_utilizado ||
+            (completedNow as any).resultado_json?.provedor_execucao ||
+            'Gemini (gemini-3.8-flash)';
+          toast.success(`PWA gerado e concluído com sucesso! Motor utilizado: ${modelLabel}`);
           setTimeout(() => {
             setGeneratingAI(false);
           }, 1000);
@@ -445,6 +470,7 @@ export function ContactDetailView({
           clearInterval(pollTimer);
           clearInterval(progressTimer);
           setGeneratingAI(false);
+          toast.error('Tempo limite de acompanhamento atingido. Verifique o status na Fila de Projetos.');
         }
       }, 2500);
     } catch (err: any) {

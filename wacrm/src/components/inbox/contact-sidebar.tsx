@@ -369,7 +369,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
       const primaryHex = brandDirection?.primary_color_hex || brandDirection?.primary_color;
 
       const { projectId } = await enqueueAndTriggerBuild({
-        project_name: contact.name || "Projeto Sem Nome",
+        project_name: contact.company || contact.name || "Projeto Sem Nome",
         contact_id: contact.id,
         branding: {
           ...(brandDirection || {}),
@@ -400,7 +400,11 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
         const freshProjects = await fetchContactData();
         const contactProjectsNow = filterProjectsForContact(freshProjects || [], contact);
         const completedNow = contactProjectsNow.find(
-          (p) => p.status === "concluido" || (projectId && p.id === projectId && p.status === "concluido")
+          (p) =>
+            p.status === "concluido" ||
+            p.resultado_json?.status === "concluido" ||
+            Boolean(p.resultado_json?.preview_url) ||
+            (projectId && p.id === projectId && p.status === "concluido")
         );
         const failedNow = contactProjectsNow.find(
           (p) => (projectId && p.id === projectId) && (p.status === "falha_critica" || p.status === "erro")

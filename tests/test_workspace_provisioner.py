@@ -90,5 +90,35 @@ class TestWorkspaceProvisioner(unittest.TestCase):
             self.assertEqual(executed_commands, ["npm install", "npm run build"])
 
 
+    def test_provision_modular_tenant_stack_creates_frontend_and_backend_guardrails(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create mock template sources
+            mock_frontend = os.path.join(tmpdir, "mock_frontend")
+            mock_backend = os.path.join(tmpdir, "mock_backend")
+            os.makedirs(os.path.join(mock_frontend, "src"))
+            os.makedirs(os.path.join(mock_backend, "routes"))
+
+            with open(os.path.join(mock_frontend, "package.json"), "w", encoding="utf-8") as f:
+                f.write('{"name": "frontend"}')
+            with open(os.path.join(mock_backend, "security.js"), "w", encoding="utf-8") as f:
+                f.write('export function setupSecurityGuardrails() {}')
+            with open(os.path.join(mock_backend, "server.js"), "w", encoding="utf-8") as f:
+                f.write('import express from "express";')
+
+            dest_root = os.path.join(tmpdir, "workspace")
+            project_path = workspace_provisioner.provision_modular_tenant_stack(
+                app_name="Pizzaria Bella",
+                frontend_template_path=mock_frontend,
+                backend_blueprint_path=mock_backend,
+                workspace_root=dest_root,
+            )
+
+            self.assertTrue(os.path.isdir(os.path.join(project_path, "frontend")))
+            self.assertTrue(os.path.isdir(os.path.join(project_path, "backend")))
+            self.assertTrue(os.path.isdir(os.path.join(project_path, "database")))
+            self.assertTrue(os.path.isfile(os.path.join(project_path, "backend", "security.js")))
+            self.assertTrue(os.path.isfile(os.path.join(project_path, "contexto_arquitetura.md")))
+
+
 if __name__ == "__main__":
     unittest.main()
