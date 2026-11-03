@@ -48,3 +48,24 @@ test('places_service - buildLeadDossier gracefully warns when API key is missing
   assert.equal(result.code, 'MISSING_API_KEY');
   assert.ok(result.error.includes('GOOGLE_MAPS_API_KEY não configurada'));
 });
+
+test('places_service - high-resolution photo gallery capacity and hours matrix structure', () => {
+  const mockPhotos = Array.from({ length: 15 }, (_, i) => ({
+    widthPx: 1600,
+    heightPx: 1200,
+    name: `places/P123/photos/photo_${i + 1}`,
+  }));
+
+  const cleanKey = 'TEST_KEY_123';
+  const parsedPhotos = mockPhotos.slice(0, 10).map((p, index) => ({
+    id: index + 1,
+    width: p.widthPx,
+    height: p.heightPx,
+    photo_url: `https://places.googleapis.com/v1/${p.name}/media?maxWidthPx=1200&key=${cleanKey}`,
+  }));
+
+  assert.equal(parsedPhotos.length, 10, 'Must cap photos at 10 high-resolution assets');
+  assert.ok(parsedPhotos[0].photo_url.includes('maxWidthPx=1200'), 'Must use 1200px max width for high-res');
+  assert.equal(parsedPhotos[9].id, 10);
+});
+

@@ -46,6 +46,22 @@ _Avoid_: Monolithic template, hardcoded scheduling app, generic cloned site
 The deterministic assignment of frontend pages and backend endpoints (such as Menu/Orders for gastronomy, Bookings/Services for appointments, Catalog/Cart for retail) driven by the Lead Dossier's verified Google Maps niche classification.
 _Avoid_: Forced appointment booking, one-size-fits-all pages
 
+**Lead Profile Page**:
+The dedicated full-screen view (/contacts/[id]) in WACRM that replaces the narrow sidebar drawer, presenting an immersive dashboard of the business: high-resolution photo gallery, review sentiment analysis, operating hours, geolocation, and AI-powered intelligence.
+_Avoid_: Contact drawer, sidebar sheet, modal popover
+
+**Multimodal Business Diagnosis**:
+An AI-driven analysis endpoint powered by Gemini Multimodal Vision and semantic NLP that evaluates both Google Maps imagery (interior ambiance, facade, products/services) and text data to synthesize exactly what the company is, its brand personality, target audience, and unique value proposition.
+_Avoid_: Basic text summary, raw niche label, static category
+
+**Master Prompt Generator**:
+The automated engine that transforms a Lead Dossier and Multimodal Business Diagnosis into a hyper-personalized, production-grade master prompt containing real client assets, design guidelines, tone, and component specifications, engineered for the operator to copy and execute in any frontier AI.
+_Avoid_: Auto-builder script, hardcoded template, generic system prompt
+
+**Operator-Driven Generation**:
+The bespoke workflow where the human operator reviews the Lead Profile Page and Multimodal Diagnosis, copies the synthesized Master Prompt, and directs an external frontier AI to generate a zero-template website tailored from scratch.
+_Avoid_: Blind auto-generation, one-click blackbox builder
+
 **Gold Template (Legacy)**:
 The superseded monolithic application template in `gold_templates/template_base_app` that hardcoded appointment scheduling pages across all client domains.
 _Avoid_: Base project, starter kit, boilerplate

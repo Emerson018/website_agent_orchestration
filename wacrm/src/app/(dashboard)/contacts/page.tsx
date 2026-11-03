@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { listContactsWithTags, type ContactWithTags } from '@/lib/crm-repository';
 import { toast } from 'sonner';
@@ -56,6 +57,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 const PAGE_SIZE = 25;
 
 export default function ContactsPage() {
+  const router = useRouter();
   const supabase = createClient();
   const canEdit = useCan('send-messages');
   const canEditSettings = useCan('edit-settings');
@@ -152,8 +154,7 @@ export default function ContactsPage() {
   }
 
   function openDetail(contactId: string) {
-    setDetailContactId(contactId);
-    setDetailOpen(true);
+    router.push('/contacts/' + contactId);
   }
 
   function confirmDelete(contact: Contact) {

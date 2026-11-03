@@ -7,7 +7,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { buildLeadDossier, extractPlaceQueryFromUrl } from './places_service.js';
-import { orchestrateModularTenantStack } from './modular_orchestrator.js';
+import { orchestrateModularTenantStack } from './modular_orchestrator.js';
+import { runMultimodalBusinessDiagnosis, buildMasterPrompt } from './multimodal_diagnosis_service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -719,7 +720,8 @@ app.post('/api/dossie/consultar', async (req, res) => {
 app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
   const { id } = req.params;
   try {
-    let projeto = getLocalProjectById(id);
+    let local = getLocalProjectById(id);
+    let projeto = local;
     if (!projeto && isSupabaseActive) {
       const { data } = await supabase
         .from('fila_projetos')
@@ -729,13 +731,40 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
       if (data) projeto = data;
     }
 
-    if (!projeto) {
-      return res.status(404).json({ error: 'Lead não encontrado na fila de projetos.' });
+    // Se ainda não encontrou em fila_projetos por ID direto, tenta encontrar por contact_id em fila_projetos
+    if (!projeto && isSupabaseActive) {
+      try {
+        const { data: qData } = await supabase
+          .from('fila_projetos')
+          .select('*')
+          .filter('resultado_json->>contact_id', 'eq', id)
+          .maybeSingle();
+        if (qData) projeto = qData;
+      } catch {}
     }
 
-    const payload = projeto.resultado_json || {};
+    // Tenta carregar diretamente da tabela contacts
+    let contactRecord = null;
+    if (isSupabaseActive) {
+      const { data: cData } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (cData) contactRecord = cData;
+    }
+
+    if (!projeto && !contactRecord) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+
+    const payload = projeto?.resultado_json || {};
     const candidateQuery =
-      req.body.query ||
+      req.body?.query ||
+      contactRecord?.additional_data?.query ||
+      contactRecord?.additional_data?.website ||
+      contactRecord?.company ||
+      contactRecord?.name ||
       payload.website ||
       payload.briefing_payload?.website ||
       payload.briefing_payload?.company ||
@@ -746,25 +775,33 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
       return res.status(400).json({ error: 'Lead não possui site, link do Google Maps ou nome de empresa para enriquecimento.' });
     }
 
-    const result = await buildLeadDossier(candidateQuery, process.env.GOOGLE_MAPS_API_KEY);
+    const mapsKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_API_KEY;
+    const result = await buildLeadDossier(candidateQuery, mapsKey);
     if (!result.success) {
       return res.status(result.code === 'MISSING_API_KEY' ? 412 : 400).json(result);
     }
 
-    const updatedResultado = {
-      ...payload,
-      dossie: result.dossie,
-    };
-
-    updateLocalProject(id, { resultado_json: updatedResultado });
+    if (local) {
+      const updatedResultado = {
+        ...(local.resultado_json || {}),
+        dossie: result.dossie,
+      };
+      updateLocalProject(id, { resultado_json: updatedResultado });
+    }
 
     if (isSupabaseActive) {
-      await supabase
-        .from('fila_projetos')
-        .update({ resultado_json: updatedResultado })
-        .eq('id', id);
+      if (projeto) {
+        const updatedResultado = {
+          ...(projeto.resultado_json || {}),
+          dossie: result.dossie,
+        };
+        await supabase
+          .from('fila_projetos')
+          .update({ resultado_json: updatedResultado })
+          .eq('id', projeto.id);
+      }
 
-      const contactId = payload.contact_id;
+      const contactId = payload.contact_id || contactRecord?.id || (isNaN(Number(id)) ? id : null);
       if (contactId) {
         const { data: contact } = await supabase
           .from('contacts')
@@ -789,6 +826,123 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
   } catch (err) {
     console.error(`Erro ao enriquecer dossiê do lead ${id}:`, err.message);
     res.status(500).json({ error: 'Erro ao gerar dossiê do lead.', details: err.message });
+  }
+});
+
+app.post('/api/leads/:id/diagnose', async (req, res) => {
+  const { id } = req.params;
+  console.log(`[Diagnostico] Iniciando diagnóstico multimodal da IA para lead ID: ${id}`);
+
+  try {
+    const local = getLocalProjectById(id);
+    let projeto = local;
+
+    if (!projeto && isSupabaseActive) {
+      const { data } = await supabase
+        .from('fila_projetos')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (data) projeto = data;
+    }
+
+    // Se ainda não encontrou em fila_projetos, tenta carregar diretamente da tabela contacts
+    let contactRecord = null;
+    if (isSupabaseActive) {
+      const { data: cData } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (cData) contactRecord = cData;
+    }
+
+    const payload = projeto?.resultado_json?.briefing_payload || projeto?.resultado_json || {};
+    const dossie = payload?.dossie || contactRecord?.additional_data?.dossie || null;
+    const companyName =
+      payload?.project_name ||
+      contactRecord?.company ||
+      contactRecord?.name ||
+      dossie?.nome_verificado ||
+      projeto?.mensagem_lead?.slice(0, 30) ||
+      'Empresa';
+
+    if (!dossie) {
+      return res.status(400).json({
+        success: false,
+        error: 'Lead não possui Dossiê do Google Maps. Consulte o Maps antes de gerar o diagnóstico.',
+      });
+    }
+
+    const result = await runMultimodalBusinessDiagnosis({
+      dossie,
+      companyName,
+      apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
+    });
+
+    if (!result.success) {
+      const statusCode = result.code === 'MISSING_API_KEY' ? 412 : 502;
+      return res.status(statusCode).json(result);
+    }
+
+    // Persistência Híbrida: Local + Supabase
+    if (local) {
+      const currentRes = local.resultado_json || {};
+      updateLocalProject(id, {
+        resultado_json: {
+          ...currentRes,
+          diagnostico_ia: result.diagnostico,
+          prompt_mestre: result.prompt_mestre,
+        },
+      });
+    }
+
+    if (isSupabaseActive) {
+      // 1. Atualiza fila_projetos se existir
+      if (projeto) {
+        await supabase
+          .from('fila_projetos')
+          .update({
+            resultado_json: {
+              ...(projeto.resultado_json || {}),
+              diagnostico_ia: result.diagnostico,
+              prompt_mestre: result.prompt_mestre,
+            },
+          })
+          .eq('id', id);
+      }
+
+      // 2. Atualiza contacts.additional_data
+      const contactId = payload?.contact_id || contactRecord?.id || (isNaN(Number(id)) ? id : null);
+      if (contactId) {
+        const { data: ct } = await supabase
+          .from('contacts')
+          .select('additional_data')
+          .eq('id', contactId)
+          .maybeSingle();
+
+        const curAdd = ct?.additional_data || {};
+        await supabase
+          .from('contacts')
+          .update({
+            additional_data: {
+              ...curAdd,
+              diagnostico_ia: result.diagnostico,
+              prompt_mestre: result.prompt_mestre,
+            },
+          })
+          .eq('id', contactId);
+      }
+    }
+
+    return res.json({
+      success: true,
+      diagnostico: result.diagnostico,
+      prompt_mestre: result.prompt_mestre,
+    });
+  } catch (err) {
+    console.error(`Erro ao gerar diagnóstico multimodal do lead ${id}:`, err.message);
+    res.status(500).json({ error: 'Erro interno ao processar diagnóstico da IA.', details: err.message });
   }
 });
 

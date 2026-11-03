@@ -217,11 +217,11 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
         : [];
 
       const photos = Array.isArray(place.photos)
-        ? place.photos.slice(0, 6).map((photoRef, index) => ({
+        ? place.photos.slice(0, 10).map((photoRef, index) => ({
             id: index + 1,
-            width: photoRef.widthPx || 800,
-            height: photoRef.heightPx || 600,
-            photo_url: `https://places.googleapis.com/v1/${photoRef.name}/media?maxWidthPx=800&key=${cleanKey}`,
+            width: photoRef.widthPx || 1200,
+            height: photoRef.heightPx || 800,
+            photo_url: `https://places.googleapis.com/v1/${photoRef.name}/media?maxWidthPx=1200&key=${cleanKey}`,
             attribution: photoRef.authorAttributions?.[0]?.displayName || '',
           }))
         : [];
@@ -319,11 +319,11 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
 
     // 3. Monta URLs de fotos em alta resolução (até 6 fotos)
     const photos = Array.isArray(placeDetails.photos)
-      ? placeDetails.photos.slice(0, 6).map((photoRef, index) => ({
+      ? placeDetails.photos.slice(0, 10).map((photoRef, index) => ({
           id: index + 1,
           width: photoRef.width,
           height: photoRef.height,
-          photo_url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${photoRef.photo_reference}&key=${cleanKey}`,
+          photo_url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1200&photoreference=${photoRef.photo_reference}&key=${cleanKey}`,
           attribution: photoRef.html_attributions?.[0] || '',
         }))
       : [];
