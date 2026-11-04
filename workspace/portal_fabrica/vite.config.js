@@ -10,6 +10,10 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
+    watch: {
+      // Ignora alterações no backend e em arquivos json para evitar recargas automáticas inesperadas ao salvar projetos
+      ignored: ['**/backend/**', '**/data/**', '**/*.json'],
+    },
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:5000',

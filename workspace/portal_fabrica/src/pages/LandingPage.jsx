@@ -28,6 +28,8 @@ const HOMOLOGATED_CASES = [
   }
 ];
 
+const STORAGE_KEY = 'portal_fabrica_submitted_lead';
+
 export default function LandingPage() {
   // Form State
   const [formData, setFormData] = useState({
@@ -40,7 +42,16 @@ export default function LandingPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [submittedData, setSubmittedData] = useState(null);
+
+  // Mantém os dados da solicitação persistidos para que a tela não suma mesmo em recargas
+  const [submittedData, setSubmittedData] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
 
   const handlePhoneChange = (e) => {
     const formatted = formatBrazilianPhone(e.target.value);
@@ -51,6 +62,26 @@ export default function LandingPage() {
   const handleChange = (field) => (e) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
     if (errorMessage) setErrorMessage('');
+  };
+
+  const handleResetForm = () => {
+    setSubmittedData(null);
+    setFormData({
+      name: '',
+      company: '',
+      email: '',
+      phone: '',
+      website: ''
+    });
+    setErrorMessage('');
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch {}
+    // Scroll suave de volta para o topo do formulário
+    setTimeout(() => {
+      const el = document.getElementById('formulario');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
   };
 
   const handleSubmit = async (e) => {
@@ -106,13 +137,24 @@ export default function LandingPage() {
         throw new Error(serverMessage);
       }
 
-      setSubmittedData({
+      const submitted = {
         name: trimmedName,
         company: trimmedCompany,
         email: trimmedEmail,
         phone: trimmedPhone,
         website: trimmedWebsite
-      });
+      };
+
+      setSubmittedData(submitted);
+      try {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(submitted));
+      } catch {}
+
+      // Garante que o scroll fique posicionado no container de sucesso
+      setTimeout(() => {
+        const el = document.getElementById('formulario');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
     } catch (err) {
       console.error('Erro ao enviar lead:', err);
       setErrorMessage(err.message || 'Falha ao conectar com o servidor. Verifique sua conexão e tente novamente.');
@@ -146,7 +188,7 @@ export default function LandingPage() {
           {/* Form / Success Container */}
           <div id="formulario" className="mt-12 max-w-2xl mx-auto scroll-mt-24">
             {submittedData ? (
-              /* Success State (Clean, high-converting thank you screen) */
+              /* Success State (Permanente com botão de Voltar) */
               <div className="rounded-xl border border-emerald-500/30 bg-[#161B22] p-8 sm:p-10 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-500">
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600" />
 
@@ -202,6 +244,17 @@ export default function LandingPage() {
                   <div className="pt-4 text-xs text-[#949BA8] flex items-center justify-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-400" />
                     Nosso time entrará em contato pelo WhatsApp para apresentar o direcionamento de design exclusivo.
+                  </div>
+
+                  {/* Botão de Voltar solicitado */}
+                  <div className="pt-6 border-t border-[#282F3D]/60 flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={handleResetForm}
+                      className="w-full sm:w-auto px-8 py-3 rounded-lg bg-[#E59A28] hover:bg-[#D48817] text-[#12151B] font-bold text-sm transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:shadow-[#E59A28]/20"
+                    >
+                      <span>← Voltar / Fazer Nova Solicitação</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -366,7 +419,7 @@ export default function LandingPage() {
 
             <div className="p-6 rounded-xl bg-[#161B22] border border-[#282F3D] space-y-3">
               <div className="w-10 h-10 rounded-lg bg-[#E59A28]/10 text-[#E59A28] flex items-center justify-center text-xl font-bold">
-                💬
+                📱
               </div>
               <h3 className="text-base font-bold text-[#ECEEF2]">Integração Nativa com WhatsApp CRM</h3>
               <p className="text-xs text-[#949BA8] leading-relaxed">
@@ -387,7 +440,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Homologated Cases Showcase */}
+      {/* Homologated Cases */}
       <section id="cases" className="py-16 sm:py-20 bg-[#12151B] scroll-mt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12">
@@ -412,13 +465,11 @@ export default function LandingPage() {
                     </span>
                     <span className="text-xs text-[#949BA8]">{item.sector}</span>
                   </div>
-
                   <h3 className="text-lg font-bold text-[#ECEEF2] font-display">{item.client}</h3>
                   <p className="text-xs text-[#949BA8] leading-relaxed">{item.outcome}</p>
                 </div>
-
                 <div className="mt-4 pt-3 border-t border-[#282F3D] text-[11px] font-semibold text-emerald-400">
-                  ★ {item.highlight}
+                  ✓ {item.highlight}
                 </div>
               </div>
             ))}
