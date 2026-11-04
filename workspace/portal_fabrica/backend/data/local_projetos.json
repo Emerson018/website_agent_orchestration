@@ -1,5 +1,421 @@
 [
   {
+    "id": 143,
+    "created_at": "2026-11-04T19:42:01.717048+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: placeholder\n- **Empresa / Marca**: 'null'\n- **WhatsApp/Tel**: (12) 39452-4560\n- **E-mail**: portalarga@gmail.com\n- **Site Oficial**: https://maps.app.goo.gl/wWZ56y3anxg7xN5r9\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://maps.app.goo.gl/wWZ56y3anxg7xN5r9 (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "portalarga@gmail.com",
+      "phone": "(12) 39452-4560",
+      "company": null,
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://maps.app.goo.gl/wWZ56y3anxg7xN5r9",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "6c69dd6e-5c2c-4865-8e10-266aa59fe5bc",
+      "contact_name": "placeholder",
+      "project_name": null,
+      "briefing_payload": {
+        "name": "placeholder",
+        "email": "portalarga@gmail.com",
+        "phone": "(12) 39452-4560",
+        "company": null,
+        "website": "https://maps.app.goo.gl/wWZ56y3anxg7xN5r9"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 142,
+    "created_at": "2026-11-04T19:13:00.231866+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Roberto Alencar\n- **Empresa / Marca**: 'null'\n- **WhatsApp/Tel**: (11) 98888-1234\n- **E-mail**: roberto_1793819578846@exemplo.com\n- **Site Oficial**: https://barbeariamodelo.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://barbeariamodelo.com.br (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "roberto_1793819578846@exemplo.com",
+      "phone": "(11) 98888-1234",
+      "company": null,
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://barbeariamodelo.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "d401bd39-032a-4220-8aa4-3c54c962747e",
+      "contact_name": "Roberto Alencar",
+      "project_name": null,
+      "briefing_payload": {
+        "name": "Roberto Alencar",
+        "email": "roberto_1793819578846@exemplo.com",
+        "phone": "(11) 98888-1234",
+        "website": "https://barbeariamodelo.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 141,
+    "created_at": "2026-11-04T17:52:50.383643+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Maria Souza\n- **Empresa / Marca**: 'Estética Renascer 1793814769117'\n- **WhatsApp/Tel**: (51) 949165957\n- **E-mail**: lead_5f_1793814769117@test.com\n- **Site Oficial**: https://esteticarenascer.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://esteticarenascer.com.br (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "lead_5f_1793814769117@test.com",
+      "phone": "(51) 949165957",
+      "company": "Estética Renascer 1793814769117",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://esteticarenascer.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "e67ba4a1-f550-4d25-9167-5fcf50b7052c",
+      "contact_name": "Maria Souza",
+      "project_name": "Estética Renascer 1793814769117",
+      "briefing_payload": {
+        "name": "Maria Souza",
+        "email": "lead_5f_1793814769117@test.com",
+        "phone": "(51) 949165957",
+        "company": "Estética Renascer 1793814769117",
+        "website": "https://esteticarenascer.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 140,
+    "created_at": "2026-11-04T17:52:50.239096+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Roberto Alencar\n- **Empresa / Marca**: 'null'\n- **WhatsApp/Tel**: (11) 98888-1234\n- **E-mail**: roberto_1793814769164@exemplo.com\n- **Site Oficial**: https://barbeariamodelo.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://barbeariamodelo.com.br (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "roberto_1793814769164@exemplo.com",
+      "phone": "(11) 98888-1234",
+      "company": null,
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://barbeariamodelo.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "d401bd39-032a-4220-8aa4-3c54c962747e",
+      "contact_name": "Roberto Alencar",
+      "project_name": null,
+      "briefing_payload": {
+        "name": "Roberto Alencar",
+        "email": "roberto_1793814769164@exemplo.com",
+        "phone": "(11) 98888-1234",
+        "website": "https://barbeariamodelo.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 139,
+    "created_at": "2026-11-04T17:50:32.611563+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Dr. Roberto Clínicas\n- **Empresa / Marca**: 'null'\n- **WhatsApp/Tel**: (11) 97777-6666\n- **E-mail**: roberto@clinica.com.br\n- **Site Oficial**: https://maps.google.com/?cid=12012514467023863728\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://maps.google.com/?cid=12012514467023863728 (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "roberto@clinica.com.br",
+      "phone": "(11) 97777-6666",
+      "company": null,
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://maps.google.com/?cid=12012514467023863728",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "3a75b140-5af5-417d-9718-5e9c69c83e21",
+      "contact_name": "Dr. Roberto Clínicas",
+      "project_name": null,
+      "briefing_payload": {
+        "name": "Dr. Roberto Clínicas",
+        "email": "roberto@clinica.com.br",
+        "phone": "(11) 97777-6666",
+        "website": "https://maps.google.com/?cid=12012514467023863728"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 138,
+    "created_at": "2026-11-04T17:49:11.660919+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Cliente Teste Via Vite\n- **Empresa / Marca**: 'null'\n- **WhatsApp/Tel**: (11) 98765-4321\n- **E-mail**: clientevite@exemplo.com\n- **Site Oficial**: https://maps.google.com/?cid=123\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://maps.google.com/?cid=123 (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "clientevite@exemplo.com",
+      "phone": "(11) 98765-4321",
+      "company": null,
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://maps.google.com/?cid=123",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "3607ef01-5fea-4a02-8bf3-9a485520178a",
+      "contact_name": "Cliente Teste Via Vite",
+      "project_name": null,
+      "briefing_payload": {
+        "name": "Cliente Teste Via Vite",
+        "email": "clientevite@exemplo.com",
+        "phone": "(11) 98765-4321",
+        "website": "https://maps.google.com/?cid=123"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 137,
+    "created_at": "2026-11-04T17:48:11.468881+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Teste Diagnostico\n- **Empresa / Marca**: 'null'\n- **WhatsApp/Tel**: (51) 99999-8888\n- **E-mail**: teste@exemplo.com\n- **Site Oficial**: https://pizzariaexemplo.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://pizzariaexemplo.com.br (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "teste@exemplo.com",
+      "phone": "(51) 99999-8888",
+      "company": null,
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://pizzariaexemplo.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "9d7b0585-7ee9-445f-acc7-743bd36a3061",
+      "contact_name": "Teste Diagnostico",
+      "project_name": null,
+      "briefing_payload": {
+        "name": "Teste Diagnostico",
+        "email": "teste@exemplo.com",
+        "phone": "(51) 99999-8888",
+        "website": "https://pizzariaexemplo.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 136,
+    "created_at": "2026-11-04T17:39:51.078933+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Maria Souza\n- **Empresa / Marca**: 'Estética Renascer 1793813990195'\n- **WhatsApp/Tel**: (51) 938118075\n- **E-mail**: lead_5f_1793813990195@test.com\n- **Site Oficial**: https://esteticarenascer.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://esteticarenascer.com.br (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "lead_5f_1793813990195@test.com",
+      "phone": "(51) 938118075",
+      "company": "Estética Renascer 1793813990195",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://esteticarenascer.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "428f9a1e-c453-4a4e-949d-70c18e618d91",
+      "contact_name": "Maria Souza",
+      "project_name": "Estética Renascer 1793813990195",
+      "briefing_payload": {
+        "name": "Maria Souza",
+        "email": "lead_5f_1793813990195@test.com",
+        "phone": "(51) 938118075",
+        "company": "Estética Renascer 1793813990195",
+        "website": "https://esteticarenascer.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 135,
+    "created_at": "2026-11-04T17:39:42.580823+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Roberto Alencar\n- **Empresa / Marca**: 'null'\n- **WhatsApp/Tel**: (11) 98888-1234\n- **E-mail**: roberto_1793813981269@exemplo.com\n- **Site Oficial**: https://barbeariamodelo.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://barbeariamodelo.com.br (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "roberto_1793813981269@exemplo.com",
+      "phone": "(11) 98888-1234",
+      "company": null,
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://barbeariamodelo.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "d401bd39-032a-4220-8aa4-3c54c962747e",
+      "contact_name": "Roberto Alencar",
+      "project_name": null,
+      "briefing_payload": {
+        "name": "Roberto Alencar",
+        "email": "roberto_1793813981269@exemplo.com",
+        "phone": "(11) 98888-1234",
+        "website": "https://barbeariamodelo.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": "88801",
+    "mensagem_lead": "Lead sem url",
+    "resultado_json": {
+      "scraped_data": {
+        "sucesso": true,
+        "urls": [
+          "https://pizzariabella.com.br/cardapio"
+        ],
+        "metodo_utilizado": "stealth_browser",
+        "cardapio": [
+          {
+            "nome": "Pizza Margherita",
+            "preco": "R$ 48,00",
+            "descricao": "Molho e manjericão fresco"
+          }
+        ],
+        "institucional": {
+          "titulo": "Pizzaria Bella",
+          "sobre": "Tradição italiana desde 1990",
+          "contato": {
+            "telefones": [
+              "(11) 99999-8888"
+            ],
+            "emails": [],
+            "enderecos": []
+          }
+        },
+        "markdown_resumo": "### Pizzaria Bella\n- Pizza Margherita: R$ 48,00"
+      },
+      "scraping_urls": [
+        "https://pizzariabella.com.br/cardapio"
+      ]
+    },
+    "is_local": true
+  },
+  {
+    "id": "88802",
+    "mensagem_lead": "Lead com url de site",
+    "resultado_json": {
+      "project_name": "Pizzaria Bella",
+      "additional_data": {
+        "website": "https://pizzariabella.com.br"
+      },
+      "scraped_data": {
+        "sucesso": true,
+        "urls": [
+          "https://pizzariabella.com.br"
+        ],
+        "metodo_utilizado": "stealth_browser",
+        "cardapio": [
+          {
+            "nome": "Pizza Margherita",
+            "preco": "R$ 48,00",
+            "descricao": "Molho e manjericão fresco"
+          }
+        ],
+        "institucional": {
+          "titulo": "Pizzaria Bella",
+          "sobre": "Tradição italiana desde 1990",
+          "contato": {
+            "telefones": [
+              "(11) 99999-8888"
+            ],
+            "emails": [],
+            "enderecos": []
+          }
+        },
+        "markdown_resumo": "### Pizzaria Bella\n- Pizza Margherita: R$ 48,00"
+      },
+      "scraping_urls": [
+        "https://pizzariabella.com.br"
+      ]
+    },
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 134
+  },
+  {
+    "id": 1793811524011,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Barbearia Teste Resiliente\n- **Empresa / Marca**: 'Barbearia Teste Resiliente'\n- **WhatsApp/Tel**: 11999999999\n- **E-mail**: teste@barbearia.com\n- **Site Oficial**: Nenhum site informado\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Barbearia Teste Resiliente",
+      "briefing_payload": {
+        "project_name": "Barbearia Teste Resiliente",
+        "client_info": {
+          "email": "teste@barbearia.com",
+          "phone": "11999999999"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "auto_process": false
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-11-04T16:58:44.011Z",
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 133
+  },
+  {
+    "id": 131,
+    "created_at": "2026-11-04T16:56:30.909653+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Lead Teste Diag 1793811389864\n- **Empresa / Marca**: 'Lead Teste Diag 1793811389864'\n- **WhatsApp/Tel**: (11) 977204916\n- **E-mail**: lead_diag_1793811389864@test.com\n- **Site Oficial**: https://example.com\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://example.com \n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "lead_diag_1793811389864@test.com",
+      "phone": "(11) 977204916",
+      "company": "Lead Teste Diag 1793811389864",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://example.com",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "fff19608-3cfc-47de-9e60-8036468405cc",
+      "contact_name": "Lead Teste Diag 1793811389864",
+      "project_name": "Lead Teste Diag 1793811389864",
+      "briefing_payload": {
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "client_info": {
+          "email": "lead_diag_1793811389864@test.com",
+          "phone": "(11) 977204916"
+        },
+        "auto_process": false,
+        "project_name": "Lead Teste Diag 1793811389864",
+        "reference_links": [
+          {
+            "url": "https://example.com",
+            "type": "site"
+          }
+        ]
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
     "id": 125,
     "created_at": "2026-11-04T13:17:09.440333+00:00",
     "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Lead Teste Diag 1793798228787\n- **Empresa / Marca**: 'Lead Teste Diag 1793798228787'\n- **WhatsApp/Tel**: (11) 936378365\n- **E-mail**: lead_diag_1793798228787@test.com\n- **Site Oficial**: https://example.com\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://example.com \n",
@@ -100,25 +516,6 @@
     "is_local": false,
     "supabase_synced": true,
     "supabase_id": 123
-  },
-  {
-    "id": "88801",
-    "mensagem_lead": "Gostaria de um cardápio digital para a Pizzaria Nonna",
-    "status": "processando",
-    "resultado_json": {
-      "project_name": "Pizzaria Nonna E2E",
-      "dossie": {
-        "place_id": "ChIJTESTE2E99",
-        "nome_verificado": "Pizzaria da Nonna E2E",
-        "nicho_detectado": "restaurant",
-        "rating_score": 4.8,
-        "total_reviews": 120,
-        "pitch_comercial_sugerido": "Proposta digital para pizzaria"
-      }
-    },
-    "is_local": false,
-    "supabase_synced": true,
-    "supabase_id": 124
   },
   {
     "id": 120,

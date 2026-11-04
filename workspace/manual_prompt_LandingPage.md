@@ -152,21 +152,21 @@ O template possui suporte nativo a `framer-motion`. Adicione dinamismo autoral e
 4. Invariante de Rolagem de Âncoras: TODA seção com `id` (ex: `id="inicio"`, `id="destaques"`, `id="sobre"`, `id="contato"`) DEVE incluir a classe `scroll-mt-24` para compensar a altura do Navbar sticky e nunca sobrepor o título.
 
 === DESIGN DIRECTION APROVADA NO PASSE 1 (OBRIGATÓRIO SEGUIR) ===
-- Tema (`theme`): light
+- Tema (`theme`): dark
 - Paleta Semântica (CSS Variables disponíveis em :root):
-  * `--primary-color`: #382215
-  * `--secondary-color`: #4E6E58
-  * `--bg-color`: #FAF8F3
-  * `--surface-color`: #F0ECE1
-  * `--text-color`: #1E1916
-  * `--muted-color`: #73675E
+  * `--primary-color`: #6366F1
+  * `--secondary-color`: #1A1A1A
+  * `--bg-color`: #0F172A
+  * `--surface-color`: #1E293B
+  * `--text-color`: #F8FAFC
+  * `--muted-color`: #94A3B8
 - Tipografia Google Fonts injetada:
-  * Display/Títulos (`font-display` / `--font-display`): Fraunces
+  * Display/Títulos (`font-display` / `--font-display`): Space Grotesk
   * Corpo (`font-sans` / `--font-sans`): Plus Jakarta Sans
-- Conceito de Layout (`layout_concept`): Alinhamento à esquerda com composição assimétrica inspirada em cardápios de cafeterias independentes e revistas de cultura gastronômica. Em vez de blocos centralizados, a página divide a tela entre uma coluna de narrativa sensorial fixa e um quadro vivo de fornadas, métodos de extração e disponibilidade de mesas.
-- Elemento Focal Único (`focal_element`): Quadro Interativo 'Fornada & Extração do Dia' no Hero: um painel tipográfico e tátil que cruza a nota sensorial do grão em moinho hoje com o seletor rápido de reserva de mesa ou bancada de trabalho.
-- Revisão Anti-Clichê (`design_critique`): Rejeitamos o clichê #F4F1EA com terracota #D97757 (tell clássico de IA) usando um fundo de leite vaporizado #FAF8F3 combinado ao marrom espresso #382215 e verde botânico #4E6E58. Eliminamos o kit SaaS de 3 cards idênticos em favor de uma lista de cardápio com preços e notas de torra alinhados por tabulação editorial. Removemos eyebrows em ALL-CAPS, separadores com ponto médio e setas '→' nos botões, adotando verbos diretos na primeira ação ('Reservar mesa', 'Ver cardápio do dia').
-- Tom de Voz (`copy_tone`): Conversacional, sensorial e direto. Fala de temperatura, moagem na hora, manteiga dourada e lugares confortáveis para sentar, sem adjetivos vazios como 'experiência única' ou 'incomparável'.
+- Conceito de Layout (`layout_concept`): Bento Grid Modular de Alta Precisão: Composição em mosaico técnico de células assimétricas (col-span-8 + col-span-4), combinando vitrine principal, células de métricas/horários ao vivo e grade modular de serviços.
+- Elemento Focal Único (`focal_element`): Painel tipográfico de abertura com chamada direta para reserva de horário online.
+- Revisão Anti-Clichê (`design_critique`): Removidos jargões genéricos de IA e decorações supérfluas; foco em clareza de escopo, horários e reserva.
+- Tom de Voz (`copy_tone`): Objetivo, claro e orientado à ação do cliente.
 
 
 <ARCHITECTURAL_CONTRACT>
@@ -185,9 +185,9 @@ CONTRATO ARQUITETURAL E INVARIANTES TÉCNICOS DO GOLD TEMPLATE (BACKEND COMPARTI
 </ARCHITECTURAL_CONTRACT>
 
 <LAYOUT_ARCHETYPE_BLUEPRINT>
-ARQUÉTIPO ESTRUTURAL OBRIGATÓRIO DESTE PROJETO: `editorial_asymmetric` (Editorial Split-Screen Assimétrico)
-- Diretriz Estrutural: Abertura em coluna assimétrica 7/5 estilo revista impressa com manifesto da casa à esquerda, retrato vertical emoldurado à direita e catálogo numerado (01, 02, 03) em linhas horizontais.
-- PROIBIDO gerar um layout genérico de 3 cartões SaaS iguais. A estrutura visual, o grid e o ritmo de leitura devem materializar o arquétipo `editorial_asymmetric` e seguir a sequência do `section_blueprint`.
+ARQUÉTIPO ESTRUTURAL OBRIGATÓRIO DESTE PROJETO: `bento_modular` (Bento Grid Modular de Alta Precisão)
+- Diretriz Estrutural: Composição em mosaico técnico de células assimétricas (col-span-8 + col-span-4), combinando vitrine principal, células de métricas/horários ao vivo e grade modular de serviços.
+- PROIBIDO gerar um layout genérico de 3 cartões SaaS iguais. A estrutura visual, o grid e o ritmo de leitura devem materializar o arquétipo `bento_modular` e seguir a sequência do `section_blueprint`.
 </LAYOUT_ARCHETYPE_BLUEPRINT>
 
 ```
@@ -198,104 +198,84 @@ Construa o código completo de `LandingPage.jsx` consumindo fielmente o contrato
 
 <BRAND_DESIGN_SPEC_JSON>
 {
-  "app_name": "Espaço Mesclado Café",
-  "niche": "Cafeteria Especial, Brunch & Espaço de Convivência",
-  "theme": "light",
+  "app_name": "AppCustomizado",
+  "niche": "Serviços Especializados",
+  "theme": "dark",
   "palette_tokens": {
-    "primary_color": "#382215",
-    "secondary_color": "#4E6E58",
-    "bg_color": "#FAF8F3",
-    "surface_color": "#F0ECE1",
-    "text_color": "#1E1916",
-    "muted_color": "#73675E"
+    "primary_color": "#6366F1",
+    "secondary_color": "#1A1A1A",
+    "bg_color": "#0F172A",
+    "surface_color": "#1E293B",
+    "text_color": "#F8FAFC",
+    "muted_color": "#94A3B8"
   },
   "typography": {
-    "font_heading": "Fraunces",
+    "font_heading": "Space Grotesk",
     "font_body": "Plus Jakarta Sans"
   },
   "brand_identity": {
-    "tagline": "Torra fresca, massa mãe e tempo para ficar.",
-    "brand_essence": "O ponto de encontro entre a extração técnica do café especial e a pausa descomplicada ao redor da mesa.",
-    "value_proposition": "Cafés extraídos sob medida, fornadas artesanais diárias e mesas reserváveis para trabalhar com calma ou reunir amigos sem olhar no relógio.",
-    "target_audience": "Apreciadores de cafés filtrados e espressos bem tirados, profissionais em trabalho remoto em busca de boas mesas com tomada e grupos que valorizam brunch artesanal.",
+    "tagline": "Atendimento com hora marcada na AppCustomizado",
+    "brand_essence": "AppCustomizado posiciona-se no segmento de Serviços Especializados combinando domínio técnico em Atendimento Individual, Avaliação e Diagnóstico e Agendamento Online Direto com uma atmosfera moderno, tecnológico, dinâmico e profissional.",
+    "value_proposition": "Oferecer Atendimento Individual, Avaliação e Diagnóstico e Agendamento Online Direto no AppCustomizado com agendamento digital sem fila de espera, preparo prévio da equipe e transparência de valores e horários.",
+    "target_audience": "Clientes de AppCustomizado que buscam atendimento individual, avaliação e diagnóstico e agendamento online direto com pontualidade, atendimento personalizado e confirmação imediata pelo celular ou computador.",
     "brand_pillars": [
-      "Grãos brasileiros de torra fresca e extração precisa",
-      "Panificação de fermentação lenta feita na casa",
-      "Ambiente acolhedor pensado para conversas ou foco",
-      "Reserva simples de mesas, bancadas e degustações"
+      "Especialização em Atendimento Individual com padrão consistente de entrega",
+      "Arquitetura visual Bento Grid Modular de Alta Precisão desenhada para leitura rápida e decisão imediata",
+      "Reserva online integrada em tempo real com confirmação direta de data e horário"
     ],
-    "copy_tone": "Conversacional, sensorial e direto. Fala de temperatura, moagem na hora, manteiga dourada e lugares confortáveis para sentar, sem adjetivos vazios como 'experiência única' ou 'incomparável'."
+    "copy_tone": "Objetivo, claro e orientado à ação do cliente."
   },
   "layout_architecture": {
-    "layout_archetype": "editorial_asymmetric",
-    "layout_archetype_label": "Editorial Split-Screen Assimétrico",
-    "layout_concept": "Alinhamento à esquerda com composição assimétrica inspirada em cardápios de cafeterias independentes e revistas de cultura gastronômica. Em vez de blocos centralizados, a página divide a tela entre uma coluna de narrativa sensorial fixa e um quadro vivo de fornadas, métodos de extração e disponibilidade de mesas.",
-    "focal_element": "Quadro Interativo 'Fornada & Extração do Dia' no Hero: um painel tipográfico e tátil que cruza a nota sensorial do grão em moinho hoje com o seletor rápido de reserva de mesa ou bancada de trabalho.",
-    "design_critique": "Rejeitamos o clichê #F4F1EA com terracota #D97757 (tell clássico de IA) usando um fundo de leite vaporizado #FAF8F3 combinado ao marrom espresso #382215 e verde botânico #4E6E58. Eliminamos o kit SaaS de 3 cards idênticos em favor de uma lista de cardápio com preços e notas de torra alinhados por tabulação editorial. Removemos eyebrows em ALL-CAPS, separadores com ponto médio e setas '→' nos botões, adotando verbos diretos na primeira ação ('Reservar mesa', 'Ver cardápio do dia').",
+    "layout_archetype": "bento_modular",
+    "layout_archetype_label": "Bento Grid Modular de Alta Precisão",
+    "layout_concept": "Bento Grid Modular de Alta Precisão: Composição em mosaico técnico de células assimétricas (col-span-8 + col-span-4), combinando vitrine principal, células de métricas/horários ao vivo e grade modular de serviços.",
+    "focal_element": "Painel tipográfico de abertura com chamada direta para reserva de horário online.",
+    "design_critique": "Removidos jargões genéricos de IA e decorações supérfluas; foco em clareza de escopo, horários e reserva.",
     "section_blueprint": [
-      {
-        "id": "hero",
-        "title": "Abertura e Painel de Extração do Dia",
-        "purpose": "Colocar o visitante dentro do aroma e da rotina do Espaço Mesclado com acesso imediato à reserva de mesa ou bancada."
-      },
-      {
-        "id": "menu_rituals",
-        "title": "Na Xícara e no Forno",
-        "purpose": "Apresentar os métodos de extração (Espresso, V60, Prensa) e os itens de fornada em formato de cardápio impresso legível, com notas reais e faixas de preço claras."
-      },
-      {
-        "id": "space_modes",
-        "title": "Seu Ritmo no Mesclado",
-        "purpose": "Mostrar os dois usos reais da casa: mesas ensolaradas para brunch em grupo e bancadas tranquilas com tomadas para leitura ou trabalho remoto."
-      },
-      {
-        "id": "booking_pwa",
-        "title": "Reserva de Mesa e Experiências",
-        "purpose": "Integrar o agendador PWA para escolha rápida de horário, número de pessoas ou sessão de degustação sem fila de espera."
-      },
-      {
-        "id": "location_hours",
-        "title": "Onde Estamos e Horários de Fornada",
-        "purpose": "Exibir endereço, link direto para a rota no Google Maps, horários de funcionamento e contato rápido via WhatsApp."
-      }
+      "1. Bento Hero Mosaico: Célula principal (8 colunas) com proposta de valor + 2 células laterais (4 colunas) com horário e localização rápida",
+      "2. Matriz Modular de Serviços: Grid assimétrico em células com bordas expostas, badge técnico, preço em destaque e link para /agendar",
+      "3. Painel de Diferenciais Operacionais: 3 células técnicas lado a lado detalhando os pilares reais da marca",
+      "4. Barra de Ação & Atendimento Direto: Bloco compacto de conversão imediata para a agenda online"
     ]
   },
   "real_services": [
-    "Reserva de Mesa para Brunch & Café (Salão ou Jardim)",
-    "Estação de Trabalho Compartilhada (Mesas com Energia e Wi-Fi + Café Filtrado)",
-    "Degustação Guiada de Métodos Filtrados (V60, Chemex e Prensa Francesa)",
-    "Reserva de Espaço para Pequenos Encontros e Reuniões"
+    {
+      "name": "Atendimento Individual",
+      "price": "Sob consulta",
+      "description": "Sessão dedicada com horário reservado exclusivamente para a sua demanda.",
+      "badge": "Mais procurado"
+    },
+    {
+      "name": "Avaliação e Diagnóstico",
+      "price": "Sob consulta",
+      "description": "Análise técnica detalhada com apresentação de etapas e prazos claros.",
+      "badge": "Hora marcada"
+    },
+    {
+      "name": "Agendamento Online Direto",
+      "price": "Online",
+      "description": "Seleção imediata de data e horário disponível com confirmação automática.",
+      "badge": "Hora marcada"
+    }
   ],
   "contact_and_location": {
-    "address": "Consulte nossa localização pelo mapa interativo ou WhatsApp",
-    "working_hours": "Terça a Domingo, das 08h30 às 19h30",
-    "phone": "(12) 12112-1212"
+    "address": "Av. Principal, 1000 - Centro - Porto Alegre/RS",
+    "working_hours": "Segunda a Sábado das 9h às 18h",
+    "phone": "(51) 99999-9999"
   },
   "curated_media": {
-    "hero_img": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80",
+    "hero_img": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80",
     "service_images": [
-      "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80",
-      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80",
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80"
+      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=600&q=80"
     ]
   }
 }
 </BRAND_DESIGN_SPEC_JSON>
 
 Contexto original complementar do cliente:
-### BRIEFING DO PROJETO DE CLIENTE
-- **Nome do Estabelecimento / Marca**: 'Espaço Mesclado Café'
-- **Módulos Solicitados**: [agendador_pwa, site]
-- **Contato do Cliente**: E-mail: mescladocafe@gmail.com | WhatsApp/Tel: (12) 12112-1212
-
-
-### CONTEÚDOS E TEXTOS DE APOIO:
-
-
-
-### LINKS DE REFERÊNCIA DO CLIENTE:
-1. Tipo: outro - URL: https://maps.app.goo.gl/Zrz3apDnVidavagz8 (Notas: Nome, preço, avaliações, local)
-
+Lead sem url
 ```
 
 ## Instruções de Conclusão
