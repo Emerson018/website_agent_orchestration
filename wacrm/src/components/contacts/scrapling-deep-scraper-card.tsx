@@ -140,7 +140,15 @@ export function ScraplingDeepScraperCard({
         body: JSON.stringify({ urls }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(`Erro na resposta do servidor (${res.status}): ${text.slice(0, 100)}`);
+      }
+
       if (!res.ok) {
         throw new Error(data.error || 'Falha ao executar raspagem profunda.');
       }
