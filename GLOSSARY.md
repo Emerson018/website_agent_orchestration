@@ -34,6 +34,14 @@ _Avoid_: Generic tags, metadata dump, feature list
 The consolidated list of verified external digital presence links (Instagram, Facebook, iFood, TripAdvisor, LinkedIn, etc.) synthesized by crawling the client's official site, ingesting briefing links, and querying public digital presence channels, providing direct access to the brand's broader footprint across the internet.
 _Avoid_: External backlinks, random search links, unverified URLs
 
+**Raspagem Profunda com Scrapling (Deep Web Scraping)**:
+The extraction pipeline in the AI Software Factory utilizing Scrapling to harvest categorized menu catalogs, pricing, institutional narratives, and raw Markdown from client-designated URLs, featuring an adaptive fail-safe mechanism that seamlessly falls back to lightweight HTTP parsing if headless browser binaries are unavailable in constrained production environments.
+_Avoid_: Brute-force scraping, rigid crawler, unhandled headless dependency
+
+**Dados Raspados do Estabelecimento (Scraped Business Intelligence)**:
+The structured payload stored in `contacts.additional_data.scraped_data`, comprising categorized menu items/services, institutional copy, and clean Markdown feedable directly into the Master Prompt Studio and autonomous PWA generators.
+_Avoid_: Raw html dump, unparsed text, temp cache
+
 **Avaliações 5 Estrelas e Desafios de Atendimento (5-Star Reviews & Operational Pain Points)**:
 The strict chronological review partitioning in the Lead Dossier separating up to 4 latest 5-star customer reviews (for genuine social proof and brand advocacy) and up to 2 latest constructive/negative reviews (rating <= 3, or fallback to 'Sem nenhuma avaliação negativa.') to equip the operator with actionable hooks for sales pitches and friction resolution.
 _Avoid_: Random reviews, all praise, unfiltered testimonials

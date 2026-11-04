@@ -7,7 +7,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { buildLeadDossier, extractPlaceQueryFromUrl } from './places_service.js';
-import { orchestrateModularTenantStack } from './modular_orchestrator.js';
+import { orchestrateModularTenantStack } from './modular_orchestrator.js';
+
 import { runMultimodalBusinessDiagnosis, buildMasterPrompt } from './multimodal_diagnosis_service.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -885,6 +886,157 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
   }
 });
 
+app.post('/api/leads/:id/scrape-deep', async (req, res) => {
+  const { id } = req.params;
+  const reqUrls = req.body?.urls;
+
+  try {
+    let local = getLocalProjectById(id);
+    let projeto = local;
+    let contactRecord = null;
+
+    if (isSupabaseActive) {
+      if (!projeto) {
+        const { data } = await supabase.from('fila_projetos').select('*').eq('id', id).maybeSingle();
+        if (data) projeto = data;
+      }
+      if (!projeto) {
+        try {
+          const { data: qData } = await supabase.from('fila_projetos').select('*').filter('resultado_json->>contact_id', 'eq', id).maybeSingle();
+          if (qData) projeto = qData;
+        } catch {}
+      }
+      const { data: cData } = await supabase.from('contacts').select('*').eq('id', id).maybeSingle();
+      if (cData) contactRecord = cData;
+    }
+
+    if (!projeto && !contactRecord) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+
+    // Coleta URLs candidatas
+    let candidateUrls = [];
+    if (Array.isArray(reqUrls) && reqUrls.length > 0) {
+      candidateUrls = reqUrls.filter((u) => typeof u === 'string' && u.trim().startsWith('http'));
+    }
+
+    const currentAddData = contactRecord?.additional_data || projeto?.resultado_json?.additional_data || {};
+
+    if (candidateUrls.length === 0 && Array.isArray(currentAddData.scraping_urls)) {
+      candidateUrls = currentAddData.scraping_urls.filter((u) => typeof u === 'string' && u.trim().startsWith('http'));
+    }
+
+    if (candidateUrls.length === 0 && Array.isArray(currentAddData.links)) {
+      candidateUrls = currentAddData.links
+        .map((l) => (typeof l === 'string' ? l : l?.url))
+        .filter((u) => typeof u === 'string' && u.trim().startsWith('http'));
+    }
+
+    if (candidateUrls.length === 0 && currentAddData.website) {
+      const w = currentAddData.website.trim();
+      candidateUrls.push(w.startsWith('http') ? w : `https://${w}`);
+    }
+
+    if (candidateUrls.length === 0 && currentAddData.dossie?.site_oficial) {
+      const s = currentAddData.dossie.site_oficial.trim();
+      candidateUrls.push(s.startsWith('http') ? s : `https://${s}`);
+    }
+
+    // Deduplica URLs
+    candidateUrls = Array.from(new Set(candidateUrls));
+
+    if (candidateUrls.length === 0) {
+      return res.status(400).json({ error: 'Nenhuma URL informada ou cadastrada para este lead para realizar a raspagem.' });
+    }
+
+    const pythonServiceUrl = process.env.AI_FACTORY_URL || 'http://localhost:8000';
+    console.log(`[ScrapeDeep] Disparando raspagem para ${candidateUrls.length} URLs do lead ${id} em ${pythonServiceUrl}`);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 35000);
+
+    let scraperResponse;
+    try {
+      scraperResponse = await fetch(`${pythonServiceUrl}/api/scrape/deep`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls: candidateUrls, timeout: 25 }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!scraperResponse.ok) {
+      const errText = await scraperResponse.text();
+      return res.status(scraperResponse.status).json({
+        error: `Falha no serviço de raspagem (${scraperResponse.status}): ${errText}`,
+      });
+    }
+
+    const scrapedData = await scraperResponse.json();
+
+    // Persistência no Supabase
+    const contactId = contactRecord?.id || projeto?.resultado_json?.contact_id || (isNaN(Number(id)) ? id : null);
+
+    if (isSupabaseActive && contactId) {
+      const { data: freshContact } = await supabase
+        .from('contacts')
+        .select('additional_data')
+        .eq('id', contactId)
+        .maybeSingle();
+
+      const baseAddData = freshContact?.additional_data || currentAddData || {};
+      const updatedAddData = {
+        ...baseAddData,
+        scraping_urls: candidateUrls,
+        scraped_data: scrapedData,
+      };
+
+      const { error: updErr } = await supabase
+        .from('contacts')
+        .update({ additional_data: updatedAddData })
+        .eq('id', contactId);
+
+      if (updErr) {
+        console.warn(`[ScrapeDeep] Erro ao salvar scraped_data no contact(${contactId}):`, updErr.message);
+      }
+    }
+
+    if (isSupabaseActive && projeto?.id) {
+      const updatedResJson = {
+        ...(projeto.resultado_json || {}),
+        scraped_data: scrapedData,
+        scraping_urls: candidateUrls,
+      };
+      await supabase
+        .from('fila_projetos')
+        .update({ resultado_json: updatedResJson })
+        .eq('id', projeto.id);
+    }
+
+    if (local) {
+      const updatedResJson = {
+        ...(local.resultado_json || {}),
+        scraped_data: scrapedData,
+        scraping_urls: candidateUrls,
+      };
+      updateLocalProject(id, { resultado_json: updatedResJson });
+    }
+
+    return res.status(200).json({
+      success: true,
+      scraped_data: scrapedData,
+      urls: candidateUrls,
+    });
+  } catch (error) {
+    console.error(`[ScrapeDeep] Erro no endpoint para lead ${id}:`, error);
+    return res.status(500).json({
+      error: `Erro ao executar raspagem profunda: ${error.message}`,
+    });
+  }
+});
+
 app.post('/api/leads/:id/diagnose', async (req, res) => {
   const { id } = req.params;
   console.log(`[Diagnostico] Iniciando diagnóstico multimodal da IA para lead ID: ${id}`);
@@ -930,9 +1082,12 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
       });
     }
 
+    const scrapedData = payload?.scraped_data || contactRecord?.additional_data?.scraped_data || null;
+
     const result = await runMultimodalBusinessDiagnosis({
       dossie,
       companyName,
+      scrapedData,
       apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
     });
 

@@ -179,5 +179,27 @@ async def analisar_marca(contact_id: str, background_tasks: BackgroundTasks):
     }
 
 
+class ScrapeDeepRequest(BaseModel):
+    urls: list[str] = []
+    timeout: Optional[int] = 15
+
+
+@app_api.post("/api/scrape/deep")
+async def api_scrape_deep(payload: ScrapeDeepRequest):
+    """
+    Endpoint para raspagem profunda com Scrapling e fallback automático.
+    Extrai catálogo/cardápio de produtos, dados institucionais e markdown enriquecido.
+    """
+    from ai_software_factory.scraper_service import scrape_urls_deep
+    try:
+        resultado = scrape_urls_deep(urls=payload.urls, timeout=payload.timeout or 15)
+        return resultado
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao processar raspagem profunda: {str(e)}",
+        )
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app_api", host="0.0.0.0", port=8000, reload=True)

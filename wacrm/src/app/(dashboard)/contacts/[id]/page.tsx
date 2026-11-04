@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { ScraplingDeepScraperCard } from '@/components/contacts/scrapling-deep-scraper-card';
 
 export default function ContactProfilePage() {
   const params = useParams();
@@ -489,6 +490,33 @@ export default function ContactProfilePage() {
               </div>
             </div>
           )}
+
+          {/* Card: Raspagem Profunda com Scrapling */}
+          <ScraplingDeepScraperCard
+            leadId={contact.id}
+            scrapedData={additionalData.scraped_data}
+            initialUrls={
+              Array.isArray(additionalData.scraping_urls)
+                ? additionalData.scraping_urls
+                : Array.isArray(additionalData.links)
+                ? additionalData.links.map((l: any) => (typeof l === 'string' ? l : l?.url)).filter(Boolean)
+                : []
+            }
+            websiteUrl={contact.website || additionalData.website || dossie?.site_oficial}
+            onScraped={(newData, updatedUrls) => {
+              setContact((prev: any) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  additional_data: {
+                    ...(prev.additional_data || {}),
+                    scraping_urls: updatedUrls,
+                    scraped_data: newData,
+                  },
+                };
+              });
+            }}
+          />
 
           {/* Card: Depoimentos e Sentimento Real dos Clientes */}
           <div className="p-5 rounded-2xl bg-card border border-border space-y-4">

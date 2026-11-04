@@ -25,12 +25,14 @@ async function fetchPhotoAsBase64(photoUrl, timeoutMs = 3500) {
 }
 
 /**
- * Constrói o Prompt Mestre em 4 blocos para geração do site do zero
+ * Constrói o Prompt Mestre em 4 blocos para geração do site do zero,
+ * integrando dados do Google Maps e produtos/institucional raspados com Scrapling.
  */
 export function buildMasterPrompt({
   companyName,
   dossie,
   diagnostico,
+  scrapedData,
 }) {
   const notaStr = dossie?.nota ? `${dossie.nota.toFixed(1)}★ (${dossie.total_avaliacoes || 0} avaliações)` : 'Excelente reputação local';
   const endereco = dossie?.endereco_formatado || 'Consulte localização';
@@ -48,6 +50,37 @@ export function buildMasterPrompt({
     ? diagnostico.diferenciais_unicos.map((d) => `- ${d}`).join('\n')
     : `- Especialistas em ${nicho}\n- Atendimento humanizado e ágil`;
 
+  // Bloco de Cardápio e Produtos reais capturados pelo Scrapling
+  let blocoProdutosScraped = '';
+  const produtos = scrapedData?.cardapio || [];
+  if (Array.isArray(produtos) && produtos.length > 0) {
+    const itensLines = produtos.slice(0, 30).map((it) => {
+      const precoStr = it.preco ? ` | **${it.preco}**` : '';
+      const descStr = it.descricao ? ` - ${it.descricao}` : '';
+      return `• **${it.nome}**${precoStr}${descStr}`;
+    }).join('\n');
+
+    blocoProdutosScraped = `
+---
+
+### BLOCO DE PRODUTOS & CARDÁPIO OFICIAL (EXTRAÍDO COM SCRAPLING)
+O site DEVE incluir os itens e preços reais abaixo em suas seções de catálogo/cardápio:
+${itensLines}
+`;
+  }
+
+  // Textos institucionais oficiais coletados do site do cliente
+  let blocoInstitucionalScraped = '';
+  const instSobre = scrapedData?.institucional?.sobre;
+  const instServicos = scrapedData?.institucional?.servicos;
+  if (instSobre || (Array.isArray(instServicos) && instServicos.length > 0)) {
+    const servicosLines = Array.isArray(instServicos) && instServicos.length > 0
+      ? `\n- **Especialidades & Serviços Informados no Site:**\n${instServicos.map((s) => `  • ${s}`).join('\n')}`
+      : '';
+    const sobreText = instSobre ? `\n- **História & Posicionamento Oficial do Site:**\n  "${instSobre}"` : '';
+    blocoInstitucionalScraped = `${sobreText}${servicosLines}`;
+  }
+
   return `# PROMPT MESTRE DE ENGENHARIA DE SITE (GERAÇÃO 100% DO ZERO)
 
 Atue como um Engenheiro Frontend Sênior e Diretor Criativo especializado em interfaces digitais premium e conversão direta via WhatsApp.
@@ -61,7 +94,7 @@ Sua missão é desenvolver o código completo de um site/web app profissional do
 - **Estilo Visual & Atmosfera:** ${diagnostico?.estilo_visual_vibe || 'Design contemporâneo, sofisticado e acolhedor, refletindo a energia autêntica do espaço físico.'}
 - **Público-Alvo Primário:** ${diagnostico?.publico_alvo || 'Clientes locais que valorizam qualidade, pontualidade e experiência personalizada.'}
 - **Diferenciais Competitivos:**
-${diferenciais}
+${diferenciais}${blocoInstitucionalScraped}
 
 ---
 
@@ -72,7 +105,7 @@ ${diferenciais}
 - **Horários de Operação:** ${horarios}
 - **Prova Social Real (Depoimentos Verificados):**
 ${elogios}
-
+${blocoProdutosScraped}
 ---
 
 ### BLOCO 3: DIRETRIZES DE DESIGN, CORES E TIPOGRAFIA
@@ -96,6 +129,7 @@ ${elogios}
 export async function runMultimodalBusinessDiagnosis({
   dossie,
   companyName,
+  scrapedData,
   apiKey = process.env.GEMINI_API_KEY,
 }) {
   const cleanKey = (apiKey || '').trim();
@@ -213,6 +247,7 @@ Responda APENAS o JSON válido, sem blocos de markdown adicionais.`;
       companyName,
       dossie,
       diagnostico: diagnosticoFinal,
+      scrapedData,
     });
 
     return {
