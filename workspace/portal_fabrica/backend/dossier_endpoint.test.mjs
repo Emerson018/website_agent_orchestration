@@ -14,19 +14,24 @@ test('dossier endpoints - POST /api/dossie/consultar gracefully validates input 
   });
   assert.equal(badRes.status, 400);
 
-  // 2. With target but no API key configured
+  // 2. With target
   const res = await fetch('http://localhost:5092/api/dossie/consultar', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query: 'Barbearia Modelo' }),
   });
 
-  // Since GOOGLE_MAPS_API_KEY is not configured yet, it should return 412 (Precondition Failed) with clean error
   const data = await res.json();
-  assert.equal(res.status, 412);
-  assert.equal(data.success, false);
-  assert.equal(data.code, 'MISSING_API_KEY');
-  assert.ok(data.error.includes('GOOGLE_MAPS_API_KEY'));
+  if (res.status === 412) {
+    assert.equal(data.success, false);
+    assert.equal(data.code, 'MISSING_API_KEY');
+    assert.ok(data.error.includes('GOOGLE_MAPS_API_KEY'));
+  } else {
+    // If API key is present in environment, it succeeds
+    assert.equal(res.status, 200);
+    assert.equal(data.success, true);
+    assert.ok(data.dossie);
+  }
 
   server.close();
 });

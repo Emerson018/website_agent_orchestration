@@ -759,8 +759,22 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
     }
 
     const payload = projeto?.resultado_json || {};
+
+    // Extrai possíveis links de Google Maps ou websites de additional_data.links se houver
+    let linkFromAdditional = null;
+    if (contactRecord?.additional_data?.links && Array.isArray(contactRecord.additional_data.links)) {
+      const mapsLink = contactRecord.additional_data.links.find(
+        (l) => l?.url && (l.url.includes('google.com/maps') || l.url.includes('maps.app.goo.gl') || l.url.includes('share.google'))
+      );
+      const siteLink = contactRecord.additional_data.links.find(
+        (l) => l?.url && (l.label?.toLowerCase().includes('site') || l.url.startsWith('http'))
+      );
+      linkFromAdditional = mapsLink?.url || siteLink?.url || null;
+    }
+
     const candidateQuery =
       req.body?.query ||
+      linkFromAdditional ||
       contactRecord?.additional_data?.query ||
       contactRecord?.additional_data?.website ||
       contactRecord?.company ||
@@ -776,7 +790,9 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
     }
 
     const mapsKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_API_KEY;
-    const result = await buildLeadDossier(candidateQuery, mapsKey);
+    const result = await buildLeadDossier(candidateQuery, mapsKey, {
+      additionalLinks: contactRecord?.additional_data?.links || [],
+    });
     if (!result.success) {
       return res.status(result.code === 'MISSING_API_KEY' ? 412 : 400).json(result);
     }
@@ -795,19 +811,26 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
           ...(projeto.resultado_json || {}),
           dossie: result.dossie,
         };
-        await supabase
+        const { error: pErr } = await supabase
           .from('fila_projetos')
           .update({ resultado_json: updatedResultado })
           .eq('id', projeto.id);
+        if (pErr) {
+          console.warn(`[GoogleMaps] Erro ao atualizar fila_projetos(${projeto.id}):`, pErr.message);
+        }
       }
 
       const contactId = payload.contact_id || contactRecord?.id || (isNaN(Number(id)) ? id : null);
       if (contactId) {
-        const { data: contact } = await supabase
+        const { data: contact, error: getErr } = await supabase
           .from('contacts')
-          .select('company, website, additional_data')
+          .select('id, company, additional_data')
           .eq('id', contactId)
           .maybeSingle();
+
+        if (getErr) {
+          console.warn(`[GoogleMaps] Erro ao buscar contact(${contactId}):`, getErr.message);
+        }
 
         const currentAddData = contact?.additional_data || {};
         const verifiedName = result.dossie?.nome_verificado;
@@ -816,6 +839,7 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
         const updateContactFields = {
           additional_data: {
             ...currentAddData,
+            website: verifiedWebsite || currentAddData.website || '',
             dossie: result.dossie,
           },
         };
@@ -832,16 +856,17 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
           updateContactFields.company = verifiedName;
         }
 
-        // Atualiza website se fornecido pelo Maps
-        if (verifiedWebsite) {
-          updateContactFields.website = verifiedWebsite;
-        }
-
         // Importante: contacts.phone NUNCA é sobrescrito aqui! Permanece intacto como o WhatsApp do lead.
-        await supabase
+        const { error: updErr } = await supabase
           .from('contacts')
           .update(updateContactFields)
           .eq('id', contactId);
+
+        if (updErr) {
+          console.error(`[GoogleMaps] Erro ao salvar dossiê em contacts(${contactId}):`, updErr);
+        } else {
+          console.log(`[GoogleMaps] Dossiê salvo com sucesso em contacts(${contactId})!`);
+        }
       }
     }
 

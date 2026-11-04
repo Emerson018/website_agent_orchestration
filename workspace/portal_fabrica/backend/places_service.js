@@ -15,8 +15,8 @@ export async function extractPlaceQueryFromUrl(input) {
   try {
     let targetUrl = trimmed;
 
-    // Se for URL encurtada (ex: maps.app.goo.gl ou goo.gl/maps), resolve o redirecionamento
-    if (trimmed.includes('goo.gl') || trimmed.includes('maps.app.goo.gl')) {
+    // Se for URL encurtada (ex: maps.app.goo.gl, goo.gl ou share.google), resolve o redirecionamento
+    if (trimmed.includes('goo.gl') || trimmed.includes('maps.app.goo.gl') || trimmed.includes('share.google')) {
       try {
         const redirectRes = await fetch(trimmed, {
           method: 'GET',
@@ -93,9 +93,212 @@ export function synthesizeServiceModalities(place) {
 }
 
 /**
+ * Sintetiza comodidades e informações relevantes detalhadas (acessibilidade, pagamento, estacionamento, ambiente).
+ */
+export function synthesizeAmenitiesAndInfo(place) {
+  if (!place) {
+    return {
+      resumo_editorial: '',
+      faixa_preco: 'Não informado',
+      comodidades: [],
+    };
+  }
+
+  const resumo = place.editorialSummary?.text || '';
+
+  const priceMap = {
+    PRICE_LEVEL_FREE: 'Gratuito',
+    PRICE_LEVEL_INEXPENSIVE: 'Econômico ($)',
+    PRICE_LEVEL_MODERATE: 'Moderado ($$)',
+    PRICE_LEVEL_EXPENSIVE: 'Sofisticado ($$$)',
+    PRICE_LEVEL_VERY_EXPENSIVE: 'Alto Padrão ($$$$)',
+  };
+  const faixaPreco = priceMap[place.priceLevel] || (place.priceLevel ? 'Moderado' : 'Não informado');
+
+  const comodidades = [];
+
+  // Acessibilidade
+  const acc = place.accessibilityOptions || {};
+  if (acc.wheelchairAccessibleEntrance || acc.wheelchairAccessibleSeating || acc.wheelchairAccessibleRestroom || acc.wheelchairAccessibleParking) {
+    comodidades.push('Acessível para cadeirantes');
+  }
+
+  // Meios de Pagamento
+  const pay = place.paymentOptions || {};
+  if (pay.acceptsCreditCards || pay.acceptsDebitCards) {
+    comodidades.push('Aceita cartões de crédito/débito');
+  }
+  if (pay.acceptsNfc) {
+    comodidades.push('Pagamento por aproximação (NFC)');
+  }
+  if (pay.acceptsCashOnly) {
+    comodidades.push('Somente dinheiro');
+  }
+
+  // Estacionamento
+  const park = place.parkingOptions || {};
+  if (park.freeParkingLot || park.freeStreetParking) {
+    comodidades.push('Estacionamento gratuito');
+  } else if (park.paidParkingLot || park.paidStreetParking) {
+    comodidades.push('Estacionamento pago');
+  }
+  if (park.valetParking) {
+    comodidades.push('Serviço de manobrista');
+  }
+
+  // Ambiente / Instalações
+  if (place.outdoorSeating) comodidades.push('Mesas ao ar livre');
+  if (place.allowsDogs) comodidades.push('Pet friendly');
+  if (place.reservable) comodidades.push('Aceita reservas');
+  if (place.goodForChildren) comodidades.push('Bom para crianças');
+  if (place.goodForGroups) comodidades.push('Bom para grupos');
+  if (place.liveMusic) comodidades.push('Música ao vivo');
+  if (place.restroom) comodidades.push('Banheiro no local');
+
+  return {
+    resumo_editorial: resumo,
+    faixa_preco: faixaPreco,
+    comodidades,
+  };
+}
+
+/**
+ * Consolida presença digital externa (redes sociais, diretórios, marketplaces) a partir do HTML do site e links do lead.
+ */
+export function extractWebResults({ html, additionalLinks = [] }) {
+  const results = [];
+  const seenUrls = new Set();
+
+  function addResult(url, tipo, titulo) {
+    if (!url || typeof url !== 'string') return;
+    const cleanUrl = url.trim();
+    if (!cleanUrl || !cleanUrl.startsWith('http')) return;
+    const norm = cleanUrl.toLowerCase().replace(/\/+$/, '');
+    if (seenUrls.has(norm)) return;
+    seenUrls.add(norm);
+    results.push({ titulo, url: cleanUrl, tipo });
+  }
+
+  // 1. Processa links informados no briefing
+  if (Array.isArray(additionalLinks)) {
+    for (const item of additionalLinks) {
+      const url = item?.url;
+      if (!url) continue;
+      const label = item.label || '';
+      if (url.includes('instagram.com')) addResult(url, 'instagram', 'Instagram');
+      else if (url.includes('facebook.com')) addResult(url, 'facebook', 'Facebook');
+      else if (url.includes('ifood.com.br')) addResult(url, 'ifood', 'iFood');
+      else if (url.includes('tripadvisor')) addResult(url, 'tripadvisor', 'TripAdvisor');
+      else if (url.includes('linkedin.com')) addResult(url, 'linkedin', 'LinkedIn');
+      else if (url.includes('tiktok.com')) addResult(url, 'tiktok', 'TikTok');
+      else if (url.includes('youtube.com')) addResult(url, 'youtube', 'YouTube');
+      else if (label.toLowerCase().includes('site')) addResult(url, 'site', 'Site Oficial');
+      else addResult(url, 'web', label || 'Link Web');
+    }
+  }
+
+  // 2. Extrai links de redes sociais do HTML do site
+  if (html && typeof html === 'string') {
+    const socialPatterns = [
+      { regex: /https?:\/\/(?:www\.)?instagram\.com\/[a-zA-Z0-9_.-]+(?:\/)?/gi, tipo: 'instagram', titulo: 'Instagram' },
+      { regex: /https?:\/\/(?:www\.)?facebook\.com\/[a-zA-Z0-9_.-]+(?:\/)?/gi, tipo: 'facebook', titulo: 'Facebook' },
+      { regex: /https?:\/\/(?:www\.)?ifood\.com\.br\/delivery\/[^\s"'<>]+/gi, tipo: 'ifood', titulo: 'iFood' },
+      { regex: /https?:\/\/(?:www\.)?tripadvisor\.(?:com|com\.br)\/[^\s"'<>]+/gi, tipo: 'tripadvisor', titulo: 'TripAdvisor' },
+      { regex: /https?:\/\/(?:www\.)?linkedin\.com\/(?:company|in)\/[a-zA-Z0-9_.-]+(?:\/)?/gi, tipo: 'linkedin', titulo: 'LinkedIn' },
+      { regex: /https?:\/\/(?:www\.)?tiktok\.com\/@[a-zA-Z0-9_.-]+(?:\/)?/gi, tipo: 'tiktok', titulo: 'TikTok' },
+      { regex: /https?:\/\/(?:www\.)?youtube\.com\/(?:@|c\/|channel\/)?[a-zA-Z0-9_.-]+(?:\/)?/gi, tipo: 'youtube', titulo: 'YouTube' },
+    ];
+
+    for (const { regex, tipo, titulo } of socialPatterns) {
+      const matches = html.match(regex);
+      if (matches) {
+        for (const m of matches) {
+          if (m.includes('/sharer') || m.includes('/intent') || m.includes('/policies')) continue;
+          addResult(m, tipo, titulo);
+        }
+      }
+    }
+  }
+
+  return results;
+}
+
+
+/**
  * Inspeciona o site oficial do estabelecimento em busca de links de cardápio digital ou delivery.
  */
+export async function extractMenuLinkAndHtml(websiteUrl) {
+  if (!websiteUrl || typeof websiteUrl !== 'string') return { menuLink: null, html: null };
+  const trimmed = websiteUrl.trim();
+  if (!trimmed) return { menuLink: null, html: null };
+
+  const targetUrl = trimmed.startsWith('http://') || trimmed.startsWith('https://')
+    ? trimmed
+    : `https://${trimmed}`;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+    const res = await fetch(targetUrl, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+      },
+      redirect: 'follow',
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) return { menuLink: null, html: null };
+
+    const html = await res.text();
+    if (!html) return { menuLink: null, html: null };
+
+    // 1. Procura por links de plataformas de cardápio conhecidas
+    const platformMatches = html.match(
+      /https?:\/\/(?:www\.)?(?:(?:[a-zA-Z0-9-]+\.)?ifood\.com\.br|(?:[a-zA-Z0-9-]+\.)?goomer\.(?:app|me)|(?:[a-zA-Z0-9-]+\.)?anota\.ai|(?:[a-zA-Z0-9-]+\.)?ola\.click|(?:[a-zA-Z0-9-]+\.)?olaclick\.com|(?:[a-zA-Z0-9-]+\.)?cardapioweb\.com|(?:[a-zA-Z0-9-]+\.)?instadelivery\.com\.br|(?:[a-zA-Z0-9-]+\.)?deliverydireto\.com\.br)[^\s"'<>]+/i
+    );
+    if (platformMatches && platformMatches[0]) {
+      return { menuLink: platformMatches[0], html };
+    }
+
+    // 2. Procura por tags <a> com href ou texto contendo palavras-chave de cardápio
+    const linkRegex = /<a\s+(?:[^>]*?\s+)?href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gis;
+    let match;
+    while ((match = linkRegex.exec(html)) !== null) {
+      const href = match[1];
+      const text = match[2].toLowerCase();
+
+      const isMenuHref = /\/(cardapio|menu|pedir|pedidos|cardapio-digital)/i.test(href);
+      const isMenuText = /(cardápio|cardapio|nosso menu|ver menu|faça seu pedido|fazer pedido|pedir online)/i.test(text);
+
+      if (isMenuHref || isMenuText) {
+        if (href.startsWith('http://') || href.startsWith('https://')) {
+          return { menuLink: href, html };
+        }
+        try {
+          const resolved = new URL(href, targetUrl).toString();
+          return { menuLink: resolved, html };
+        } catch {
+          // ignore invalid relative url
+        }
+      }
+    }
+
+    return { menuLink: null, html };
+  } catch (err) {
+    return { menuLink: null, html: null };
+  }
+}
+
 export async function extractMenuLink(websiteUrl) {
+  const { menuLink } = await extractMenuLinkAndHtml(websiteUrl);
+  return menuLink;
+}
+
+async function unusedOldExtractMenuLink(websiteUrl) {
   if (!websiteUrl || typeof websiteUrl !== 'string') return null;
   const trimmed = websiteUrl.trim();
   if (!trimmed) return null;
@@ -319,7 +522,7 @@ export async function synthesizeSentimentAndPitch({ name, rating, user_ratings_t
 /**
  * Constrói o Lead Dossier completo consultando a Google Places API oficial.
  */
-export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_MAPS_API_KEY) {
+export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_MAPS_API_KEY, options = {}) {
   if (!apiKey || apiKey.trim() === '' || apiKey.includes('sua-chave') || apiKey.includes('placeholder')) {
     return {
       success: false,
@@ -363,6 +566,16 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
       'places.takeout',
       'places.curbsidePickup',
       'places.reservable',
+      'places.editorialSummary',
+      'places.accessibilityOptions',
+      'places.paymentOptions',
+      'places.parkingOptions',
+      'places.outdoorSeating',
+      'places.allowsDogs',
+      'places.restroom',
+      'places.goodForChildren',
+      'places.goodForGroups',
+      'places.liveMusic',
     ].join(',');
 
     const v1Res = await fetch('https://places.googleapis.com/v1/places:searchText', {
@@ -401,18 +614,41 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
             rating: rev.rating || 5,
             text: rev.text?.text || rev.originalText?.text || '',
             published_time: rev.relativePublishTimeDescription || '',
+            publish_time: rev.publishTime || '',
           }))
         : [];
 
-      // 4 primeiras avaliações positivas (rating >= 4)
-      const positiveReviews = normalizedReviews
-        .filter((rev) => Number(rev.rating) >= 4)
+      // Ordenação cronológica estrita: mais recentes primeiro
+      const sortedReviews = [...normalizedReviews].sort((a, b) => {
+        if (!a.publish_time || !b.publish_time) return 0;
+        return new Date(b.publish_time).getTime() - new Date(a.publish_time).getTime();
+      });
+
+      // Últimas avaliações com 5 estrelas (estritamente rating === 5, até 4)
+      const positiveReviews = sortedReviews
+        .filter((rev) => Number(rev.rating) === 5)
         .slice(0, 4)
         .map((rev) => ({
           author: rev.author_name || 'Cliente',
-          rating: Number(rev.rating) || 5,
+          rating: 5,
           text: rev.text || '',
+          published_time: rev.published_time || '',
         }));
+
+      // Últimas avaliações de desafios/dores (rating <= 3, até 2)
+      const rawNegativeReviews = sortedReviews
+        .filter((rev) => Number(rev.rating) <= 3)
+        .slice(0, 2)
+        .map((rev) => ({
+          author: rev.author_name || 'Cliente',
+          rating: Number(rev.rating) || 1,
+          text: rev.text || '',
+          published_time: rev.published_time || '',
+        }));
+
+      const doresDestaque = rawNegativeReviews.length > 0
+        ? rawNegativeReviews
+        : [{ author: 'Google Maps', rating: 5, text: 'Sem nenhuma avaliação negativa.' }];
 
       // Fotos limitadas estritamente a 6 fotos
       const rawPhotos = Array.isArray(place.photos)
@@ -429,11 +665,20 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
       // Classificação multimodal assíncrona com fallback resiliente
       const classifiedPhotos = await classifyPhotosWithGemini(rawPhotos, cleanKey);
 
-      // Link do cardápio crawler no website oficial
-      const menuLink = await extractMenuLink(place.websiteUri);
+      // Link do cardápio e HTML do website oficial
+      const { menuLink, html: siteHtml } = await extractMenuLinkAndHtml(place.websiteUri);
 
       // Modalidades de atendimento (entrega, local, retirada)
       const modalidadesAtendimento = synthesizeServiceModalities(place);
+
+      // Comodidades e informações relevantes
+      const informacoesRelevantes = synthesizeAmenitiesAndInfo(place);
+
+      // Resultados da web (presença digital consolidada)
+      const resultadosWeb = extractWebResults({
+        html: siteHtml,
+        additionalLinks: options.additionalLinks || [],
+      });
 
       const sentiment = await synthesizeSentimentAndPitch({
         name: verifiedName,
@@ -455,7 +700,10 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
         site_oficial: place.websiteUri || '',
         link_cardapio: menuLink || null,
         modalidades_atendimento: modalidadesAtendimento,
+        informacoes_relevantes: informacoesRelevantes,
+        resultados_web: resultadosWeb,
         avaliacoes_positivas: positiveReviews,
+        dores_destaque: doresDestaque,
         google_maps_url: place.googleMapsUri || `https://www.google.com/maps/place/?q=place_id:${placeId}`,
         nota: place.rating || null,
         total_avaliacoes: place.userRatingCount || 0,
@@ -463,7 +711,10 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
         aberto_agora: Boolean(place.regularOpeningHours?.openNow),
         fotos: classifiedPhotos,
         categorias: place.types || [],
-        ...sentiment,
+        rating_score: place.rating || null,
+        total_reviews: place.userRatingCount || sortedReviews.length,
+        pitch_comercial_sugerido: sentiment.pitch_comercial_sugerido,
+        nicho_detectado: sentiment.nicho_detectado,
         consultado_em: new Date().toISOString(),
       };
 

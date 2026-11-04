@@ -18,6 +18,7 @@ import {
   Sparkles,
   Copy,
   Check,
+  CheckCircle2,
   RefreshCw,
   ExternalLink,
   Loader2,
@@ -105,8 +106,19 @@ export default function ContactProfilePage() {
     if (!contactId) return;
     setEnrichingDossier(true);
     try {
+      const additionalLinks = ((contact?.additional_data as any)?.links as Array<{ url: string; label?: string }>) || [];
+      const mapsLink = additionalLinks.find(
+        (l) => l?.url && (l.url.includes('google.com/maps') || l.url.includes('maps.app.goo.gl') || l.url.includes('share.google'))
+      )?.url;
+      const siteLink = additionalLinks.find(
+        (l) => l?.url && (l.label?.toLowerCase().includes('site') || l.url.startsWith('http'))
+      )?.url;
+
       const searchQuery =
         dossie?.link_google_maps ||
+        dossie?.google_maps_url ||
+        mapsLink ||
+        siteLink ||
         (companyName !== 'Lead Sem Nome' ? companyName : (contact?.company || contact?.name || ''));
 
       const res = await fetch(`/api/leads/${contactId}/enrich-dossier`, {
@@ -116,6 +128,21 @@ export default function ContactProfilePage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Falha ao consultar Google Maps.');
+
+      if (data.dossie) {
+        setContact((prev: any) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            company: data.dossie.nome_verificado || prev.company,
+            website: data.dossie.site_oficial || prev.website,
+            additional_data: {
+              ...(prev.additional_data || {}),
+              dossie: data.dossie,
+            },
+          };
+        });
+      }
 
       toast.success('Dossiê do Google Maps atualizado com sucesso!');
       await fetchContactData();
@@ -398,6 +425,65 @@ export default function ContactProfilePage() {
             </div>
           </div>
 
+          {/* Card: Informações Relevantes & Comodidades */}
+          {dossie?.informacoes_relevantes && (
+            <div className="p-5 rounded-2xl bg-card border border-border space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-2">
+                  <Sparkles className="size-4 text-primary" />
+                  Informações Relevantes & Comodidades
+                </h2>
+                {dossie.informacoes_relevantes.faixa_preco && dossie.informacoes_relevantes.faixa_preco !== 'Não informado' && (
+                  <Badge variant="outline" className="text-xs">
+                    {dossie.informacoes_relevantes.faixa_preco}
+                  </Badge>
+                )}
+              </div>
+
+              {dossie.informacoes_relevantes.resumo_editorial && (
+                <p className="text-xs text-muted-foreground italic border-l-2 border-primary/50 pl-2.5 py-0.5">
+                  &quot;{dossie.informacoes_relevantes.resumo_editorial}&quot;
+                </p>
+              )}
+
+              {dossie.informacoes_relevantes.comodidades && dossie.informacoes_relevantes.comodidades.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {dossie.informacoes_relevantes.comodidades.map((item: string, idx: number) => (
+                    <Badge key={idx} variant="secondary" className="text-[11px] font-normal py-0.5 px-2">
+                      {item}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Nenhuma comodidade adicional especificada no Maps.</p>
+              )}
+            </div>
+          )}
+
+          {/* Card: Resultados da Web & Presença Digital */}
+          {dossie?.resultados_web && dossie.resultados_web.length > 0 && (
+            <div className="p-5 rounded-2xl bg-card border border-border space-y-3">
+              <h2 className="text-sm font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-2">
+                <Globe className="size-4 text-primary" />
+                Resultados da Web & Presença Digital
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {dossie.resultados_web.map((link: any, idx: number) => (
+                  <a
+                    key={idx}
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/80 bg-background hover:bg-muted/50 hover:border-primary text-xs text-foreground transition group"
+                  >
+                    <span className="font-medium">{link.titulo}</span>
+                    <ExternalLink className="size-3 text-muted-foreground group-hover:text-primary transition" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Card: Depoimentos e Sentimento Real dos Clientes */}
           <div className="p-5 rounded-2xl bg-card border border-border space-y-4">
             <h2 className="text-sm font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-2">
@@ -405,13 +491,13 @@ export default function ContactProfilePage() {
               Depoimentos e Percepção dos Clientes
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* 4 Primeiras Avaliações Positivas */}
+            <div className="space-y-4">
+              {/* Últimas avaliações com 5 estrelas */}
               {dossie?.avaliacoes_positivas && dossie.avaliacoes_positivas.length > 0 && (
-                <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20 space-y-2 col-span-1 sm:col-span-2">
+                <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20 space-y-2">
                   <h3 className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 uppercase">
                     <ThumbsUp className="size-3.5" />
-                    4 Primeiras Avaliações Positivas (Google Maps)
+                    Últimas avaliações com 5 estrelas
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     {dossie.avaliacoes_positivas.slice(0, 4).map((p: any, idx: number) => (
@@ -427,41 +513,37 @@ export default function ContactProfilePage() {
                 </div>
               )}
 
-              {/* Elogios Destaque */}
-              <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20 space-y-2">
-                <h3 className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 uppercase">
-                  <ThumbsUp className="size-3.5" />
-                  Elogios Recorrentes
-                </h3>
-                {dossie?.elogios_destaque && dossie.elogios_destaque.length > 0 ? (
-                  <ul className="space-y-2 text-xs text-foreground/90">
-                    {dossie.elogios_destaque.slice(0, 3).map((e: any, idx: number) => (
-                      <li key={idx} className="italic border-l-2 border-emerald-500/50 pl-2">
-                        &quot;{e.text}&quot; <span className="text-muted-foreground text-[10px]">— {e.author}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-xs text-muted-foreground">Nenhum elogio destacado capturado.</p>
-                )}
-              </div>
-
-              {/* Dores / Desafios Apontados */}
+              {/* Desafios & Dores de Atendimento (Últimas avaliações <= 3 estrelas) */}
               <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-500/20 space-y-2">
                 <h3 className="text-xs font-bold text-amber-400 flex items-center gap-1.5 uppercase">
                   <AlertTriangle className="size-3.5" />
-                  Desafios & Dores de Atendimento
+                  Desafios & Dores de Atendimento (Google Maps)
                 </h3>
                 {dossie?.dores_destaque && dossie.dores_destaque.length > 0 ? (
-                  <ul className="space-y-2 text-xs text-foreground/90">
-                    {dossie.dores_destaque.slice(0, 3).map((d: any, idx: number) => (
-                      <li key={idx} className="italic border-l-2 border-amber-500/50 pl-2">
-                        &quot;{d.text}&quot; <span className="text-muted-foreground text-[10px]">— {d.author}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="space-y-2 text-xs">
+                    {dossie.dores_destaque.slice(0, 2).map((d: any, idx: number) => {
+                      const isNoNegative = d.text === 'Sem nenhuma avaliação negativa.';
+                      return isNoNegative ? (
+                        <div key={idx} className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
+                          <CheckCircle2 className="size-4" />
+                          <span>Sem nenhuma avaliação negativa.</span>
+                        </div>
+                      ) : (
+                        <div key={idx} className="p-2.5 rounded-lg bg-background/40 border border-amber-500/20 space-y-1">
+                          <div className="flex items-center justify-between text-[11px] font-semibold text-foreground">
+                            <span>{d.author}</span>
+                            <span className="text-amber-400">★ {d.rating}</span>
+                          </div>
+                          <p className="italic text-muted-foreground">&quot;{d.text}&quot;</p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground">Nenhuma dor crítica registrada nas avaliações.</p>
+                  <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
+                    <CheckCircle2 className="size-4" />
+                    <span>Sem nenhuma avaliação negativa.</span>
+                  </div>
                 )}
               </div>
             </div>

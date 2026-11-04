@@ -26,6 +26,18 @@ _Avoid_: Photo tagging, raw image list, album tags
 The official commercial landline or mobile contact number retrieved from Google Places API (dossie.telefone_estabelecimento), explicitly preserved alongside and decoupled from the lead's personal WhatsApp contact phone (contacts.phone) to prevent communication routing corruption while highlighting data discrepancies in the CRM.
 _Avoid_: Phone override, company phone, fallback number
 
+**Informações Relevantes & Comodidades (Establishment Amenities & Relevant Info)**:
+Structured physical and operational traits retrieved from Google Places API (editorialSummary, accessibilityOptions, paymentOptions, parkingOptions, outdoorSeating, allowsDogs), providing a rich operational digest of accessibility, accepted tender, parking availability, and ambient features without manual research.
+_Avoid_: Generic tags, metadata dump, feature list
+
+**Resultados da Web (Web Results)**:
+The consolidated list of verified external digital presence links (Instagram, Facebook, iFood, TripAdvisor, LinkedIn, etc.) synthesized by crawling the client's official site, ingesting briefing links, and querying public digital presence channels, providing direct access to the brand's broader footprint across the internet.
+_Avoid_: External backlinks, random search links, unverified URLs
+
+**Avaliações 5 Estrelas e Desafios de Atendimento (5-Star Reviews & Operational Pain Points)**:
+The strict chronological review partitioning in the Lead Dossier separating up to 4 latest 5-star customer reviews (for genuine social proof and brand advocacy) and up to 2 latest constructive/negative reviews (rating <= 3, or fallback to 'Sem nenhuma avaliação negativa.') to equip the operator with actionable hooks for sales pitches and friction resolution.
+_Avoid_: Random reviews, all praise, unfiltered testimonials
+
 **Decision Gate**:
 The mandatory human evaluation checkpoint in the CRM and Factory Portal where an operator inspects the Lead Dossier to choose between initiating PWA generation, generating an AI sales pitch, or disqualifying the lead.
 _Avoid_: Auto-builder, silent pipeline, background generator

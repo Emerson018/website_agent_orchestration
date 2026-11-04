@@ -62,6 +62,16 @@ export interface LeadDossierData {
   }>;
   horarios_funcionamento?: string[];
   aberto_agora?: boolean;
+  informacoes_relevantes?: {
+    resumo_editorial?: string;
+    faixa_preco?: string;
+    comodidades?: string[];
+  };
+  resultados_web?: Array<{
+    titulo: string;
+    url: string;
+    tipo: string;
+  }>;
 }
 
 interface LeadDossierCardProps {
@@ -359,13 +369,13 @@ export function LeadDossierCard({
       {/* Alerta de Divergência de Telefones (Lead WhatsApp vs Maps) */}
       {hasPhoneDivergence && (
         <div className="rounded-lg bg-blue-500/10 border border-blue-500/30 p-2.5 space-y-1.5 text-xs">
-          <div className="flex items-center justify-between text-blue-400 font-semibold">
-            <span className="flex items-center gap-1">
-              <PhoneCall className="h-3.5 w-3.5" />
-              Telefones Diferentes Detectados
+          <div className="flex items-center justify-between text-foreground font-semibold">
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <PhoneCall className="h-3.5 w-3.5 text-primary" />
+              Canais de Contato Identificados
             </span>
-            <Badge variant="outline" className="text-[9px] border-blue-500/40 text-blue-400">
-              Divergente
+            <Badge variant="outline" className="text-[9px] border-border text-muted-foreground">
+              Verificado
             </Badge>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
@@ -407,7 +417,7 @@ export function LeadDossierCard({
         <div className="space-y-1.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 p-2.5">
           <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
             <ThumbsUp className="h-3.5 w-3.5" />
-            <span>4 Primeiras Avaliações Positivas (Google Maps):</span>
+            <span>Últimas avaliações com 5 estrelas:</span>
           </div>
           <div className="space-y-1.5">
             {dossie.avaliacoes_positivas.slice(0, 4).map((pos, idx) => (
@@ -423,18 +433,77 @@ export function LeadDossierCard({
         </div>
       )}
 
-      {/* Dores & Reclamações Recorrentes (Inteligência Comercial) */}
+      {/* Desafios / Avaliações Negativas ou Neutras */}
       {dossie.dores_destaque && dossie.dores_destaque.length > 0 && (
-        <div className="space-y-1.5 rounded-lg bg-red-500/5 border border-red-500/20 p-2.5">
-          <div className="flex items-center gap-1 text-[11px] font-bold text-red-400">
+        <div className="space-y-1.5 rounded-lg bg-amber-500/5 border border-amber-500/20 p-2.5">
+          <div className="flex items-center gap-1 text-[11px] font-bold text-amber-400">
             <AlertTriangle className="h-3.5 w-3.5" />
-            <span>Dores / Reclamações dos Clientes no Google:</span>
+            <span>Desafios / Avaliações Negativas (Google Maps):</span>
           </div>
           <div className="space-y-1">
-            {dossie.dores_destaque.map((pain, idx) => (
-              <p key={idx} className="text-[11px] text-muted-foreground italic">
-                &quot;{pain.text}&quot;
-              </p>
+            {dossie.dores_destaque.slice(0, 2).map((pain, idx) => (
+              pain.text === 'Sem nenhuma avaliação negativa.' ? (
+                <p key={idx} className="text-[11px] text-emerald-400 font-medium">
+                  ✓ Sem nenhuma avaliação negativa.
+                </p>
+              ) : (
+                <div key={idx} className="text-[11px] text-muted-foreground border-l-2 border-amber-500/40 pl-2">
+                  <div className="flex items-center gap-1 text-[10px] text-foreground font-semibold">
+                    <span>{pain.author}</span>
+                    <span className="text-amber-400">★ {pain.rating}</span>
+                  </div>
+                  <p className="italic line-clamp-2">&quot;{pain.text}&quot;</p>
+                </div>
+              )
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Informações Relevantes & Comodidades */}
+      {dossie.informacoes_relevantes && (
+        <div className="space-y-1.5 rounded-lg bg-muted/40 border border-border/60 p-2.5 text-xs">
+          <div className="flex items-center justify-between font-semibold text-foreground text-[11px]">
+            <span>Informações Relevantes & Comodidades</span>
+            {dossie.informacoes_relevantes.faixa_preco && dossie.informacoes_relevantes.faixa_preco !== 'Não informado' && (
+              <Badge variant="secondary" className="text-[9px]">
+                {dossie.informacoes_relevantes.faixa_preco}
+              </Badge>
+            )}
+          </div>
+          {dossie.informacoes_relevantes.resumo_editorial && (
+            <p className="text-[11px] text-muted-foreground italic border-l-2 border-primary/40 pl-2">
+              &quot;{dossie.informacoes_relevantes.resumo_editorial}&quot;
+            </p>
+          )}
+          {dossie.informacoes_relevantes.comodidades && dossie.informacoes_relevantes.comodidades.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-1">
+              {dossie.informacoes_relevantes.comodidades.map((com, idx) => (
+                <Badge key={idx} variant="outline" className="text-[9px] py-0 px-1.5 bg-background/50">
+                  {com}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Resultados da Web (Presença Digital) */}
+      {dossie.resultados_web && dossie.resultados_web.length > 0 && (
+        <div className="space-y-1.5 rounded-lg bg-muted/40 border border-border/60 p-2.5 text-xs">
+          <span className="block font-semibold text-foreground text-[11px]">Resultados da Web:</span>
+          <div className="flex flex-wrap gap-1.5">
+            {dossie.resultados_web.map((link, idx) => (
+              <a
+                key={idx}
+                href={link.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-background border border-border/70 hover:border-primary text-foreground transition"
+              >
+                <span>{link.titulo}</span>
+                <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+              </a>
             ))}
           </div>
         </div>

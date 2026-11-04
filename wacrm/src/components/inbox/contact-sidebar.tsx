@@ -877,6 +877,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
             {/* Dossiê Comercial Google Maps & Decision Gate */}
             <div className="mt-3">
               <LeadDossierCard
+                leadId={contact.id}
                 dossie={(contact as any)?.additional_data?.dossie}
                 companyName={contact.company || contact.name}
                 targetUrl={contact.website || (contact as any)?.additional_data?.links?.[0]?.url}

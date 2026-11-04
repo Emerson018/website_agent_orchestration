@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  synthesizeAmenitiesAndInfo,
+  extractWebResults,
   extractPlaceQueryFromUrl,
   synthesizeSentimentAndPitch,
   buildLeadDossier,
@@ -162,4 +164,104 @@ test('places_service - positive reviews filtering retains max 4 reviews with rat
   assert.equal(positive.length, 4);
   assert.equal(positive[0].author, 'Ana');
   assert.equal(positive[3].author, 'Eduardo');
+});
+
+
+test('places_service - 5-star reviews and negative reviews partitioning', () => {
+  const reviews = [
+    { author_name: 'Antigo 5 Estrelas', rating: 5, text: 'Muito bom antigamente', publish_time: '2023-01-01T00:00:00Z' },
+    { author_name: 'Novo 5 Estrelas 1', rating: 5, text: 'Perfeito hoje', publish_time: '2024-05-01T00:00:00Z' },
+    { author_name: 'Novo 5 Estrelas 2', rating: 5, text: 'Adorei agora', publish_time: '2024-04-01T00:00:00Z' },
+    { author_name: 'Novo 5 Estrelas 3', rating: 5, text: 'Excelente!', publish_time: '2024-03-01T00:00:00Z' },
+    { author_name: 'Novo 5 Estrelas 4', rating: 5, text: 'Top!', publish_time: '2024-02-01T00:00:00Z' },
+    { author_name: 'Avaliacao 4 Estrelas', rating: 4, text: 'Bom mas nao 5', publish_time: '2024-05-10T00:00:00Z' },
+    { author_name: 'Critica 1', rating: 2, text: 'Demorou muito', publish_time: '2024-05-02T00:00:00Z' },
+    { author_name: 'Critica 2', rating: 3, text: 'Comida fria', publish_time: '2024-04-15T00:00:00Z' },
+    { author_name: 'Critica Antiga', rating: 1, text: 'Pessimo ano passado', publish_time: '2023-01-01T00:00:00Z' },
+  ];
+
+  const sorted = [...reviews].sort((a, b) => new Date(b.publish_time) - new Date(a.publish_time));
+
+  // 1. Strictly 5-star reviews, max 4, latest first
+  const fiveStars = sorted.filter(r => Number(r.rating) === 5).slice(0, 4);
+  assert.equal(fiveStars.length, 4);
+  assert.equal(fiveStars[0].author_name, 'Novo 5 Estrelas 1');
+  assert.equal(fiveStars[1].author_name, 'Novo 5 Estrelas 2');
+  assert.equal(fiveStars[2].author_name, 'Novo 5 Estrelas 3');
+  assert.equal(fiveStars[3].author_name, 'Novo 5 Estrelas 4');
+
+  // 2. Negative reviews <= 3, max 2, latest first
+  const negative = sorted.filter(r => Number(r.rating) <= 3).slice(0, 2);
+  assert.equal(negative.length, 2);
+  assert.equal(negative[0].author_name, 'Critica 1'); // May 2024
+  assert.equal(negative[1].author_name, 'Critica 2'); // April 2024
+
+  // 3. Fallback when no reviews <= 3
+  const allPositive = reviews.filter(r => r.rating >= 4);
+  const negativeFallback = allPositive.filter(r => r.rating <= 3);
+  const dores = negativeFallback.length > 0 ? negativeFallback : [{ author: 'Google Maps', rating: 5, text: 'Sem nenhuma avaliação negativa.' }];
+  assert.equal(dores.length, 1);
+  assert.equal(dores[0].text, 'Sem nenhuma avaliação negativa.');
+});
+
+
+
+test('places_service - synthesizeAmenitiesAndInfo produces clean badges and editorial summary', () => {
+  const mockPlace = {
+    editorialSummary: { text: 'Restaurante tradicional gaúcho com cortes nobres.' },
+    priceLevel: 'PRICE_LEVEL_MODERATE',
+    accessibilityOptions: {
+      wheelchairAccessibleEntrance: true,
+      wheelchairAccessibleRestroom: true,
+      wheelchairAccessibleSeating: true,
+    },
+    paymentOptions: {
+      acceptsCreditCards: true,
+      acceptsDebitCards: true,
+      acceptsNfc: true,
+    },
+    parkingOptions: {
+      freeParkingLot: true,
+    },
+    outdoorSeating: true,
+    allowsDogs: true,
+    reservable: true,
+  };
+
+  const info = synthesizeAmenitiesAndInfo(mockPlace);
+  assert.equal(info.resumo_editorial, 'Restaurante tradicional gaúcho com cortes nobres.');
+  assert.equal(info.faixa_preco, 'Moderado ($$)');
+  assert.ok(info.comodidades.includes('Acessível para cadeirantes'));
+  assert.ok(info.comodidades.includes('Aceita cartões de crédito/débito'));
+  assert.ok(info.comodidades.includes('Pagamento por aproximação (NFC)'));
+  assert.ok(info.comodidades.includes('Estacionamento gratuito'));
+  assert.ok(info.comodidades.includes('Mesas ao ar livre'));
+  assert.ok(info.comodidades.includes('Pet friendly'));
+  assert.ok(info.comodidades.includes('Aceita reservas'));
+});
+
+
+
+test('places_service - extractWebResults extracts social and directory links cleanly', () => {
+  const html = `
+    <html>
+      <body>
+        <footer>
+          <a href="https://instagram.com/fogao_oficial">Siga no Instagram</a>
+          <a href="https://facebook.com/fogaocampeiro">Facebook</a>
+          <a href="https://www.ifood.com.br/delivery/porto-alegre-rs/o-fogao">Pedir no iFood</a>
+        </footer>
+      </body>
+    </html>
+  `;
+  const additionalLinks = [
+    { url: 'https://instagram.com/fogao_oficial', label: 'Referência (instagram)' },
+    { url: 'https://tripadvisor.com.br/Restaurant_Review-123', label: 'TripAdvisor' }
+  ];
+
+  const results = extractWebResults({ html, additionalLinks });
+  assert.ok(results.some(r => r.tipo === 'instagram' && r.url.includes('instagram.com/fogao_oficial')));
+  assert.ok(results.some(r => r.tipo === 'facebook' && r.url.includes('facebook.com/fogaocampeiro')));
+  assert.ok(results.some(r => r.tipo === 'ifood' && r.url.includes('ifood.com.br')));
+  assert.ok(results.some(r => r.tipo === 'tripadvisor' && r.url.includes('tripadvisor.com.br')));
 });
