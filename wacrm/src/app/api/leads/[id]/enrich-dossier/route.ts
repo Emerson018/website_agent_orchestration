@@ -9,19 +9,30 @@ export async function POST(
     const body = await req.json().catch(() => ({}));
     const portalUrl = process.env.NEXT_PUBLIC_PORTAL_API_URL || 'http://localhost:5000';
 
-    let backendRes: Response;
+    let backendRes: Response | null = null;
+    let lastNetworkErr: any = null;
+
     try {
       backendRes = await fetch(`${portalUrl}/api/leads/${id}/enrich-dossier`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-    } catch {
-      backendRes = await fetch(`http://127.0.0.1:5000/api/leads/${id}/enrich-dossier`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+    } catch (err) {
+      lastNetworkErr = err;
+      try {
+        backendRes = await fetch(`http://127.0.0.1:5000/api/leads/${id}/enrich-dossier`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+      } catch (err2) {
+        lastNetworkErr = err2;
+      }
+    }
+
+    if (!backendRes) {
+      throw lastNetworkErr || new Error('Falha ao comunicar com o servidor backend.');
     }
 
     const contentType = backendRes.headers.get('content-type') || '';
@@ -32,13 +43,22 @@ export async function POST(
 
     const text = await backendRes.text();
     return NextResponse.json(
-      { error: `Servidor retornou erro (${backendRes.status}): ${text.slice(0, 150)}` },
+      { error: `Servidor retornou resposta inesperada (${backendRes.status}): ${text.slice(0, 150)}` },
       { status: backendRes.status || 500 }
     );
   } catch (err: any) {
+    const isConnRefused =
+      err?.message?.includes('fetch failed') ||
+      err?.cause?.code === 'ECONNREFUSED' ||
+      err?.cause?.code === 'ENOTFOUND';
+
+    const errorMessage = isConnRefused
+      ? 'Não foi possível conectar ao servidor backend (porta 5000). Verifique se o serviço do backend está ativo.'
+      : err?.message || 'Erro ao conectar à API do Google Maps.';
+
     return NextResponse.json(
-      { error: err.message || 'Erro ao conectar à API do Google Maps.' },
-      { status: 500 }
+      { error: errorMessage },
+      { status: isConnRefused ? 503 : 500 }
     );
   }
 }

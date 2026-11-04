@@ -125,10 +125,17 @@ export default function LandingPage() {
       });
 
       if (!res.ok) {
-        let serverMessage = `Erro ao enviar solicitação (Código ${res.status}).`;
+        let serverMessage = Erro ao enviar solicitação (Código ).;
         try {
-          const errBody = await res.json();
-          if (errBody?.error) serverMessage = errBody.error;
+          const text = await res.text();
+          try {
+            const errBody = JSON.parse(text);
+            if (errBody?.error) serverMessage = errBody.error;
+          } catch {
+            if (text.includes('ECONNREFUSED') || text.includes('proxy error') || res.status === 500) {
+              serverMessage = 'Não foi possível conectar ao servidor backend (porta 5000). Verifique se o serviço está em execução.';
+            }
+          }
         } catch {}
         throw new Error(serverMessage);
       }
