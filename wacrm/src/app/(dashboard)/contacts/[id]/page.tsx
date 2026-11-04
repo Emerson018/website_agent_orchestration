@@ -26,6 +26,10 @@ import {
   AlertTriangle,
   RotateCcw,
   MessageCircle,
+  Utensils,
+  Bike,
+  Store,
+  PhoneCall,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -209,9 +213,16 @@ export default function ContactProfilePage() {
                 </Badge>
               )}
             </h1>
-            <p className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-              <span>{contact.phone}</span>
+            <p className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5 flex-wrap">
+              <span>WhatsApp: <strong>{contact.phone}</strong></span>
               {contact.email && <span>• {contact.email}</span>}
+              {dossie?.telefone_estabelecimento &&
+                contact.phone?.replace(/\D/g, '') !== dossie.telefone_estabelecimento.replace(/\D/g, '') && (
+                  <span className="flex items-center gap-1 text-blue-400">
+                    • <PhoneCall className="size-3" /> Maps: <strong>{dossie.telefone_estabelecimento}</strong>
+                    <Badge variant="outline" className="text-[9px] py-0 px-1 border-blue-500/40 text-blue-400">Divergente</Badge>
+                  </span>
+                )}
               {dossie?.nicho_detectado && (
                 <span className="capitalize text-primary">• {dossie.nicho_detectado}</span>
               )}
@@ -240,6 +251,18 @@ export default function ContactProfilePage() {
             <Sparkles className={`size-3.5 ${diagnosing ? 'animate-spin' : ''}`} />
             {diagnosing ? 'IA Diagnosticando...' : 'Diagnosticar com IA'}
           </Button>
+
+          {dossie?.link_cardapio && (
+            <a
+              href={dossie.link_cardapio}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition shadow-sm"
+            >
+              <Utensils className="size-3.5" />
+              Cardápio
+            </a>
+          )}
 
           {contact.phone && (
             <a
@@ -272,7 +295,7 @@ export default function ContactProfilePage() {
 
               {/* Grid de Fotos */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {dossie.fotos.slice(0, 10).map((foto: any, index: number) => (
+                {dossie.fotos.slice(0, 6).map((foto: any, index: number) => (
                   <div
                     key={index}
                     onClick={() => setActivePhoto(foto.photo_url)}
@@ -285,6 +308,11 @@ export default function ContactProfilePage() {
                       className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                       loading="lazy"
                     />
+                    {foto.tipo === 'cardapio' && (
+                      <span className="absolute bottom-1 left-1 bg-amber-600/90 text-white font-bold text-[9px] px-1.5 py-0.5 rounded shadow">
+                        Cardápio
+                      </span>
+                    )}
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                       <ExternalLink className="size-4 text-white drop-shadow" />
                     </div>
@@ -302,6 +330,30 @@ export default function ContactProfilePage() {
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            {/* Modalidades de Atendimento */}
+            {dossie?.modalidades_atendimento && (
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-border/40">
+                {dossie.modalidades_atendimento.permite_entrega && (
+                  <Badge variant="outline" className="text-[10px] gap-1 bg-emerald-500/10 border-emerald-500/30 text-emerald-400">
+                    <Bike className="size-3" />
+                    Entrega / Delivery
+                  </Badge>
+                )}
+                {dossie.modalidades_atendimento.permite_consumo_local && (
+                  <Badge variant="outline" className="text-[10px] gap-1 bg-blue-500/10 border-blue-500/30 text-blue-400">
+                    <Store className="size-3" />
+                    Consumo no Local
+                  </Badge>
+                )}
+                {dossie.modalidades_atendimento.permite_retirada && (
+                  <Badge variant="outline" className="text-[10px] gap-1 bg-amber-500/10 border-amber-500/30 text-amber-400">
+                    <Utensils className="size-3" />
+                    Retirada no Local
+                  </Badge>
+                )}
+              </div>
+            )}
+
               {/* Endereço */}
               <div className="space-y-2">
                 <span className="text-xs font-medium text-muted-foreground">Endereço Físico</span>
@@ -354,6 +406,27 @@ export default function ContactProfilePage() {
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* 4 Primeiras Avaliações Positivas */}
+              {dossie?.avaliacoes_positivas && dossie.avaliacoes_positivas.length > 0 && (
+                <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20 space-y-2 col-span-1 sm:col-span-2">
+                  <h3 className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 uppercase">
+                    <ThumbsUp className="size-3.5" />
+                    4 Primeiras Avaliações Positivas (Google Maps)
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {dossie.avaliacoes_positivas.slice(0, 4).map((p: any, idx: number) => (
+                      <div key={idx} className="p-2.5 rounded-lg bg-background/40 border border-emerald-500/20 space-y-1">
+                        <div className="flex items-center justify-between text-[11px] font-semibold text-foreground">
+                          <span>{p.author}</span>
+                          <span className="text-amber-400">★ {p.rating}</span>
+                        </div>
+                        <p className="italic text-muted-foreground line-clamp-3">&quot;{p.text}&quot;</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Elogios Destaque */}
               <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20 space-y-2">
                 <h3 className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 uppercase">

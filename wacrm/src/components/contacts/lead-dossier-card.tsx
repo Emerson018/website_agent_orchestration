@@ -17,6 +17,11 @@ import {
   Globe,
   Archive,
   RefreshCw,
+  Utensils,
+  Bike,
+  Store,
+  PhoneCall,
+  MessageCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +32,21 @@ export interface LeadDossierData {
   nome_verificado: string;
   endereco_formatado?: string;
   telefone?: string;
+  telefone_estabelecimento?: string;
   site_oficial?: string;
+  link_cardapio?: string | null;
+  modalidades_atendimento?: {
+    permite_entrega?: boolean;
+    permite_consumo_local?: boolean;
+    permite_retirada?: boolean;
+    modalidade?: string;
+  };
+  avaliacoes_positivas?: Array<{
+    author: string;
+    rating: number;
+    text: string;
+    published_time?: string;
+  }>;
   google_maps_url?: string;
   nota?: number | null;
   total_avaliacoes?: number;
@@ -35,7 +54,12 @@ export interface LeadDossierData {
   elogios_destaque?: Array<{ author: string; rating: number; text: string }>;
   dores_destaque?: Array<{ author: string; rating: number; text: string }>;
   pitch_comercial_sugerido?: string;
-  fotos?: Array<{ id: number; photo_url: string }>;
+  fotos?: Array<{
+    id: number;
+    photo_url: string;
+    tipo?: 'cardapio' | 'foto_normal';
+    attribution?: string;
+  }>;
   horarios_funcionamento?: string[];
   aberto_agora?: boolean;
 }
@@ -43,6 +67,7 @@ export interface LeadDossierData {
 interface LeadDossierCardProps {
   dossie?: LeadDossierData | null;
   leadId?: number | string | null;
+  leadPhone?: string;
   companyName?: string;
   targetUrl?: string;
   onTriggerPwaGeneration?: () => void;
@@ -54,6 +79,7 @@ interface LeadDossierCardProps {
 export function LeadDossierCard({
   dossie: initialDossie,
   leadId,
+  leadPhone,
   companyName,
   targetUrl,
   onTriggerPwaGeneration,
@@ -66,6 +92,7 @@ export function LeadDossierCard({
   const [isRegeneratingPitch, setIsRegeneratingPitch] = useState(false);
   const [copiedPitch, setCopiedPitch] = useState(false);
   const [isArchived, setIsArchived] = useState(false);
+  const [filterFoto, setFilterFoto] = useState<'todas' | 'cardapio' | 'foto_normal'>('todas');
 
   // Helper para URL base da API do portal
   const apiBase =
@@ -207,9 +234,21 @@ export function LeadDossierCard({
     );
   }
 
+  const mapsPhone = dossie.telefone_estabelecimento || dossie.telefone || '';
+  const leadClean = (leadPhone || '').replace(/\D/g, '');
+  const mapsClean = mapsPhone.replace(/\D/g, '');
+  const hasPhoneDivergence = Boolean(leadClean && mapsClean && leadClean !== mapsClean);
+
+  const fotos = dossie.fotos || [];
+  const fotosFiltradas = fotos.filter((f) => {
+    if (filterFoto === 'cardapio') return f.tipo === 'cardapio';
+    if (filterFoto === 'foto_normal') return f.tipo !== 'cardapio';
+    return true;
+  });
+
   // Estado 2: Dossiê enriquecido e ativo (Decision Gate)
   return (
-    <div className="rounded-xl border border-border bg-card p-4 space-y-3 shadow-sm text-left">
+    <div className="rounded-xl border border-border bg-card p-4 space-y-3.5 shadow-sm text-left">
       {/* Cabeçalho do Dossiê */}
       <div className="flex items-start justify-between gap-2 border-b border-border/60 pb-2.5">
         <div>
@@ -251,6 +290,139 @@ export function LeadDossierCard({
         )}
       </div>
 
+      {/* Barra de Ações Rápidas: Site Oficial + Cardápio + Maps */}
+      <div className="flex flex-wrap items-center gap-2">
+        {dossie.site_oficial && (
+          <a
+            href={dossie.site_oficial}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition"
+          >
+            <Globe className="h-3 w-3 text-primary" />
+            <span>Site Oficial</span>
+            <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+          </a>
+        )}
+
+        {dossie.link_cardapio && (
+          <a
+            href={dossie.link_cardapio}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25 transition"
+          >
+            <Utensils className="h-3 w-3" />
+            <span>Ver Cardápio</span>
+            <ExternalLink className="h-2.5 w-2.5 opacity-70" />
+          </a>
+        )}
+
+        {dossie.google_maps_url && (
+          <a
+            href={dossie.google_maps_url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground hover:text-foreground transition"
+          >
+            <MapPin className="h-3 w-3 text-red-400" />
+            <span>Google Maps</span>
+            <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+          </a>
+        )}
+      </div>
+
+      {/* Modalidades de Atendimento (Entrega, Consumo Local, Retirada) */}
+      {dossie.modalidades_atendimento && (
+        <div className="flex flex-wrap gap-1.5 pt-0.5">
+          {dossie.modalidades_atendimento.permite_entrega && (
+            <Badge variant="outline" className="text-[10px] gap-1 bg-emerald-500/10 border-emerald-500/30 text-emerald-400">
+              <Bike className="h-3 w-3" />
+              Entrega / Delivery
+            </Badge>
+          )}
+          {dossie.modalidades_atendimento.permite_consumo_local && (
+            <Badge variant="outline" className="text-[10px] gap-1 bg-blue-500/10 border-blue-500/30 text-blue-400">
+              <Store className="h-3 w-3" />
+              Consumo no Local
+            </Badge>
+          )}
+          {dossie.modalidades_atendimento.permite_retirada && (
+            <Badge variant="outline" className="text-[10px] gap-1 bg-amber-500/10 border-amber-500/30 text-amber-400">
+              <Utensils className="h-3 w-3" />
+              Retirada no Local
+            </Badge>
+          )}
+        </div>
+      )}
+
+      {/* Alerta de Divergência de Telefones (Lead WhatsApp vs Maps) */}
+      {hasPhoneDivergence && (
+        <div className="rounded-lg bg-blue-500/10 border border-blue-500/30 p-2.5 space-y-1.5 text-xs">
+          <div className="flex items-center justify-between text-blue-400 font-semibold">
+            <span className="flex items-center gap-1">
+              <PhoneCall className="h-3.5 w-3.5" />
+              Telefones Diferentes Detectados
+            </span>
+            <Badge variant="outline" className="text-[9px] border-blue-500/40 text-blue-400">
+              Divergente
+            </Badge>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
+            <div className="p-1.5 rounded bg-background/50 border border-border/50 flex items-center justify-between">
+              <div>
+                <span className="text-muted-foreground block text-[9px] uppercase font-bold">WhatsApp do Lead</span>
+                <span className="font-mono text-foreground font-medium">{leadPhone}</span>
+              </div>
+              <a
+                href={`https://wa.me/${leadClean}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-emerald-400 hover:text-emerald-300 p-1"
+                title="Conversar no WhatsApp"
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+              </a>
+            </div>
+
+            <div className="p-1.5 rounded bg-background/50 border border-border/50 flex items-center justify-between">
+              <div>
+                <span className="text-muted-foreground block text-[9px] uppercase font-bold">Maps (Estabelecimento)</span>
+                <span className="font-mono text-foreground font-medium">{mapsPhone}</span>
+              </div>
+              <a
+                href={`tel:${mapsClean}`}
+                className="text-primary hover:text-primary/80 p-1"
+                title="Ligar para o estabelecimento"
+              >
+                <Phone className="h-3.5 w-3.5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4 Primeiras Avaliações Positivas */}
+      {dossie.avaliacoes_positivas && dossie.avaliacoes_positivas.length > 0 && (
+        <div className="space-y-1.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 p-2.5">
+          <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+            <ThumbsUp className="h-3.5 w-3.5" />
+            <span>4 Primeiras Avaliações Positivas (Google Maps):</span>
+          </div>
+          <div className="space-y-1.5">
+            {dossie.avaliacoes_positivas.slice(0, 4).map((pos, idx) => (
+              <div key={idx} className="text-[11px] text-muted-foreground border-l-2 border-emerald-500/40 pl-2">
+                <div className="flex items-center gap-1 text-[10px] text-foreground font-semibold">
+                  <span>{pos.author}</span>
+                  <span className="text-amber-400">★ {pos.rating}</span>
+                </div>
+                <p className="italic line-clamp-2">&quot;{pos.text}&quot;</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Dores & Reclamações Recorrentes (Inteligência Comercial) */}
       {dossie.dores_destaque && dossie.dores_destaque.length > 0 && (
         <div className="space-y-1.5 rounded-lg bg-red-500/5 border border-red-500/20 p-2.5">
@@ -261,50 +433,71 @@ export function LeadDossierCard({
           <div className="space-y-1">
             {dossie.dores_destaque.map((pain, idx) => (
               <p key={idx} className="text-[11px] text-muted-foreground italic">
-                "{pain.text}"
+                &quot;{pain.text}&quot;
               </p>
             ))}
           </div>
         </div>
       )}
 
-      {/* Elogios Mais Frequentes */}
-      {dossie.elogios_destaque && dossie.elogios_destaque.length > 0 && (
-        <div className="space-y-1.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 p-2.5">
-          <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
-            <ThumbsUp className="h-3.5 w-3.5" />
-            <span>Pontos Fortes Elogiados:</span>
+      {/* Galeria de Fotos Curadas (Até 6) com Filtro Cardápio / Geral */}
+      {fotos.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Fotos do Estabelecimento ({fotosFiltradas.length}/{fotos.length})
+            </span>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => setFilterFoto('todas')}
+                className={`text-[9px] px-1.5 py-0.5 rounded ${
+                  filterFoto === 'todas' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                Todas ({fotos.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterFoto('cardapio')}
+                className={`text-[9px] px-1.5 py-0.5 rounded ${
+                  filterFoto === 'cardapio' ? 'bg-amber-500 text-black font-semibold' : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                Cardápio ({fotos.filter((f) => f.tipo === 'cardapio').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterFoto('foto_normal')}
+                className={`text-[9px] px-1.5 py-0.5 rounded ${
+                  filterFoto === 'foto_normal' ? 'bg-secondary text-secondary-foreground font-semibold' : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                Ambiente
+              </button>
+            </div>
           </div>
-          <div className="space-y-1">
-            {dossie.elogios_destaque.slice(0, 2).map((praise, idx) => (
-              <p key={idx} className="text-[11px] text-muted-foreground italic">
-                "{praise.text}"
-              </p>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Galeria de Fotos do Local */}
-      {dossie.fotos && dossie.fotos.length > 0 && (
-        <div className="space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            Fotos do Estabelecimento
-          </span>
           <div className="flex gap-1.5 overflow-x-auto pb-1">
-            {dossie.fotos.map((f, i) => (
+            {fotosFiltradas.map((f, i) => (
               <a
                 key={i}
                 href={f.photo_url}
                 target="_blank"
                 rel="noreferrer"
-                className="shrink-0 rounded border border-border overflow-hidden hover:opacity-85 transition"
+                className="relative shrink-0 rounded border border-border overflow-hidden hover:opacity-85 transition group"
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={f.photo_url}
-                  alt="Fachada/Local"
-                  className="h-12 w-16 object-cover"
+                  alt={f.tipo === 'cardapio' ? 'Cardápio' : 'Fachada/Local'}
+                  className="h-14 w-20 object-cover"
                 />
+                {f.tipo === 'cardapio' && (
+                  <span className="absolute bottom-0 inset-x-0 bg-amber-600/90 text-white font-bold text-[8px] text-center py-0.5 uppercase tracking-wide">
+                    Cardápio
+                  </span>
+                )}
               </a>
             ))}
           </div>

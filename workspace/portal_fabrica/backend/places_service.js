@@ -57,6 +57,188 @@ export async function extractPlaceQueryFromUrl(input) {
 }
 
 /**
+ * Sintetiza opções operacionais de atendimento (entrega, consumo no local, retirada).
+ */
+export function synthesizeServiceModalities(place) {
+  if (!place || typeof place !== 'object') {
+    return {
+      permite_entrega: false,
+      permite_consumo_local: false,
+      permite_retirada: false,
+      modalidade: 'nao_informado',
+    };
+  }
+
+  const delivery = Boolean(place.delivery || place.places?.delivery);
+  const dineIn = Boolean(place.dineIn || place.dine_in || place.places?.dineIn);
+  const takeout = Boolean(place.takeout || place.curbsidePickup || place.places?.takeout);
+
+  let modalidade = 'nao_informado';
+  if (delivery && dineIn) {
+    modalidade = 'entrega_e_local';
+  } else if (delivery) {
+    modalidade = 'somente_entrega';
+  } else if (dineIn) {
+    modalidade = 'somente_local';
+  } else if (takeout) {
+    modalidade = 'somente_retirada';
+  }
+
+  return {
+    permite_entrega: delivery,
+    permite_consumo_local: dineIn,
+    permite_retirada: takeout,
+    modalidade,
+  };
+}
+
+/**
+ * Inspeciona o site oficial do estabelecimento em busca de links de cardápio digital ou delivery.
+ */
+export async function extractMenuLink(websiteUrl) {
+  if (!websiteUrl || typeof websiteUrl !== 'string') return null;
+  const trimmed = websiteUrl.trim();
+  if (!trimmed) return null;
+
+  const targetUrl = trimmed.startsWith('http://') || trimmed.startsWith('https://')
+    ? trimmed
+    : `https://${trimmed}`;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+    const res = await fetch(targetUrl, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+      },
+      redirect: 'follow',
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) return null;
+
+    const html = await res.text();
+    if (!html) return null;
+
+    // 1. Procura por links de plataformas de cardápio conhecidas
+    const platformMatches = html.match(
+      /https?:\/\/(?:www\.)?(?:(?:[a-zA-Z0-9-]+\.)?ifood\.com\.br|(?:[a-zA-Z0-9-]+\.)?goomer\.(?:app|me)|(?:[a-zA-Z0-9-]+\.)?anota\.ai|(?:[a-zA-Z0-9-]+\.)?ola\.click|(?:[a-zA-Z0-9-]+\.)?olaclick\.com|(?:[a-zA-Z0-9-]+\.)?cardapioweb\.com|(?:[a-zA-Z0-9-]+\.)?instadelivery\.com\.br|(?:[a-zA-Z0-9-]+\.)?deliverydireto\.com\.br)[^\s"'<>]+/i
+    );
+    if (platformMatches && platformMatches[0]) {
+      return platformMatches[0];
+    }
+
+    // 2. Procura por tags <a> com href ou texto contendo palavras-chave de cardápio
+    const linkRegex = /<a\s+(?:[^>]*?\s+)?href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gis;
+    let match;
+    while ((match = linkRegex.exec(html)) !== null) {
+      const href = match[1];
+      const text = match[2].toLowerCase();
+
+      const isMenuHref = /\/(cardapio|menu|pedir|pedidos|cardapio-digital)/i.test(href);
+      const isMenuText = /(cardápio|cardapio|nosso menu|ver menu|faça seu pedido|fazer pedido|pedir online)/i.test(text);
+
+      if (isMenuHref || isMenuText) {
+        if (href.startsWith('http://') || href.startsWith('https://')) {
+          return href;
+        }
+        try {
+          const resolved = new URL(href, targetUrl).toString();
+          return resolved;
+        } catch {
+          // ignore invalid relative url
+        }
+      }
+    }
+
+    return null;
+  } catch (err) {
+    return null;
+  }
+}
+
+/**
+ * Classifica até 6 fotos entre "cardapio" e "foto_normal" via Gemini Vision de forma assíncrona.
+ */
+export async function classifyPhotosWithGemini(photos, apiKey) {
+  if (!Array.isArray(photos) || photos.length === 0) return [];
+  const safePhotos = photos.slice(0, 6).map((p, idx) => ({
+    id: p.id || idx + 1,
+    width: p.width,
+    height: p.height,
+    photo_url: p.photo_url,
+    attribution: p.attribution || '',
+    tipo: 'foto_normal',
+  }));
+
+  const geminiKey = apiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!geminiKey || geminiKey.includes('placeholder')) {
+    return safePhotos;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+    const prompt = `Analise a lista das seguintes ${safePhotos.length} fotos de um estabelecimento:
+${safePhotos.map((p) => `ID ${p.id}: ${p.photo_url}`).join('\n')}
+
+Classifique cada foto pelo seu ID como "cardapio" (se for folha/página de cardápio, tabela de preços, lista de pratos com valores) ou "foto_normal" (ambiente, fachada, prato isolado/comida, decoração, equipe).
+Responda EXCLUSIVAMENTE em formato JSON puro, array de objetos:
+[{"id": 1, "tipo": "cardapio" | "foto_normal"}]`;
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            responseMimeType: 'application/json',
+          },
+        }),
+      }
+    );
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      return safePhotos;
+    }
+
+    const data = await res.json();
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (!rawText) return safePhotos;
+
+    const parsed = JSON.parse(rawText.replace(/```(?:json)?/g, '').trim());
+    if (Array.isArray(parsed)) {
+      const typeMap = new Map();
+      parsed.forEach((item) => {
+        if (item.id && (item.tipo === 'cardapio' || item.tipo === 'foto_normal')) {
+          typeMap.set(Number(item.id), item.tipo);
+        }
+      });
+
+      return safePhotos.map((p) => ({
+        ...p,
+        tipo: typeMap.get(p.id) || 'foto_normal',
+      }));
+    }
+
+    return safePhotos;
+  } catch (err) {
+    // Fallback garantido
+    return safePhotos;
+  }
+}
+
+/**
  * Sintetiza o sentimento das avaliações e cria um pitch comercial pronto para WhatsApp.
  */
 export async function synthesizeSentimentAndPitch({ name, rating, user_ratings_total, reviews, types, address }) {
@@ -121,7 +303,7 @@ export async function synthesizeSentimentAndPitch({ name, rating, user_ratings_t
       }
     }
   } catch {
-    // Fallback imediato e resiliente para o pitch contextualizado determinístico
+    // Fallback imediato
   }
 
   return {
@@ -176,6 +358,11 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
       'places.types',
       'places.googleMapsUri',
       'places.priceLevel',
+      'places.delivery',
+      'places.dineIn',
+      'places.takeout',
+      'places.curbsidePickup',
+      'places.reservable',
     ].join(',');
 
     const v1Res = await fetch('https://places.googleapis.com/v1/places:searchText', {
@@ -213,18 +400,40 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
             author_name: rev.authorAttribution?.displayName || 'Cliente',
             rating: rev.rating || 5,
             text: rev.text?.text || rev.originalText?.text || '',
+            published_time: rev.relativePublishTimeDescription || '',
           }))
         : [];
 
-      const photos = Array.isArray(place.photos)
-        ? place.photos.slice(0, 10).map((photoRef, index) => ({
+      // 4 primeiras avaliações positivas (rating >= 4)
+      const positiveReviews = normalizedReviews
+        .filter((rev) => Number(rev.rating) >= 4)
+        .slice(0, 4)
+        .map((rev) => ({
+          author: rev.author_name || 'Cliente',
+          rating: Number(rev.rating) || 5,
+          text: rev.text || '',
+        }));
+
+      // Fotos limitadas estritamente a 6 fotos
+      const rawPhotos = Array.isArray(place.photos)
+        ? place.photos.slice(0, 6).map((photoRef, index) => ({
             id: index + 1,
             width: photoRef.widthPx || 1200,
             height: photoRef.heightPx || 800,
             photo_url: `https://places.googleapis.com/v1/${photoRef.name}/media?maxWidthPx=1200&key=${cleanKey}`,
             attribution: photoRef.authorAttributions?.[0]?.displayName || '',
+            tipo: 'foto_normal',
           }))
         : [];
+
+      // Classificação multimodal assíncrona com fallback resiliente
+      const classifiedPhotos = await classifyPhotosWithGemini(rawPhotos, cleanKey);
+
+      // Link do cardápio crawler no website oficial
+      const menuLink = await extractMenuLink(place.websiteUri);
+
+      // Modalidades de atendimento (entrega, local, retirada)
+      const modalidadesAtendimento = synthesizeServiceModalities(place);
 
       const sentiment = await synthesizeSentimentAndPitch({
         name: verifiedName,
@@ -235,18 +444,24 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
         address: place.formattedAddress,
       });
 
+      const phone = place.nationalPhoneNumber || place.internationalPhoneNumber || '';
+
       const dossie = {
         place_id: placeId,
         nome_verificado: verifiedName,
         endereco_formatado: place.formattedAddress || '',
-        telefone: place.nationalPhoneNumber || place.internationalPhoneNumber || '',
+        telefone_estabelecimento: phone,
+        telefone: phone,
         site_oficial: place.websiteUri || '',
+        link_cardapio: menuLink || null,
+        modalidades_atendimento: modalidadesAtendimento,
+        avaliacoes_positivas: positiveReviews,
         google_maps_url: place.googleMapsUri || `https://www.google.com/maps/place/?q=place_id:${placeId}`,
         nota: place.rating || null,
         total_avaliacoes: place.userRatingCount || 0,
         horarios_funcionamento: place.regularOpeningHours?.weekdayDescriptions || [],
         aberto_agora: Boolean(place.regularOpeningHours?.openNow),
-        fotos: photos,
+        fotos: classifiedPhotos,
         categorias: place.types || [],
         ...sentiment,
         consultado_em: new Date().toISOString(),
@@ -300,6 +515,9 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
       'types',
       'url',
       'price_level',
+      'delivery',
+      'dine_in',
+      'takeout',
     ].join(',');
 
     const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${detailsFields}&key=${cleanKey}&language=pt-BR`;
@@ -317,39 +535,67 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
 
     const placeDetails = detailsData.result;
 
-    // 3. Monta URLs de fotos em alta resolução (até 6 fotos)
-    const photos = Array.isArray(placeDetails.photos)
-      ? placeDetails.photos.slice(0, 10).map((photoRef, index) => ({
+    const normalizedReviews = Array.isArray(placeDetails.reviews)
+      ? placeDetails.reviews.map((rev) => ({
+          author_name: rev.author_name || 'Cliente',
+          rating: rev.rating || 5,
+          text: rev.text || '',
+          published_time: rev.relative_time_description || '',
+        }))
+      : [];
+
+    const positiveReviews = normalizedReviews
+      .filter((rev) => Number(rev.rating) >= 4)
+      .slice(0, 4)
+      .map((rev) => ({
+        author: rev.author_name || 'Cliente',
+        rating: Number(rev.rating) || 5,
+        text: rev.text || '',
+      }));
+
+    // Fotos limitadas a 6 fotos
+    const rawPhotos = Array.isArray(placeDetails.photos)
+      ? placeDetails.photos.slice(0, 6).map((photoRef, index) => ({
           id: index + 1,
           width: photoRef.width,
           height: photoRef.height,
           photo_url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1200&photoreference=${photoRef.photo_reference}&key=${cleanKey}`,
           attribution: photoRef.html_attributions?.[0] || '',
+          tipo: 'foto_normal',
         }))
       : [];
 
-    // 4. Sintetiza sentimento e pitch comercial
+    const classifiedPhotos = await classifyPhotosWithGemini(rawPhotos, cleanKey);
+    const menuLink = await extractMenuLink(placeDetails.website);
+    const modalidadesAtendimento = synthesizeServiceModalities(placeDetails);
+
     const sentiment = await synthesizeSentimentAndPitch({
       name: placeDetails.name,
       rating: placeDetails.rating,
       user_ratings_total: placeDetails.user_ratings_total,
-      reviews: placeDetails.reviews,
+      reviews: normalizedReviews,
       types: placeDetails.types,
       address: placeDetails.formatted_address,
     });
+
+    const legacyPhone = placeDetails.formatted_phone_number || placeDetails.international_phone_number || '';
 
     const dossie = {
       place_id: placeId,
       nome_verificado: placeDetails.name,
       endereco_formatado: placeDetails.formatted_address || '',
-      telefone: placeDetails.formatted_phone_number || placeDetails.international_phone_number || '',
+      telefone_estabelecimento: legacyPhone,
+      telefone: legacyPhone,
       site_oficial: placeDetails.website || '',
+      link_cardapio: menuLink || null,
+      modalidades_atendimento: modalidadesAtendimento,
+      avaliacoes_positivas: positiveReviews,
       google_maps_url: placeDetails.url || `https://www.google.com/maps/place/?q=place_id:${placeId}`,
       nota: placeDetails.rating || null,
       total_avaliacoes: placeDetails.user_ratings_total || 0,
       horarios_funcionamento: placeDetails.opening_hours?.weekday_text || [],
       aberto_agora: Boolean(placeDetails.opening_hours?.open_now),
-      fotos: photos,
+      fotos: classifiedPhotos,
       categorias: placeDetails.types || [],
       ...sentiment,
       consultado_em: new Date().toISOString(),

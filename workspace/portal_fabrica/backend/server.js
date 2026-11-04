@@ -805,19 +805,42 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
       if (contactId) {
         const { data: contact } = await supabase
           .from('contacts')
-          .select('additional_data')
+          .select('company, website, additional_data')
           .eq('id', contactId)
           .maybeSingle();
 
         const currentAddData = contact?.additional_data || {};
+        const verifiedName = result.dossie?.nome_verificado;
+        const verifiedWebsite = result.dossie?.site_oficial;
+
+        const updateContactFields = {
+          additional_data: {
+            ...currentAddData,
+            dossie: result.dossie,
+          },
+        };
+
+        // Preserva o nome do briefing anterior se for diferente do Maps
+        if (contact?.company && verifiedName && contact.company !== verifiedName) {
+          if (!currentAddData.nome_original_briefing) {
+            updateContactFields.additional_data.nome_original_briefing = contact.company;
+          }
+        }
+
+        // Atualiza company com o nome oficial verificado
+        if (verifiedName) {
+          updateContactFields.company = verifiedName;
+        }
+
+        // Atualiza website se fornecido pelo Maps
+        if (verifiedWebsite) {
+          updateContactFields.website = verifiedWebsite;
+        }
+
+        // Importante: contacts.phone NUNCA é sobrescrito aqui! Permanece intacto como o WhatsApp do lead.
         await supabase
           .from('contacts')
-          .update({
-            additional_data: {
-              ...currentAddData,
-              dossie: result.dossie,
-            },
-          })
+          .update(updateContactFields)
           .eq('id', contactId);
       }
     }

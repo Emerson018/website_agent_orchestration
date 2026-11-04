@@ -1,5 +1,80 @@
 [
   {
+    "id": 118,
+    "created_at": "2026-11-04T11:36:51.662976+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Emerson Viçosa\n- **Empresa / Marca**: 'Restaurante'\n- **WhatsApp/Tel**: (23) 05345-9823\n- **E-mail**: restaurantecomercio@gmail.com\n- **Site Oficial**: https://maps.app.goo.gl/JAjCAcBAo2sZd7MQ8\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://maps.app.goo.gl/JAjCAcBAo2sZd7MQ8 (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "restaurantecomercio@gmail.com",
+      "phone": "(23) 05345-9823",
+      "company": "Restaurante",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://maps.app.goo.gl/JAjCAcBAo2sZd7MQ8",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "033eb532-fa0d-4411-a7a2-3d682ee766d4",
+      "contact_name": "Emerson Viçosa",
+      "project_name": "Restaurante",
+      "briefing_payload": {
+        "name": "Emerson Viçosa",
+        "email": "restaurantecomercio@gmail.com",
+        "phone": "(23) 05345-9823",
+        "company": "Restaurante",
+        "website": "https://maps.app.goo.gl/JAjCAcBAo2sZd7MQ8"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 117,
+    "created_at": "2026-11-04T11:29:14.811791+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Lead Teste Diag 1793791753202\n- **Empresa / Marca**: 'Lead Teste Diag 1793791753202'\n- **WhatsApp/Tel**: (11) 991333148\n- **E-mail**: lead_diag_1793791753202@test.com\n- **Site Oficial**: https://example.com\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://example.com \n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "lead_diag_1793791753202@test.com",
+      "phone": "(11) 991333148",
+      "company": "Lead Teste Diag 1793791753202",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://example.com",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "2867cfee-5ff6-41ca-941e-39928a44c540",
+      "contact_name": "Lead Teste Diag 1793791753202",
+      "project_name": "Lead Teste Diag 1793791753202",
+      "briefing_payload": {
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "client_info": {
+          "email": "lead_diag_1793791753202@test.com",
+          "phone": "(11) 991333148"
+        },
+        "auto_process": false,
+        "project_name": "Lead Teste Diag 1793791753202",
+        "reference_links": [
+          {
+            "url": "https://example.com",
+            "type": "site"
+          }
+        ]
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
     "id": "77701",
     "mensagem_lead": "Cliente sem dossiê",
     "resultado_json": {},
@@ -23,7 +98,102 @@
         ]
       }
     },
-    "is_local": true
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 116
+  },
+  {
+    "id": 115,
+    "created_at": "2026-11-04T11:27:29.555358+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Lead Teste Diag 1793791648177\n- **Empresa / Marca**: 'Lead Teste Diag 1793791648177'\n- **WhatsApp/Tel**: (11) 951109256\n- **E-mail**: lead_diag_1793791648177@test.com\n- **Site Oficial**: https://example.com\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://example.com \n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "lead_diag_1793791648177@test.com",
+      "phone": "(11) 951109256",
+      "company": "Lead Teste Diag 1793791648177",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://example.com",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "758a7914-d731-4601-921e-c376e59c6266",
+      "contact_name": "Lead Teste Diag 1793791648177",
+      "project_name": "Lead Teste Diag 1793791648177",
+      "briefing_payload": {
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "client_info": {
+          "email": "lead_diag_1793791648177@test.com",
+          "phone": "(11) 951109256"
+        },
+        "auto_process": false,
+        "project_name": "Lead Teste Diag 1793791648177",
+        "reference_links": [
+          {
+            "url": "https://example.com",
+            "type": "site"
+          }
+        ]
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": "88801",
+    "mensagem_lead": "Gostaria de um cardápio digital para a Pizzaria Nonna",
+    "status": "processando",
+    "resultado_json": {
+      "project_name": "Pizzaria Nonna E2E",
+      "dossie": {
+        "place_id": "ChIJTESTE2E99",
+        "nome_verificado": "Pizzaria da Nonna E2E",
+        "nicho_detectado": "restaurant",
+        "rating_score": 4.8,
+        "total_reviews": 120,
+        "pitch_comercial_sugerido": "Proposta digital para pizzaria"
+      }
+    },
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 112
+  },
+  {
+    "id": 1793791647285,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Barbearia Teste Resiliente\n- **Empresa / Marca**: 'Barbearia Teste Resiliente'\n- **WhatsApp/Tel**: 11999999999\n- **E-mail**: teste@barbearia.com\n- **Site Oficial**: Nenhum site informado\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Barbearia Teste Resiliente",
+      "briefing_payload": {
+        "project_name": "Barbearia Teste Resiliente",
+        "client_info": {
+          "email": "teste@barbearia.com",
+          "phone": "11999999999"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "auto_process": false
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-11-04T11:27:27.285Z",
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 114
   },
   {
     "id": 100,
@@ -176,40 +346,6 @@
     "supabase_service_role_key": null,
     "is_local": false,
     "supabase_synced": true
-  },
-  {
-    "id": "88801",
-    "mensagem_lead": "Gostaria de um cardápio digital para a Pizzaria Nonna",
-    "status": "concluido",
-    "resultado_json": {
-      "project_name": "Pizzaria Nonna E2E",
-      "dossie": {
-        "place_id": "ChIJTESTE2E99",
-        "nome_verificado": "Pizzaria da Nonna E2E",
-        "nicho_detectado": "restaurant",
-        "rating_score": 4.8,
-        "total_reviews": 120,
-        "pitch_comercial_sugerido": "Proposta digital para pizzaria"
-      },
-      "success": true,
-      "status": "concluido",
-      "modelo_utilizado": "Gemini (gemini-3.8-flash)",
-      "target_project_path": "workspace/pizzaria_nonna_e2e",
-      "project_slug": "pizzaria_nonna_e2e",
-      "nicho_detectado": "gastronomia",
-      "backend_port": 5051,
-      "frontend_port": 5174,
-      "backend_url": "http://localhost:5051",
-      "preview_url": "http://localhost:5174",
-      "modules": [
-        "cardapio",
-        "pedidos"
-      ],
-      "provisioned_at": "2026-11-03T19:38:39.725Z"
-    },
-    "is_local": false,
-    "supabase_synced": true,
-    "supabase_id": 97
   },
   {
     "id": 95,
@@ -1771,5 +1907,35 @@
     "is_local": false,
     "supabase_synced": true,
     "supabase_id": 68
+  },
+  {
+    "id": 85,
+    "created_at": "2026-10-30T16:24:53.496457+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Emerson\n- **Empresa / Marca**: 'Padaria'\n- **WhatsApp/Tel**: (12) 34123-4123\n- **E-mail**: padaria1@gmail.com\n- **Site Oficial**: https://maps.app.goo.gl/1uHfmYvrbhNmHKtX6\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://maps.app.goo.gl/1uHfmYvrbhNmHKtX6 (Site Oficial do Lead)\n",
+    "status": "pendente",
+    "resultado_json": {
+      "email": "padaria1@gmail.com",
+      "phone": "(12) 34123-4123",
+      "company": "Padaria",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://maps.app.goo.gl/1uHfmYvrbhNmHKtX6",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "a45139a0-b19e-417f-860a-3bef66f42d0b",
+      "contact_name": "Emerson",
+      "project_name": "Padaria",
+      "briefing_payload": {
+        "name": "Emerson",
+        "email": "padaria1@gmail.com",
+        "phone": "(12) 34123-4123",
+        "company": "Padaria",
+        "website": "https://maps.app.goo.gl/1uHfmYvrbhNmHKtX6"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
   }
 ]

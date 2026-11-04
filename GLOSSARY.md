@@ -11,8 +11,20 @@ A structured intake specification capturing a prospective business's contact nam
 _Avoid_: Payload, prompt text, raw lead, inbox message lead
 
 **Lead Dossier**:
-An enriched business intelligence profile synthesized from Google Places API and public web sources, detailing verified name, operating hours, star rating, review sentiment breakdown (customer praises and pain points), photo gallery, and niche classification.
+An enriched business intelligence profile synthesized from Google Places API and public web sources, detailing verified business name, official website, menu link (if available), service modalities (delivery, dine-in, takeout), operating hours, star rating, verified establishment phone number, positive review highlights, a curated 6-photo gallery with menu/atmosphere classification, and niche classification.
 _Avoid_: Scraping dump, raw places json, info sheet
+
+**Modalidade de Atendimento (Service Modalities)**:
+The operational fulfillment channels supported by an establishment, extracted from Google Places API attributes (delivery, dine-in, takeout) and classified into structured flags (permite_entrega, permite_consumo_local, permite_retirada) and high-level status (modalidade) to steer both CRM lead insights and niche frontend/backend architecture generation.
+_Avoid_: Delivery status, shipping options, service flags
+
+**Classificação de Mídia do Dossiê (Dossier Media Classification)**:
+The multimodal categorization applied to the verified photo gallery (restricted to 6 photos), tagging each visual asset as either cardapio (menu, price lists, dish catalogs) or foto_normal (atmosphere, facade, team, food), enabling focused UI presentation in the CRM and targeted asset injection in web generation.
+_Avoid_: Photo tagging, raw image list, album tags
+
+**Telefone do Estabelecimento Verificado (Verified Business Phone)**:
+The official commercial landline or mobile contact number retrieved from Google Places API (dossie.telefone_estabelecimento), explicitly preserved alongside and decoupled from the lead's personal WhatsApp contact phone (contacts.phone) to prevent communication routing corruption while highlighting data discrepancies in the CRM.
+_Avoid_: Phone override, company phone, fallback number
 
 **Decision Gate**:
 The mandatory human evaluation checkpoint in the CRM and Factory Portal where an operator inspects the Lead Dossier to choose between initiating PWA generation, generating an AI sales pitch, or disqualifying the lead.
