@@ -750,7 +750,7 @@ export function ContactDetailView({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-muted-foreground text-xs">Company</Label>
+                    <Label className="text-muted-foreground text-xs">Nome do Estabelecimento / Empresa</Label>
                     <Input
                       value={editCompany}
                       onChange={(e) => setEditCompany(e.target.value)}

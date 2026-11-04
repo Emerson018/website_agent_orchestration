@@ -98,10 +98,6 @@ export default function LandingPage() {
       setErrorMessage('Por favor, informe seu nome completo.');
       return;
     }
-    if (!trimmedCompany) {
-      setErrorMessage('Por favor, informe o nome da sua empresa ou negócio.');
-      return;
-    }
     if (!trimmedEmail || !trimmedEmail.includes('@')) {
       setErrorMessage('Por favor, informe um e-mail de contato válido.');
       return;
@@ -116,7 +112,7 @@ export default function LandingPage() {
     try {
       const payload = {
         name: trimmedName,
-        company: trimmedCompany,
+        company: trimmedCompany || null,
         email: trimmedEmail,
         phone: trimmedPhone,
         website: trimmedWebsite || null
@@ -202,8 +198,7 @@ export default function LandingPage() {
                   </h2>
 
                   <p className="text-sm sm:text-base text-[#949BA8] leading-relaxed">
-                    Obrigado, <strong className="text-[#ECEEF2]">{submittedData.name}</strong>! Os dados da empresa{' '}
-                    <strong className="text-[#E59A28]">{submittedData.company}</strong> foram registrados com sucesso no nosso sistema.
+                    Obrigado, <strong className="text-[#ECEEF2]">{submittedData.name}</strong>! Os dados da sua solicitação foram registrados com sucesso no nosso sistema.
                   </p>
 
                   <div className="p-4 rounded-lg bg-[#12151B] border border-[#282F3D] text-left text-xs sm:text-sm space-y-2 mt-6">
@@ -216,7 +211,7 @@ export default function LandingPage() {
                     </div>
                     <div className="flex justify-between py-0.5">
                       <span className="text-[#949BA8]">Empresa:</span>
-                      <span className="text-[#ECEEF2] font-medium">{submittedData.company}</span>
+                      <span className="text-[#ECEEF2] font-medium">{submittedData.company || 'Identificação automática via Google Maps'}</span>
                     </div>
                     <div className="flex justify-between py-0.5">
                       <span className="text-[#949BA8]">E-mail:</span>
@@ -294,22 +289,6 @@ export default function LandingPage() {
                     />
                   </div>
 
-                  {/* Campo 2: Empresa */}
-                  <div className="space-y-1.5">
-                    <label htmlFor="field-company" className="block text-xs sm:text-sm font-semibold text-[#ECEEF2]">
-                      Empresa ou Negócio <span className="text-[#E59A28]">*</span>
-                    </label>
-                    <input
-                      id="field-company"
-                      type="text"
-                      required
-                      placeholder="Ex: Barbearia Retrô ou Clínica Estética"
-                      value={formData.company}
-                      onChange={handleChange('company')}
-                      className="w-full px-3.5 py-2.5 rounded-lg bg-[#12151B] border border-[#282F3D] text-[#ECEEF2] placeholder-[#5A6272] text-sm focus:outline-none focus:border-[#E59A28] transition-colors"
-                    />
-                  </div>
-
                   {/* Grid de Contato: E-mail e WhatsApp */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Campo 3: E-mail */}
@@ -349,7 +328,7 @@ export default function LandingPage() {
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label htmlFor="field-website" className="block text-xs sm:text-sm font-semibold text-[#ECEEF2]">
-                        Site Atual ou Link de Referência
+                        Site Atual ou Link do Google Maps
                       </label>
                       <span className="text-[11px] text-[#949BA8] font-normal">Opcional</span>
                     </div>
@@ -362,7 +341,7 @@ export default function LandingPage() {
                       className="w-full px-3.5 py-2.5 rounded-lg bg-[#12151B] border border-[#282F3D] text-[#ECEEF2] placeholder-[#5A6272] text-sm focus:outline-none focus:border-[#E59A28] transition-colors"
                     />
                     <p className="text-[11px] text-[#949BA8]">
-                      Se você já possui um site, Instagram ou página de referência, insira a URL aqui.
+                      Se você possui um site ou link do Google Maps, insira a URL aqui para identificação automática do seu negócio.
                     </p>
                   </div>
 

@@ -315,21 +315,21 @@ app.post('/api/projetos', async (req, res) => {
       raw_project_name ||
       'Novo Contato';
 
+    const phone = req.body.phone || client_info?.phone || 'Não informado';
+    const email = req.body.email || client_info?.email || 'Não informado';
+    const website = raw_website || site || (reference_links?.[0]?.url) || null;
+
     const companyName =
       company ||
       company_name ||
       raw_project_name ||
-      'Projeto Fábrica';
+      null;
 
-    const project_name = companyName;
+    const project_name = companyName || (website ? ('Lead ' + website) : (contactName ? ('Lead ' + contactName) : 'Projeto Fábrica'));
 
     if (!raw_project_name && !company && !name && !contact_name) {
       return res.status(400).json({ error: 'Informe ao menos o nome do responsável ou da empresa.' });
     }
-
-    const phone = req.body.phone || client_info?.phone || 'Não informado';
-    const email = req.body.email || client_info?.email || 'Não informado';
-    const website = raw_website || site || (reference_links?.[0]?.url) || null;
 
     let finalAdditionalData = additional_data ? { ...additional_data } : {};
     if (website) {
@@ -501,7 +501,7 @@ ${ai_analysis ? `### ANÁLISE DE MARCA & ARQUITETURA DA IA:\n${ai_analysis}\n` :
             .select('id')
             .eq('account_id', defaultAccountId)
             .eq('contact_id', contactId)
-            .eq('title', `Projeto - ${companyName}`)
+            .eq('title', `Projeto - ${companyName || contactName}`)
             .limit(1)
             .maybeSingle();
 
@@ -515,7 +515,7 @@ ${ai_analysis ? `### ANÁLISE DE MARCA & ARQUITETURA DA IA:\n${ai_analysis}\n` :
                   pipeline_id: pipelineId,
                   stage_id: stageId,
                   contact_id: contactId,
-                  title: `Projeto - ${companyName}`,
+                  title: `Projeto - ${companyName || contactName}`,
                   value: dealValue,
                   currency: 'BRL',
                   notes: `Responsável: ${contactName} | Site: ${website || 'Não informado'}`,

@@ -31,6 +31,8 @@ import {
   Bike,
   Store,
   PhoneCall,
+  Pencil,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -63,6 +65,11 @@ export default function ContactProfilePage() {
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [copiedPitch, setCopiedPitch] = useState(false);
 
+  // Estado de Edição do Nome do Estabelecimento
+  const [isEditingCompany, setIsEditingCompany] = useState(false);
+  const [companyInput, setCompanyInput] = useState('');
+  const [isSavingCompany, setIsSavingCompany] = useState(false);
+
   const fetchContactData = useCallback(async () => {
     if (!contactId) return;
     setLoading(true);
@@ -74,6 +81,7 @@ export default function ContactProfilePage() {
         const savedPrompt = addData.prompt_mestre || '';
         setPromptMestre(savedPrompt);
         setOriginalPrompt(savedPrompt);
+        setCompanyInput(data.company || '');
 
         // Fetch associated tags
         const { data: tagData } = await supabase
@@ -101,6 +109,29 @@ export default function ContactProfilePage() {
   const dossie = additionalData.dossie || null;
   const diagnostico = additionalData.diagnostico_ia || null;
   const companyName = contact?.company || dossie?.nome_verificado || contact?.name || 'Lead Sem Nome';
+
+  // Handler para salvar edicao do nome do estabelecimento
+  const handleSaveCompany = async () => {
+    if (!contactId) return;
+    const newName = companyInput.trim();
+    setIsSavingCompany(true);
+    try {
+      const { error } = await supabase
+        .from('contacts')
+        .update({ company: newName || null })
+        .eq('id', contactId);
+
+      if (error) throw error;
+
+      setContact((prev: any) => (prev ? { ...prev, company: newName || null } : prev));
+      setIsEditingCompany(false);
+      toast.success('Nome do estabelecimento atualizado com sucesso!');
+    } catch (err: any) {
+      toast.error('Erro ao salvar nome do estabelecimento: ' + err.message);
+    } finally {
+      setIsSavingCompany(false);
+    }
+  };
 
   // Handler para enriquecer dossiê do Google Maps
   const handleEnrichDossier = async () => {
@@ -238,15 +269,77 @@ export default function ContactProfilePage() {
           </Button>
           <div className="h-5 w-px bg-border" />
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              {companyName}
-              {dossie?.nota && (
-                <Badge variant="secondary" className="gap-1 font-mono text-xs">
-                  <Star className="size-3 text-amber-500 fill-amber-500" />
-                  {dossie.nota.toFixed(1)} ({dossie.total_avaliacoes || 0})
-                </Badge>
-              )}
-            </h1>
+            {isEditingCompany ? (
+              <div className="flex items-center gap-2 mb-1">
+                <input
+                  type="text"
+                  value={companyInput}
+                  onChange={(e) => setCompanyInput(e.target.value)}
+                  placeholder="Nome do estabelecimento"
+                  className="px-3 py-1 text-lg font-bold bg-muted/80 border border-primary rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary h-9 w-72 sm:w-80 shadow-sm"
+                  autoFocus
+                  disabled={isSavingCompany}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveCompany();
+                    if (e.key === 'Escape') {
+                      setCompanyInput(contact?.company || '');
+                      setIsEditingCompany(false);
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  onClick={handleSaveCompany}
+                  disabled={isSavingCompany}
+                  className="h-8 px-2.5 gap-1 bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm"
+                >
+                  {isSavingCompany ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                  <span className="text-xs">Salvar</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setCompanyInput(contact?.company || '');
+                    setIsEditingCompany(false);
+                  }}
+                  disabled={isSavingCompany}
+                  className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="size-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                  {contact?.company || dossie?.nome_verificado ? (
+                    contact?.company || dossie?.nome_verificado
+                  ) : (
+                    <span className="text-muted-foreground italic text-lg font-normal">
+                      Estabelecimento sem nome definido
+                    </span>
+                  )}
+                  {dossie?.nota && (
+                    <Badge variant="secondary" className="gap-1 font-mono text-xs">
+                      <Star className="size-3 text-amber-500 fill-amber-500" />
+                      {dossie.nota.toFixed(1)} ({dossie.total_avaliacoes || 0})
+                    </Badge>
+                  )}
+                </h1>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCompanyInput(contact?.company || dossie?.nome_verificado || '');
+                    setIsEditingCompany(true);
+                  }}
+                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 transition flex items-center gap-1 text-xs"
+                  title="Editar nome do estabelecimento"
+                >
+                  <Pencil className="size-3.5 text-amber-500" />
+                  <span className="text-[11px] underline decoration-muted-foreground/40">Editar</span>
+                </button>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5 flex-wrap">
               <span>WhatsApp: <strong>{contact.phone}</strong></span>
               {contact.email && <span>• {contact.email}</span>}
