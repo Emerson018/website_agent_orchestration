@@ -790,8 +790,16 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
     }
 
     const mapsKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_API_KEY;
+    const fallbackName =
+      contactRecord?.company ||
+      contactRecord?.name ||
+      payload.briefing_payload?.company ||
+      payload.project_name ||
+      '';
+
     const result = await buildLeadDossier(candidateQuery, mapsKey, {
       additionalLinks: contactRecord?.additional_data?.links || [],
+      fallbackQuery: fallbackName,
     });
     if (!result.success) {
       return res.status(result.code === 'MISSING_API_KEY' ? 412 : 400).json(result);

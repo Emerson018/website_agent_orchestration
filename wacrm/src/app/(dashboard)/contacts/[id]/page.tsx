@@ -114,12 +114,18 @@ export default function ContactProfilePage() {
         (l) => l?.url && (l.label?.toLowerCase().includes('site') || l.url.startsWith('http'))
       )?.url;
 
+      const businessName =
+        companyName !== 'Lead Sem Nome'
+          ? companyName
+          : (contact?.company || dossie?.nome_verificado || contact?.name || '');
+
       const searchQuery =
-        dossie?.link_google_maps ||
-        dossie?.google_maps_url ||
+        businessName ||
         mapsLink ||
         siteLink ||
-        (companyName !== 'Lead Sem Nome' ? companyName : (contact?.company || contact?.name || ''));
+        contact?.company ||
+        contact?.name ||
+        '';
 
       const res = await fetch(`/api/leads/${contactId}/enrich-dossier`, {
         method: 'POST',

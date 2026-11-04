@@ -533,7 +533,15 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
   }
 
   const cleanKey = apiKey.trim();
-  const searchQuery = await extractPlaceQueryFromUrl(queryOrUrl);
+  let searchQuery = await extractPlaceQueryFromUrl(queryOrUrl);
+
+  if (!searchQuery && options?.fallbackQuery) {
+    searchQuery = await extractPlaceQueryFromUrl(options.fallbackQuery);
+  }
+
+  if (!searchQuery && typeof queryOrUrl === 'string' && queryOrUrl.trim()) {
+    searchQuery = queryOrUrl.trim();
+  }
 
   if (!searchQuery) {
     return {
