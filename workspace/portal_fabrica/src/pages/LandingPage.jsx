@@ -125,7 +125,7 @@ export default function LandingPage() {
       });
 
       if (!res.ok) {
-        let serverMessage = Erro ao enviar solicitação (Código ).;
+        let serverMessage = 'Erro ao enviar solicitação (Código ' + res.status + ').';
         try {
           const text = await res.text();
           try {
