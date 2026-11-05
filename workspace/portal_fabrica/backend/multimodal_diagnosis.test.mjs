@@ -25,6 +25,25 @@ test('Multimodal Diagnosis - fail-fast when GEMINI_API_KEY is missing', async ()
   assert.ok(result.error.includes('GEMINI_API_KEY'));
 });
 
+test('Multimodal Diagnosis - strips quotes and whitespace from apiKey properly', async () => {
+  const mockDossie = {
+    nome_verificado: 'Pizzaria Bella Napoli',
+    endereco_formatado: 'Rua das Flores, 123',
+    nota: 4.8,
+    total_avaliacoes: 140,
+  };
+
+  // When only quotes/whitespace are provided, it must treat as missing/empty
+  const resultQuotes = await runMultimodalBusinessDiagnosis({
+    dossie: mockDossie,
+    companyName: 'Pizzaria Bella Napoli',
+    apiKey: "  ''  ",
+  });
+
+  assert.equal(resultQuotes.success, false);
+  assert.equal(resultQuotes.code, 'MISSING_API_KEY');
+});
+
 test('Master Prompt Synthesizer - structures 4 blocks and real client assets', () => {
   const mockDossie = {
     nome_verificado: 'Café & Coworking Aurora',
@@ -33,6 +52,7 @@ test('Master Prompt Synthesizer - structures 4 blocks and real client assets', (
     nota: 4.9,
     total_avaliacoes: 85,
     nicho_detectado: 'cafe',
+    google_maps_url: 'https://maps.app.goo.gl/aurora123',
     horarios_funcionamento: ['Segunda a Sexta: 08:00 - 20:00', 'Sábado: 09:00 - 18:00'],
     elogios_destaque: [
       { author: 'Camila R.', rating: 5, text: 'Melhor café filtrado da cidade e internet super rápida!' },
@@ -70,4 +90,27 @@ test('Master Prompt Synthesizer - structures 4 blocks and real client assets', (
   assert.ok(prompt.includes('Melhor café filtrado da cidade'));
   assert.ok(prompt.includes('Verde sálvia'));
   assert.ok(prompt.includes('React (Vite), Tailwind CSS e Lucide Icons'));
+  assert.ok(prompt.includes('Link Oficial do Google Maps (Perfil do Cliente)'));
+  assert.ok(prompt.includes('https://maps.app.goo.gl/aurora123'));
+  assert.ok(prompt.includes('e NUNCA para o endereço em texto'));
+});
+
+test('Master Prompt Synthesizer - Block 2 strictly directs Google Maps links to client maps URL rather than text address', () => {
+  const prompt = buildMasterPrompt({
+    companyName: 'Studio Bella',
+    dossie: {
+      nome_verificado: 'Studio Bella',
+      endereco_formatado: 'Rua Bela Vista, 100',
+      google_maps_url: 'https://maps.app.goo.gl/studiobella99',
+    },
+    diagnostico: { resumo_empresa: 'Studio de beleza' },
+  });
+
+  const bloco2Match = prompt.match(/### BLOCO 2: DADOS & ATIVOS VERIFICADOS \(GOOGLE MAPS\)[\s\S]*?(?=### BLOCO 3)/);
+  assert.ok(bloco2Match, 'Bloco 2 must exist');
+  const bloco2Text = bloco2Match[0];
+
+  assert.ok(bloco2Text.includes('https://maps.app.goo.gl/studiobella99'));
+  assert.ok(bloco2Text.includes('e NUNCA para o endereço em texto ou buscas genéricas'));
+  assert.ok(bloco2Text.includes('informações corretas do estabelecimento do cliente'));
 });

@@ -70,6 +70,11 @@ export default function ContactProfilePage() {
   const [companyInput, setCompanyInput] = useState('');
   const [isSavingCompany, setIsSavingCompany] = useState(false);
 
+  // Estado de Edição do Link do Google Maps
+  const [isEditingMapsLink, setIsEditingMapsLink] = useState(false);
+  const [mapsLinkInput, setMapsLinkInput] = useState('');
+  const [isSavingMapsLink, setIsSavingMapsLink] = useState(false);
+
   const fetchContactData = useCallback(async () => {
     if (!contactId) return;
     setLoading(true);
@@ -82,6 +87,13 @@ export default function ContactProfilePage() {
         setPromptMestre(savedPrompt);
         setOriginalPrompt(savedPrompt);
         setCompanyInput(data.company || '');
+        const currentMaps =
+          addData.maps_search_link ||
+          addData.maps_url ||
+          addData.dossie?.google_maps_url ||
+          (data.website && (data.website.includes('maps') || data.website.includes('goo.gl')) ? data.website : '') ||
+          '';
+        setMapsLinkInput(currentMaps);
 
         // Fetch associated tags
         const { data: tagData } = await supabase
@@ -133,8 +145,110 @@ export default function ContactProfilePage() {
     }
   };
 
+  const currentMapsUrl =
+    additionalData.maps_search_link ||
+    additionalData.maps_url ||
+    dossie?.google_maps_url ||
+    ((additionalData.links as Array<{ url: string }>) || []).find(
+      (l) => l?.url && (l.url.includes('google.com/maps') || l.url.includes('maps.app.goo.gl') || l.url.includes('share.google'))
+    )?.url ||
+    (contact?.website && (contact.website.includes('maps') || contact.website.includes('goo.gl')) ? contact.website : '') ||
+    '';
+
+  // Handler para salvar e atualizar o link do Google Maps
+  const handleSaveMapsLink = async (newUrl: string) => {
+    if (!contactId) return;
+    const trimmed = (newUrl || '').trim();
+    if (!trimmed) {
+      toast.error('Informe um link ou termo de busca válido.');
+      return;
+    }
+
+    setIsSavingMapsLink(true);
+    try {
+      const currentAddData = (contact?.additional_data as Record<string, any>) || {};
+      const existingLinks = Array.isArray(currentAddData.links) ? [...currentAddData.links] : [];
+      const mapsIdx = existingLinks.findIndex(
+        (l) => l?.url && (l.url.includes('google.com/maps') || l.url.includes('maps.app.goo.gl') || l.url.includes('share.google'))
+      );
+      if (mapsIdx >= 0) {
+        existingLinks[mapsIdx] = { ...existingLinks[mapsIdx], url: trimmed, label: 'Google Maps' };
+      } else {
+        existingLinks.unshift({ url: trimmed, label: 'Google Maps' });
+      }
+
+      const updatedAddData = {
+        ...currentAddData,
+        maps_url: trimmed,
+        maps_search_link: trimmed,
+        links: existingLinks,
+      };
+
+      const contactUpdates: any = {
+        additional_data: updatedAddData,
+      };
+
+      if (trimmed.startsWith('http') && (!contact?.website || contact.website.includes('maps') || contact.website.includes('goo.gl'))) {
+        contactUpdates.website = trimmed;
+      }
+
+      const { error: dbErr } = await supabase
+        .from('contacts')
+        .update(contactUpdates)
+        .eq('id', contactId);
+
+      if (dbErr) {
+        console.warn('Erro ao atualizar contacts no Supabase:', dbErr.message);
+      }
+
+      setContact((prev: any) =>
+        prev
+          ? {
+              ...prev,
+              ...contactUpdates,
+              additional_data: updatedAddData,
+            }
+          : prev
+      );
+
+      // Envia imediatamente a nova URL para a rota de enriquecimento do Maps
+      const res = await fetch(`/api/leads/${contactId}/enrich-dossier`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: trimmed }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Falha ao consultar Google Maps com o novo link.');
+
+      if (data.dossie) {
+        setContact((prev: any) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            company: data.dossie.nome_verificado || prev.company,
+            website: data.dossie.site_oficial || prev.website,
+            additional_data: {
+              ...(prev.additional_data || {}),
+              maps_url: trimmed,
+              maps_search_link: trimmed,
+              dossie: data.dossie,
+            },
+          };
+        });
+      }
+
+      toast.success('Link do Google Maps atualizado e Dossiê sincronizado com sucesso!');
+      setIsEditingMapsLink(false);
+      await fetchContactData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao atualizar link do Google Maps.');
+    } finally {
+      setIsSavingMapsLink(false);
+    }
+  };
+
   // Handler para enriquecer dossiê do Google Maps
-  const handleEnrichDossier = async () => {
+  const handleEnrichDossier = async (customQuery?: string) => {
     if (!contactId) return;
     setEnrichingDossier(true);
     try {
@@ -152,9 +266,11 @@ export default function ContactProfilePage() {
           : (contact?.company || dossie?.nome_verificado || contact?.name || '');
 
       const searchQuery =
-        businessName ||
+        customQuery ||
+        currentMapsUrl ||
         mapsLink ||
         siteLink ||
+        businessName ||
         contact?.company ||
         contact?.name ||
         '';
@@ -361,7 +477,21 @@ export default function ContactProfilePage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleEnrichDossier}
+            onClick={() => {
+              setMapsLinkInput(currentMapsUrl);
+              setIsEditingMapsLink(true);
+            }}
+            className="gap-1.5"
+            title="Alterar o link do Google Maps usado na busca deste lead"
+          >
+            <MapPin className="size-3.5 text-amber-500" />
+            Alterar Link do Maps
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleEnrichDossier()}
             disabled={enrichingDossier}
             className="gap-1.5"
           >
@@ -498,6 +628,31 @@ export default function ContactProfilePage() {
                     <ExternalLink className="size-3" />
                   </a>
                 )}
+
+                {/* Seção de Link de Busca com Botão de Alteração */}
+                <div className="pt-2 mt-2 border-t border-border/40 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                      <MapPin className="size-3 text-amber-500" />
+                      Link de Busca do Maps
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setMapsLinkInput(currentMapsUrl);
+                        setIsEditingMapsLink(true);
+                      }}
+                      className="h-6 px-2 text-xs text-amber-500 hover:text-amber-400 gap-1 hover:bg-amber-500/10"
+                    >
+                      <Pencil className="size-3" />
+                      Alterar Link
+                    </Button>
+                  </div>
+                  <p className="text-xs font-mono text-muted-foreground break-all bg-muted/40 p-2 rounded-lg border border-border/40 select-all">
+                    {currentMapsUrl || 'Nenhum link direto configurado (busca automática por nome)'}
+                  </p>
+                </div>
               </div>
 
               {/* Horários */}
@@ -816,6 +971,65 @@ export default function ContactProfilePage() {
           )}
         </div>
       </div>
+      {/* Dialog para Alterar Link do Google Maps */}
+      <Dialog open={isEditingMapsLink} onOpenChange={setIsEditingMapsLink}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="size-5 text-amber-500" />
+              Alterar Link de Busca do Google Maps
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Caso o cliente tenha enviado outro link do Google Maps (ou link encurtado <code>maps.app.goo.gl</code>), insira-o abaixo. O CRM salvará o novo link e consultará a API imediatamente.
+            </p>
+            <div className="space-y-1.5">
+              <label htmlFor="maps-link-input-field" className="text-xs font-semibold text-foreground">
+                Novo Link ou URL do Google Maps
+              </label>
+              <input
+                id="maps-link-input-field"
+                type="text"
+                value={mapsLinkInput}
+                onChange={(e) => setMapsLinkInput(e.target.value)}
+                placeholder="Ex: https://maps.app.goo.gl/... ou https://google.com/maps/place/..."
+                className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm text-foreground focus:outline-none focus:border-amber-500 transition-colors"
+                autoFocus
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditingMapsLink(false)}
+                disabled={isSavingMapsLink}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => handleSaveMapsLink(mapsLinkInput)}
+                disabled={isSavingMapsLink || !mapsLinkInput.trim()}
+                className="bg-amber-600 hover:bg-amber-700 text-white font-semibold gap-1.5"
+              >
+                {isSavingMapsLink ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    Salvando & Consultando...
+                  </>
+                ) : (
+                  <>
+                    <Check className="size-3.5" />
+                    Salvar e Buscar no Maps
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Modal de Foto em Alta Resolucao */}
       <Dialog open={Boolean(activePhoto)} onOpenChange={(open) => !open && setActivePhoto(null)}>
         <DialogContent className="max-w-3xl p-3 bg-black/90 border-border">

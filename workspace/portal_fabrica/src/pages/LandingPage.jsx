@@ -289,7 +289,7 @@ export default function LandingPage() {
                       id="field-name"
                       type="text"
                       required
-                      placeholder="Ex: Carlos Eduardo Mendes"
+                      
                       value={formData.name}
                       onChange={handleChange('name')}
                       className="w-full px-3.5 py-2.5 rounded-lg bg-[#12151B] border border-[#282F3D] text-[#ECEEF2] placeholder-[#5A6272] text-sm focus:outline-none focus:border-[#E59A28] transition-colors"
@@ -307,7 +307,7 @@ export default function LandingPage() {
                         id="field-email"
                         type="email"
                         required
-                        placeholder="contato@suaempresa.com.br"
+                        
                         value={formData.email}
                         onChange={handleChange('email')}
                         className="w-full px-3.5 py-2.5 rounded-lg bg-[#12151B] border border-[#282F3D] text-[#ECEEF2] placeholder-[#5A6272] text-sm focus:outline-none focus:border-[#E59A28] transition-colors"

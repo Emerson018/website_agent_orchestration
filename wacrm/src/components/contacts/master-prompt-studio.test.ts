@@ -65,4 +65,16 @@ ${diagnostico.estilo_visual_vibe}
     current = original;
     expect(current).toBe(original);
   });
+  it('ensures Block 2 prioritizes direct Google Maps URL over generic address query', () => {
+    const mapsUrl = 'https://maps.app.goo.gl/barbeariadom';
+    const endereco = 'Rua dos Andradas, 200 - Centro';
+
+    const bloco2 = `### BLOCO 2: DADOS & ATIVOS VERIFICADOS (GOOGLE MAPS)
+- **Localização / Endereço:** ${endereco}
+- **Link Oficial do Google Maps (Perfil do Cliente):** ${mapsUrl}
+- **Regra Obrigatória para Links de Mapas:** Todos os links e botões ("Como Chegar", "Ver no Google Maps") DEVEM direcionar ESTRITAMENTE para o link oficial do Google Maps do cliente (${mapsUrl}), e NUNCA para o endereço em texto.`;
+
+    expect(bloco2).toContain(mapsUrl);
+    expect(bloco2).toContain('NUNCA para o endereço em texto');
+  });
 });

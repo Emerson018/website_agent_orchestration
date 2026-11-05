@@ -3,7 +3,7 @@ import fetch from 'node-fetch';
 /**
  * Converte uma URL de foto em base64 inlineData para o Gemini Vision
  */
-async function fetchPhotoAsBase64(photoUrl, timeoutMs = 3500) {
+async function fetchPhotoAsBase64(photoUrl, timeoutMs = 2500) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -33,6 +33,7 @@ export function buildMasterPrompt({
   dossie,
   diagnostico,
   scrapedData,
+  mapsUrl,
 }) {
   const notaStr = dossie?.nota ? `${dossie.nota.toFixed(1)}★ (${dossie.total_avaliacoes || 0} avaliações)` : 'Excelente reputação local';
   const endereco = dossie?.endereco_formatado || 'Consulte localização';
@@ -41,6 +42,12 @@ export function buildMasterPrompt({
   const horarios = Array.isArray(dossie?.horarios_funcionamento) && dossie.horarios_funcionamento.length > 0
     ? dossie.horarios_funcionamento.join(' | ')
     : 'Segunda a Sábado';
+
+  const mapsLink =
+    dossie?.google_maps_url ||
+    dossie?.maps_url ||
+    (typeof mapsUrl === 'string' && mapsUrl ? mapsUrl : null) ||
+    '';
 
   const elogios = Array.isArray(dossie?.elogios_destaque) && dossie.elogios_destaque.length > 0
     ? dossie.elogios_destaque.map((e) => `• "${e.text}" (${e.author})`).join('\n')
@@ -101,6 +108,8 @@ ${diferenciais}${blocoInstitucionalScraped}
 ### BLOCO 2: DADOS & ATIVOS VERIFICADOS (GOOGLE MAPS)
 - **Reputação Comprovada:** ${notaStr}
 - **Localização / Endereço:** ${endereco}
+- **Link Oficial do Google Maps (Perfil do Cliente):** ${mapsLink || 'Não informado'}
+- **Regra Obrigatória para Links de Mapas:** Todos os links, botões e ações de "Como Chegar", "Ver no Google Maps", "Localização" ou clique no endereço no site DEVEM direcionar ESTRITAMENTE para o link oficial do Google Maps do cliente (${mapsLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(companyName + ' ' + endereco)}`}), e NUNCA para o endereço em texto ou buscas genéricas. Isso garante que o usuário final abra diretamente as informações corretas do estabelecimento do cliente (fotos, nota real, avaliações verificadas e rotas oficiais).
 - **Contato / WhatsApp:** ${telefone || 'Informado no atendimento'}
 - **Horários de Operação:** ${horarios}
 - **Prova Social Real (Depoimentos Verificados):**
@@ -119,6 +128,7 @@ ${blocoProdutosScraped}
 - Crie o site utilizando **React (Vite), Tailwind CSS e Lucide Icons**.
 - **NÃO use componentes genéricos ou placeholders de outros nichos.** Todos os textos, botões e chamadas devem ser fiéis a ${companyName}.
 - O botão principal de CTA deve direcionar diretamente para o WhatsApp oficial com mensagem inicial contextualizada (ex: "Olá! Vi o site da ${companyName} e gostaria de...").
+- **Links do Google Maps:** Todos os botões de rotas/localização ("Como Chegar", link de endereço no rodapé/contato) DEVEM utilizar diretamente o link oficial do Google Maps do cliente (${mapsLink || 'link do Maps informado no Bloco 2'}), sem usar pesquisas por endereço de texto puro.
 - Garanta código limpo, componentizado, com responsividade perfeita para smartphones e acessibilidade semântica.
 `;
 }
@@ -130,9 +140,16 @@ export async function runMultimodalBusinessDiagnosis({
   dossie,
   companyName,
   scrapedData,
-  apiKey = process.env.GEMINI_API_KEY,
+  mapsUrl,
+  apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
+  models = [
+    process.env.GEMINI_MODEL,
+    'gemini-3.8-flash',
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
+  ].filter(Boolean),
 }) {
-  const cleanKey = (apiKey || '').trim();
+  const cleanKey = (apiKey || '').trim().replace(/^['"]|['"]$/g, '').trim();
 
   // Regra estrita: fail-fast quando a chave não estiver configurada
   if (!cleanKey) {
@@ -149,6 +166,11 @@ export async function runMultimodalBusinessDiagnosis({
   const nicho = dossie?.nicho_detectado || 'comércio/serviço';
   const totalReviews = dossie?.total_avaliacoes || 0;
   const nota = dossie?.nota || 5.0;
+  const mapsLink =
+    dossie?.google_maps_url ||
+    dossie?.maps_url ||
+    (typeof mapsUrl === 'string' && mapsUrl ? mapsUrl : null) ||
+    '';
 
   // 1. Tenta carregar até 3 fotos reais em base64 para inspeção visual
   const imageParts = [];
@@ -167,6 +189,7 @@ Dados do Google Maps:
 - Segmento/Nicho: ${nicho}
 - Nota: ${nota}★ em ${totalReviews} avaliações
 - Endereço: ${endereco}
+- Link Oficial do Google Maps do Cliente: ${mapsLink || 'Não informado'}
 - Depoimentos reais de clientes: ${reviews.map((r) => r.text).join(' | ') || 'Não informados'}
 
 Sua tarefa é diagnosticar com precisão extrema o que essa empresa realmente é e responder ESTRITAMENTE em formato JSON com o seguinte schema:
@@ -194,36 +217,72 @@ Responda APENAS o JSON válido, sem blocos de markdown adicionais.`;
     },
   ];
 
-  try {
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanKey}`;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
+  const candidateModels = Array.isArray(models) && models.length > 0
+    ? Array.from(new Set(models))
+    : ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.8-flash'];
 
-    const res = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents,
-        generationConfig: {
-          temperature: 0.2,
-          responseMimeType: 'application/json',
-        },
-      }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
+  let lastError = null;
+  let successData = null;
+  let modelUsed = candidateModels[0];
 
-    if (!res.ok) {
+  for (const model of candidateModels) {
+    try {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanKey}`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000);
+
+      const res = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents,
+          generationConfig: {
+            temperature: 0.2,
+            responseMimeType: 'application/json',
+          },
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      if (res.ok) {
+        successData = await res.json();
+        modelUsed = model;
+        lastError = null;
+        break;
+      }
+
       const errBody = await res.text().catch(() => '');
-      return {
-        success: false,
-        code: 'AI_DIAGNOSIS_FAILED',
-        error: `A API do Google Gemini retornou erro (${res.status}): ${errBody || res.statusText}`,
-      };
-    }
+      lastError = `A API do Google Gemini retornou erro (${res.status}): ${errBody || res.statusText}`;
 
-    const data = await res.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      // Se for 503 (alta demanda transitória), 429 (rate limit) ou 404 (modelo indisponível), tenta o próximo modelo
+      if (res.status === 503 || res.status === 429 || res.status === 404) {
+        await new Promise((r) => setTimeout(r, 800));
+        continue;
+      }
+
+      // Erro fatal (ex: 403 API_KEY_SERVICE_BLOCKED, 400 Bad Request) -> interrompe imediatamente
+      break;
+    } catch (err) {
+      lastError = `Não foi possível gerar o diagnóstico da IA: ${err.message}`;
+      // Em caso de timeout/abort da requisição individual, tenta o próximo modelo
+      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+        continue;
+      }
+      break;
+    }
+  }
+
+  if (!successData) {
+    return {
+      success: false,
+      code: 'AI_DIAGNOSIS_FAILED',
+      error: lastError || 'A API do Google Gemini não pôde processar a requisição.',
+    };
+  }
+
+  try {
+    const rawText = successData?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
     let diagnosticoJson = {};
 
     try {
@@ -239,7 +298,7 @@ Responda APENAS o JSON válido, sem blocos de markdown adicionais.`;
     const diagnosticoFinal = {
       ...diagnosticoJson,
       gerado_em: new Date().toISOString(),
-      modelo_utilizado: 'gemini-2.5-flash',
+      modelo_utilizado: modelUsed,
       fotos_analisadas: imageParts.length,
     };
 
@@ -248,6 +307,7 @@ Responda APENAS o JSON válido, sem blocos de markdown adicionais.`;
       dossie,
       diagnostico: diagnosticoFinal,
       scrapedData,
+      mapsUrl: mapsLink,
     });
 
     return {

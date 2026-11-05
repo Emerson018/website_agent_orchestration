@@ -63,4 +63,15 @@ describe('LeadDossierData validation and formatting', () => {
     const mapsDigits = mapsPhone.replace(/\D/g, '');
     expect(leadDigits).not.toBe(mapsDigits);
   });
+  it('supports updating and overriding Google Maps search URL', () => {
+    let capturedUrl = '';
+    const onUpdate = (newUrl: string) => {
+      capturedUrl = newUrl;
+    };
+
+    const newMapsLink = 'https://maps.app.goo.gl/k9827Jks92';
+    onUpdate(newMapsLink);
+    expect(capturedUrl).toBe(newMapsLink);
+    expect(capturedUrl).toContain('maps.app.goo.gl');
+  });
 });

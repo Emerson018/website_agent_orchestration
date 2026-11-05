@@ -40,12 +40,12 @@ test('Server Scrape Deep API - POST /api/leads/:id/scrape-deep', async (t) => {
 
   await new Promise((resolve) => mockScraperServer.listen(8099, resolve));
 
-  process.env.PORT = '5098';
+  process.env.PORT = '5099';
   process.env.AI_FACTORY_URL = 'http://localhost:8099';
 
   const { server } = await import('./server.js');
   await new Promise((r) => setTimeout(r, 400));
-  const baseUrl = 'http://localhost:5098';
+  const baseUrl = 'http://localhost:5099';
 
   const testIdNoUrl = '88801';
   const testIdWithUrl = '88802';

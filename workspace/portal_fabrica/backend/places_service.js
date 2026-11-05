@@ -378,7 +378,8 @@ export async function classifyPhotosWithGemini(photos, apiKey) {
     tipo: 'foto_normal',
   }));
 
-  const geminiKey = apiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const rawGemini = apiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const geminiKey = (rawGemini || '').replace(/^['"]|['"]$/g, '').trim();
   if (!geminiKey || geminiKey.includes('placeholder')) {
     return safePhotos;
   }
@@ -395,7 +396,7 @@ Responda EXCLUSIVAMENTE em formato JSON puro, array de objetos:
 [{"id": 1, "tipo": "cardapio" | "foto_normal"}]`;
 
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${geminiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

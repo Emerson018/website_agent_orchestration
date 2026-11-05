@@ -32,7 +32,7 @@ test('Server backend operates with local resilient queue when Supabase is offlin
   assert.equal(postRes.status, 201);
   const created = await postRes.json();
   assert.ok(created.id);
-  assert.equal(created.status, 'pendente');
+  assert.ok(['pendente', 'aguardando_decisao'].includes(created.status));
   assert.equal(created.is_local, true);
 
   // 3. Test GET /api/projetos

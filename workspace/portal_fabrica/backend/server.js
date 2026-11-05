@@ -810,6 +810,7 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
       const updatedResultado = {
         ...(local.resultado_json || {}),
         dossie: result.dossie,
+        maps_url: req.body?.query || local?.resultado_json?.maps_url,
       };
       updateLocalProject(id, { resultado_json: updatedResultado });
     }
@@ -819,6 +820,7 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
         const updatedResultado = {
           ...(projeto.resultado_json || {}),
           dossie: result.dossie,
+          maps_url: req.body?.query || projeto?.resultado_json?.maps_url,
         };
         const { error: pErr } = await supabase
           .from('fila_projetos')
@@ -849,6 +851,8 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
           additional_data: {
             ...currentAddData,
             website: verifiedWebsite || currentAddData.website || '',
+            maps_url: req.body?.query || currentAddData.maps_url || '',
+            maps_search_link: req.body?.query || currentAddData.maps_search_link || '',
             dossie: result.dossie,
           },
         };
@@ -1083,11 +1087,18 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
     }
 
     const scrapedData = payload?.scraped_data || contactRecord?.additional_data?.scraped_data || null;
+    const mapsUrl =
+      dossie?.google_maps_url ||
+      contactRecord?.additional_data?.maps_url ||
+      contactRecord?.additional_data?.maps_search_link ||
+      local?.resultado_json?.maps_url ||
+      '';
 
     const result = await runMultimodalBusinessDiagnosis({
       dossie,
       companyName,
       scrapedData,
+      mapsUrl,
       apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
     });
 

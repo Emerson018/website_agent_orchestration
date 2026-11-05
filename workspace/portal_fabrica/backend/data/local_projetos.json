@@ -1,5 +1,184 @@
 [
   {
+    "id": 1793843342632,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Barbearia Teste Resiliente\n- **Empresa / Marca**: 'Barbearia Teste Resiliente'\n- **WhatsApp/Tel**: 11999999999\n- **E-mail**: teste@barbearia.com\n- **Site Oficial**: Nenhum site informado\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Barbearia Teste Resiliente",
+      "briefing_payload": {
+        "project_name": "Barbearia Teste Resiliente",
+        "client_info": {
+          "email": "teste@barbearia.com",
+          "phone": "11999999999"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "auto_process": false
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-11-05T01:49:02.632Z",
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 161
+  },
+  {
+    "id": 154,
+    "created_at": "2026-11-05T01:48:27.781662+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Roberto Alencar\n- **Empresa / Marca**: 'null'\n- **WhatsApp/Tel**: (11) 98888-1234\n- **E-mail**: roberto_1793843305206@exemplo.com\n- **Site Oficial**: https://barbeariamodelo.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://barbeariamodelo.com.br (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "roberto_1793843305206@exemplo.com",
+      "phone": "(11) 98888-1234",
+      "company": null,
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://barbeariamodelo.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "d401bd39-032a-4220-8aa4-3c54c962747e",
+      "contact_name": "Roberto Alencar",
+      "project_name": null,
+      "briefing_payload": {
+        "name": "Roberto Alencar",
+        "email": "roberto_1793843305206@exemplo.com",
+        "phone": "(11) 98888-1234",
+        "website": "https://barbeariamodelo.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": "77701",
+    "mensagem_lead": "Cliente sem dossiê",
+    "resultado_json": {},
+    "is_local": true
+  },
+  {
+    "id": "77702",
+    "mensagem_lead": "Cliente com dossiê",
+    "resultado_json": {
+      "project_name": "Studio Estética Bella",
+      "dossie": {
+        "nome_verificado": "Studio Estética Bella",
+        "endereco_formatado": "Rua Bela Vista, 200",
+        "nota": 4.9,
+        "total_avaliacoes": 30,
+        "fotos": [
+          {
+            "id": 1,
+            "photo_url": "http://localhost/test.jpg"
+          }
+        ]
+      }
+    },
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 156
+  },
+  {
+    "id": 153,
+    "created_at": "2026-11-05T01:48:26.854761+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Maria Souza\n- **Empresa / Marca**: 'Estética Renascer 1793843305206'\n- **WhatsApp/Tel**: (51) 971806737\n- **E-mail**: lead_5f_1793843305206@test.com\n- **Site Oficial**: https://esteticarenascer.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://esteticarenascer.com.br (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "lead_5f_1793843305206@test.com",
+      "phone": "(51) 971806737",
+      "company": "Estética Renascer 1793843305206",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://esteticarenascer.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "191a1312-9f9c-4b31-912d-55db3336854b",
+      "contact_name": "Maria Souza",
+      "project_name": "Estética Renascer 1793843305206",
+      "briefing_payload": {
+        "name": "Maria Souza",
+        "email": "lead_5f_1793843305206@test.com",
+        "phone": "(51) 971806737",
+        "company": "Estética Renascer 1793843305206",
+        "website": "https://esteticarenascer.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 1793843305884,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Barbearia Teste Resiliente\n- **Empresa / Marca**: 'Barbearia Teste Resiliente'\n- **WhatsApp/Tel**: 11999999999\n- **E-mail**: teste@barbearia.com\n- **Site Oficial**: Nenhum site informado\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Barbearia Teste Resiliente",
+      "briefing_payload": {
+        "project_name": "Barbearia Teste Resiliente",
+        "client_info": {
+          "email": "teste@barbearia.com",
+          "phone": "11999999999"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "auto_process": false
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-11-05T01:48:25.884Z",
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 158
+  },
+  {
+    "id": "88801",
+    "mensagem_lead": "Gostaria de um cardápio digital para a Pizzaria Nonna",
+    "status": "concluido",
+    "resultado_json": {
+      "project_name": "Pizzaria Nonna E2E",
+      "dossie": {
+        "place_id": "ChIJTESTE2E99",
+        "nome_verificado": "Pizzaria da Nonna E2E",
+        "nicho_detectado": "restaurant",
+        "rating_score": 4.8,
+        "total_reviews": 120,
+        "pitch_comercial_sugerido": "Proposta digital para pizzaria"
+      },
+      "success": true,
+      "status": "concluido",
+      "modelo_utilizado": "Gemini (gemini-3.8-flash)",
+      "target_project_path": "workspace/pizzaria_nonna_e2e",
+      "project_slug": "pizzaria_nonna_e2e",
+      "nicho_detectado": "gastronomia",
+      "backend_port": 5051,
+      "frontend_port": 5174,
+      "backend_url": "http://localhost:5051",
+      "preview_url": "http://localhost:5174",
+      "modules": [
+        "cardapio",
+        "pedidos"
+      ],
+      "provisioned_at": "2026-11-05T01:48:26.025Z"
+    },
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 160
+  },
+  {
     "id": 143,
     "created_at": "2026-11-04T19:42:01.717048+00:00",
     "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: placeholder\n- **Empresa / Marca**: 'null'\n- **WhatsApp/Tel**: (12) 39452-4560\n- **E-mail**: portalarga@gmail.com\n- **Site Oficial**: https://maps.app.goo.gl/wWZ56y3anxg7xN5r9\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://maps.app.goo.gl/wWZ56y3anxg7xN5r9 (Site Oficial do Lead)\n",
@@ -264,42 +443,6 @@
     "supabase_synced": true
   },
   {
-    "id": "88801",
-    "mensagem_lead": "Lead sem url",
-    "resultado_json": {
-      "scraped_data": {
-        "sucesso": true,
-        "urls": [
-          "https://pizzariabella.com.br/cardapio"
-        ],
-        "metodo_utilizado": "stealth_browser",
-        "cardapio": [
-          {
-            "nome": "Pizza Margherita",
-            "preco": "R$ 48,00",
-            "descricao": "Molho e manjericão fresco"
-          }
-        ],
-        "institucional": {
-          "titulo": "Pizzaria Bella",
-          "sobre": "Tradição italiana desde 1990",
-          "contato": {
-            "telefones": [
-              "(11) 99999-8888"
-            ],
-            "emails": [],
-            "enderecos": []
-          }
-        },
-        "markdown_resumo": "### Pizzaria Bella\n- Pizza Margherita: R$ 48,00"
-      },
-      "scraping_urls": [
-        "https://pizzariabella.com.br/cardapio"
-      ]
-    },
-    "is_local": true
-  },
-  {
     "id": "88802",
     "mensagem_lead": "Lead com url de site",
     "resultado_json": {
@@ -459,34 +602,6 @@
     "supabase_service_role_key": null,
     "is_local": false,
     "supabase_synced": true
-  },
-  {
-    "id": "77701",
-    "mensagem_lead": "Cliente sem dossiê",
-    "resultado_json": {},
-    "is_local": true
-  },
-  {
-    "id": "77702",
-    "mensagem_lead": "Cliente com dossiê",
-    "resultado_json": {
-      "project_name": "Studio Estética Bella",
-      "dossie": {
-        "nome_verificado": "Studio Estética Bella",
-        "endereco_formatado": "Rua Bela Vista, 200",
-        "nota": 4.9,
-        "total_avaliacoes": 30,
-        "fotos": [
-          {
-            "id": 1,
-            "photo_url": "http://localhost/test.jpg"
-          }
-        ]
-      }
-    },
-    "is_local": false,
-    "supabase_synced": true,
-    "supabase_id": 121
   },
   {
     "id": 1793798228130,

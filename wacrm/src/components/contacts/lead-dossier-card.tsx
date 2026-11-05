@@ -22,6 +22,8 @@ import {
   Store,
   PhoneCall,
   MessageCircle,
+  Pencil,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -84,6 +86,7 @@ interface LeadDossierCardProps {
   isGeneratingPwa?: boolean;
   onDossierEnriched?: (dossie: LeadDossierData) => void;
   onArchiveLead?: () => void;
+  onUpdateTargetUrl?: (newUrl: string) => void;
 }
 
 export function LeadDossierCard({
@@ -96,6 +99,7 @@ export function LeadDossierCard({
   isGeneratingPwa,
   onDossierEnriched,
   onArchiveLead,
+  onUpdateTargetUrl,
 }: LeadDossierCardProps) {
   const [dossie, setDossie] = useState<LeadDossierData | null>(initialDossie || null);
   const [isLoading, setIsLoading] = useState(false);
@@ -103,6 +107,16 @@ export function LeadDossierCard({
   const [copiedPitch, setCopiedPitch] = useState(false);
   const [isArchived, setIsArchived] = useState(false);
   const [filterFoto, setFilterFoto] = useState<'todas' | 'cardapio' | 'foto_normal'>('todas');
+  const [activeUrl, setActiveUrl] = useState<string>(targetUrl || '');
+  const [isEditingUrl, setIsEditingUrl] = useState(false);
+  const [urlInput, setUrlInput] = useState<string>(targetUrl || '');
+
+  React.useEffect(() => {
+    if (targetUrl !== undefined) {
+      setActiveUrl(targetUrl);
+      setUrlInput(targetUrl);
+    }
+  }, [targetUrl]);
 
   // Helper para URL base da API do portal
   const apiBase =
@@ -116,10 +130,10 @@ export function LeadDossierCard({
     }
   }, [initialDossie]);
 
-  async function handleEnrichDossier() {
+  async function handleEnrichDossier(overrideQuery?: string) {
     setIsLoading(true);
     try {
-      const query = targetUrl || companyName || '';
+      const query = overrideQuery || activeUrl || targetUrl || companyName || '';
       if (!query) {
         toast.error('Informe o site, link do Google Maps ou nome da empresa.');
         setIsLoading(false);
@@ -158,6 +172,18 @@ export function LeadDossierCard({
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function handleSaveNewTargetUrl() {
+    const trimmed = urlInput.trim();
+    if (!trimmed) {
+      toast.error('Informe um link do Google Maps ou termo de busca válido.');
+      return;
+    }
+    setActiveUrl(trimmed);
+    setIsEditingUrl(false);
+    onUpdateTargetUrl?.(trimmed);
+    await handleEnrichDossier(trimmed);
   }
 
   async function handleGenerateAIPitch() {
@@ -222,8 +248,57 @@ export function LeadDossierCard({
           Antes de gerar o site, consulte a inteligência do Google Maps para entender as avaliações,
           dores dos clientes e fotos reais deste negócio.
         </p>
+
+        {isEditingUrl ? (
+          <div className="space-y-2 p-2.5 rounded-lg bg-background/80 border border-amber-500/30">
+            <label className="text-[11px] font-semibold text-foreground block">
+              Link de Busca do Google Maps:
+            </label>
+            <input
+              type="text"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="https://maps.app.goo.gl/... ou termo de busca"
+              className="w-full px-2.5 py-1.5 text-xs rounded border border-border bg-background text-foreground focus:outline-none focus:border-amber-500"
+            />
+            <div className="flex justify-end gap-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditingUrl(false)}
+                className="h-7 px-2 text-xs"
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveNewTargetUrl}
+                disabled={isLoading}
+                className="h-7 px-2.5 text-xs bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Salvar & Consultar'}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between text-[11px] bg-background/50 px-2 py-1.5 rounded border border-border/50">
+            <span className="truncate text-muted-foreground mr-2 font-mono text-[10px]">
+              {activeUrl || targetUrl || companyName || 'Sem link definido'}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditingUrl(true)}
+              className="h-5 px-1.5 text-[10px] text-amber-500 hover:text-amber-400 shrink-0 gap-1"
+            >
+              <Pencil className="h-2.5 w-2.5" />
+              Alterar Link
+            </Button>
+          </div>
+        )}
+
         <Button
-          onClick={handleEnrichDossier}
+          onClick={() => handleEnrichDossier()}
           disabled={isLoading}
           size="sm"
           className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5"
@@ -277,6 +352,16 @@ export function LeadDossierCard({
                 <ExternalLink className="h-3 w-3" />
               </a>
             )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditingUrl(!isEditingUrl)}
+              className="h-5 px-1.5 text-[10px] text-amber-500 hover:text-amber-400 gap-1 ml-1"
+              title="Alterar o link do Google Maps para re-enriquecer"
+            >
+              <Pencil className="h-2.5 w-2.5" />
+              Alterar Link
+            </Button>
           </div>
           {dossie.endereco_formatado && (
             <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
@@ -299,6 +384,39 @@ export function LeadDossierCard({
           </div>
         )}
       </div>
+
+      {isEditingUrl && (
+        <div className="p-2.5 rounded-lg bg-muted/40 border border-amber-500/30 space-y-2">
+          <label className="text-[11px] font-semibold text-foreground block">
+            Alterar Link de Busca do Google Maps:
+          </label>
+          <input
+            type="text"
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            placeholder="https://maps.app.goo.gl/... ou termo de busca"
+            className="w-full px-2.5 py-1.5 text-xs rounded border border-border bg-background text-foreground focus:outline-none focus:border-amber-500"
+          />
+          <div className="flex justify-end gap-1.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditingUrl(false)}
+              className="h-7 px-2 text-xs"
+            >
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSaveNewTargetUrl}
+              disabled={isLoading}
+              className="h-7 px-2.5 text-xs bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Salvar & Buscar'}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Barra de Ações Rápidas: Site Oficial + Cardápio + Maps */}
       <div className="flex flex-wrap items-center gap-2">

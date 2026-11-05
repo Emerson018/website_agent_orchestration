@@ -90,3 +90,19 @@ test('formatBrazilianPhone limits input to 11 digits and applies (DD) 9XXXX-XXXX
   assert.equal(isValidBrazilianPhone('(51) 3344-5566'), true);
   assert.equal(isValidBrazilianPhone('(51) 9987'), false);
 });
+
+test('LandingPage form inputs do not contain placeholders for Nome Completo and Email de Contato', async () => {
+  const fs = await import('node:fs/promises');
+  const path = await import('node:path');
+  const landingCode = await fs.readFile(path.resolve('workspace/portal_fabrica/src/pages/LandingPage.jsx'), 'utf-8');
+
+  // Check field-name
+  const nameInputMatch = landingCode.match(/id="field-name"[\s\S]*?\/>/);
+  assert.ok(nameInputMatch, 'field-name input must exist');
+  assert.ok(!nameInputMatch[0].includes('placeholder='), 'field-name must NOT have a placeholder');
+
+  // Check field-email
+  const emailInputMatch = landingCode.match(/id="field-email"[\s\S]*?\/>/);
+  assert.ok(emailInputMatch, 'field-email input must exist');
+  assert.ok(!emailInputMatch[0].includes('placeholder='), 'field-email must NOT have a placeholder');
+});
