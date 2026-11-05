@@ -1,6 +1,6 @@
 Contexto de Arquitetura & BrandDesignSpec: AppCustomizado
 0. Motor de IA Utilizado
-Motor / Modelo: Gerador Multi-Arquétipo + Prompt Gemini (gemini-3.8-flash)
+Motor / Modelo: Antigravity CLI (Headless)
 Arquétipo Estrutural de Layout: bento_modular
 
 1. Design Direction & Essência da Marca (Gerada com a Skill /frontend-design)

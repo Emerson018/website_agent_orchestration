@@ -20,6 +20,12 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../../wacrm/.env.local') });
 dotenv.config();
 
+export function reloadEnv() {
+  dotenv.config({ path: path.join(__dirname, '.env'), override: true });
+  dotenv.config({ path: path.resolve(__dirname, '../../../.env'), override: true });
+  dotenv.config({ path: path.resolve(__dirname, '../../../wacrm/.env.local'), override: true });
+}
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 const SOFTWARE_FACTORY_API_URL = process.env.SOFTWARE_FACTORY_API_URL || 'http://localhost:8000';
@@ -701,6 +707,7 @@ app.get('/api/projetos/:id', async (req, res) => {
 // Rota de consulta direta ao Google Places
 app.post('/api/dossie/consultar', async (req, res) => {
   try {
+    reloadEnv();
     const { query, url } = req.body;
     const target = url || query;
     if (!target) {
@@ -1070,7 +1077,7 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
     }
 
     const payload = projeto?.resultado_json?.briefing_payload || projeto?.resultado_json || {};
-    const dossie = payload?.dossie || contactRecord?.additional_data?.dossie || null;
+    const dossie = projeto?.resultado_json?.dossie || payload?.dossie || contactRecord?.additional_data?.dossie || null;
     const companyName =
       payload?.project_name ||
       contactRecord?.company ||

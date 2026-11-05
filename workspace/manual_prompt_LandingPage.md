@@ -152,21 +152,21 @@ O template possui suporte nativo a `framer-motion`. Adicione dinamismo autoral e
 4. Invariante de Rolagem de Âncoras: TODA seção com `id` (ex: `id="inicio"`, `id="destaques"`, `id="sobre"`, `id="contato"`) DEVE incluir a classe `scroll-mt-24` para compensar a altura do Navbar sticky e nunca sobrepor o título.
 
 === DESIGN DIRECTION APROVADA NO PASSE 1 (OBRIGATÓRIO SEGUIR) ===
-- Tema (`theme`): dark
+- Tema (`theme`): light
 - Paleta Semântica (CSS Variables disponíveis em :root):
-  * `--primary-color`: #6366F1
-  * `--secondary-color`: #1A1A1A
-  * `--bg-color`: #0F172A
-  * `--surface-color`: #1E293B
-  * `--text-color`: #F8FAFC
-  * `--muted-color`: #94A3B8
+  * `--primary-color`: #C8321E
+  * `--secondary-color`: #2E4F2F
+  * `--bg-color`: #F9F4E8
+  * `--surface-color`: #EFE8D5
+  * `--text-color`: #241914
+  * `--muted-color`: #735F52
 - Tipografia Google Fonts injetada:
-  * Display/Títulos (`font-display` / `--font-display`): Space Grotesk
+  * Display/Títulos (`font-display` / `--font-display`): Fraunces
   * Corpo (`font-sans` / `--font-sans`): Plus Jakarta Sans
-- Conceito de Layout (`layout_concept`): Bento Grid Modular de Alta Precisão: Composição em mosaico técnico de células assimétricas (col-span-8 + col-span-4), combinando vitrine principal, células de métricas/horários ao vivo e grade modular de serviços.
-- Elemento Focal Único (`focal_element`): Painel tipográfico de abertura com chamada direta para reserva de horário online.
-- Revisão Anti-Clichê (`design_critique`): Removidos jargões genéricos de IA e decorações supérfluas; foco em clareza de escopo, horários e reserva.
-- Tom de Voz (`copy_tone`): Objetivo, claro e orientado à ação do cliente.
+- Conceito de Layout (`layout_concept`): Estrutura inspirada nos cardápios impressos em papel algodão das cantinas tradicionais do sul da Itália, alinhada à esquerda com hierarquia tipográfica de livro de receitas. Em vez de uma grade de cartões quadrados de e-commerce, os sabores são dispostos em linhas editoriais contínuas com linhas pontilhadas sutis ligando o nome da pizza ao preço, acompanhadas de retratos fotográficos recortados apenas para as criações principais e uma comanda lateral fixa (ou gaveta inferior tátil no celular) que funciona como o bloco de notas do garçom.
+- Elemento Focal Único (`focal_element`): O Montador Visual de Pizza ('Bancada da Nonna'): no topo do cardápio, um disco de pizza ilustrado e fotográfico que permite ao cliente escolher entre pizza inteira ou meio a meio com um único toque, atualizando visualmente as duas metades do disco e o valor final antes de enviar para a comanda.
+- Revisão Anti-Clichê (`design_critique`): Rejeitamos o layout de grade SaaS de 3 colunas com sombras cinzas idênticas e substituímos por uma lista editorial de cantina com espaçamento generoso e foco nos ingredientes. Eliminamos a paleta clichê de fundo creme #F4F1EA com terracota #D97757 em favor do contraste vivo entre tomate San Marzano (#C8321E), farinha de sêmola (#F9F4E8) e verde manjericão (#2E4F2F). Removemos todos os eyebrows em caixa alta espaçada, marcadores numéricos falsos (01/02/03) e setas '→' nos botões; cada ação usa verbos diretos de mesa ('Adicionar à comanda', 'Montar meio a meio', 'Enviar pedido pelo WhatsApp'). A animação se resume à transição física do disco meio a meio e ao deslize suave do bloco da comanda.
+- Tom de Voz (`copy_tone`): Acolhedor, apetitoso e específico. Escreve os ingredientes exatos de cada receita sem adjetivos vazios como 'incrível' ou 'incomparável', colocando o leitor diante do cheiro de lenha e manjericão fresco.
 
 
 <ARCHITECTURAL_CONTRACT>
@@ -185,9 +185,9 @@ CONTRATO ARQUITETURAL E INVARIANTES TÉCNICOS DO GOLD TEMPLATE (BACKEND COMPARTI
 </ARCHITECTURAL_CONTRACT>
 
 <LAYOUT_ARCHETYPE_BLUEPRINT>
-ARQUÉTIPO ESTRUTURAL OBRIGATÓRIO DESTE PROJETO: `bento_modular` (Bento Grid Modular de Alta Precisão)
-- Diretriz Estrutural: Composição em mosaico técnico de células assimétricas (col-span-8 + col-span-4), combinando vitrine principal, células de métricas/horários ao vivo e grade modular de serviços.
-- PROIBIDO gerar um layout genérico de 3 cartões SaaS iguais. A estrutura visual, o grid e o ritmo de leitura devem materializar o arquétipo `bento_modular` e seguir a sequência do `section_blueprint`.
+ARQUÉTIPO ESTRUTURAL OBRIGATÓRIO DESTE PROJETO: `editorial_asymmetric` (Editorial Split-Screen Assimétrico)
+- Diretriz Estrutural: Abertura em coluna assimétrica 7/5 estilo revista impressa com manifesto da casa à esquerda, retrato vertical emoldurado à direita e catálogo numerado (01, 02, 03) em linhas horizontais.
+- PROIBIDO gerar um layout genérico de 3 cartões SaaS iguais. A estrutura visual, o grid e o ritmo de leitura devem materializar o arquétipo `editorial_asymmetric` e seguir a sequência do `section_blueprint`.
 </LAYOUT_ARCHETYPE_BLUEPRINT>
 
 ```
@@ -198,84 +198,141 @@ Construa o código completo de `LandingPage.jsx` consumindo fielmente o contrato
 
 <BRAND_DESIGN_SPEC_JSON>
 {
-  "app_name": "AppCustomizado",
-  "niche": "Serviços Especializados",
-  "theme": "dark",
+  "app_name": "Pizzaria Nonna",
+  "niche": "Pizzaria Artesanal e Cardápio Digital de Longa Fermentação",
+  "theme": "light",
   "palette_tokens": {
-    "primary_color": "#6366F1",
-    "secondary_color": "#1A1A1A",
-    "bg_color": "#0F172A",
-    "surface_color": "#1E293B",
-    "text_color": "#F8FAFC",
-    "muted_color": "#94A3B8"
+    "primary_color": "#C8321E",
+    "secondary_color": "#2E4F2F",
+    "bg_color": "#F9F4E8",
+    "surface_color": "#EFE8D5",
+    "text_color": "#241914",
+    "muted_color": "#735F52"
   },
   "typography": {
-    "font_heading": "Space Grotesk",
+    "font_heading": "Fraunces",
     "font_body": "Plus Jakarta Sans"
   },
   "brand_identity": {
-    "tagline": "Atendimento com hora marcada na AppCustomizado",
-    "brand_essence": "AppCustomizado posiciona-se no segmento de Serviços Especializados combinando domínio técnico em Atendimento Individual, Avaliação e Diagnóstico e Agendamento Online Direto com uma atmosfera moderno, tecnológico, dinâmico e profissional.",
-    "value_proposition": "Oferecer Atendimento Individual, Avaliação e Diagnóstico e Agendamento Online Direto no AppCustomizado com agendamento digital sem fila de espera, preparo prévio da equipe e transparência de valores e horários.",
-    "target_audience": "Clientes de AppCustomizado que buscam atendimento individual, avaliação e diagnóstico e agendamento online direto com pontualidade, atendimento personalizado e confirmação imediata pelo celular ou computador.",
+    "tagline": "Massa aberta na mão, molho de tomates assados e forno a lenha aceso desde as cinco.",
+    "brand_essence": "Caderno de receitas da cantina italiana traduzido em um cardápio digital tátil, direto e sem atalhos entre a fome e o pedido.",
+    "value_proposition": "Cardápio digital interativo focado na escolha rápida de sabores clássicos e autorais, montagem descomplicada de pizzas meio a meio e envio direto do pedido.",
+    "target_audience": "Famílias, casais e grupos de amigos que valorizam pizza de fermentação lenta, ingredientes de origem clara e querem fazer o pedido pelo celular sem enfrentar telas confusas de aplicativos genéricos.",
     "brand_pillars": [
-      "Especialização em Atendimento Individual com padrão consistente de entrega",
-      "Arquitetura visual Bento Grid Modular de Alta Precisão desenhada para leitura rápida e decisão imediata",
-      "Reserva online integrada em tempo real com confirmação direta de data e horário"
+      "Massa de 48 horas de maturação em temperatura controlada",
+      "Molho preparado na casa com tomates pelados italianos",
+      "Cardápio enxuto com leitura de cantina tradicional",
+      "Pedido direto no balcão ou entrega sem taxas intermediárias"
     ],
-    "copy_tone": "Objetivo, claro e orientado à ação do cliente."
+    "copy_tone": "Acolhedor, apetitoso e específico. Escreve os ingredientes exatos de cada receita sem adjetivos vazios como 'incrível' ou 'incomparável', colocando o leitor diante do cheiro de lenha e manjericão fresco."
   },
   "layout_architecture": {
-    "layout_archetype": "bento_modular",
-    "layout_archetype_label": "Bento Grid Modular de Alta Precisão",
-    "layout_concept": "Bento Grid Modular de Alta Precisão: Composição em mosaico técnico de células assimétricas (col-span-8 + col-span-4), combinando vitrine principal, células de métricas/horários ao vivo e grade modular de serviços.",
-    "focal_element": "Painel tipográfico de abertura com chamada direta para reserva de horário online.",
-    "design_critique": "Removidos jargões genéricos de IA e decorações supérfluas; foco em clareza de escopo, horários e reserva.",
+    "layout_archetype": "editorial_asymmetric",
+    "layout_archetype_label": "Editorial Split-Screen Assimétrico",
+    "layout_concept": "Estrutura inspirada nos cardápios impressos em papel algodão das cantinas tradicionais do sul da Itália, alinhada à esquerda com hierarquia tipográfica de livro de receitas. Em vez de uma grade de cartões quadrados de e-commerce, os sabores são dispostos em linhas editoriais contínuas com linhas pontilhadas sutis ligando o nome da pizza ao preço, acompanhadas de retratos fotográficos recortados apenas para as criações principais e uma comanda lateral fixa (ou gaveta inferior tátil no celular) que funciona como o bloco de notas do garçom.",
+    "focal_element": "O Montador Visual de Pizza ('Bancada da Nonna'): no topo do cardápio, um disco de pizza ilustrado e fotográfico que permite ao cliente escolher entre pizza inteira ou meio a meio com um único toque, atualizando visualmente as duas metades do disco e o valor final antes de enviar para a comanda.",
+    "design_critique": "Rejeitamos o layout de grade SaaS de 3 colunas com sombras cinzas idênticas e substituímos por uma lista editorial de cantina com espaçamento generoso e foco nos ingredientes. Eliminamos a paleta clichê de fundo creme #F4F1EA com terracota #D97757 em favor do contraste vivo entre tomate San Marzano (#C8321E), farinha de sêmola (#F9F4E8) e verde manjericão (#2E4F2F). Removemos todos os eyebrows em caixa alta espaçada, marcadores numéricos falsos (01/02/03) e setas '→' nos botões; cada ação usa verbos diretos de mesa ('Adicionar à comanda', 'Montar meio a meio', 'Enviar pedido pelo WhatsApp'). A animação se resume à transição física do disco meio a meio e ao deslize suave do bloco da comanda.",
     "section_blueprint": [
-      "1. Bento Hero Mosaico: Célula principal (8 colunas) com proposta de valor + 2 células laterais (4 colunas) com horário e localização rápida",
-      "2. Matriz Modular de Serviços: Grid assimétrico em células com bordas expostas, badge técnico, preço em destaque e link para /agendar",
-      "3. Painel de Diferenciais Operacionais: 3 células técnicas lado a lado detalhando os pilares reais da marca",
-      "4. Barra de Ação & Atendimento Direto: Bloco compacto de conversão imediata para a agenda online"
+      {
+        "id": "hero-forno",
+        "title": "Abertura e Status da Fornada",
+        "purpose": "Apresentar a identidade da Pizzaria Nonna, o indicador ao vivo de forno aceso com tempo médio de saída e atalho imediato para as categorias ou montagem meio a meio.",
+        "layout": "Cabeçalho assimétrico com tipografia Fraunces em grande escala à esquerda, selo de temperatura/tempo do forno e destaque fotográfico da pizza recém-saída da pedra à direita."
+      },
+      {
+        "id": "bancada-meio-a-meio",
+        "title": "Montador Meio a Meio da Nonna",
+        "purpose": "Resolver a principal dúvida de quem pede pizza em família ou casal permitindo combinar dois sabores e escolher a borda em uma única superfície visual.",
+        "layout": "Painel interativo em destaque sobre superfície cor de sêmola (#EFE8D5) com seletor de metades lado a lado e cálculo instantâneo."
+      },
+      {
+        "id": "cardapio-cantina",
+        "title": "Cardápio por Categorias",
+        "purpose": "Exibir Entradas do Forno, Pizzas Clássicas, Especialidades da Nonna e Dolci com leitura rápida de ingredientes e adição em um toque.",
+        "layout": "Navegação por abas aderentes no topo com listagem editorial em coluna dupla no desktop e coluna única no mobile, destacando ingredientes e preços alinhados."
+      },
+      {
+        "id": "segredo-da-massa",
+        "title": "A Farinha, o Tempo e a Lenha",
+        "purpose": "Justificar o valor artesanal da pizza explicando em linguagem direta as 48 horas de fermentação e a origem do molho.",
+        "layout": "Faixa editorial enxuta dividida em três blocos tipográficos sem cartões, com bordas finas inspiradas em sacos de farinha italiana."
+      },
+      {
+        "id": "comanda-e-retirada",
+        "title": "Comanda Digital e Informações da Casa",
+        "purpose": "Permitir revisão do pedido, escolha entre entrega ou retirada no balcão, consulta de endereço e envio direto formatado para o atendimento.",
+        "layout": "Rodapé completo com dados de funcionamento e gaveta de comanda persistente na base da tela."
+      }
     ]
   },
   "real_services": [
     {
-      "name": "Atendimento Individual",
-      "price": "Sob consulta",
-      "description": "Sessão dedicada com horário reservado exclusivamente para a sua demanda.",
-      "badge": "Mais procurado"
+      "name": "Margherita Verace",
+      "category": "Pizzas Clássicas",
+      "description": "Molho de tomates San Marzano amassados à mão, fior di latte fresca, folhas de manjericão colhidas no dia e azeite extravirgem na saída do forno.",
+      "price": "R$ 68,00",
+      "prep_time": "25-35 min",
+      "highlight": true
     },
     {
-      "name": "Avaliação e Diagnóstico",
-      "price": "Sob consulta",
-      "description": "Análise técnica detalhada com apresentação de etapas e prazos claros.",
-      "badge": "Hora marcada"
+      "name": "Calabresa Curada & Cebola Roxa",
+      "category": "Pizzas Clássicas",
+      "description": "Linguiça calabresa artesanal fatiada fina, cebola roxa caramelizada na lenha, azeitonas pretas e orégano chileno.",
+      "price": "R$ 72,00",
+      "prep_time": "25-35 min",
+      "highlight": false
     },
     {
-      "name": "Agendamento Online Direto",
-      "price": "Online",
-      "description": "Seleção imediata de data e horário disponível com confirmação automática.",
-      "badge": "Hora marcada"
+      "name": "Nonna Rosa (Burrata & Pesto)",
+      "category": "Especialidades da Nonna",
+      "description": "Base de molho rústico, burrata inteira adicionada fria no centro, pesto genovês de manjericão com pinoli e raspas de limão siciliano.",
+      "price": "R$ 86,00",
+      "prep_time": "30-40 min",
+      "highlight": true
+    },
+    {
+      "name": "Funghi Trifolati & Taleggio",
+      "category": "Especialidades da Nonna",
+      "description": "Cogumelos Paris e Portobello salteados no alho e tomilho fresco sobre base branca de queijo taleggio derretido e salsinha picada.",
+      "price": "R$ 84,00",
+      "prep_time": "30-40 min",
+      "highlight": false
+    },
+    {
+      "name": "Focaccia de Alecrim e Flor de Sal",
+      "category": "Entradas do Forno",
+      "description": "Massa da casa assada direto na pedra com azeite infusionado no alho, ramos de alecrim fresco e lascas de parmesão maturados.",
+      "price": "R$ 34,00",
+      "prep_time": "15-20 min",
+      "highlight": false
+    },
+    {
+      "name": "Tiramisù da Casa",
+      "category": "Dolci & Bebidas",
+      "description": "Biscoitos savoiardi embebidos em café expresso forte, creme leve de mascarpone batido na hora e cacau alcalino peneirado na mesa.",
+      "price": "R$ 32,00",
+      "prep_time": "Pronta entrega",
+      "highlight": false
     }
   ],
   "contact_and_location": {
-    "address": "Av. Principal, 1000 - Centro - Porto Alegre/RS",
-    "working_hours": "Segunda a Sábado das 9h às 18h",
-    "phone": "(51) 99999-9999"
+    "address": "Rua das Oliveiras, 412, Bairro Jardins",
+    "working_hours": "Terça a Domingo, das 18h30 às 23h30",
+    "phone": "(11) 98765-4321"
   },
   "curated_media": {
-    "hero_img": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80",
+    "hero_img": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80",
     "service_images": [
-      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80",
-      "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80",
-      "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=600&q=80"
+      "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80"
     ]
   }
 }
 </BRAND_DESIGN_SPEC_JSON>
 
 Contexto original complementar do cliente:
-Lead sem url
+Gostaria de um cardápio digital para a Pizzaria Nonna
 ```
 
 ## Instruções de Conclusão

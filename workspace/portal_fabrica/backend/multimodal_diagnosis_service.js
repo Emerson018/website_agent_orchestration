@@ -70,8 +70,8 @@ export function buildMasterPrompt({
     blocoProdutosScraped = `
 ---
 
-### BLOCO DE PRODUTOS & CARDÁPIO OFICIAL (EXTRAÍDO COM SCRAPLING)
-O site DEVE incluir os itens e preços reais abaixo em suas seções de catálogo/cardápio:
+### BLOCO DE PRODUTOS & CATÁLOGO OFICIAL (EXTRAÍDO COM SCRAPLING)
+O projeto DEVE estruturar e exibir os itens e preços reais abaixo em sua seção de catálogo/cardápio, sem omitir ou inventar valores:
 ${itensLines}
 `;
   }
@@ -88,28 +88,32 @@ ${itensLines}
     blocoInstitucionalScraped = `${sobreText}${servicosLines}`;
   }
 
-  return `# PROMPT MESTRE DE ENGENHARIA DE SITE (GERAÇÃO 100% DO ZERO)
+  return `# BRIEFING MESTRE DO PROJETO & ARQUITETURA DE EXECUÇÃO
 
-Atue como um Engenheiro Frontend Sênior e Diretor Criativo especializado em interfaces digitais premium e conversão direta via WhatsApp.
-Sua missão é desenvolver o código completo de um site/web app profissional do zero para a empresa abaixo, SEM utilizar templates genéricos nem estruturas pré-fabricadas.
+Este documento é a Fonte da Verdade (Single Source of Truth) sobre o negócio do cliente, seus dados verificados e as regras técnicas do projeto. 
+
+O desenvolvimento será conduzido no Antigravity através de um pipeline de Skills especializadas:
+1. **Liderança de Engenharia (\`mattpocock/skills\`):** Responsável por transformar este documento em especificação técnica (\`/to-spec\`), fatiar em tarefas lógicas (\`/to-tickets\`) e coordenar a implementação (\`/implement\`) e revisão (\`/code-review\`).
+2. **Direção de Arte & UI (\`impeccable\`):** Responsável por ler a essência do negócio (Bloco 1 e Bloco 3) e decidir de forma autônoma a tipografia, o sistema de grid, a composição do layout e a hierarquia visual, consolidando tudo no arquivo \`DESIGN.md\`.
+3. **Engenharia de Motion (\`emilkowalski/skills\`):** Responsável por analisar a interface pronta e aplicar micro-interações, física de animação e fluidez na etapa de acabamento (\`emil-design-eng\`, \`animate\`).
 
 ---
 
-### BLOCO 1: IDENTIDADE & VIBE REAL DO NEGÓCIO
+### BLOCO 1: IDENTIDADE, POSICIONAMENTO & ESSÊNCIA DO NEGÓCIO
 - **Nome da Empresa:** ${companyName}
 - **O que a empresa realmente é:** ${diagnostico?.resumo_empresa || `Estabelecimento consolidado no segmento de ${nicho}.`}
-- **Estilo Visual & Atmosfera:** ${diagnostico?.estilo_visual_vibe || 'Design contemporâneo, sofisticado e acolhedor, refletindo a energia autêntica do espaço físico.'}
+- **Atmosfera & Personalidade da Marca:** ${diagnostico?.estilo_visual_vibe || 'Design contemporâneo, sofisticado e acolhedor, refletindo a energia autêntica do espaço físico.'}
 - **Público-Alvo Primário:** ${diagnostico?.publico_alvo || 'Clientes locais que valorizam qualidade, pontualidade e experiência personalizada.'}
 - **Diferenciais Competitivos:**
 ${diferenciais}${blocoInstitucionalScraped}
 
 ---
 
-### BLOCO 2: DADOS & ATIVOS VERIFICADOS (GOOGLE MAPS)
+### BLOCO 2: DADOS & ATIVOS VERIFICADOS (GOOGLE MAPS) — REGRAS ESTRITAS
 - **Reputação Comprovada:** ${notaStr}
 - **Localização / Endereço:** ${endereco}
 - **Link Oficial do Google Maps (Perfil do Cliente):** ${mapsLink || 'Não informado'}
-- **Regra Obrigatória para Links de Mapas:** Todos os links, botões e ações de "Como Chegar", "Ver no Google Maps", "Localização" ou clique no endereço no site DEVEM direcionar ESTRITAMENTE para o link oficial do Google Maps do cliente (${mapsLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(companyName + ' ' + endereco)}`}), e NUNCA para o endereço em texto ou buscas genéricas. Isso garante que o usuário final abra diretamente as informações corretas do estabelecimento do cliente (fotos, nota real, avaliações verificadas e rotas oficiais).
+- **Regra Inegociável para Links de Mapas:** Todos os links, botões e ações de "Como Chegar", "Ver no Google Maps", "Localização" ou clique no endereço no site DEVEM direcionar ESTRITAMENTE para o link oficial do Google Maps acima (${mapsLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(companyName + ' ' + endereco)}`}), e NUNCA para o endereço em texto ou buscas genéricas.
 - **Contato / WhatsApp:** ${telefone || 'Informado no atendimento'}
 - **Horários de Operação:** ${horarios}
 - **Prova Social Real (Depoimentos Verificados):**
@@ -117,19 +121,20 @@ ${elogios}
 ${blocoProdutosScraped}
 ---
 
-### BLOCO 3: DIRETRIZES DE DESIGN, CORES E TIPOGRAFIA
-- **Paleta de Cores Recomendada:** ${diagnostico?.paleta_cores_sugerida || 'Tons primários inspirados na decoração real do local, com contraste alto para leitura e toques dourados/âmbar para botões de ação.'}
-- **Direção Tipográfica:** Títulos marcantes e com personalidade (ex: Plus Jakarta Sans / Syne) combinados com corpo de texto neutro e ultra legível (Inter).
-- **Layout & Composição:** Estrutura editorial assimétrica, hero section imersiva destacando a proposta de valor, badges de reputação em evidência e micro-interações elegantes com Framer Motion.
+### BLOCO 3: INSUMOS CRIATIVOS (DELEGAÇÃO PARA AS SKILLS DE DESIGN & MOTION)
+*Atenção Agente: NENHUM layout, fonte ou estrutura de grid está pré-fixado neste briefing. As decisões de UI/UX pertencem exclusivamente às skills de design instaladas.*
+
+- **Referência de Território Cromatico (Extraído da Marca):** ${diagnostico?.paleta_cores_sugerida || 'Tons primários inspirados na decoração real do local, com contraste alto para leitura e toques refinados para botões de ação.'} *(O Impeccable deve usar esta referência como base para expandir e estruturar os tokens semânticos de cor, contraste e superfície no \`DESIGN.md\`).*
+- **Autonomia de Tipografia e Layout (Skill \`impeccable\`):** Com base no nicho de **${companyName}**, na atmosfera descrita no Bloco 1 e no público-alvo, utilize as diretrizes do Impeccable para escolher o par tipográfico ideal, a densidade de informação, o estilo de componentes e a composição espacial que melhor convertam este público, fugindo de qualquer aparência de template genérico de IA.
+- **Autonomia de Interação e Movimento (Skills \`emilkowalski\`):** O ritmo das transições, micro-interações de hover/tap e animações de entrada devem ser definidos pelas skills de Design Engineering do Emil Kowalski de acordo com a personalidade da marca (ex: mais contido e elegante, ou mais energético e tátil).
 
 ---
 
-### BLOCO 4: DIRETRIZES TÉCNICAS DE CÓDIGO
-- Crie o site utilizando **React (Vite), Tailwind CSS e Lucide Icons**.
-- **NÃO use componentes genéricos ou placeholders de outros nichos.** Todos os textos, botões e chamadas devem ser fiéis a ${companyName}.
-- O botão principal de CTA deve direcionar diretamente para o WhatsApp oficial com mensagem inicial contextualizada (ex: "Olá! Vi o site da ${companyName} e gostaria de...").
-- **Links do Google Maps:** Todos os botões de rotas/localização ("Como Chegar", link de endereço no rodapé/contato) DEVEM utilizar diretamente o link oficial do Google Maps do cliente (${mapsLink || 'link do Maps informado no Bloco 2'}), sem usar pesquisas por endereço de texto puro.
-- Garanta código limpo, componentizado, com responsividade perfeita para smartphones e acessibilidade semântica.
+### BLOCO 4: DIRETRIZES TÉCNICAS E METODOLOGIA DE CONSTRUÇÃO
+- **Stack Tecnológica:** React (Vite), Tailwind CSS, Lucide Icons e Framer Motion (para execução das skills de animação).
+- **Fidelidade de Conteúdo:** É proibido o uso de textos genéricos (Lorem Ipsum) ou placeholders de outros nichos. Toda a copy, chamadas e seções devem refletir a realidade operacional de **${companyName}**.
+- **Foco em Conversão:** O Call-to-Action (CTA) primário em todo o fluxo deve conduzir o usuário ao WhatsApp oficial (${telefone || 'definido no atendimento'}) com uma mensagem pré-preenchida e contextualizada para o negócio.
+- **Qualidade de Entrega:** Código modular, semântica HTML rigorosa, acessibilidade e responsividade mobile-first validada.
 `;
 }
 

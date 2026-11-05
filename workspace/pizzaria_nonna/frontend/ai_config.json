@@ -1,0 +1,93 @@
+{
+  "app_name": "Pizzaria Nonna",
+  "primary_color": "#B8291C",
+  "secondary_color": "#2E4A36",
+  "nicho_detectado": "servicos",
+  "modules": [
+    "servicos",
+    "agendar"
+  ],
+  "logo_url": "/logo.png",
+  "address": "Rua das Oliveiras, 412 - Bairro Jardim Itália",
+  "phone": "(11) 98765-4321",
+  "working_hours": "Terça a Domingo, das 18h30 às 23h30",
+  "bg_color": "#FAF6EE",
+  "surface_color": "#EFE8DA",
+  "text_color": "#1E1915",
+  "muted_color": "#6E6359",
+  "theme": "light",
+  "font_heading": "Fraunces",
+  "font_body": "Plus Jakarta Sans",
+  "niche": "Pizzaria Artesanal e Cardápio Digital de Longa Fermentação",
+  "tagline": "Massa aberta na mão, 48 horas de maturação e forno a lenha a 450 graus.",
+  "brand_essence": "Cantina familiar napolitana onde a farinha 00, o molho de tomates San Marzano amassados na hora e a brasa de lenha frutífera ditam o ritmo da cozinha.",
+  "value_proposition": "Cardápio digital rápido e tátil para pedir pizzas de fermentação natural direto para a mesa ou entrega, com escolha de borda, ponto da massa e bebidas da adega.",
+  "target_audience": "Famílias, casais e apreciadores de pizza napolitana e clássica paulistana que valorizam ingredientes rastreáveis e querem fazer o pedido pelo celular sem filas ou aplicativos lentos.",
+  "brand_pillars": [
+    "Fermentação lenta de 48 horas com levain próprio",
+    "Molho preparado diariamente com tomates pelados italianos",
+    "Cardápio enxuto focado em insumos frescos de pequenos produtores",
+    "Pedido direto sem taxas ocultas de plataformas terceiras"
+  ],
+  "real_services": [
+    "Cardápio Digital de Pizzas Individuais (4 fatias) e Família (8 fatias)",
+    "Entradas de Forno a Lenha: Crostini de Alecrim, Burrata com Pesto e Focaccia",
+    "Personalização de Meia a Meia com cálculo transparente e adição de borda recheada",
+    "Carta de Vinhos Tintos Italianos, Cervejas Artesanais e Sodas da Casa",
+    "Dolci da Nonna: Tiramisù Clássico, Cannoli Siciliano e Pizza de Nutella com Pistache",
+    "Pedido Rápido para Mesa (QR Code), Retirada no Balcão ou Delivery Próprio"
+  ],
+  "color_reasoning": "Fugimos do clichê de creme acinzentado (#F4F1EA) com terracota lavado (#D97757). A paleta nasce dos ingredientes reais da bancada da Nonna: Vermelho San Marzano (#B8291C) vivo e apetitoso para despertar fome e guiar o botão de pedido; Verde Manjericão Fresco (#2E4A36) para selos de ingredientes vegetarianos, disponibilidade da casa e confirmação; Trigo Semolina (#FAF6EE) no fundo principal e Massa Crua Descansada (#EFE8DA) nas superfícies do cardápio; Carvão da Brasa (#1E1915) para tipografia de leitura nítida e Cinza Cinza-de-Forno (#6E6359) para pesos, tamanhos e descrições de ingredientes.",
+  "layout_archetype": "Editorial Trattoria Menu & Tactile Order Sheet",
+  "layout_concept": "Estrutura inspirada nos cardápios impressos em papel algodão das cantinas de Nápoles e São Paulo, organizada em duas colunas assimétricas no desktop (navegação de categorias fixa à esquerda + folha de cardápio editorial à direita com linhas pontilhadas ligando o sabor ao preço) e barra inferior tátil de comanda rápida no mobile. Alinhamento estritamente à esquerda para leitura rápida de ingredientes, eliminando grades genéricas de três cards idênticos de SaaS.",
+  "focal_element": "Comanda Interativa de Forno (Seletor Meio-a-Meio e Tamanho ao Vivo): no topo do cardápio, o cliente visualiza a tábua de madeira com a pizza dividida ou inteira e vê o tempo estimado de fornada em tempo real (ex: 'Forno a 450°C • Saindo em 18 min'), criando um ponto focal único enquanto o restante da página funciona como uma folha tipográfica limpa e silenciosa.",
+  "design_critique": "Revisão contra padrões genéricos de IA: 1. Rejeitado o par #F4F1EA + #D97757 em favor do vermelho tomate San Marzano (#B8291C) e verde manjericão (#2E4A36). 2. Rejeitado o SaaS-card kit de três colunas com sombras difusas; o cardápio usa listagem tipográfica de cantina com fotos circulares recortadas apenas nas pizzas assinadas pela Nonna. 3. Eliminados eyebrows em ALL-CAPS, travessões longos (em-dashes) e setas '→' nos botões. 4. Substituídas animações genéricas de fade-up em todas as seções por uma única transição física no seletor de pizza e no drawer da comanda.",
+  "copy_tone": "Direto, caloroso e gastronômico. Frases curtas na voz ativa que nomeiam os ingredientes reais (muçarela de búfala fresca, calabresa artesanal curada, mel picante, manjericão colhido no dia) sem adjetivos vazios como 'experiência gastronômica única' ou 'sabores inesquecíveis'.",
+  "section_blueprint": [
+    {
+      "id": "hero-fornada",
+      "title": "Cabeçalho da Cantina & Status do Forno",
+      "purpose": "Apresentar a Pizzaria Nonna, informar se o forno a lenha está aceso agora, tempo médio de entrega/preparo e atalho direto para montar uma pizza inteira ou meio a meio.",
+      "layout": "Split editorial: tipografia Fraunces de alto impacto à esquerda com selo ao vivo do forno; à direita, destaque visual da pizza Margherita Verace recém-saída da brasa."
+    },
+    {
+      "id": "navegacao-categorias",
+      "title": "Índice da Bancada (Filtro Rápido)",
+      "purpose": "Permitir pular sem rolagem longa entre Entradas de Forno, Pizzas Clássicas, Assinatura da Nonna, Vegetarianas, Doces e Bebidas, mais busca rápida por ingrediente.",
+      "layout": "Barra horizontal aderente (sticky) com pílulas táteis em fundo Semolina e indicador de quantidade de itens por seção."
+    },
+    {
+      "id": "montador-meio-a-meio",
+      "title": "Tábua Meio a Meio & Tamanho",
+      "purpose": "Resolver a principal dúvida do cliente de pizzaria: escolher o tamanho (Individual 4 fatias ou Família 8 fatias), selecionar 1 ou 2 sabores e escolher a borda.",
+      "layout": "Painel interativo em destaque na folha do cardápio com visualização da pizza dividida ao meio e preço atualizado instantaneamente."
+    },
+    {
+      "id": "cardapio-pizzas",
+      "title": "Pizzas de Longa Fermentação",
+      "purpose": "Exibir cada sabor com lista exata de ingredientes, indicação de opções vegetarianas ou picantes, preços por tamanho e botão direto 'Adicionar à comanda'.",
+      "layout": "Lista editorial de cantina em duas colunas com linhas divisórias finas cor de trigo, miniaturas nítidas e botão de adição rápida sem abrir modais desnecessários."
+    },
+    {
+      "id": "entradas-e-vinhos",
+      "title": "Para Abrir o Apetite & Adega da Nonna",
+      "purpose": "Aumentar o ticket médio com crostinis, focaccias quentes, tiramisù artesanal e harmonização de vinhos e refrigerantes.",
+      "layout": "Grade compacta em formato de recibo de trattoria com adição em um toque."
+    },
+    {
+      "id": "comanda-fechamento",
+      "title": "Sua Comanda (Mesa, Retirada ou Entrega)",
+      "purpose": "Resumo claro dos itens escolhidos, campo de observações (ex: tirar cebola, massa bem assada), seleção de modalidade (Mesa, Retirada ou Delivery) e envio direto para o WhatsApp ou cozinha.",
+      "layout": "Barra inferior fixa no mobile e gaveta lateral tipo comanda de papel pontilhado no desktop."
+    }
+  ],
+  "recommended_sections": [
+    "hero-fornada",
+    "navegacao-categorias",
+    "montador-meio-a-meio",
+    "cardapio-pizzas",
+    "entradas-e-vinhos",
+    "comanda-fechamento"
+  ],
+  "execution_engine": "Antigravity CLI (Headless)"
+}

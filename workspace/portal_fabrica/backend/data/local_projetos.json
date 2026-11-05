@@ -1,5 +1,599 @@
 [
   {
+    "id": 188,
+    "created_at": "2026-11-05T19:30:38.123191+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Lead Teste Diag 1793907037267\n- **Empresa / Marca**: 'Lead Teste Diag 1793907037267'\n- **WhatsApp/Tel**: (11) 999783147\n- **E-mail**: lead_diag_1793907037267@test.com\n- **Site Oficial**: https://example.com\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://example.com \n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "lead_diag_1793907037267@test.com",
+      "phone": "(11) 999783147",
+      "company": "Lead Teste Diag 1793907037267",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://example.com",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "3b03d9b2-1fdb-42c8-a3a2-4c7f530bbb1e",
+      "contact_name": "Lead Teste Diag 1793907037267",
+      "project_name": "Lead Teste Diag 1793907037267",
+      "briefing_payload": {
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "client_info": {
+          "email": "lead_diag_1793907037267@test.com",
+          "phone": "(11) 999783147"
+        },
+        "auto_process": false,
+        "project_name": "Lead Teste Diag 1793907037267",
+        "reference_links": [
+          {
+            "url": "https://example.com",
+            "type": "site"
+          }
+        ]
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": "88801",
+    "mensagem_lead": "Lead sem url",
+    "resultado_json": {
+      "scraped_data": {
+        "sucesso": true,
+        "urls": [
+          "https://pizzariabella.com.br/cardapio"
+        ],
+        "metodo_utilizado": "stealth_browser",
+        "cardapio": [
+          {
+            "nome": "Pizza Margherita",
+            "preco": "R$ 48,00",
+            "descricao": "Molho e manjericão fresco"
+          }
+        ],
+        "institucional": {
+          "titulo": "Pizzaria Bella",
+          "sobre": "Tradição italiana desde 1990",
+          "contato": {
+            "telefones": [
+              "(11) 99999-8888"
+            ],
+            "emails": [],
+            "enderecos": []
+          }
+        },
+        "markdown_resumo": "### Pizzaria Bella\n- Pizza Margherita: R$ 48,00"
+      },
+      "scraping_urls": [
+        "https://pizzariabella.com.br/cardapio"
+      ]
+    },
+    "is_local": true
+  },
+  {
+    "id": "88802",
+    "mensagem_lead": "Lead com url de site",
+    "resultado_json": {
+      "project_name": "Pizzaria Bella",
+      "additional_data": {
+        "website": "https://pizzariabella.com.br"
+      },
+      "scraped_data": {
+        "sucesso": true,
+        "urls": [
+          "https://pizzariabella.com.br"
+        ],
+        "metodo_utilizado": "stealth_browser",
+        "cardapio": [
+          {
+            "nome": "Pizza Margherita",
+            "preco": "R$ 48,00",
+            "descricao": "Molho e manjericão fresco"
+          }
+        ],
+        "institucional": {
+          "titulo": "Pizzaria Bella",
+          "sobre": "Tradição italiana desde 1990",
+          "contato": {
+            "telefones": [
+              "(11) 99999-8888"
+            ],
+            "emails": [],
+            "enderecos": []
+          }
+        },
+        "markdown_resumo": "### Pizzaria Bella\n- Pizza Margherita: R$ 48,00"
+      },
+      "scraping_urls": [
+        "https://pizzariabella.com.br"
+      ]
+    },
+    "is_local": true
+  },
+  {
+    "id": 187,
+    "created_at": "2026-11-05T19:30:35.812222+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Maria Souza\n- **Empresa / Marca**: 'Estética Renascer 1793907034303'\n- **WhatsApp/Tel**: (51) 946361820\n- **E-mail**: lead_5f_1793907034303@test.com\n- **Site Oficial**: https://esteticarenascer.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://esteticarenascer.com.br (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "lead_5f_1793907034303@test.com",
+      "phone": "(51) 946361820",
+      "company": "Estética Renascer 1793907034303",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://esteticarenascer.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "be5bfb37-c2da-404a-83ab-896b18103aeb",
+      "contact_name": "Maria Souza",
+      "project_name": "Estética Renascer 1793907034303",
+      "briefing_payload": {
+        "name": "Maria Souza",
+        "email": "lead_5f_1793907034303@test.com",
+        "phone": "(51) 946361820",
+        "company": "Estética Renascer 1793907034303",
+        "website": "https://esteticarenascer.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 186,
+    "created_at": "2026-11-05T19:30:35.646245+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Roberto Alencar\n- **Empresa / Marca**: 'null'\n- **WhatsApp/Tel**: (11) 98888-1234\n- **E-mail**: roberto_1793907034412@exemplo.com\n- **Site Oficial**: https://barbeariamodelo.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://barbeariamodelo.com.br (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "roberto_1793907034412@exemplo.com",
+      "phone": "(11) 98888-1234",
+      "company": null,
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://barbeariamodelo.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "d401bd39-032a-4220-8aa4-3c54c962747e",
+      "contact_name": "Roberto Alencar",
+      "project_name": null,
+      "briefing_payload": {
+        "name": "Roberto Alencar",
+        "email": "roberto_1793907034412@exemplo.com",
+        "phone": "(11) 98888-1234",
+        "website": "https://barbeariamodelo.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": "77701",
+    "mensagem_lead": "Cliente sem dossiê",
+    "resultado_json": {},
+    "is_local": true
+  },
+  {
+    "id": "77702",
+    "mensagem_lead": "Cliente com dossiê",
+    "resultado_json": {
+      "project_name": "Studio Estética Bella",
+      "dossie": {
+        "nome_verificado": "Studio Estética Bella",
+        "endereco_formatado": "Rua Bela Vista, 200",
+        "nota": 4.9,
+        "total_avaliacoes": 30,
+        "fotos": [
+          {
+            "id": 1,
+            "photo_url": "http://localhost/test.jpg"
+          }
+        ]
+      }
+    },
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 184
+  },
+  {
+    "id": 183,
+    "created_at": "2026-11-05T15:50:18.766481+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Lead Teste Diag 1793893817569\n- **Empresa / Marca**: 'Lead Teste Diag 1793893817569'\n- **WhatsApp/Tel**: (11) 942118206\n- **E-mail**: lead_diag_1793893817569@test.com\n- **Site Oficial**: https://example.com\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://example.com \n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "lead_diag_1793893817569@test.com",
+      "phone": "(11) 942118206",
+      "company": "Lead Teste Diag 1793893817569",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://example.com",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "b3a238ad-7bc9-43df-ad0d-5c48c635d09e",
+      "contact_name": "Lead Teste Diag 1793893817569",
+      "project_name": "Lead Teste Diag 1793893817569",
+      "briefing_payload": {
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "client_info": {
+          "email": "lead_diag_1793893817569@test.com",
+          "phone": "(11) 942118206"
+        },
+        "auto_process": false,
+        "project_name": "Lead Teste Diag 1793893817569",
+        "reference_links": [
+          {
+            "url": "https://example.com",
+            "type": "site"
+          }
+        ]
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 178,
+    "created_at": "2026-11-05T15:50:16.918668+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Maria Souza\n- **Empresa / Marca**: 'Estética Renascer 1793893816155'\n- **WhatsApp/Tel**: (51) 977323529\n- **E-mail**: lead_5f_1793893816155@test.com\n- **Site Oficial**: https://esteticarenascer.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://esteticarenascer.com.br (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "lead_5f_1793893816155@test.com",
+      "phone": "(51) 977323529",
+      "company": "Estética Renascer 1793893816155",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://esteticarenascer.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "d52e3796-e727-4b18-82bd-b64e6ebbdf1a",
+      "contact_name": "Maria Souza",
+      "project_name": "Estética Renascer 1793893816155",
+      "briefing_payload": {
+        "name": "Maria Souza",
+        "email": "lead_5f_1793893816155@test.com",
+        "phone": "(51) 977323529",
+        "company": "Estética Renascer 1793893816155",
+        "website": "https://esteticarenascer.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 177,
+    "created_at": "2026-11-05T15:50:16.83348+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Roberto Alencar\n- **Empresa / Marca**: 'null'\n- **WhatsApp/Tel**: (11) 98888-1234\n- **E-mail**: roberto_1793893816200@exemplo.com\n- **Site Oficial**: https://barbeariamodelo.com.br\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://barbeariamodelo.com.br (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "roberto_1793893816200@exemplo.com",
+      "phone": "(11) 98888-1234",
+      "company": null,
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://barbeariamodelo.com.br",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "d401bd39-032a-4220-8aa4-3c54c962747e",
+      "contact_name": "Roberto Alencar",
+      "project_name": null,
+      "briefing_payload": {
+        "name": "Roberto Alencar",
+        "email": "roberto_1793893816200@exemplo.com",
+        "phone": "(11) 98888-1234",
+        "website": "https://barbeariamodelo.com.br"
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 1793893816515,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Barbearia Teste Resiliente\n- **Empresa / Marca**: 'Barbearia Teste Resiliente'\n- **WhatsApp/Tel**: 11999999999\n- **E-mail**: teste@barbearia.com\n- **Site Oficial**: Nenhum site informado\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Barbearia Teste Resiliente",
+      "briefing_payload": {
+        "project_name": "Barbearia Teste Resiliente",
+        "client_info": {
+          "email": "teste@barbearia.com",
+          "phone": "11999999999"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "auto_process": false
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-11-05T15:50:16.515Z",
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 182
+  },
+  {
+    "id": 172,
+    "created_at": "2026-11-05T15:43:14.888665+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Lead Teste Diag 1793893394168\n- **Empresa / Marca**: 'Lead Teste Diag 1793893394168'\n- **WhatsApp/Tel**: (11) 959830691\n- **E-mail**: lead_diag_1793893394168@test.com\n- **Site Oficial**: https://example.com\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://example.com \n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "lead_diag_1793893394168@test.com",
+      "phone": "(11) 959830691",
+      "company": "Lead Teste Diag 1793893394168",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://example.com",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "5cb54823-e95f-4583-894f-223273a81e3a",
+      "contact_name": "Lead Teste Diag 1793893394168",
+      "project_name": "Lead Teste Diag 1793893394168",
+      "briefing_payload": {
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "summary": {
+          "total_setup_price": 1590,
+          "monthly_maintenance": 88
+        },
+        "client_info": {
+          "email": "lead_diag_1793893394168@test.com",
+          "phone": "(11) 959830691"
+        },
+        "auto_process": false,
+        "project_name": "Lead Teste Diag 1793893394168",
+        "reference_links": [
+          {
+            "url": "https://example.com",
+            "type": "site"
+          }
+        ]
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
+    "id": 1793893393236,
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Barbearia Teste Resiliente\n- **Empresa / Marca**: 'Barbearia Teste Resiliente'\n- **WhatsApp/Tel**: 11999999999\n- **E-mail**: teste@barbearia.com\n- **Site Oficial**: Nenhum site informado\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "project_name": "Barbearia Teste Resiliente",
+      "briefing_payload": {
+        "project_name": "Barbearia Teste Resiliente",
+        "client_info": {
+          "email": "teste@barbearia.com",
+          "phone": "11999999999"
+        },
+        "modules": [
+          "agendador_pwa",
+          "site"
+        ],
+        "auto_process": false
+      },
+      "supabase_service_role_key": null
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "created_at": "2026-11-05T15:43:13.236Z",
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 168
+  },
+  {
+    "id": 162,
+    "created_at": "2026-11-05T12:19:27.87475+00:00",
+    "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Teste 2\n- **Empresa / Marca**: 'null'\n- **WhatsApp/Tel**: (23) 04985-7123\n- **E-mail**: cafefarro@gmail.com\n- **Site Oficial**: https://maps.app.goo.gl/vD5zadsLFvBzXE2M7\n- **Módulos Solicitados**: [site_institucional]\n\n### LINKS DE REFERÊNCIA:\n1. Tipo: site - URL: https://maps.app.goo.gl/vD5zadsLFvBzXE2M7 (Site Oficial do Lead)\n",
+    "status": "aguardando_decisao",
+    "resultado_json": {
+      "email": "cafefarro@gmail.com",
+      "phone": "(23) 04985-7123",
+      "company": null,
+      "user_id": "2b66650c-a300-4239-b922-2aab9bccac6f",
+      "website": "https://maps.app.goo.gl/vD5zadsLFvBzXE2M7",
+      "account_id": "98006e91-88b1-44ea-9178-50c257cd973f",
+      "contact_id": "efda381f-ee04-4538-a071-1157cdae4b75",
+      "contact_name": "Teste 2",
+      "project_name": null,
+      "briefing_payload": {
+        "name": "Teste 2",
+        "email": "cafefarro@gmail.com",
+        "phone": "(23) 04985-7123",
+        "company": null,
+        "website": "https://maps.app.goo.gl/vD5zadsLFvBzXE2M7"
+      },
+      "supabase_service_role_key": null,
+      "dossie": {
+        "place_id": "ChIJcdc7YVR5GZURyZ5trqVQ1xE",
+        "nome_verificado": "Café Porto Farrô",
+        "endereco_formatado": "Av. Venâncio Aires, 1031 - Farroupilha, Porto Alegre - RS, 90040-193, Brasil",
+        "telefone_estabelecimento": "(51) 99123-3628",
+        "telefone": "(51) 99123-3628",
+        "site_oficial": "https://www.instagram.com/cafeportofarro/",
+        "link_cardapio": null,
+        "modalidades_atendimento": {
+          "permite_entrega": false,
+          "permite_consumo_local": true,
+          "permite_retirada": true,
+          "modalidade": "somente_local"
+        },
+        "informacoes_relevantes": {
+          "resumo_editorial": "",
+          "faixa_preco": "Moderado ($$)",
+          "comodidades": [
+            "Acessível para cadeirantes",
+            "Aceita cartões de crédito/débito",
+            "Pagamento por aproximação (NFC)",
+            "Estacionamento gratuito",
+            "Pet friendly",
+            "Bom para grupos",
+            "Banheiro no local"
+          ]
+        },
+        "resultados_web": [],
+        "avaliacoes_positivas": [
+          {
+            "author": "Pedro Santana",
+            "rating": 5,
+            "text": "Atendimento acolhedor, conduzido por uma equipe jovem e genuinamente simpática, que faz o cliente se sentir em casa. O café cumpre bem o seu papel: bem extraído, equilibrado e agradável do primeiro ao último gole. O único ponto de ressalva fica por conta do rocambole, cuja massa se mostrou um pouco seca, sem a umidade que se espera da receita. Ainda assim, um detalhe que não chega a comprometer a experiência, que no conjunto se revela bastante positiva.",
+            "published_time": "2 semanas atrás"
+          },
+          {
+            "author": "Ju Rocha",
+            "rating": 5,
+            "text": "Fomos num dia de semana no meio da tarde e o movimento estava moderado, foi tranquilo conseguir um lugar e o pedido veio rápido. Notamos que em praticamente todas as mesas haviam pessoas trabalhando. Os valores são bem honestos. Pedi um bolo sem açúcar e sem glúten, adoçado apenas com xilitol e os próprios açúcares da fruta (maçã). Ele realmente não é nada doce, mas vale experimentar se você estiver procurando uma opção mais saudável.",
+            "published_time": "um mês atrás"
+          },
+          {
+            "author": "Luísa Castro",
+            "rating": 5,
+            "text": "Um dos melhores cafés da cidade. Café perfeito, comidinhas maravilhosas e o ambiente sensacional. Além de todos que trabalham lá são uns fofos, super atenciosos, educados e cuidadosos. Sempre que posso dou uma passadinha pra me mimar e ter um ótimo momento",
+            "published_time": "4 meses atrás"
+          }
+        ],
+        "dores_destaque": [
+          {
+            "author": "Carlos Régio",
+            "rating": 3,
+            "text": "De uns tempos para cá, tenho achado o serviço um tanto demorado. Nas últimas vezes em que fui, pedi apenas um capuccino e uma fatia de bolo e esperei 20 minutos. Considerando o que foi pedido e o fato de a cafeteria não estar tão cheia, achei um tempo de espera acima do esperado. Outro ponto é que o ambiente pode ficar bastante barulhento em alguns momentos. Isso não tem relação direta com a cafeteria, mas com clientes que falam alto demais e acabam não respeitando o espaço das outras pessoas. Dito isso, os cafés são muito bons, com destaque para o flat white e o capuccino. Os bolos também merecem elogios: já provei o de coco e o de cenoura com especiarias, e gostei bastante de ambos. Quanto ao atendimento, é sempre simpático e atencioso. Apesar das ressalvas, continua sendo uma das minhas cafeterias preferidas em Porto Alegre e sigo recomendando pela qualidade dos cafés e dos produtos oferecidos.",
+            "published_time": "2 meses atrás"
+          }
+        ],
+        "google_maps_url": "https://maps.google.com/?cid=1285584891163811529&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+        "nota": 4.7,
+        "total_avaliacoes": 730,
+        "horarios_funcionamento": [
+          "segunda-feira: 09:00 – 18:30",
+          "terça-feira: 09:00 – 18:30",
+          "quarta-feira: 09:00 – 18:30",
+          "quinta-feira: 09:00 – 18:30",
+          "sexta-feira: 09:00 – 18:30",
+          "sábado: 09:00 – 18:30",
+          "domingo: 09:00 – 18:30"
+        ],
+        "aberto_agora": true,
+        "fotos": [
+          {
+            "id": 1,
+            "width": 3024,
+            "height": 4032,
+            "photo_url": "https://places.googleapis.com/v1/places/ChIJcdc7YVR5GZURyZ5trqVQ1xE/photos/AV-0GLdg0dcB1Ls_06t3Atkok3erVKIzP1QfiGNx8s0el_Ut4WkoLZDl4ZskjTkzTL9CqbxVEcO_YG5JT5mv8jUOLP1RxIpADmRZNe7eicP4Wc5-Z6FryjhaNKuqD2YVItpOTAf4VA_FwkZGG8JYirZeWj6KL9iL64ShfrtfjTgd5c_A9lbZDb0dPA3RCjNntBJ0sAKIYG0TbcId1flNiXbpV-v09IbcwVfXHdn297NtCCD2XtmfC58Bl1Ce7duu8352kEX8VQsWed_9HYONDly6D-tIabH-XNuJhcP1CZna1kHDkm6gQq9GZxMdO15oSFGfNoQ4VUIF7XemDQ84HoI3r0dmffyf_FgapMOXpeWJmI9rm-FYB5qt5e5YL5qa2bGBpo3BDeyCxHpaLTcwpwXp0gGm_eE/media?maxWidthPx=1200&key=AIzaSyATweFIHQu3BavSmCTPah8nu61M-pYv1ag",
+            "attribution": "Café Porto Farrô",
+            "tipo": "foto_normal"
+          },
+          {
+            "id": 2,
+            "width": 3024,
+            "height": 4032,
+            "photo_url": "https://places.googleapis.com/v1/places/ChIJcdc7YVR5GZURyZ5trqVQ1xE/photos/AV-0GLfN4kMI6DWiAyqv8_H-4bgl9x3mnjiPSW6GFeMhYVXtIrWV7UiU_JclyPJ4Yym7lL7-CESOXIzdzSoilxNkjOtj2lNvIPsvEJZqcpWp-IocdYt_uUA233vARvxQ-COBYPrcYXgB8ZKdttFIoNZhih4rgCaKCT-nnlMW2Pufavkmp2ss0TM2y4d4MxtH_hQBe27_mJtAf0KB8TaAuDfXdUOHPFMf0WbeCs3iYelFS0HpdhsQIJ7Q-KKFWXEmtoZ0PFMbxtl6ts8ozvXhhrL6gDMzmaixlLaN6PAdovDpoL1VWZAYKAn48NV9aYsWsNCGsVY5UHJicvi5QmvAztl5WTaskbfMSJM71ImOWW6Jx6K1VXxC3TvQf5r6nHwgudmi99UjB2V4-OPId7wSO24n8EMSqw/media?maxWidthPx=1200&key=AIzaSyATweFIHQu3BavSmCTPah8nu61M-pYv1ag",
+            "attribution": "Café Porto Farrô",
+            "tipo": "foto_normal"
+          },
+          {
+            "id": 3,
+            "width": 4160,
+            "height": 3120,
+            "photo_url": "https://places.googleapis.com/v1/places/ChIJcdc7YVR5GZURyZ5trqVQ1xE/photos/AV-0GLeKdeb6-AewqMDomuA-lbRzvcDzE6LVnTH_fDS3BMgrjKjPsbmrtL2uSiH5tknYqT2a_37ypuycFipsjuM7GjjE18d6QkzRpjMja_ZNWHr-p5i9S3AOkgVHcJnRUTYRRxQiRccX-oS7bQwvjVWnUSon75Aq94ulSq_dIG4KuIKTO2v7vltkqX2XudwLxheszXiFDaBm_iLOBS1Q7WXzvZS_h5JcXlWQSUMN85snBzEH1LFPbHHU12oaSa2QACT5EohlRn-uBEldPhmu1ZfV1Bg7BjicRY7h0CV49y-gfoE6QwFpJKYWr7NgdHW8y2Vf-QPFRKghyFJAciw8kq-cQX213IfouYwcPPAr6Y2dkB6xjflLaV0DcfqGo3_tBSAna2FKbtGw0pMfRzXqnOifwRiUIzA/media?maxWidthPx=1200&key=AIzaSyATweFIHQu3BavSmCTPah8nu61M-pYv1ag",
+            "attribution": "Silvie Jobim",
+            "tipo": "foto_normal"
+          },
+          {
+            "id": 4,
+            "width": 3024,
+            "height": 4032,
+            "photo_url": "https://places.googleapis.com/v1/places/ChIJcdc7YVR5GZURyZ5trqVQ1xE/photos/AV-0GLdm072CYQU65dpmwB_UZZmSuAjFDYxrHl1sPZfH580rvIgq5hHqGoCuEZT1KFjqmciWcbz2Pvg6JcVGeJMMnPtyajMbtLMVk0rzg82ZYIICwfNr3bp5LXZjfGghwC7A9JngbyL60ceMuLjbgbYU1dSuitoETxpsbcv4cM7rXnbh3km7GeBezPm88T-sX2BOkmA3iu5FM6irtpCGk2HkIQCrpTscL9A37q_YpCmqgcOHF2x_TbAQrRAe4mhbuCXMdgjG4N85Jy9Yph0__3BkDBSxXmFxKj2RCsDIjDnAvM9bBPGXDDgAhnEuPuvjvKwurybzTdOMmU5rI1Eh0bpNKI2MXJToyY28jkow7HayoSKu02cekdK17-kcq5R-0gC39dE7N74a1KsYvk5HCsUroYxafNdLxpGcMLObQWTCB6Zo/media?maxWidthPx=1200&key=AIzaSyATweFIHQu3BavSmCTPah8nu61M-pYv1ag",
+            "attribution": "Kristo Vatef",
+            "tipo": "foto_normal"
+          },
+          {
+            "id": 5,
+            "width": 3072,
+            "height": 3072,
+            "photo_url": "https://places.googleapis.com/v1/places/ChIJcdc7YVR5GZURyZ5trqVQ1xE/photos/AV-0GLe8he5pEKkfquN9mY5bFelMJL4CmBiUS9rGOgHy_WKYb3hceLnTbbVIaV2YLZU7zGWzQ3ajebhMFWrDQ8mKa-K3p09VxppLM2u3bJcrCOTqfwvyXV6mCxwJ8amjtoZ-yC-4jYOhakE_wX7MMaw7yCjB82ixT4iXLdYl1TGJEcSGrX3smwYy6Po3k_Gt0uCXq4xysJOk-bonMg5jno3_g1AeaMEjEfHSQ8P6BbdbqovvoJh__lfM51ZXmbjiNALIgMX2Bk_cx7GXOVyH1_wlXIK_4X88JOMCnfMknhslTU2vx_jc0L_FaTN0IB_opLC7olbUiriHHjVjE5iPEkRMHBAi9AHRdNxI3ShNVsr3nVcMHZH8Lr5IiOva43sTS2EEoarbr_iKGZXH9hUboe6JwSjlZA/media?maxWidthPx=1200&key=AIzaSyATweFIHQu3BavSmCTPah8nu61M-pYv1ag",
+            "attribution": "Rosane Maria Oliveira Rosa",
+            "tipo": "foto_normal"
+          },
+          {
+            "id": 6,
+            "width": 3024,
+            "height": 4032,
+            "photo_url": "https://places.googleapis.com/v1/places/ChIJcdc7YVR5GZURyZ5trqVQ1xE/photos/AV-0GLcGTvcvfH2xRozSxQ7O4ykr0jxcZd-MBSZ3u9L86_FMMEOAQlT1GDvUSb09kr2lDYKWiwG8Ofirkm78PD9Di0o3r3BJqE3LnEci5u5LFyRIlagbTh82TCgo6d50S3W-uGx5euqGimnm5iC63t91dJcwFacYp7c3E1o3brWhOm_iX0pZ_lirqsEhfQyfotRut4nBEaHgIyofFh011yFZxZbPD3eXcFk-g1tV0DMxnQ-kIS51UXLBcZN7s0jW-TqQGvY5UNcuO4HGTOwYqrGtCIMLWew4Bvt7X8qBSoMXdN8mNZrP8KkZuDHRAV_sQO0GhxWAEI-CVBxLE_lNIihPFspO70qk4IdOvszdtNyu1ioy-bLO3vo_4A-1D8UzuPoRXrZzvzMJxQI_YpRDknG_0Dsz9qNzfOCjGkosnsUtLwPm/media?maxWidthPx=1200&key=AIzaSyATweFIHQu3BavSmCTPah8nu61M-pYv1ag",
+            "attribution": "Brunna Escouto",
+            "tipo": "foto_normal"
+          }
+        ],
+        "categorias": [
+          "coffee_shop",
+          "cafe",
+          "food_store",
+          "food",
+          "store",
+          "point_of_interest",
+          "establishment"
+        ],
+        "rating_score": 4.7,
+        "total_reviews": 730,
+        "pitch_comercial_sugerido": "Olá equipe da Café Porto Farrô! Analisei o perfil de vocês no Google Maps e notei uma excelente reputação média (4.7★), mas percebi avaliações recentes pontuando desafios práticos (ex: \"De uns tempos para cá, tenho achado o serviço um tanto demorado. Nas últimas vezes em que fui, pedi apenas um capuccino e uma fatia de bolo e esperei 20 minutos. Considerando o que foi pedido e o fato de a cafeteria não ...\"). Desenvolvemos uma plataforma digital própria (PWA) pensada exatamente para agilizar o atendimento de vocês, organizar a demanda e eliminar esse atrito com os clientes. Teriam 5 minutos esta semana para eu apresentar um protótipo visual gratuito?",
+        "nicho_detectado": "coffee_shop",
+        "consultado_em": "2026-11-05T12:26:49.614Z"
+      },
+      "diagnostico_ia": {
+        "resumo_empresa": "O Café Porto Farrô é uma cafeteria de especialidade urbana que combina o consumo de cafés de alta qualidade com uma atmosfera artística e vibrante. Operando como um ponto de encontro criativo, o local foca na experiência do 'terceira onda', unindo técnica rigorosa de preparo a um ambiente que celebra a cultura local e a expressão visual.",
+        "estilo_visual_vibe": "Industrial criativo com forte apelo artístico; o espaço utiliza pé-direito alto, concreto aparente e mobiliário em madeira clara, contrastando com murais coloridos e vibrantes que conferem uma energia jovem e autêntica.",
+        "publico_alvo": "Jovens adultos, estudantes universitários, nômades digitais e profissionais criativos que buscam um ambiente inspirador para trabalhar, socializar ou apreciar um café de alta qualidade em um espaço com personalidade marcante.",
+        "diferenciais_unicos": [
+          "Qualidade técnica superior no preparo de cafés especiais (latte art e métodos filtrados)",
+          "Identidade visual icônica e instagramável que atua como ponto de referência no bairro",
+          "Ambiente que equilibra funcionalidade para trabalho com uma atmosfera acolhedora e artística"
+        ],
+        "paleta_cores_sugerida": "Laranja Vibrante #FF6600, Cinza Concreto #7F7F7F, Madeira Natural #D2B48C, Branco Off-White #F8F8F8",
+        "gerado_em": "2026-11-05T16:05:40.976Z",
+        "modelo_utilizado": "gemini-3.1-flash-lite",
+        "fotos_analisadas": 3
+      },
+      "prompt_mestre": "# BRIEFING MESTRE DO PROJETO & ARQUITETURA DE EXECUÇÃO\n\nEste documento é a Fonte da Verdade (Single Source of Truth) sobre o negócio do cliente, seus dados verificados e as regras técnicas do projeto. \n\nO desenvolvimento será conduzido no Antigravity através de um pipeline de Skills especializadas:\n1. **Liderança de Engenharia (`mattpocock/skills`):** Responsável por transformar este documento em especificação técnica (`/to-spec`), fatiar em tarefas lógicas (`/to-tickets`) e coordenar a implementação (`/implement`) e revisão (`/code-review`).\n2. **Direção de Arte & UI (`impeccable`):** Responsável por ler a essência do negócio (Bloco 1 e Bloco 3) e decidir de forma autônoma a tipografia, o sistema de grid, a composição do layout e a hierarquia visual, consolidando tudo no arquivo `DESIGN.md`.\n3. **Engenharia de Motion (`emilkowalski/skills`):** Responsável por analisar a interface pronta e aplicar micro-interações, física de animação e fluidez na etapa de acabamento (`emil-design-eng`, `animate`).\n\n---\n\n### BLOCO 1: IDENTIDADE, POSICIONAMENTO & ESSÊNCIA DO NEGÓCIO\n- **Nome da Empresa:** Café Porto Farrô\n- **O que a empresa realmente é:** O Café Porto Farrô é uma cafeteria de especialidade urbana que combina o consumo de cafés de alta qualidade com uma atmosfera artística e vibrante. Operando como um ponto de encontro criativo, o local foca na experiência do 'terceira onda', unindo técnica rigorosa de preparo a um ambiente que celebra a cultura local e a expressão visual.\n- **Atmosfera & Personalidade da Marca:** Industrial criativo com forte apelo artístico; o espaço utiliza pé-direito alto, concreto aparente e mobiliário em madeira clara, contrastando com murais coloridos e vibrantes que conferem uma energia jovem e autêntica.\n- **Público-Alvo Primário:** Jovens adultos, estudantes universitários, nômades digitais e profissionais criativos que buscam um ambiente inspirador para trabalhar, socializar ou apreciar um café de alta qualidade em um espaço com personalidade marcante.\n- **Diferenciais Competitivos:**\n- Qualidade técnica superior no preparo de cafés especiais (latte art e métodos filtrados)\n- Identidade visual icônica e instagramável que atua como ponto de referência no bairro\n- Ambiente que equilibra funcionalidade para trabalho com uma atmosfera acolhedora e artística\n\n---\n\n### BLOCO 2: DADOS & ATIVOS VERIFICADOS (GOOGLE MAPS) — REGRAS ESTRITAS\n- **Reputação Comprovada:** 4.7★ (730 avaliações)\n- **Localização / Endereço:** Av. Venâncio Aires, 1031 - Farroupilha, Porto Alegre - RS, 90040-193, Brasil\n- **Link Oficial do Google Maps (Perfil do Cliente):** https://maps.google.com/?cid=1285584891163811529&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA\n- **Regra Inegociável para Links de Mapas:** Todos os links, botões e ações de \"Como Chegar\", \"Ver no Google Maps\", \"Localização\" ou clique no endereço no site DEVEM direcionar ESTRITAMENTE para o link oficial do Google Maps acima (https://maps.google.com/?cid=1285584891163811529&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA), e NUNCA para o endereço em texto ou buscas genéricas.\n- **Contato / WhatsApp:** (51) 99123-3628\n- **Horários de Operação:** segunda-feira: 09:00 – 18:30 | terça-feira: 09:00 – 18:30 | quarta-feira: 09:00 – 18:30 | quinta-feira: 09:00 – 18:30 | sexta-feira: 09:00 – 18:30 | sábado: 09:00 – 18:30 | domingo: 09:00 – 18:30\n- **Prova Social Real (Depoimentos Verificados):**\n• Atendimento de alto padrão reconhecido pelos clientes.\n\n---\n\n### BLOCO 3: INSUMOS CRIATIVOS (DELEGAÇÃO PARA AS SKILLS DE DESIGN & MOTION)\n*Atenção Agente: NENHUM layout, fonte ou estrutura de grid está pré-fixado neste briefing. As decisões de UI/UX pertencem exclusivamente às skills de design instaladas.*\n\n- **Referência de Território Cromatico (Extraído da Marca):** Laranja Vibrante #FF6600, Cinza Concreto #7F7F7F, Madeira Natural #D2B48C, Branco Off-White #F8F8F8 *(O Impeccable deve usar esta referência como base para expandir e estruturar os tokens semânticos de cor, contraste e superfície no `DESIGN.md`).*\n- **Autonomia de Tipografia e Layout (Skill `impeccable`):** Com base no nicho de **Café Porto Farrô**, na atmosfera descrita no Bloco 1 e no público-alvo, utilize as diretrizes do Impeccable para escolher o par tipográfico ideal, a densidade de informação, o estilo de componentes e a composição espacial que melhor convertam este público, fugindo de qualquer aparência de template genérico de IA.\n- **Autonomia de Interação e Movimento (Skills `emilkowalski`):** O ritmo das transições, micro-interações de hover/tap e animações de entrada devem ser definidos pelas skills de Design Engineering do Emil Kowalski de acordo com a personalidade da marca (ex: mais contido e elegante, ou mais energético e tátil).\n\n---\n\n### BLOCO 4: DIRETRIZES TÉCNICAS E METODOLOGIA DE CONSTRUÇÃO\n- **Stack Tecnológica:** React (Vite), Tailwind CSS, Lucide Icons e Framer Motion (para execução das skills de animação).\n- **Fidelidade de Conteúdo:** É proibido o uso de textos genéricos (Lorem Ipsum) ou placeholders de outros nichos. Toda a copy, chamadas e seções devem refletir a realidade operacional de **Café Porto Farrô**.\n- **Foco em Conversão:** O Call-to-Action (CTA) primário em todo o fluxo deve conduzir o usuário ao WhatsApp oficial ((51) 99123-3628) com uma mensagem pré-preenchida e contextualizada para o negócio.\n- **Qualidade de Entrega:** Código modular, semântica HTML rigorosa, acessibilidade e responsividade mobile-first validada.\n"
+    },
+    "supabase_url": null,
+    "supabase_anon_key": null,
+    "supabase_service_role_key": null,
+    "is_local": false,
+    "supabase_synced": true
+  },
+  {
     "id": 1793843342632,
     "mensagem_lead": "### BRIEFING DO PROJETO DE CLIENTE\n- **Responsável / Contato**: Barbearia Teste Resiliente\n- **Empresa / Marca**: 'Barbearia Teste Resiliente'\n- **WhatsApp/Tel**: 11999999999\n- **E-mail**: teste@barbearia.com\n- **Site Oficial**: Nenhum site informado\n- **Módulos Solicitados**: [agendador_pwa, site]\n\n",
     "status": "aguardando_decisao",
@@ -56,34 +650,6 @@
     "supabase_service_role_key": null,
     "is_local": false,
     "supabase_synced": true
-  },
-  {
-    "id": "77701",
-    "mensagem_lead": "Cliente sem dossiê",
-    "resultado_json": {},
-    "is_local": true
-  },
-  {
-    "id": "77702",
-    "mensagem_lead": "Cliente com dossiê",
-    "resultado_json": {
-      "project_name": "Studio Estética Bella",
-      "dossie": {
-        "nome_verificado": "Studio Estética Bella",
-        "endereco_formatado": "Rua Bela Vista, 200",
-        "nota": 4.9,
-        "total_avaliacoes": 30,
-        "fotos": [
-          {
-            "id": 1,
-            "photo_url": "http://localhost/test.jpg"
-          }
-        ]
-      }
-    },
-    "is_local": false,
-    "supabase_synced": true,
-    "supabase_id": 156
   },
   {
     "id": 153,
@@ -143,40 +709,6 @@
     "is_local": false,
     "supabase_synced": true,
     "supabase_id": 158
-  },
-  {
-    "id": "88801",
-    "mensagem_lead": "Gostaria de um cardápio digital para a Pizzaria Nonna",
-    "status": "concluido",
-    "resultado_json": {
-      "project_name": "Pizzaria Nonna E2E",
-      "dossie": {
-        "place_id": "ChIJTESTE2E99",
-        "nome_verificado": "Pizzaria da Nonna E2E",
-        "nicho_detectado": "restaurant",
-        "rating_score": 4.8,
-        "total_reviews": 120,
-        "pitch_comercial_sugerido": "Proposta digital para pizzaria"
-      },
-      "success": true,
-      "status": "concluido",
-      "modelo_utilizado": "Gemini (gemini-3.8-flash)",
-      "target_project_path": "workspace/pizzaria_nonna_e2e",
-      "project_slug": "pizzaria_nonna_e2e",
-      "nicho_detectado": "gastronomia",
-      "backend_port": 5051,
-      "frontend_port": 5174,
-      "backend_url": "http://localhost:5051",
-      "preview_url": "http://localhost:5174",
-      "modules": [
-        "cardapio",
-        "pedidos"
-      ],
-      "provisioned_at": "2026-11-05T01:48:26.025Z"
-    },
-    "is_local": false,
-    "supabase_synced": true,
-    "supabase_id": 160
   },
   {
     "id": 143,
@@ -441,48 +973,6 @@
     "supabase_service_role_key": null,
     "is_local": false,
     "supabase_synced": true
-  },
-  {
-    "id": "88802",
-    "mensagem_lead": "Lead com url de site",
-    "resultado_json": {
-      "project_name": "Pizzaria Bella",
-      "additional_data": {
-        "website": "https://pizzariabella.com.br"
-      },
-      "scraped_data": {
-        "sucesso": true,
-        "urls": [
-          "https://pizzariabella.com.br"
-        ],
-        "metodo_utilizado": "stealth_browser",
-        "cardapio": [
-          {
-            "nome": "Pizza Margherita",
-            "preco": "R$ 48,00",
-            "descricao": "Molho e manjericão fresco"
-          }
-        ],
-        "institucional": {
-          "titulo": "Pizzaria Bella",
-          "sobre": "Tradição italiana desde 1990",
-          "contato": {
-            "telefones": [
-              "(11) 99999-8888"
-            ],
-            "emails": [],
-            "enderecos": []
-          }
-        },
-        "markdown_resumo": "### Pizzaria Bella\n- Pizza Margherita: R$ 48,00"
-      },
-      "scraping_urls": [
-        "https://pizzariabella.com.br"
-      ]
-    },
-    "is_local": false,
-    "supabase_synced": true,
-    "supabase_id": 134
   },
   {
     "id": 1793811524011,

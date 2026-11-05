@@ -54,7 +54,7 @@ test('Master Prompt Studio - integra dados raspados via Scrapling', async (t) =>
       scrapedData: mockScrapedData,
     });
 
-    assert.ok(prompt.includes('BLOCO DE PRODUTOS & CARDÁPIO OFICIAL (EXTRAÍDO COM SCRAPLING)'));
+    assert.ok(prompt.includes('BLOCO DE PRODUTOS & CATÁLOGO OFICIAL (EXTRAÍDO COM SCRAPLING)'));
     assert.ok(prompt.includes('Gnocchi al Tartufo'));
     assert.ok(prompt.includes('R$ 68,00'));
     assert.ok(prompt.includes('Cannoli Siciliani'));
@@ -71,8 +71,8 @@ test('Master Prompt Studio - integra dados raspados via Scrapling', async (t) =>
       scrapedData: null,
     });
 
-    assert.ok(promptWithoutScraped.includes('PROMPT MESTRE DE ENGENHARIA DE SITE'));
-    assert.ok(!promptWithoutScraped.includes('BLOCO DE PRODUTOS & CARDÁPIO OFICIAL'));
+    assert.ok(promptWithoutScraped.includes('BRIEFING MESTRE DO PROJETO & ARQUITETURA DE EXECUÇÃO'));
+    assert.ok(!promptWithoutScraped.includes('BLOCO DE PRODUTOS & CATÁLOGO OFICIAL'));
     assert.ok(promptWithoutScraped.includes('Trattoria del Nonno'));
   });
 });

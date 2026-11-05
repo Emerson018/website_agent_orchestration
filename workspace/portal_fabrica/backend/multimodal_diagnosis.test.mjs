@@ -77,10 +77,10 @@ test('Master Prompt Synthesizer - structures 4 blocks and real client assets', (
   });
 
   // Verify all 4 blocks exist
-  assert.ok(prompt.includes('BLOCO 1: IDENTIDADE & VIBE REAL DO NEGÓCIO'), 'Must contain Block 1');
-  assert.ok(prompt.includes('BLOCO 2: DADOS & ATIVOS VERIFICADOS (GOOGLE MAPS)'), 'Must contain Block 2');
-  assert.ok(prompt.includes('BLOCO 3: DIRETRIZES DE DESIGN, CORES E TIPOGRAFIA'), 'Must contain Block 3');
-  assert.ok(prompt.includes('BLOCO 4: DIRETRIZES TÉCNICAS DE CÓDIGO'), 'Must contain Block 4');
+  assert.ok(prompt.includes('BLOCO 1: IDENTIDADE, POSICIONAMENTO & ESSÊNCIA DO NEGÓCIO'), 'Must contain Block 1');
+  assert.ok(prompt.includes('BLOCO 2: DADOS & ATIVOS VERIFICADOS (GOOGLE MAPS) — REGRAS ESTRITAS'), 'Must contain Block 2');
+  assert.ok(prompt.includes('BLOCO 3: INSUMOS CRIATIVOS (DELEGAÇÃO PARA AS SKILLS DE DESIGN & MOTION)'), 'Must contain Block 3');
+  assert.ok(prompt.includes('BLOCO 4: DIRETRIZES TÉCNICAS E METODOLOGIA DE CONSTRUÇÃO'), 'Must contain Block 4');
 
   // Verify real client data
   assert.ok(prompt.includes('Café & Coworking Aurora'));
@@ -89,7 +89,7 @@ test('Master Prompt Synthesizer - structures 4 blocks and real client assets', (
   assert.ok(prompt.includes('4.9★ (85 avaliações)'));
   assert.ok(prompt.includes('Melhor café filtrado da cidade'));
   assert.ok(prompt.includes('Verde sálvia'));
-  assert.ok(prompt.includes('React (Vite), Tailwind CSS e Lucide Icons'));
+  assert.ok(prompt.includes('React (Vite), Tailwind CSS, Lucide Icons e Framer Motion'));
   assert.ok(prompt.includes('Link Oficial do Google Maps (Perfil do Cliente)'));
   assert.ok(prompt.includes('https://maps.app.goo.gl/aurora123'));
   assert.ok(prompt.includes('e NUNCA para o endereço em texto'));
@@ -112,5 +112,5 @@ test('Master Prompt Synthesizer - Block 2 strictly directs Google Maps links to 
 
   assert.ok(bloco2Text.includes('https://maps.app.goo.gl/studiobella99'));
   assert.ok(bloco2Text.includes('e NUNCA para o endereço em texto ou buscas genéricas'));
-  assert.ok(bloco2Text.includes('informações corretas do estabelecimento do cliente'));
+  assert.ok(bloco2Text.includes('Regra Inegociável para Links de Mapas'));
 });
