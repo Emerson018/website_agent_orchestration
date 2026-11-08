@@ -9,7 +9,6 @@ import {
   Radio,
   Zap,
   Inbox,
-  Sparkles,
 } from 'lucide-react'
 import type { ComponentType } from 'react'
 import type { ActivityItem, ActivityKind } from '@/lib/dashboard/types'
@@ -37,7 +36,6 @@ const KIND_THEME: Record<ActivityKind, KindTheme> = {
   deal: { icon: Briefcase, badge: 'bg-primary/10 text-primary' },
   broadcast: { icon: Radio, badge: 'bg-amber-500/10 text-amber-400' },
   automation: { icon: Zap, badge: 'bg-rose-500/10 text-rose-400' },
-  project: { icon: Sparkles, badge: 'bg-purple-500/10 text-purple-400' },
 }
 
 export function ActivityFeed({ items, loading }: ActivityFeedProps) {

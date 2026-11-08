@@ -118,7 +118,7 @@ export default function LandingPage() {
         website: trimmedWebsite || null
       };
 
-      const res = await apiFetch('/projetos', {
+      const res = await apiFetch('/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

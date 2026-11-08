@@ -3,22 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { getContactById } from '@/lib/crm-repository';
-import {
-  normalizeTenantSupabaseUrl,
-  enqueueAndTriggerBuild,
-  filterProjectsForContact,
-  extractProjectBrandName,
-  getContactProjectStatus,
-  getStageByProgress,
-  PWA_GENERATION_STAGES,
-  type ProjectQueueItem,
-} from '@/lib/project-queue';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { formatCurrency } from '@/lib/currency';
 import { toast } from 'sonner';
-import type { Contact, Tag, ContactTag, ContactNote, CustomField, ContactCustomValue, Deal } from '@/types';
+import type { Contact, Tag, ContactNote, CustomField, Deal } from '@/types';
 import {
   Sheet,
   SheetContent,
@@ -33,8 +21,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Phone,
   Mail,
@@ -46,12 +32,7 @@ import {
   Plus,
   Trash2,
   Save,
-  X,
   DollarSign,
-  Sparkles,
-  Database,
-  CheckCircle2,
-  RefreshCw,
 } from 'lucide-react';
 
 interface ContactDetailViewProps {
@@ -80,29 +61,7 @@ export function ContactDetailView({
   const [editEmail, setEditEmail] = useState('');
   const [editCompany, setEditCompany] = useState('');
   const [editWebsite, setEditWebsite] = useState('');
-  const [supabaseUrl, setSupabaseUrl] = useState('');
-  const [supabaseAnonKey, setSupabaseAnonKey] = useState('');
-  const [supabaseServiceRoleKey, setSupabaseServiceRoleKey] = useState('');
   const [savingDetails, setSavingDetails] = useState(false);
-  const [generatingAI, setGeneratingAI] = useState(false);
-  const [generationProgress, setGenerationProgress] = useState(0);
-  const [generationStageText, setGenerationStageText] = useState('');
-  const [allowForceRegenerate, setAllowForceRegenerate] = useState(false);
-  const [projects, setProjects] = useState<ProjectQueueItem[]>([]);
-
-  // Database Deploy tab states
-  const [baseSql, setBaseSql] = useState<string | null>(null);
-  const [extensionSql, setExtensionSql] = useState<string | null>(null);
-  const [loadingSql, setLoadingSql] = useState(false);
-  const [sqlError, setSqlError] = useState<string | null>(null);
-  const [projectFolder, setProjectFolder] = useState<string | null>(null);
-  
-  const [deployingDb, setDeployingDb] = useState(false);
-  const [deployError, setDeployError] = useState<string | null>(null);
-  const [showSetupInstruction, setShowSetupInstruction] = useState(false);
-  const [setupSql, setSetupSql] = useState('');
-  const [copiedSqlType, setCopiedSqlType] = useState<'base' | 'extension' | 'setup' | null>(null);
-
   // Tags tab
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [contactTagIds, setContactTagIds] = useState<string[]>([]);
@@ -138,9 +97,6 @@ export function ContactDetailView({
       setEditCompany(data.company ?? '');
       const initialWebsite = data.website ?? (data.additional_data?.links?.find((l: any) => l.label === 'Site Oficial' || l.url)?.url ?? '');
       setEditWebsite(initialWebsite);
-      setSupabaseUrl(data.supabase_url ?? '');
-      setSupabaseAnonKey(data.supabase_anon_key ?? '');
-      setSupabaseServiceRoleKey(data.supabase_service_role_key ?? '');
     }
     setLoading(false);
   }, [contactId, supabase]);
@@ -208,19 +164,6 @@ export function ContactDetailView({
     setLoadingDeals(false);
   }, [contactId, supabase]);
 
-  const fetchProjects = useCallback(async () => {
-    if (!contactId) return [];
-    const { data } = await supabase
-      .from('fila_projetos')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (data) {
-      setProjects(data);
-      return data;
-    }
-    return [];
-  }, [contactId, supabase]);
-
   useEffect(() => {
     if (open && contactId) {
       fetchContact();
@@ -228,88 +171,14 @@ export function ContactDetailView({
       fetchNotes();
       fetchCustomFields();
       fetchDeals();
-      fetchProjects();
-      setGenerationProgress(0);
-      setGenerationStageText('');
-      setAllowForceRegenerate(false);
-      setBaseSql(null);
-      setExtensionSql(null);
-      setSqlError(null);
-      setProjectFolder(null);
-      setDeployError(null);
-      setShowSetupInstruction(false);
     }
-  }, [open, contactId, fetchContact, fetchTags, fetchNotes, fetchCustomFields, fetchDeals, fetchProjects]);
+  }, [open, contactId, fetchContact, fetchTags, fetchNotes, fetchCustomFields, fetchDeals]);
 
   async function copyPhone() {
     if (!contact) return;
     await navigator.clipboard.writeText(contact.phone);
     setCopiedPhone(true);
     setTimeout(() => setCopiedPhone(false), 2000);
-  }
-
-  const fetchSqlSchemas = useCallback(async () => {
-    if (!contactId) return;
-    setLoadingSql(true);
-    setSqlError(null);
-    try {
-      const res = await fetch(`/api/contacts/${contactId}/deploy-db`);
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        setSqlError(data.error || 'Erro ao carregar esquemas SQL');
-        setBaseSql(null);
-        setExtensionSql(null);
-      } else {
-        setBaseSql(data.base_schema);
-        setExtensionSql(data.ai_extension_schema);
-        setProjectFolder(data.project_folder);
-      }
-    } catch (err) {
-      setSqlError('Erro de conexão ao carregar esquemas SQL');
-    } finally {
-      setLoadingSql(false);
-    }
-  }, [contactId]);
-
-  async function handleDeployDatabase() {
-    if (!contactId || !contact) return;
-    
-    const normUrl = normalizeTenantSupabaseUrl(supabaseUrl);
-    setSupabaseUrl(normUrl);
-
-    if (!normUrl || !supabaseServiceRoleKey.trim()) {
-      toast.error('Supabase URL e Service Role Key são necessários para realizar o deploy.');
-      return;
-    }
-
-    setDeployingDb(true);
-    setDeployError(null);
-    setShowSetupInstruction(false);
-
-    try {
-      const res = await fetch(`/api/contacts/${contactId}/deploy-db`, {
-        method: 'POST',
-      });
-      const data = await res.json();
-      
-      if (!res.ok || !data.success) {
-        setDeployError(data.error || 'Erro ao realizar o deploy.');
-        if (data.isFunctionMissing) {
-          setShowSetupInstruction(true);
-          setSetupSql(data.setup_sql);
-          toast.error('Erro: Função auxiliar exec_sql ausente no banco do cliente.');
-        } else {
-          toast.error(data.error || 'Erro ao realizar o deploy.');
-        }
-      } else {
-        toast.success('Banco de dados implantado com sucesso no inquilino do cliente!');
-      }
-    } catch (err) {
-      setDeployError('Erro de conexão ao realizar o deploy.');
-      toast.error('Erro de conexão ao realizar o deploy.');
-    } finally {
-      setDeployingDb(false);
-    }
   }
 
   async function saveDetails() {
@@ -319,8 +188,6 @@ export function ContactDetailView({
     }
 
     setSavingDetails(true);
-    const normUrl = normalizeTenantSupabaseUrl(supabaseUrl);
-    setSupabaseUrl(normUrl);
 
     const { error } = await supabase
       .from('contacts')
@@ -330,9 +197,6 @@ export function ContactDetailView({
         email: editEmail.trim() || null,
         company: editCompany.trim() || null,
         website: editWebsite.trim() || null,
-        supabase_url: normUrl || null,
-        supabase_anon_key: supabaseAnonKey.trim() || null,
-        supabase_service_role_key: supabaseServiceRoleKey.trim() || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', contactId);
@@ -345,142 +209,6 @@ export function ContactDetailView({
       onUpdated();
     }
     setSavingDetails(false);
-  }
-
-  async function handleGenerateAISite() {
-    if (!contactId || !contact) return;
-
-    const normUrl = normalizeTenantSupabaseUrl(supabaseUrl);
-    setSupabaseUrl(normUrl);
-
-    if (!normUrl || !supabaseAnonKey.trim()) {
-      toast.info('Gerando PWA sem credenciais do Supabase. Você poderá vinculá-las a qualquer momento após a criação.');
-    }
-
-    setGeneratingAI(true);
-    setGenerationProgress(15);
-    setGenerationStageText(PWA_GENERATION_STAGES[0].title);
-
-    const progressTimer = setInterval(() => {
-      setGenerationProgress((curr) => {
-        if (curr < 35) {
-          setGenerationStageText(PWA_GENERATION_STAGES[1].title);
-          return 35;
-        }
-        if (curr < 60) {
-          setGenerationStageText(PWA_GENERATION_STAGES[2].title);
-          return 60;
-        }
-        if (curr < 80) {
-          setGenerationStageText(PWA_GENERATION_STAGES[3].title);
-          return 80;
-        }
-        if (curr < 94) {
-          setGenerationStageText(PWA_GENERATION_STAGES[4].title);
-          return 94;
-        }
-        return curr;
-      });
-    }, 2000);
-
-    try {
-      // Find custom field values by name mapping (case-insensitive)
-      const getVal = (name: string) => {
-        const f = customFields.find(cf => cf.field_name.toLowerCase() === name.toLowerCase());
-        return f ? customValues[f.id] : undefined;
-      };
-
-      const brandDirection =
-        (contact.additional_data as Record<string, any>)?.brand_direction ||
-        (contact.additional_data as Record<string, any>)?.branding;
-      const primaryColor = getVal("cor principal") || getVal("primary color") || brandDirection?.primary_color_hex;
-      const paletteName = getVal("paleta") || getVal("palette") || brandDirection?.palette_name || "Definida via Direção de Marca Gemini";
-      const modulesStr = getVal("modulos") || getVal("modules") || "site";
-      const modules = modulesStr.split(",").map(m => m.trim()).filter(Boolean);
-      
-      const refLink1 = getVal("link referencia") || getVal("reference link") || "";
-      const reference_links = refLink1 ? [{ url: refLink1, type: "site", notes: "Link enviado pelo CRM" }] : [];
-      
-      const aiAnalysis = getVal("mensagem lead") || getVal("lead message") || getVal("analise ia") || contact.rag_report || "Gerado automaticamente via botão CRM.";
-
-      const { projectId } = await enqueueAndTriggerBuild({
-        project_name: editCompany || contact.company || editName || contact.name || "Projeto Sem Nome",
-        contact_id: contactId,
-        branding: {
-          ...(brandDirection || {}),
-          palette_name: paletteName,
-          ...(primaryColor ? { primary_color_hex: primaryColor } : {})
-        },
-        modules: modules.length > 0 ? modules : ["site"],
-        reference_links,
-        client_info: {
-          email: editEmail || contact.email || "",
-          phone: editPhone || contact.phone || ""
-        },
-        supabase_url: normUrl,
-        supabase_anon_key: supabaseAnonKey.trim(),
-        supabase_service_role_key: supabaseServiceRoleKey.trim(),
-        ai_analysis: aiAnalysis,
-        additional_data: (contact.additional_data as Record<string, unknown>) || { files: [], links: [], texts: [] },
-      });
-
-      toast.success("Geração de site por IA iniciada com sucesso!");
-      setAllowForceRegenerate(false);
-
-      let attempts = 0;
-      const pollTimer = setInterval(async () => {
-        attempts += 1;
-        const freshProjects = await fetchProjects();
-        const contactProjectsNow = filterProjectsForContact(freshProjects, contact);
-        const completedNow = contactProjectsNow.find(
-          (p) =>
-            p.status === 'concluido' ||
-            p.resultado_json?.status === 'concluido' ||
-            Boolean(p.resultado_json?.preview_url) ||
-            (projectId && p.id === projectId && p.status === 'concluido')
-        );
-        const failedNow = contactProjectsNow.find(
-          (p) => (projectId && p.id === projectId) && (p.status === 'erro' || (p.status as string) === 'falha_critica')
-        );
-
-        if (failedNow) {
-          clearInterval(pollTimer);
-          clearInterval(progressTimer);
-          setGeneratingAI(false);
-          setGenerationProgress(0);
-          setGenerationStageText('');
-          const errReason =
-            (failedNow as any).resultado_json?.error_details ||
-            'Falha durante a compilação do PWA na Fábrica de IA.';
-          toast.error(`Erro na geração do PWA: ${errReason}`);
-        } else if (completedNow) {
-          clearInterval(pollTimer);
-          clearInterval(progressTimer);
-          setGenerationProgress(100);
-          setGenerationStageText(PWA_GENERATION_STAGES[5].title);
-          const modelLabel =
-            (completedNow as any).resultado_json?.modelo_utilizado ||
-            (completedNow as any).resultado_json?.provedor_execucao ||
-            'Gemini (gemini-3.8-flash)';
-          toast.success(`PWA gerado e concluído com sucesso! Motor utilizado: ${modelLabel}`);
-          setTimeout(() => {
-            setGeneratingAI(false);
-          }, 1000);
-        } else if (attempts >= 20) {
-          clearInterval(pollTimer);
-          clearInterval(progressTimer);
-          setGeneratingAI(false);
-          toast.error('Tempo limite de acompanhamento atingido. Verifique o status na Fila de Projetos.');
-        }
-      }, 2500);
-    } catch (err: any) {
-      clearInterval(progressTimer);
-      console.error(err);
-      toast.error(err.message || "Erro na integração com a Fábrica de IA.");
-      setGeneratingAI(false);
-      setGenerationProgress(0);
-      setGenerationStageText('');
-    }
   }
 
   async function toggleTag(tagId: string) {
@@ -672,15 +400,7 @@ export function ContactDetailView({
             </SheetHeader>
 
             {/* Tabs */}
-            <Tabs 
-              defaultValue="details" 
-              className="flex-1 flex flex-col min-h-0"
-              onValueChange={(val) => {
-                if (val === 'deploy') {
-                  fetchSqlSchemas();
-                }
-              }}
-            >
+            <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0">
               <TabsList className="bg-muted/50 border-b border-border mx-4 mt-3">
                 <TabsTrigger
                   value="details"
@@ -711,12 +431,6 @@ export function ContactDetailView({
                   className="data-active:bg-muted data-active:text-primary text-muted-foreground"
                 >
                   Deals
-                </TabsTrigger>
-                <TabsTrigger
-                  value="deploy"
-                  className="data-active:bg-muted data-active:text-primary text-muted-foreground"
-                >
-                  Deploy DB
                 </TabsTrigger>
               </TabsList>
 
@@ -766,43 +480,6 @@ export function ContactDetailView({
                       className="bg-muted border-border text-foreground h-8 text-sm"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-muted-foreground text-xs flex items-center gap-1">
-                      <span>Supabase Tenant URL</span>
-                      <span className="text-[10px] opacity-60 font-normal">(Single-Tenant)</span>
-                    </Label>
-                    <Input
-                      value={supabaseUrl}
-                      onChange={(e) => setSupabaseUrl(e.target.value)}
-                      placeholder="https://seu-projeto.supabase.co"
-                      className="bg-muted border-border text-foreground h-8 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-muted-foreground text-xs flex items-center gap-1">
-                      <span>Supabase Anon Key</span>
-                      <span className="text-[10px] opacity-60 font-normal">(Single-Tenant)</span>
-                    </Label>
-                    <Input
-                      value={supabaseAnonKey}
-                      onChange={(e) => setSupabaseAnonKey(e.target.value)}
-                      placeholder="eyJhbGciOi..."
-                      className="bg-muted border-border text-foreground h-8 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-muted-foreground text-xs flex items-center gap-1">
-                      <span>Supabase Service Role Key</span>
-                      <span className="text-[10px] opacity-60 font-normal">(Single-Tenant)</span>
-                    </Label>
-                    <Input
-                      type="password"
-                      value={supabaseServiceRoleKey}
-                      onChange={(e) => setSupabaseServiceRoleKey(e.target.value)}
-                      placeholder="eyJhbGciOi..."
-                      className="bg-muted border-border text-foreground h-8 text-sm"
-                    />
-                  </div>
                   <Button
                     onClick={saveDetails}
                     disabled={savingDetails}
@@ -823,8 +500,6 @@ export function ContactDetailView({
                       dossie={(contact as any)?.additional_data?.dossie}
                       companyName={contact?.company || contact?.name}
                       targetUrl={contact?.website || (contact as any)?.additional_data?.links?.[0]?.url}
-                      onTriggerPwaGeneration={handleGenerateAISite}
-                      isGeneratingPwa={generatingAI}
                       onDossierEnriched={(newDossie) => {
                         if (contact?.id) {
                           supabase
@@ -836,136 +511,12 @@ export function ContactDetailView({
                               },
                             })
                             .eq('id', contact.id)
-                            .then(() => fetchProjects());
+                            .then(() => fetchContact());
                         }
                       }}
                     />
                   </div>
 
-                  {(() => {
-                    const contactProjects = filterProjectsForContact(projects, contact);
-                    const projectStatus = getContactProjectStatus(contactProjects);
-                    const isAlreadyGenerated = projectStatus.isGenerated;
-                    const isCurrentlyProcessing = generatingAI || projectStatus.isProcessing;
-                    const effectiveProgress = generatingAI
-                      ? generationProgress
-                      : projectStatus.isProcessing
-                      ? Math.max(generationProgress, projectStatus.progressPercentage)
-                      : projectStatus.isGenerated
-                      ? 100
-                      : 0;
-                    const effectiveStageText = generatingAI
-                      ? generationStageText || PWA_GENERATION_STAGES[0].title
-                      : projectStatus.isProcessing
-                      ? getStageByProgress(effectiveProgress).title
-                      : projectStatus.statusMessage;
-
-                    return (
-                      <div className="mt-3 space-y-2">
-                        {isCurrentlyProcessing && (
-                          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2 animate-fadeIn">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                                <Loader2 className="size-3.5 animate-spin text-primary" />
-                                Acompanhamento da Geração (IA)
-                              </span>
-                              <span className="text-xs font-mono font-bold text-primary">
-                                {effectiveProgress}%
-                              </span>
-                            </div>
-                            <Progress
-                              value={effectiveProgress}
-                              className="h-2 bg-muted/80"
-                              indicatorClassName="bg-gradient-to-r from-violet-500 to-indigo-500"
-                            />
-                            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
-                              <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-ping" />
-                              <span>{effectiveStageText}</span>
-                            </p>
-                          </div>
-                        )}
-
-                        {!isCurrentlyProcessing && isAlreadyGenerated && !allowForceRegenerate && (
-                          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-2 animate-fadeIn">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                                <CheckCircle2 className="size-4 text-emerald-500" />
-                                PWA Gerado com Sucesso (Status: OK)
-                              </span>
-                              <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">
-                                OK
-                              </Badge>
-                            </div>
-                            <Button
-                              disabled={true}
-                              size="sm"
-                              className="w-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 cursor-not-allowed flex items-center justify-center gap-1.5 font-bold"
-                            >
-                              <CheckCircle2 className="size-3.5 text-emerald-400" />
-                              PWA Já Gerado (Concluído)
-                            </Button>
-                            <div className="flex items-center justify-between px-0.5 text-[10px] text-muted-foreground">
-                              <span>✓ Bloqueado contra nova geração acidental.</span>
-                              <button
-                                type="button"
-                                onClick={() => setAllowForceRegenerate(true)}
-                                className="text-primary hover:underline cursor-pointer font-medium"
-                              >
-                                Regerar PWA?
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        {(isCurrentlyProcessing || (!isAlreadyGenerated || allowForceRegenerate)) && (
-                          <div className="space-y-1.5">
-                            {allowForceRegenerate && (
-                              <div className="flex items-center justify-between p-2 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px]">
-                                <span>Modo de regeração ativo.</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setAllowForceRegenerate(false)}
-                                  className="underline hover:text-amber-300"
-                                >
-                                  Cancelar
-                                </button>
-                              </div>
-                            )}
-                            <Button
-                              onClick={handleGenerateAISite}
-                              disabled={isCurrentlyProcessing}
-                              className={cn(
-                                "w-full gap-2 font-medium",
-                                isCurrentlyProcessing
-                                  ? "bg-primary/40 text-primary-foreground cursor-wait"
-                                  : allowForceRegenerate
-                                  ? "bg-amber-600 hover:bg-amber-700 text-white"
-                                  : "bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white"
-                              )}
-                              size="sm"
-                            >
-                              {isCurrentlyProcessing ? (
-                                <>
-                                  <Loader2 className="size-3.5 animate-spin" />
-                                  <span>Gerando PWA ({effectiveProgress}%)...</span>
-                                </>
-                              ) : allowForceRegenerate ? (
-                                <>
-                                  <RefreshCw className="size-3.5" />
-                                  <span>Regerar Site / PWA com IA</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Sparkles className="size-3.5" />
-                                  <span>Gerar Site com IA</span>
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
                 </div>
               </TabsContent>
 
@@ -1177,162 +728,6 @@ export function ContactDetailView({
                 )}
               </TabsContent>
 
-              {/* Deploy DB Tab */}
-              <TabsContent value="deploy" className="flex-1 overflow-y-auto px-4 py-3">
-                <div className="space-y-4">
-                  {loadingSql ? (
-                    <div className="flex flex-col items-center justify-center py-12 space-y-2">
-                      <Loader2 className="size-6 animate-spin text-primary" />
-                      <p className="text-xs text-muted-foreground">Carregando esquemas SQL...</p>
-                    </div>
-                  ) : sqlError ? (
-                    <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
-                      <p className="font-semibold mb-1">Erro ao obter arquivos SQL</p>
-                      <p className="text-xs opacity-90">{sqlError}</p>
-                    </div>
-                  ) : (
-                    <>
-                      {projectFolder && (
-                        <div className="flex items-center justify-between rounded-lg bg-muted/50 border border-border p-2">
-                          <span className="text-xs text-muted-foreground font-medium">Projeto:</span>
-                          <Badge variant="outline" className="font-mono text-[10px] bg-background">
-                            {projectFolder}
-                          </Badge>
-                        </div>
-                      )}
-
-                      {/* SQL Code Blocks */}
-                      <div className="space-y-3">
-                        {/* Base Schema */}
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-foreground">Esquema Base (base_schema.sql)</span>
-                            {baseSql && (
-                              <button
-                                onClick={async () => {
-                                  await navigator.clipboard.writeText(baseSql);
-                                  setCopiedSqlType('base');
-                                  setTimeout(() => setCopiedSqlType(null), 2000);
-                                }}
-                                className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors cursor-pointer"
-                              >
-                                {copiedSqlType === 'base' ? (
-                                  <>
-                                    <Check className="size-3 text-emerald-400" />
-                                    <span>Copiado</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="size-3" />
-                                    <span>Copiar</span>
-                                  </>
-                                )}
-                              </button>
-                            )}
-                          </div>
-                          <ScrollArea className="h-36 rounded-md border border-border bg-zinc-950 p-2 font-mono text-[10px] text-zinc-300">
-                            {baseSql ? (
-                              <pre className="whitespace-pre">{baseSql}</pre>
-                            ) : (
-                              <span className="text-zinc-500 italic">Arquivo vazio ou não gerado.</span>
-                            )}
-                          </ScrollArea>
-                        </div>
-
-                        {/* AI Schema */}
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-foreground">Esquema Personalizado (ai_extension_schema.sql)</span>
-                            {extensionSql && (
-                              <button
-                                onClick={async () => {
-                                  await navigator.clipboard.writeText(extensionSql);
-                                  setCopiedSqlType('extension');
-                                  setTimeout(() => setCopiedSqlType(null), 2000);
-                                }}
-                                className="text-[10px] text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors cursor-pointer"
-                              >
-                                {copiedSqlType === 'extension' ? (
-                                  <>
-                                    <Check className="size-3 text-emerald-400" />
-                                    <span>Copiado</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="size-3" />
-                                    <span>Copiar</span>
-                                  </>
-                                )}
-                              </button>
-                            )}
-                          </div>
-                          <ScrollArea className="h-36 rounded-md border border-border bg-zinc-950 p-2 font-mono text-[10px] text-zinc-300">
-                            {extensionSql ? (
-                              <pre className="whitespace-pre">{extensionSql}</pre>
-                            ) : (
-                              <span className="text-zinc-500 italic">Arquivo vazio ou não gerado.</span>
-                            )}
-                          </ScrollArea>
-                        </div>
-                      </div>
-
-                      {/* Action Button */}
-                      <Button
-                        onClick={handleDeployDatabase}
-                        disabled={deployingDb || (!baseSql && !extensionSql)}
-                        className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium gap-2 shadow-sm"
-                        size="sm"
-                      >
-                        {deployingDb ? (
-                          <Loader2 className="size-3.5 animate-spin" />
-                        ) : (
-                          <Database className="size-3.5" />
-                        )}
-                        Executar Deploy no Banco do Cliente
-                      </Button>
-
-                      {/* Instructions for Missing exec_sql helper */}
-                      {showSetupInstruction && (
-                        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 space-y-2">
-                          <h4 className="text-xs font-bold text-amber-500 flex items-center gap-1">
-                            ⚠️ Ação Necessária no Supabase
-                          </h4>
-                          <p className="text-[10px] text-amber-400 leading-normal">
-                            Para implantar remotamente, crie a função de execução SQL. Acesse o **SQL Editor** no painel do Supabase do cliente e execute o seguinte comando:
-                          </p>
-                          <div className="relative">
-                            <ScrollArea className="h-24 rounded-md border border-amber-500/20 bg-zinc-950/80 p-2 font-mono text-[9px] text-zinc-300">
-                              <pre className="whitespace-pre">{setupSql}</pre>
-                            </ScrollArea>
-                            <button
-                              onClick={async () => {
-                                await navigator.clipboard.writeText(setupSql);
-                                setCopiedSqlType('setup');
-                                setTimeout(() => setCopiedSqlType(null), 2000);
-                              }}
-                              className="absolute top-1 right-1 p-1 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-[9px] flex items-center gap-1 transition-all cursor-pointer"
-                            >
-                              {copiedSqlType === 'setup' ? (
-                                <Check className="size-2 text-emerald-400" />
-                              ) : (
-                                <Copy className="size-2" />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* General deploy feedback error */}
-                      {deployError && !showSetupInstruction && (
-                        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400">
-                          <p className="font-semibold mb-1">Falha no Deploy:</p>
-                          <p className="opacity-90">{deployError}</p>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </TabsContent>
             </Tabs>
           </div>
         )}

@@ -55,7 +55,6 @@ export type ActivityKind =
   | 'broadcast'
   | 'automation'
   | 'contact'
-  | 'project'
 
 export interface ActivityItem {
   id: string

@@ -1,34 +1,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createFakeSupabase } from './test_support/fake_supabase.mjs';
 
-test('Intake de Lead sem campo Empresa (obtido posteriormente via Maps)', async (t) => {
+test('Intake de Lead sem campo Empresa (obtido posteriormente via Maps)', async () => {
   const testPort = '5098';
   process.env.PORT = testPort;
-  const { server } = await import(`./server.js?v=${Date.now()}`);
+  process.env.SUPABASE_URL = 'https://placeholder.supabase.co';
+  const { server, setSupabaseClientForTests } = await import('./server.js');
+  const fake = createFakeSupabase();
+  setSupabaseClientForTests(fake);
   await new Promise((r) => setTimeout(r, 400));
   const baseUrl = `http://localhost:${testPort}`;
 
   try {
-    // Lead enviado da LandingPage sem campo company
-    const testPayload = {
-      name: 'Roberto Alencar',
-      email: `roberto_${Date.now()}@exemplo.com`,
-      phone: '(11) 98888-1234',
-      website: 'https://barbeariamodelo.com.br',
-    };
-
-    const res = await fetch(`${baseUrl}/api/projetos`, {
+    const res = await fetch(`${baseUrl}/api/leads`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(testPayload),
+      body: JSON.stringify({
+        name: 'Roberto Alencar',
+        email: 'roberto@exemplo.com',
+        phone: '(11) 98888-1234',
+        website: 'https://barbeariamodelo.com.br',
+      }),
     });
 
     assert.equal(res.status, 201, 'Deve aceitar submissão mesmo sem o campo empresa');
     const data = await res.json();
-    assert.ok(data.id, 'Deve retornar o ID do projeto/lead registrado');
+    assert.ok(data.contact_id, 'Deve retornar o ID do contato registrado');
+    assert.equal(fake.tables.contacts[0].name, 'Roberto Alencar');
   } finally {
-    if (server && server.close) {
-      server.close();
-    }
+    await new Promise((resolve) => server.close(resolve));
   }
 });

@@ -43,13 +43,11 @@ import {
   ChevronLeft,
   ChevronRight,
   SlidersHorizontal,
-  Layers,
 } from 'lucide-react';
 import { ContactForm } from '@/components/contacts/contact-form';
 import { ContactDetailView } from '@/components/contacts/contact-detail-view';
 import { ImportModal } from '@/components/contacts/import-modal';
 import { CustomFieldsManager } from '@/components/contacts/custom-fields-manager';
-import { FilaProjetosModal } from '@/components/projects/fila-projetos-modal';
 import { useCan } from '@/hooks/use-can';
 import { GatedButton } from '@/components/ui/gated-button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -76,7 +74,6 @@ export default function ContactsPage() {
   const [detailContactId, setDetailContactId] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
-  const [filaModalOpen, setFilaModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -242,14 +239,6 @@ export default function ContactsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setFilaModalOpen(true)}
-            className="border-border text-muted-foreground hover:bg-muted gap-1.5"
-          >
-            <Layers className="size-4 text-primary animate-pulse" />
-            Fila de Projetos (IA)
-          </Button>
           {canEditSettings && (
             <Button
               variant="outline"
@@ -561,12 +550,6 @@ export default function ContactsPage() {
           onOpenChange={setCustomFieldsOpen}
         />
       )}
-
-      {/* Fila de Projetos IA Modal */}
-      <FilaProjetosModal
-        open={filaModalOpen}
-        onOpenChange={setFilaModalOpen}
-      />
 
       {/* Delete Confirmation */}
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>

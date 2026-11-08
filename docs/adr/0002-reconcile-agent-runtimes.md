@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0011
 ---
 
 # Reconcile Dual Agent Runtimes and Establish Three-Pass Lifecycle

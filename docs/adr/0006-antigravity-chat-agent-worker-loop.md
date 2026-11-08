@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0011
 ---
 
 # 0006: Antigravity Chat Agent Worker Loop

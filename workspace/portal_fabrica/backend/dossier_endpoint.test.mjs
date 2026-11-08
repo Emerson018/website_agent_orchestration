@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 test('dossier endpoints - POST /api/dossie/consultar gracefully validates input and API key', async () => {
   process.env.PORT = '5092';
+  process.env.SUPABASE_URL = 'https://placeholder.supabase.co';
   const { server } = await import('./server.js');
   await new Promise((r) => setTimeout(r, 400));
 

@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0011
 ---
 
 # Two-Pass Frontend Design Direction Pipeline and Semantic Gold Template Shell

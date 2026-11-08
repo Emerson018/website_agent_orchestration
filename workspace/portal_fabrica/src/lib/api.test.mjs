@@ -30,7 +30,7 @@ test('apiFetch recovers from Vite proxy ECONNRESET (500/502) and transient backe
 
   try {
     const res = await apiFetch(
-      '/projetos',
+      '/leads',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -66,7 +66,7 @@ test('apiFetch returns genuine 400 application error immediately without retryin
 
   try {
     const res = await apiFetch(
-      '/projetos',
+      '/leads',
       { method: 'POST' },
       {
         primaryBase: `http://127.0.0.1:${port}/api`,

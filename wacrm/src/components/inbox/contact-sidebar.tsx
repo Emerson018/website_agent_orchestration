@@ -1,20 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import {
-  normalizeTenantSupabaseUrl,
-  enqueueAndTriggerBuild,
-  filterProjectsForContact,
-  extractProjectBrandName,
-  getContactProjectStatus,
-  getStageByProgress,
-  PWA_GENERATION_STAGES,
-  type ProjectQueueItem,
-} from "@/lib/project-queue";
 import { useAuth } from "@/hooks/use-auth";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 import type { Contact, Deal, ContactNote, Tag } from "@/types";
 import {
   Phone,
@@ -22,273 +10,41 @@ import {
   Globe,
   Copy,
   Check,
-  User,
   Tag as TagIcon,
   DollarSign,
   StickyNote,
   Plus,
-  Loader2,
   Sparkles,
   ExternalLink,
   FileText,
-  Edit2,
-  Save,
-  File,
-  Layers,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LeadDossierCard } from "@/components/contacts/lead-dossier-card";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
-import { FilaProjetosModal } from "@/components/projects/fila-projetos-modal";
 import { format } from "date-fns";
 
-type FilaProjeto = ProjectQueueItem;
 
 interface ContactSidebarProps {
   contact: Contact | null;
   onContactUpdate?: (contact: Contact) => void;
 }
 
-export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps) {
+export function ContactSidebar({ contact }: ContactSidebarProps) {
   const { accountId } = useAuth();
   const [copied, setCopied] = useState(false);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [notes, setNotes] = useState<ContactNote[]>([]);
   const [tags, setTags] = useState<(Tag & { contact_tag_id: string })[]>([]);
-  const [projects, setProjects] = useState<FilaProjeto[]>([]);
-  const [filaModalOpen, setFilaModalOpen] = useState(false);
   const [newNote, setNewNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
 
-  // Brand Analysis & Design Direction States
-  const [brandStatus, setBrandStatus] = useState<string | null>(null);
-  const [brandReport, setBrandReport] = useState<string | null>(null);
-  const [isEditingReport, setIsEditingReport] = useState(false);
-  const [editedReport, setEditedReport] = useState("");
-  const [generatingAI, setGeneratingAI] = useState(false);
-  const [generationProgress, setGenerationProgress] = useState(0);
-  const [generationStageText, setGenerationStageText] = useState("");
-  const [allowForceRegenerate, setAllowForceRegenerate] = useState(false);
-  const [sidebarSupabaseUrl, setSidebarSupabaseUrl] = useState("");
-  const [sidebarSupabaseAnonKey, setSidebarSupabaseAnonKey] = useState("");
-  const [isConnectionValidated, setIsConnectionValidated] = useState(false);
-  const [validatingConnection, setValidatingConnection] = useState(false);
-
-  const lastContactIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const currentId = contact?.id || null;
-    if (currentId !== lastContactIdRef.current) {
-      lastContactIdRef.current = currentId;
-      setGenerationProgress(0);
-      setGenerationStageText("");
-      setAllowForceRegenerate(false);
-      if (contact) {
-        setBrandStatus(contact.rag_status || "idle");
-        setBrandReport(contact.rag_report || null);
-        setEditedReport(contact.rag_report || "");
-        setSidebarSupabaseUrl(contact.supabase_url || "");
-        setSidebarSupabaseAnonKey(contact.supabase_anon_key || "");
-        setIsConnectionValidated(false);
-        setIsEditingReport(false);
-      } else {
-        setBrandStatus(null);
-        setBrandReport(null);
-        setEditedReport("");
-        setSidebarSupabaseUrl("");
-        setSidebarSupabaseAnonKey("");
-        setIsConnectionValidated(false);
-        setIsEditingReport(false);
-      }
-    }
-  }, [contact]);
-
-  // Polling for Brand Analysis status updates
-  useEffect(() => {
-    if (!contact || brandStatus !== "processing") return;
-
-    let intervalId: NodeJS.Timeout;
-
-    const checkStatus = async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("contacts")
-        .select("rag_status, rag_report, additional_data")
-        .eq("id", contact.id)
-        .single();
-
-      if (error) {
-        toast.error("Erro ao consultar status da análise de marca: " + error.message);
-        return;
-      }
-
-      if (data && data.rag_status !== "processing") {
-        setBrandStatus(data.rag_status);
-        setBrandReport(data.rag_report);
-        setEditedReport(data.rag_report || "");
-        if (onContactUpdate) {
-          onContactUpdate({
-            ...contact,
-            rag_status: data.rag_status,
-            rag_report: data.rag_report,
-            additional_data: data.additional_data || contact.additional_data
-          });
-        }
-        if (data.rag_status === "completed") {
-          const engineUsed =
-            (data.additional_data as Record<string, any>)?.last_execution_engine ||
-            (data.additional_data as Record<string, any>)?.brand_direction?.execution_engine ||
-            "Gemini (gemini-3.8-flash)";
-          toast.success(`Análise de marca concluída! Motor utilizado: ${engineUsed}`);
-        } else if (data.rag_status === "failed") {
-          toast.error(data.rag_report || "Falha ao executar a análise de marca e conteúdo.");
-        }
-        clearInterval(intervalId);
-      }
-    };
-
-    // Poll every 3 seconds
-    intervalId = setInterval(checkStatus, 3000);
-
-    return () => clearInterval(intervalId);
-  }, [contact, brandStatus, onContactUpdate]);
-
-  const handleTriggerBrandAnalysis = useCallback(async () => {
-    if (!contact) return;
-    setBrandStatus("processing");
-    if (onContactUpdate) {
-      onContactUpdate({
-        ...contact,
-        rag_status: "processing"
-      });
-    }
-
-    try {
-      console.log(`Disparando análise de marca para o contato ${contact.id}`);
-      const response = await fetch(`http://localhost:8000/api/analisar-marca/${contact.id}`, {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        let detailMsg = "Erro ao disparar análise de marca no orquestrador (porta 8000).";
-        try {
-          const errJson = await response.json();
-          if (errJson?.detail) detailMsg = errJson.detail;
-        } catch {
-          // Resposta não-JSON
-        }
-        throw new Error(detailMsg);
-      }
-
-      const resData = await response.json();
-      toast.info(resData?.engine ? `Análise iniciada via ${resData.engine}...` : "Análise de marca iniciada...");
-    } catch (err: any) {
-      console.error(err);
-      setBrandStatus("failed");
-      toast.error(
-        err?.message || "Não foi possível conectar ao Orquestrador de IA na porta 8000 para analisar a marca."
-      );
-      if (onContactUpdate) {
-        onContactUpdate({
-          ...contact,
-          rag_status: "failed"
-        });
-      }
-    }
-  }, [contact, onContactUpdate]);
-
-  const handleSaveReport = useCallback(async () => {
-    if (!contact) return;
-
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("contacts")
-      .update({ rag_report: editedReport })
-      .eq("id", contact.id);
-
-    if (!error) {
-      setBrandReport(editedReport);
-      setIsEditingReport(false);
-      toast.success("Dossiê de marca atualizado com sucesso!");
-      if (onContactUpdate) {
-        onContactUpdate({
-          ...contact,
-          rag_report: editedReport
-        });
-      }
-    } else {
-      toast.error("Erro ao salvar o dossiê de marca: " + error.message);
-    }
-  }, [contact, editedReport, onContactUpdate]);
-
-  const handleValidateConnection = useCallback(async () => {
-    if (!sidebarSupabaseUrl.trim() || !sidebarSupabaseAnonKey.trim()) {
-      toast.error("Por favor, preencha a URL e a Anon Key.");
-      return;
-    }
-
-    setValidatingConnection(true);
-    try {
-      const cleanUrl = normalizeTenantSupabaseUrl(sidebarSupabaseUrl);
-      setSidebarSupabaseUrl(cleanUrl);
-
-      const res = await fetch(`${cleanUrl}/rest/v1/`, {
-        headers: {
-          apikey: sidebarSupabaseAnonKey.trim(),
-          Authorization: `Bearer ${sidebarSupabaseAnonKey.trim()}`
-        }
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || `Erro de autenticação (Status: ${res.status})`);
-      }
-
-      if (contact) {
-        const supabase = createClient();
-        const { error } = await supabase
-          .from("contacts")
-          .update({
-            supabase_url: cleanUrl,
-            supabase_anon_key: sidebarSupabaseAnonKey.trim()
-          })
-          .eq("id", contact.id);
-
-        if (error) {
-          console.warn("Erro ao salvar chaves validadas no banco do CRM:", error.message);
-        } else if (onContactUpdate) {
-          onContactUpdate({
-            ...contact,
-            supabase_url: cleanUrl,
-            supabase_anon_key: sidebarSupabaseAnonKey.trim()
-          });
-        }
-      }
-
-      setIsConnectionValidated(true);
-      toast.success("Conexão com o Supabase validada com sucesso!");
-    } catch (err: any) {
-      console.error(err);
-      setIsConnectionValidated(false);
-      toast.error(err.message || "Erro ao conectar com o Supabase. Verifique a URL e Anon Key.");
-    } finally {
-      setValidatingConnection(false);
-    }
-  }, [contact, sidebarSupabaseUrl, sidebarSupabaseAnonKey, onContactUpdate]);
-
   const fetchContactData = useCallback(async () => {
-    if (!contact) return [];
+    if (!contact) return;
 
     const supabase = createClient();
 
-    // Fetch deals, notes, tags, and projects in parallel
-    const [dealsRes, notesRes, tagsRes, projectsRes] = await Promise.all([
+    // Fetch deals, notes and tags in parallel
+    const [dealsRes, notesRes, tagsRes] = await Promise.all([
       supabase
         .from("deals")
         .select("*, stage:pipeline_stages(*)")
@@ -303,10 +59,6 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
         .from("contact_tags")
         .select("id, tag_id, tags(*)")
         .eq("contact_id", contact.id),
-      supabase
-        .from("fila_projetos")
-        .select("*")
-        .order("created_at", { ascending: false }),
     ]);
 
     if (dealsRes.data) setDeals(dealsRes.data);
@@ -320,135 +72,7 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
         }));
       setTags(mapped);
     }
-    if (projectsRes.data) {
-      setProjects(projectsRes.data);
-      return projectsRes.data;
-    }
-    return [];
   }, [contact]);
-
-  const handleGenerateAISiteFromSidebar = useCallback(async () => {
-    if (!contact) return;
-
-    if (!sidebarSupabaseUrl.trim() || !sidebarSupabaseAnonKey.trim()) {
-      toast.info("Gerando PWA sem credenciais do Supabase. Você poderá vinculá-las a qualquer momento após a criação.");
-    }
-
-    setGeneratingAI(true);
-    setGenerationProgress(15);
-    setGenerationStageText(PWA_GENERATION_STAGES[0].title);
-
-    // Barra de progresso animada com etapas reais da fábrica de IA
-    const progressTimer = setInterval(() => {
-      setGenerationProgress((curr) => {
-        if (curr < 35) {
-          setGenerationStageText(PWA_GENERATION_STAGES[1].title);
-          return 35;
-        }
-        if (curr < 60) {
-          setGenerationStageText(PWA_GENERATION_STAGES[2].title);
-          return 60;
-        }
-        if (curr < 80) {
-          setGenerationStageText(PWA_GENERATION_STAGES[3].title);
-          return 80;
-        }
-        if (curr < 94) {
-          setGenerationStageText(PWA_GENERATION_STAGES[4].title);
-          return 94;
-        }
-        return curr;
-      });
-    }, 2000);
-
-    try {
-      const brandDirection =
-        (contact.additional_data as Record<string, any>)?.brand_direction ||
-        (contact.additional_data as Record<string, any>)?.branding;
-      const paletteName = brandDirection?.palette_name || "Definida via Direção de Marca Gemini";
-      const primaryHex = brandDirection?.primary_color_hex || brandDirection?.primary_color;
-
-      const { projectId } = await enqueueAndTriggerBuild({
-        project_name: contact.company || contact.name || "Projeto Sem Nome",
-        contact_id: contact.id,
-        branding: {
-          ...(brandDirection || {}),
-          palette_name: paletteName,
-          ...(primaryHex ? { primary_color_hex: primaryHex } : {})
-        },
-        modules: ["agendador_pwa"],
-        reference_links: contact.additional_data?.links?.map(l => ({ url: l.url, type: "site", notes: l.label })) || [],
-        client_info: {
-          email: contact.email || "",
-          phone: contact.phone || ""
-        },
-        supabase_url: sidebarSupabaseUrl.trim(),
-        supabase_anon_key: sidebarSupabaseAnonKey.trim(),
-        supabase_service_role_key: contact.supabase_service_role_key?.trim() || "",
-        ai_analysis: brandReport || "",
-        additional_data: (contact.additional_data as Record<string, unknown>) || { files: [], links: [], texts: [] }
-      });
-
-      toast.success("Geração de site por IA iniciada com sucesso!");
-      setAllowForceRegenerate(false);
-
-      // Polling ativo para verificar quando a fábrica conclui o projeto
-      let attempts = 0;
-      const maxAttempts = 20;
-      const pollInterval = setInterval(async () => {
-        attempts += 1;
-        const freshProjects = await fetchContactData();
-        const contactProjectsNow = filterProjectsForContact(freshProjects || [], contact);
-        const completedNow = contactProjectsNow.find(
-          (p) =>
-            p.status === "concluido" ||
-            p.resultado_json?.status === "concluido" ||
-            Boolean(p.resultado_json?.preview_url) ||
-            (projectId && p.id === projectId && p.status === "concluido")
-        );
-        const failedNow = contactProjectsNow.find(
-          (p) => (projectId && p.id === projectId) && (p.status === "falha_critica" || p.status === "erro")
-        );
-
-        if (failedNow) {
-          clearInterval(pollInterval);
-          clearInterval(progressTimer);
-          setGeneratingAI(false);
-          setGenerationProgress(0);
-          setGenerationStageText("");
-          const errReason =
-            (failedNow as any).resultado_json?.error_details ||
-            "Falha durante a compilação do site na Fábrica de IA.";
-          toast.error(`Erro na geração do site: ${errReason}`);
-        } else if (completedNow) {
-          clearInterval(pollInterval);
-          clearInterval(progressTimer);
-          setGenerationProgress(100);
-          setGenerationStageText(PWA_GENERATION_STAGES[5].title);
-          const modelLabel =
-            (completedNow as any).resultado_json?.modelo_utilizado ||
-            (completedNow as any).resultado_json?.provedor_execucao ||
-            "Gemini (gemini-3.8-flash)";
-          toast.success(`Site gerado com sucesso! Motor utilizado: ${modelLabel}`);
-          setTimeout(() => {
-            setGeneratingAI(false);
-          }, 1000);
-        } else if (attempts >= maxAttempts) {
-          clearInterval(pollInterval);
-          clearInterval(progressTimer);
-          setGeneratingAI(false);
-        }
-      }, 2500);
-
-    } catch (err: any) {
-      clearInterval(progressTimer);
-      console.error(err);
-      toast.error(err.message || "Erro na integração com a Fábrica de IA.");
-      setGeneratingAI(false);
-      setGenerationProgress(0);
-      setGenerationStageText("");
-    }
-  }, [contact, brandReport, sidebarSupabaseUrl, sidebarSupabaseAnonKey, fetchContactData]);
 
   // Load on contact change. setContactData/setTags run inside async
   // Supabase callbacks, not synchronously in the effect body.
@@ -604,127 +228,6 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
           {/* Divider */}
           <div className="my-4 border-t border-border" />
 
-          {/* Projetos do Cliente (IA) */}
-          {(() => {
-            const contactProjects = filterProjectsForContact(projects, contact);
-            const projectStatus = getContactProjectStatus(contactProjects);
-            const effectiveProgress = generatingAI
-              ? generationProgress
-              : projectStatus.isProcessing
-              ? Math.max(generationProgress, projectStatus.progressPercentage)
-              : projectStatus.isGenerated
-              ? 100
-              : 0;
-
-            return (
-              <div>
-                <div className="flex items-center justify-between px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  <div className="flex items-center gap-1.5">
-                    <Layers className="h-3.5 w-3.5 text-primary animate-pulse" />
-                    Projetos ({contactProjects.length})
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setFilaModalOpen(true)}
-                    className="h-6 px-1.5 text-[10px] text-primary hover:text-primary/80"
-                  >
-                    Ver Fila Geral
-                  </Button>
-                </div>
-                <div className="mt-2 space-y-2">
-                  {contactProjects.length === 0 ? (
-                    <div className="rounded-lg bg-muted/40 p-2.5 text-center text-xs text-muted-foreground">
-                      <p>Nenhum projeto associado diretamente.</p>
-                      {projects.length > 0 && (
-                        <Button
-                          variant="link"
-                          onClick={() => setFilaModalOpen(true)}
-                          className="h-auto p-0 text-[11px] text-primary mt-1"
-                        >
-                          Ver {projects.length} projeto(s) na fila geral
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    contactProjects.map((p) => {
-                      const brandName = extractProjectBrandName(p);
-
-                      const getProjectBadge = (status: FilaProjeto['status']) => {
-                        switch (status) {
-                          case 'concluido':
-                            return (
-                              <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 gap-1 font-semibold text-[10px] px-1.5 py-0">
-                                <CheckCircle2 className="size-3 text-emerald-400" /> OK • Concluído
-                              </Badge>
-                            );
-                          case 'processando':
-                            return (
-                              <Badge className="bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 gap-1 font-semibold text-[10px] px-1.5 py-0 animate-pulse">
-                                <Loader2 className="size-3 animate-spin" /> Processando
-                              </Badge>
-                            );
-                          case 'erro':
-                            return (
-                              <Badge className="bg-red-500/10 text-red-400 border border-red-500/20 gap-1 font-semibold text-[10px] px-1.5 py-0">
-                                <AlertCircle className="size-3" /> Erro
-                              </Badge>
-                            );
-                          default:
-                            return (
-                              <Badge className="bg-blue-500/10 text-blue-400 border border-blue-500/20 gap-1 font-semibold text-[10px] px-1.5 py-0">
-                                <Clock className="size-3" /> Pendente
-                              </Badge>
-                            );
-                        }
-                      };
-
-                      return (
-                        <div
-                          key={p.id}
-                          onClick={() => setFilaModalOpen(true)}
-                          className="cursor-pointer rounded-lg bg-muted p-2.5 transition-colors hover:bg-muted/80 border border-border/50"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="truncate text-xs font-bold text-foreground">
-                              {brandName}
-                            </span>
-                            {getProjectBadge(p.status)}
-                          </div>
-                          <p className="mt-1 text-[10px] text-muted-foreground">
-                            Criado em {new Date(p.created_at).toLocaleDateString('pt-BR')}
-                          </p>
-                          {p.supabase_url && (
-                            <p className="mt-0.5 truncate text-[10px] text-primary font-mono">
-                              {p.supabase_url}
-                            </p>
-                          )}
-                          {(p.status === 'processando' || (p.status as string) === 'aguardando_agente') && (
-                            <div className="mt-1.5 pt-1.5 border-t border-border/40">
-                              <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
-                                <span>Compilação em andamento...</span>
-                                <span className="font-mono text-primary font-bold">
-                                  {effectiveProgress > 0 ? `${effectiveProgress}%` : 'Processando'}
-                                </span>
-                              </div>
-                              <Progress
-                                value={effectiveProgress || 45}
-                                className="h-1.5 bg-muted/80"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Divider */}
-          <div className="my-4 border-t border-border" />
-
           {/* Active Deals */}
           <div>
             <div className="flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -769,27 +272,11 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
           {/* Divider */}
           <div className="my-4 border-t border-border" />
 
-          {/* Brand Analysis & Design Direction Section */}
+          {/* Dados coletados do lead & Dossiê */}
           <div className="mb-4">
-            <div className="flex items-center justify-between px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-3 w-3 text-primary animate-pulse" />
-                Direção de Marca & Design IA
-              </div>
-              {brandStatus && (
-                <span className={cn(
-                  "rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase",
-                  brandStatus === "idle" && "bg-muted text-muted-foreground",
-                  brandStatus === "processing" && "bg-yellow-500/10 text-yellow-500 animate-pulse",
-                  brandStatus === "completed" && "bg-emerald-500/10 text-emerald-500",
-                  brandStatus === "failed" && "bg-red-500/10 text-red-500"
-                )}>
-                  {brandStatus === "idle" && "Inativo"}
-                  {brandStatus === "processing" && "Analisando..."}
-                  {brandStatus === "completed" && "Concluído"}
-                  {brandStatus === "failed" && "Erro"}
-                </span>
-              )}
+            <div className="flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <Sparkles className="h-3 w-3 text-primary" />
+              Dados do Lead & Dossiê
             </div>
 
             {/* Attachments & Links */}
@@ -852,28 +339,6 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
               </div>
             )}
 
-            {/* Trigger Button */}
-            <div className="mt-3">
-              <Button
-                onClick={handleTriggerBrandAnalysis}
-                disabled={brandStatus === "processing"}
-                size="sm"
-                className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center gap-1.5 font-bold"
-              >
-                {brandStatus === "processing" ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>Analisando com Gemini...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-3.5 w-3.5" />
-                    <span>Analisar Marca & Conteúdo com IA</span>
-                  </>
-                )}
-              </Button>
-            </div>
-
             {/* Dossiê Comercial Google Maps & Decision Gate */}
             <div className="mt-3">
               <LeadDossierCard
@@ -881,8 +346,6 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
                 dossie={(contact as any)?.additional_data?.dossie}
                 companyName={contact.company || contact.name}
                 targetUrl={contact.website || (contact as any)?.additional_data?.links?.[0]?.url}
-                onTriggerPwaGeneration={handleGenerateAISiteFromSidebar}
-                isGeneratingPwa={generatingAI}
                 onDossierEnriched={(newDossie) => {
                   if (contact.id) {
                     const sb = createClient();
@@ -900,289 +363,6 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
               />
             </div>
 
-            {/* Report Result Section */}
-            {brandReport && (
-              <div className="mt-3 rounded-lg border border-border bg-card p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foreground flex items-center gap-1">
-                    <File className="h-3.5 w-3.5 text-primary" />
-                    Dossiê de Marca & Layout
-                  </span>
-                  {!isEditingReport ? (
-                    <Button
-                      variant="ghost"
-                      onClick={() => setIsEditingReport(true)}
-                      className="h-7 px-2 text-xs flex items-center gap-1"
-                    >
-                      <Edit2 className="h-3 w-3" />
-                      Editar
-                    </Button>
-                  ) : (
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setIsEditingReport(false);
-                          setEditedReport(brandReport);
-                        }}
-                        className="h-7 px-2 text-xs"
-                      >
-                        Cancelar
-                      </Button>
-                      <Button
-                        onClick={handleSaveReport}
-                        className="h-7 px-2 text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
-                      >
-                        <Save className="h-3 w-3" />
-                        Salvar
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {isEditingReport ? (
-                  <textarea
-                    value={editedReport}
-                    onChange={(e) => setEditedReport(e.target.value)}
-                    rows={8}
-                    className="w-full resize-y rounded-lg border border-border bg-muted px-2.5 py-2 text-xs text-foreground outline-none focus:border-primary/50"
-                  />
-                ) : (
-                  <>
-                    <div className="rounded-md bg-muted/40 p-2.5 text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed border border-border/40">
-                      {brandReport}
-                    </div>
-
-                    <div className="pt-3 border-t border-border/60 space-y-2.5 text-left">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                        Configuração do Supabase (Opcional)
-                      </span>
-                      
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-medium text-foreground block">Supabase URL</label>
-                        <input
-                          type="text"
-                          value={sidebarSupabaseUrl}
-                          onChange={(e) => {
-                            setSidebarSupabaseUrl(e.target.value);
-                            setIsConnectionValidated(false);
-                          }}
-                          placeholder="https://your-project.supabase.co"
-                          className="w-full rounded border border-border bg-muted px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-primary/50"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-medium text-foreground block">Supabase Anon Key</label>
-                        <input
-                          type="password"
-                          value={sidebarSupabaseAnonKey}
-                          onChange={(e) => {
-                            setSidebarSupabaseAnonKey(e.target.value);
-                            setIsConnectionValidated(false);
-                          }}
-                          placeholder="Chave Anon Key"
-                          className="w-full rounded border border-border bg-muted px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-primary/50"
-                        />
-                      </div>
-
-                      <Button
-                        type="button"
-                        onClick={handleValidateConnection}
-                        disabled={validatingConnection || !sidebarSupabaseUrl.trim() || !sidebarSupabaseAnonKey.trim()}
-                        variant={isConnectionValidated ? "outline" : "secondary"}
-                        size="sm"
-                        className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold"
-                      >
-                        {validatingConnection ? (
-                          <>
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            <span>Validando Conexão...</span>
-                          </>
-                        ) : isConnectionValidated ? (
-                          <>
-                            <Check className="h-3.5 w-3.5 text-emerald-500" />
-                            <span className="text-emerald-700">Conexão Válida!</span>
-                          </>
-                        ) : (
-                          <span>Validar Conexão</span>
-                        )}
-                      </Button>
-                    </div>
-
-                    {(() => {
-                      const contactProjects = filterProjectsForContact(projects, contact);
-                      const projectStatus = getContactProjectStatus(contactProjects);
-                      const completedProject = projectStatus.completedProject;
-                      const isAlreadyGenerated = projectStatus.isGenerated;
-                      const isCurrentlyProcessing = generatingAI || projectStatus.isProcessing;
-                      const effectiveProgress = generatingAI
-                        ? generationProgress
-                        : projectStatus.isProcessing
-                        ? Math.max(generationProgress, projectStatus.progressPercentage)
-                        : projectStatus.isGenerated
-                        ? 100
-                        : 0;
-                      const effectiveStageText = generatingAI
-                        ? generationStageText || PWA_GENERATION_STAGES[0].title
-                        : projectStatus.isProcessing
-                        ? getStageByProgress(effectiveProgress).title
-                        : projectStatus.statusMessage;
-
-                      return (
-                        <div className="pt-3 border-t border-border/60 space-y-2.5">
-                          {/* 1. Barra de Loading de Acompanhamento (durante geração ativa) */}
-                          {isCurrentlyProcessing && (
-                            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2 animate-fadeIn">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                                  <span>Acompanhamento da Linha de Produção (IA)</span>
-                                </div>
-                                <span className="text-xs font-mono font-bold text-primary">
-                                  {effectiveProgress}%
-                                </span>
-                              </div>
-                              <Progress
-                                value={effectiveProgress}
-                                className="h-2.5 bg-muted/80"
-                                indicatorClassName="bg-gradient-to-r from-violet-500 via-indigo-500 to-primary"
-                              />
-                              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
-                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-ping" />
-                                <span>{effectiveStageText}</span>
-                              </p>
-                            </div>
-                          )}
-
-                          {/* 2. Projeto Já Gerado com Sucesso (Status OK) */}
-                          {!isCurrentlyProcessing && isAlreadyGenerated && !allowForceRegenerate && (
-                            <div className="space-y-2.5 animate-fadeIn">
-                              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-400">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-400 flex-shrink-0" />
-                                    <span>PWA Gerado com Sucesso (Status: OK)</span>
-                                  </div>
-                                  <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px] font-bold">
-                                    STATUS: OK
-                                  </Badge>
-                                </div>
-                                <div className="text-xs text-muted-foreground space-y-1">
-                                  <p>
-                                    <strong className="text-foreground">Projeto:</strong>{" "}
-                                    {completedProject
-                                      ? extractProjectBrandName(completedProject)
-                                      : contact.name || "PWA do Cliente"}
-                                  </p>
-                                  {completedProject?.created_at && (
-                                    <p className="text-[11px]">
-                                      Finalizado em{" "}
-                                      {new Date(completedProject.created_at).toLocaleDateString("pt-BR")}{" "}
-                                      às{" "}
-                                      {new Date(completedProject.created_at).toLocaleTimeString("pt-BR", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })}
-                                    </p>
-                                  )}
-                                  {Boolean(completedProject?.resultado_json?.preview_url) && (
-                                    <a
-                                      href={String(completedProject?.resultado_json?.preview_url)}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-semibold mt-1"
-                                    >
-                                      <ExternalLink className="h-3.5 w-3.5" />
-                                      Abrir Aplicação PWA ({String(completedProject?.resultado_json?.preview_url)})
-                                    </a>
-                                  )}
-                                </div>
-                              </div>
-
-                              <Button
-                                disabled={true}
-                                size="sm"
-                                className="w-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 cursor-not-allowed flex items-center justify-center gap-1.5 font-bold"
-                              >
-                                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                                <span>PWA Já Gerado (Concluído)</span>
-                              </Button>
-
-                              <div className="flex items-center justify-between px-0.5 text-[10px] text-muted-foreground">
-                                <span>✓ Projeto bloqueado contra nova geração acidental.</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setAllowForceRegenerate(true)}
-                                  className="text-primary hover:underline cursor-pointer ml-1 font-medium"
-                                >
-                                  Regerar PWA?
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* 3. Botão Ativo para Geração Inicial ou Regeração Forçada */}
-                          {(isCurrentlyProcessing || (!isAlreadyGenerated || allowForceRegenerate)) && (
-                            <div className="space-y-2">
-                              {allowForceRegenerate && (
-                                <div className="flex items-center justify-between p-2 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px]">
-                                  <span>Atenção: Modo de regeração ativo.</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => setAllowForceRegenerate(false)}
-                                    className="underline hover:text-amber-300 ml-2"
-                                  >
-                                    Cancelar
-                                  </button>
-                                </div>
-                              )}
-
-                              <Button
-                                onClick={handleGenerateAISiteFromSidebar}
-                                disabled={isCurrentlyProcessing}
-                                size="sm"
-                                className={cn(
-                                  "w-full flex items-center justify-center gap-1.5 font-bold transition-all",
-                                  isCurrentlyProcessing
-                                    ? "bg-primary/40 text-primary-foreground cursor-wait"
-                                    : allowForceRegenerate
-                                    ? "bg-amber-600 hover:bg-amber-700 text-white"
-                                    : "bg-primary hover:bg-primary/95 text-primary-foreground"
-                                )}
-                              >
-                                {isCurrentlyProcessing ? (
-                                  <>
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                    <span>Geração do PWA em Andamento ({effectiveProgress}%)...</span>
-                                  </>
-                                ) : allowForceRegenerate ? (
-                                  <>
-                                    <RefreshCw className="h-3.5 w-3.5" />
-                                    <span>Regerar PWA do Cliente (IA)</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Sparkles className="h-3.5 w-3.5" />
-                                    <span>Iniciar Geração do PWA (IA)</span>
-                                  </>
-                                )}
-                              </Button>
-
-                              <p className="text-[10px] text-muted-foreground text-center font-medium">
-                                {isConnectionValidated 
-                                  ? "Conexão Supabase validada." 
-                                  : "Você pode gerar o PWA agora e vincular o Supabase a qualquer momento."}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Divider */}
@@ -1233,11 +413,6 @@ export function ContactSidebar({ contact, onContactUpdate }: ContactSidebarProps
         </div>
       </ScrollArea>
 
-      {/* Modal da Fila de Projetos */}
-      <FilaProjetosModal
-        open={filaModalOpen}
-        onOpenChange={setFilaModalOpen}
-      />
     </div>
   );
 }

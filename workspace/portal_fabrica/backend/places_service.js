@@ -482,34 +482,6 @@ export async function synthesizeSentimentAndPitch({ name, rating, user_ratings_t
     pitch = `Olá equipe da ${name}! Parabéns pela excelente avaliação no Google Maps (${rating || '5.0'}★ em ${user_ratings_total || 0} avaliações). Para estabelecimentos com alto padrão como o de vocês, desenvolvemos um PWA exclusivo que fideliza seus clientes diretamente pelo WhatsApp com agendamento/pedidos rápidos sem taxa de marketplace. Posso te enviar uma prévia do sistema personalizado para a ${name}?`;
   }
 
-  // Tenta enriquecer pitch via LLM Gateway se a fábrica de IA estiver conectada
-  const factoryApiUrl = process.env.SOFTWARE_FACTORY_API_URL || 'http://localhost:8000';
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 800);
-    const aiRes = await fetch(`${factoryApiUrl}/gerar-pitch-comercial`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify({
-        empresa: name,
-        nota: rating,
-        dores: painPoints.map((p) => p.text),
-        elogios: praises.map((e) => e.text),
-        nicho: primaryType,
-      }),
-    });
-    clearTimeout(timeoutId);
-    if (aiRes.ok) {
-      const aiData = await aiRes.json();
-      if (aiData.pitch) {
-        pitch = aiData.pitch;
-      }
-    }
-  } catch {
-    // Fallback imediato
-  }
-
   return {
     rating_score: rating || null,
     total_reviews: user_ratings_total || safeReviews.length,
