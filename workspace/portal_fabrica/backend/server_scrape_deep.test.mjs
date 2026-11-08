@@ -1,12 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { createFakeSupabase } from './test_support/fake_supabase.mjs';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 test('Server Scrape Deep API - POST /api/leads/:id/scrape-deep', async (t) => {
   // 1. Inicia um servidor HTTP mock simulando o FastAPI Scrapling
@@ -43,47 +39,19 @@ test('Server Scrape Deep API - POST /api/leads/:id/scrape-deep', async (t) => {
   process.env.PORT = '5099';
   process.env.AI_FACTORY_URL = 'http://localhost:8099';
 
-  const { server } = await import('./server.js');
+  process.env.SUPABASE_URL = 'https://placeholder.supabase.co';
+  const { server, setSupabaseClientForTests } = await import('./server.js');
+  const fake = createFakeSupabase({
+    contacts: [
+      { id: 'c-no-url', name: 'Lead sem url', additional_data: {} },
+      { id: 'c-with-url', company: 'Pizzaria Bella', additional_data: { website: 'https://pizzariabella.com.br' } },
+    ],
+  });
+  setSupabaseClientForTests(fake);
   await new Promise((r) => setTimeout(r, 400));
   const baseUrl = 'http://localhost:5099';
-
-  const testIdNoUrl = '88801';
-  const testIdWithUrl = '88802';
-
-  // Seed local projects
-  const localDataPath = path.join(__dirname, 'data', 'local_projetos.json');
-  let localProjects = [];
-  if (fs.existsSync(localDataPath)) {
-    try {
-      localProjects = JSON.parse(fs.readFileSync(localDataPath, 'utf-8'));
-    } catch {
-      localProjects = [];
-    }
-  }
-
-  localProjects = localProjects.filter((p) => p.id !== testIdNoUrl && p.id !== testIdWithUrl);
-  localProjects.unshift(
-    {
-      id: testIdNoUrl,
-      mensagem_lead: 'Lead sem url',
-      resultado_json: {},
-      is_local: true,
-    },
-    {
-      id: testIdWithUrl,
-      mensagem_lead: 'Lead com url de site',
-      resultado_json: {
-        project_name: 'Pizzaria Bella',
-        additional_data: {
-          website: 'https://pizzariabella.com.br'
-        }
-      },
-      is_local: true,
-    }
-  );
-
-  fs.mkdirSync(path.dirname(localDataPath), { recursive: true });
-  fs.writeFileSync(localDataPath, JSON.stringify(localProjects, null, 2), 'utf-8');
+  const testIdNoUrl = 'c-no-url';
+  const testIdWithUrl = 'c-with-url';
 
   // Teste 1: Falha amigável 400 quando não há nenhuma URL fornecida
   await t.test('Retorna 400 quando lead não possui URLs', async () => {
@@ -123,9 +91,11 @@ test('Server Scrape Deep API - POST /api/leads/:id/scrape-deep', async (t) => {
     assert.equal(res.status, 200);
     assert.equal(data.success, true);
     assert.equal(data.urls[0], 'https://pizzariabella.com.br');
+    const saved = fake.tables.contacts.find((c) => c.id === testIdWithUrl);
+    assert.equal(saved.additional_data.scraped_data.cardapio[0].nome, 'Pizza Margherita');
   });
 
   // Limpeza
-  server.close();
+  await new Promise((resolve) => server.close(resolve));
   mockScraperServer.close();
 });

@@ -7,7 +7,6 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { buildLeadDossier, extractPlaceQueryFromUrl } from './places_service.js';
-import { orchestrateModularTenantStack } from './modular_orchestrator.js';
 
 import { runMultimodalBusinessDiagnosis, buildMasterPrompt } from './multimodal_diagnosis_service.js';
 
@@ -28,7 +27,7 @@ export function reloadEnv() {
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const SOFTWARE_FACTORY_API_URL = process.env.SOFTWARE_FACTORY_API_URL || 'http://localhost:8000';
+const AI_FACTORY_URL = process.env.AI_FACTORY_URL || 'http://localhost:8000';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -37,8 +36,6 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Diretório de dados e uploads locais resilientes
 const DATA_DIR = path.join(__dirname, 'data');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
-const LOCAL_PROJECTS_FILE = path.join(DATA_DIR, 'local_projetos.json');
-
 function ensureDirectories() {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -46,54 +43,10 @@ function ensureDirectories() {
   if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
   }
-  if (!fs.existsSync(LOCAL_PROJECTS_FILE)) {
-    fs.writeFileSync(LOCAL_PROJECTS_FILE, JSON.stringify([], null, 2), 'utf-8');
-  }
 }
 
 ensureDirectories();
 app.use('/uploads', express.static(UPLOADS_DIR));
-
-function getLocalProjects() {
-  ensureDirectories();
-  try {
-    const raw = fs.readFileSync(LOCAL_PROJECTS_FILE, 'utf-8');
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
-
-function saveLocalProject(project) {
-  ensureDirectories();
-  const projects = getLocalProjects();
-  projects.unshift(project);
-  fs.writeFileSync(LOCAL_PROJECTS_FILE, JSON.stringify(projects, null, 2), 'utf-8');
-  return project;
-}
-
-function updateLocalProject(id, patch) {
-  ensureDirectories();
-  const projects = getLocalProjects();
-  const idx = projects.findIndex((p) => String(p.id) === String(id));
-  if (idx !== -1) {
-    projects[idx] = { ...projects[idx], ...patch };
-    if (patch.resultado_json) {
-      projects[idx].resultado_json = {
-        ...(projects[idx].resultado_json || {}),
-        ...patch.resultado_json,
-      };
-    }
-    fs.writeFileSync(LOCAL_PROJECTS_FILE, JSON.stringify(projects, null, 2), 'utf-8');
-    return projects[idx];
-  }
-  return null;
-}
-
-function getLocalProjectById(id) {
-  const projects = getLocalProjects();
-  return projects.find((p) => String(p.id) === String(id)) || null;
-}
 
 // Inicializa o cliente do Supabase
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -115,16 +68,22 @@ if (supabaseUrl && supabaseKey) {
   }
 }
 
-const isSupabaseActive = Boolean(supabase && !isPlaceholderUrl);
+let isSupabaseActive = Boolean(supabase && !isPlaceholderUrl);
+
+// Permite que os testes troquem o Supabase real por um cliente em memória
+export function setSupabaseClientForTests(client) {
+  supabase = client;
+  isSupabaseActive = Boolean(client);
+}
 if (!isSupabaseActive) {
-  console.log('[Backend] Modo Fila Resiliente Local ATIVO (Supabase offline ou não configurado).');
+  console.log('[Backend] Supabase não configurado: captação e enriquecimento de leads ficam indisponíveis.');
 }
 
 // Rota de Teste de Saúde
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    database: isSupabaseActive ? 'supabase_connected' : 'local_file_queue',
+    database: isSupabaseActive ? 'supabase_connected' : 'not_configured',
     timestamp: new Date().toISOString(),
   });
 });
@@ -184,68 +143,6 @@ app.post('/api/upload', async (req, res) => {
   }
 });
 
-// Helper para despachar projeto para o Agente Antigravity no Chat ou Fábrica
-async function dispatchProjectToFactory(projectId, projectRecord = null) {
-  try {
-    const targetProject = projectRecord || getLocalProjectById(projectId);
-    const alreadyCompleted = targetProject?.status === 'concluido';
-    console.log(`[Backend] Despachando projeto #${projectId} para o Agente Antigravity no chat...`);
-
-    // 1. Marca status como 'aguardando_agente' apenas se ainda não estiver 'concluido'
-    if (!alreadyCompleted) {
-      if (targetProject?.is_local) {
-        updateLocalProject(projectId, { status: 'aguardando_agente' });
-      }
-
-      if (isSupabaseActive) {
-        try {
-          await supabase
-            .from('fila_projetos')
-            .update({ status: 'aguardando_agente' })
-            .eq('id', projectId);
-        } catch (sbErr) {
-          console.warn('[Backend] Aviso ao atualizar status no Supabase:', sbErr.message);
-        }
-      }
-    }
-
-    // 2. Grava o job em .agents/queue/pending_job.json para o watcher do chat
-    try {
-      const queueDir = path.resolve(__dirname, '../../../.agents/queue');
-      if (!fs.existsSync(queueDir)) {
-        fs.mkdirSync(queueDir, { recursive: true });
-      }
-      const pendingFile = path.join(queueDir, 'pending_job.json');
-      fs.writeFileSync(pendingFile, JSON.stringify(targetProject, null, 2), 'utf-8');
-      console.log(`[Backend] Job gravado em ${pendingFile} para o Agente Antigravity.`);
-    } catch (fsErr) {
-      console.warn('[Backend] Aviso ao gravar arquivo de fila do agente:', fsErr.message);
-    }
-
-    // 3. Notifica a Fábrica de IA assincronamente (se conectada)
-    if (targetProject?.mensagem_lead) {
-      const payload = {
-        mensagem: targetProject.mensagem_lead,
-        briefing_payload: targetProject.resultado_json?.briefing_payload || null,
-        project_id: parseInt(projectId, 10),
-      };
-
-      fetch(`${SOFTWARE_FACTORY_API_URL}/gerar-site`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }).catch(() => {
-        // Fábrica desacoplada: processamento ativo pelo Agente Antigravity no chat
-      });
-    }
-
-    return { status: 'aguardando_agente', mensagem: 'Projeto encaminhado para o Agente Antigravity no chat' };
-  } catch (err) {
-    console.error(`Erro ao despachar projeto ${projectId}:`, err.message);
-  }
-}
-
-
 async function attachTagToContact(contactId, tagName, accountId, userId) {
   if (!supabase || !isSupabaseActive || !contactId) return;
   try {
@@ -289,8 +186,8 @@ async function attachTagToContact(contactId, tagName, accountId, userId) {
   }
 }
 
-// 1. Criar novo projeto (Lead) no Supabase ou Fila Local Resiliente
-app.post('/api/projetos', async (req, res) => {
+// Captação de Lead Briefing: cria ou atualiza o Contato e o Deal no CRM
+app.post('/api/leads', async (req, res) => {
   try {
     const {
       project_name: raw_project_name,
@@ -301,17 +198,10 @@ app.post('/api/projetos', async (req, res) => {
       website: raw_website,
       site,
       contact_id: incomingContactId,
-      branding,
-      modules,
       reference_links,
       client_info,
       summary,
-      ai_analysis,
       additional_data,
-      supabase_url,
-      supabase_anon_key,
-      supabase_service_role_key,
-      auto_process,
     } = req.body;
 
     const contactName =
@@ -331,10 +221,12 @@ app.post('/api/projetos', async (req, res) => {
       raw_project_name ||
       null;
 
-    const project_name = companyName || (website ? ('Lead ' + website) : (contactName ? ('Lead ' + contactName) : 'Projeto Fábrica'));
-
     if (!raw_project_name && !company && !name && !contact_name) {
       return res.status(400).json({ error: 'Informe ao menos o nome do responsável ou da empresa.' });
+    }
+
+    if (!isSupabaseActive) {
+      return res.status(503).json({ error: 'Supabase não configurado: não é possível registrar o lead no CRM.' });
     }
 
     let finalAdditionalData = additional_data ? { ...additional_data } : {};
@@ -346,364 +238,188 @@ app.post('/api/projetos', async (req, res) => {
       finalAdditionalData.links = existingLinks;
     }
 
-    let linksStr = 'Nenhum link fornecido.';
-    if (reference_links && reference_links.length > 0) {
-      linksStr = reference_links
-        .map((l, i) => `${i + 1}. Tipo: ${l.type} - URL: ${l.url} ${l.notes ? `(Notas: ${l.notes})` : ''}`)
-        .join('\n');
-    } else if (website) {
-      linksStr = `1. Tipo: site - URL: ${website} (Site Oficial do Lead)`;
-    }
-
-    const modulosStr = modules && modules.length > 0 ? modules.join(', ') : 'site_institucional';
-
-    const mensagem_lead = `### BRIEFING DO PROJETO DE CLIENTE
-- **Responsável / Contato**: ${contactName}
-- **Empresa / Marca**: '${companyName}'
-- **WhatsApp/Tel**: ${phone}
-- **E-mail**: ${email}
-- **Site Oficial**: ${website || 'Nenhum site informado'}
-- **Módulos Solicitados**: [${modulosStr}]
-
-${ai_analysis ? `### ANÁLISE DE MARCA & ARQUITETURA DA IA:\n${ai_analysis}\n` : ''}${linksStr !== 'Nenhum link fornecido.' ? `### LINKS DE REFERÊNCIA:\n${linksStr}\n` : ''}`;
-
     let defaultUserId = '2b66650c-a300-4239-b922-2aab9bccac6f';
     let defaultAccountId = '98006e91-88b1-44ea-9178-50c257cd973f';
     let contactId = incomingContactId || null;
 
-    if (isSupabaseActive) {
-      try {
-        let { data: profile } = await supabase
+    try {
+      let { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id, account_id')
+        .eq('email', 'admin@wacrm.com')
+        .maybeSingle();
+
+      if (!profile) {
+        const { data: fallbackProfile } = await supabase
           .from('profiles')
           .select('user_id, account_id')
-          .eq('email', 'admin@wacrm.com')
+          .limit(1)
+          .maybeSingle();
+        profile = fallbackProfile;
+      }
+
+      if (profile?.user_id) defaultUserId = profile.user_id;
+      if (profile?.account_id) defaultAccountId = profile.account_id;
+
+      const phone_normalized = phone.replace(/\D/g, '');
+
+      // 1. Busca ou cria Contato no WACRM
+      if (!contactId && phone_normalized) {
+        const { data: existingContact } = await supabase
+          .from('contacts')
+          .select('id')
+          .eq('account_id', defaultAccountId)
+          .eq('phone_normalized', phone_normalized)
+          .limit(1)
           .maybeSingle();
 
-        if (!profile) {
-          const { data: fallbackProfile } = await supabase
-            .from('profiles')
-            .select('user_id, account_id')
-            .limit(1)
-            .maybeSingle();
-          profile = fallbackProfile;
+        if (existingContact) {
+          contactId = existingContact.id;
         }
+      }
 
-        if (profile?.user_id) defaultUserId = profile.user_id;
-        if (profile?.account_id) defaultAccountId = profile.account_id;
-
-        const phone_normalized = phone.replace(/\D/g, '');
-
-        // 1. Busca ou cria Contato no WACRM
-        if (!contactId && phone_normalized) {
-          const { data: existingContact } = await supabase
-            .from('contacts')
-            .select('id')
-            .eq('account_id', defaultAccountId)
-            .eq('phone_normalized', phone_normalized)
-            .limit(1)
-            .maybeSingle();
-
-          if (existingContact) {
-            contactId = existingContact.id;
-          }
+      if (contactId) {
+        const contactUpdatePayload = {
+          name: contactName,
+          company: companyName,
+          additional_data: finalAdditionalData,
+          updated_at: new Date().toISOString()
+        };
+        if (email && email !== 'Não informado') {
+          contactUpdatePayload.email = email;
         }
+        if (website) {
+          contactUpdatePayload.website = website;
+        }
+        let { error: updateError } = await supabase
+          .from('contacts')
+          .update(contactUpdatePayload)
+          .eq('id', contactId);
 
-        if (contactId) {
-          const contactUpdatePayload = {
-            name: contactName,
-            company: companyName,
-            additional_data: finalAdditionalData,
-            updated_at: new Date().toISOString()
-          };
-          if (!incomingContactId && !ai_analysis) {
-            contactUpdatePayload.rag_status = 'idle';
-          }
-          if (email && email !== 'Não informado') {
-            contactUpdatePayload.email = email;
-          }
-          if (website) {
-            contactUpdatePayload.website = website;
-          }
-          let { error: updateError } = await supabase
+        if (updateError && updateError.message && updateError.message.includes("'website' column")) {
+          delete contactUpdatePayload.website;
+          await supabase
             .from('contacts')
             .update(contactUpdatePayload)
             .eq('id', contactId);
+        }
+      } else {
+        const newContactPayload = {
+          user_id: defaultUserId,
+          account_id: defaultAccountId,
+          phone: phone,
+          name: contactName,
+          company: companyName,
+          email: email,
+          website: website || null,
+          additional_data: finalAdditionalData,
+        };
 
-          if (updateError && updateError.message && updateError.message.includes("'website' column")) {
-            delete contactUpdatePayload.website;
-            await supabase
-              .from('contacts')
-              .update(contactUpdatePayload)
-              .eq('id', contactId);
-          }
-        } else {
-          const newContactPayload = {
-            user_id: defaultUserId,
-            account_id: defaultAccountId,
-            phone: phone,
-            name: contactName,
-            company: companyName,
-            email: email,
-            website: website || null,
-            additional_data: finalAdditionalData,
-            rag_status: 'idle',
-          };
+        let { data: newContact, error: contactError } = await supabase
+          .from('contacts')
+          .insert([newContactPayload])
+          .select('id')
+          .single();
 
-          let { data: newContact, error: contactError } = await supabase
+        if (contactError && contactError.message && contactError.message.includes("'website' column")) {
+          delete newContactPayload.website;
+          const retry = await supabase
             .from('contacts')
             .insert([newContactPayload])
             .select('id')
             .single();
-
-          if (contactError && contactError.message && contactError.message.includes("'website' column")) {
-            delete newContactPayload.website;
-            const retry = await supabase
-              .from('contacts')
-              .insert([newContactPayload])
-              .select('id')
-              .single();
-            newContact = retry.data;
-            contactError = retry.error;
-          }
-
-          if (!contactError && newContact) {
-            contactId = newContact.id;
-            console.log(`[Backend] Contato registrado no CRM com sucesso! ID: ${contactId}`);
-          } else if (contactError) {
-            console.warn('[Backend] Erro ao criar contato no CRM:', contactError.message);
-          }
+          newContact = retry.data;
+          contactError = retry.error;
         }
 
-        // 2. Associa tag 'Fábrica de Sites' ao contato
-        if (contactId) {
-          await attachTagToContact(contactId, 'Fábrica de Sites', defaultAccountId, defaultUserId);
+        if (!contactError && newContact) {
+          contactId = newContact.id;
+          console.log(`[Backend] Contato registrado no CRM com sucesso! ID: ${contactId}`);
+        } else if (contactError) {
+          console.warn('[Backend] Erro ao criar contato no CRM:', contactError.message);
+        }
+      }
+
+      // 2. Associa tag 'Fábrica de Sites' ao contato
+      if (contactId) {
+        await attachTagToContact(contactId, 'Fábrica de Sites', defaultAccountId, defaultUserId);
+      }
+
+      // 3. Cria Oportunidade (Deal) no Funil de Vendas do WACRM (Sem conversa no Inbox)
+      if (contactId) {
+        let pipelineId = '0a1969dd-bc7e-4a99-a854-a925f32ad923';
+        let stageId = 'e15c3092-f3f9-4550-baa4-88a6f27b6eaa';
+
+        try {
+          const { data: stages } = await supabase
+            .from('pipeline_stages')
+            .select('id, pipeline_id, position, pipelines!inner(account_id)')
+            .eq('pipelines.account_id', defaultAccountId)
+            .order('position', { ascending: true })
+            .limit(1);
+
+          if (stages && stages.length > 0) {
+            stageId = stages[0].id;
+            pipelineId = stages[0].pipeline_id;
+          }
+        } catch (stageErr) {
+          console.warn('[Backend] Falha ao consultar pipeline stages:', stageErr.message);
         }
 
-        // 3. Cria Oportunidade (Deal) no Funil de Vendas do WACRM (Sem conversa no Inbox)
-        if (contactId) {
-          let pipelineId = '0a1969dd-bc7e-4a99-a854-a925f32ad923';
-          let stageId = 'e15c3092-f3f9-4550-baa4-88a6f27b6eaa';
+        const dealValue = summary?.total_setup_price || 0;
 
-          try {
-            const { data: stages } = await supabase
-              .from('pipeline_stages')
-              .select('id, pipeline_id, position, pipelines!inner(account_id)')
-              .eq('pipelines.account_id', defaultAccountId)
-              .order('position', { ascending: true })
-              .limit(1);
+        const { data: existingDeal } = await supabase
+          .from('deals')
+          .select('id')
+          .eq('account_id', defaultAccountId)
+          .eq('contact_id', contactId)
+          .eq('title', `Projeto - ${companyName || contactName}`)
+          .limit(1)
+          .maybeSingle();
 
-            if (stages && stages.length > 0) {
-              stageId = stages[0].id;
-              pipelineId = stages[0].pipeline_id;
-            }
-          } catch (stageErr) {
-            console.warn('[Backend] Falha ao consultar pipeline stages:', stageErr.message);
-          }
-
-          const dealValue = summary?.total_setup_price || 0;
-
-          const { data: existingDeal } = await supabase
+        if (!existingDeal) {
+          const { error: dealError } = await supabase
             .from('deals')
-            .select('id')
-            .eq('account_id', defaultAccountId)
-            .eq('contact_id', contactId)
-            .eq('title', `Projeto - ${companyName || contactName}`)
-            .limit(1)
-            .maybeSingle();
-
-          if (!existingDeal) {
-            const { error: dealError } = await supabase
-              .from('deals')
-              .insert([
-                {
-                  user_id: defaultUserId,
-                  account_id: defaultAccountId,
-                  pipeline_id: pipelineId,
-                  stage_id: stageId,
-                  contact_id: contactId,
-                  title: `Projeto - ${companyName || contactName}`,
-                  value: dealValue,
-                  currency: 'BRL',
-                  notes: `Responsável: ${contactName} | Site: ${website || 'Não informado'}`,
-                  status: 'open'
-                }
-              ]);
-
-            if (dealError) {
-              console.warn('[Backend] Erro ao criar Oportunidade (Deal) no CRM:', dealError.message);
-            } else {
-              console.log(`[Backend] Oportunidade (Deal) criada com sucesso no funil do CRM no valor de R$ ${dealValue}!`);
-            }
-          } else {
-            console.log(`[Backend] Oportunidade (Deal) já existente no CRM para ${companyName} (ID: ${existingDeal.id}).`);
-          }
-        }
-      } catch (crmResolveErr) {
-        console.warn('[Backend] Aviso ao sincronizar CRM com Supabase:', crmResolveErr.message);
-      }
-    }
-
-    const { supabase_service_role_key: _srk, supabase_anon_key: _sak, ...cleanBriefing } = req.body;
-
-    let data = null;
-
-    // Tentativa no Supabase se ativo
-    if (isSupabaseActive) {
-      try {
-        const { data: inserted, error: insertError } = await supabase
-          .from('fila_projetos')
-          .insert([
-            {
-              mensagem_lead,
-              status: 'aguardando_decisao',
-              resultado_json: {
-                account_id: defaultAccountId,
+            .insert([
+              {
                 user_id: defaultUserId,
-                ...(contactId ? { contact_id: contactId } : {}),
-                contact_name: contactName,
-                company: companyName,
-                email: email,
-                phone: phone,
-                website: website || null,
-                project_name: companyName,
-                briefing_payload: cleanBriefing,
-                supabase_service_role_key: supabase_service_role_key || null,
-              },
-              supabase_url: supabase_url || null,
-              supabase_anon_key: supabase_anon_key || null,
-            },
-          ])
-          .select();
+                account_id: defaultAccountId,
+                pipeline_id: pipelineId,
+                stage_id: stageId,
+                contact_id: contactId,
+                title: `Projeto - ${companyName || contactName}`,
+                value: dealValue,
+                currency: 'BRL',
+                notes: `Responsável: ${contactName} | Site: ${website || 'Não informado'}`,
+                status: 'open'
+              }
+            ]);
 
-        if (insertError) {
-          console.warn('[Backend] Erro no Supabase fila_projetos (' + insertError.message + '). Ativando fila local resiliente...');
+          if (dealError) {
+            console.warn('[Backend] Erro ao criar Oportunidade (Deal) no CRM:', dealError.message);
+          } else {
+            console.log(`[Backend] Oportunidade (Deal) criada com sucesso no funil do CRM no valor de R$ ${dealValue}!`);
+          }
         } else {
-          data = inserted;
-          // Salva também na cópia local para consistência e inspeção offline
-          try {
-            const localMirror = {
-              ...inserted[0],
-              is_local: false,
-              supabase_synced: true,
-            };
-            saveLocalProject(localMirror);
-          } catch {}
+          console.log(`[Backend] Oportunidade (Deal) já existente no CRM para ${companyName} (ID: ${existingDeal.id}).`);
         }
-      } catch (insertEx) {
-        console.warn('[Backend] Exceção ao gravar no Supabase (' + insertEx.message + '). Ativando fila local resiliente...');
       }
+    } catch (crmResolveErr) {
+      console.warn('[Backend] Aviso ao sincronizar CRM com Supabase:', crmResolveErr.message);
     }
 
-    // Se Supabase for offline/placeholder ou falhar (ex: fetch failed), armazena na fila local resiliente
-    if (!data || data.length === 0) {
-      const localProject = {
-        id: Date.now(),
-        mensagem_lead,
-        status: 'aguardando_decisao',
-        resultado_json: {
-          account_id: defaultAccountId,
-          user_id: defaultUserId,
-          ...(contactId ? { contact_id: contactId } : {}),
-          project_name: project_name,
-          briefing_payload: cleanBriefing,
-          supabase_service_role_key: supabase_service_role_key || null,
-        },
-        supabase_url: supabase_url || null,
-        supabase_anon_key: supabase_anon_key || null,
-        created_at: new Date().toISOString(),
-        is_local: true,
-      };
-      saveLocalProject(localProject);
-      data = [localProject];
-      console.log(`[Backend] Projeto registrado com sucesso na fila local! ID: #${localProject.id}`);
-    } else {
-      console.log(`Projeto criado com sucesso no Supabase! ID: ${data[0].id}`);
+    if (!contactId) {
+      return res.status(502).json({ error: 'Não foi possível registrar o contato no CRM.' });
     }
 
-    const createdProject = {
-      ...data[0],
-      status: 'aguardando_decisao',
-      auto_dispatched: false,
-    };
-
-    console.log(`[Backend] Lead #${data[0].id} retido no Decision Gate com status 'aguardando_decisao'. Auto-build desativado.`);
-    res.status(201).json(createdProject);
+    console.log(`[Backend] Lead registrado no CRM (contato ${contactId}), aguardando o Decision Gate.`);
+    res.status(201).json({ success: true, contact_id: contactId });
   } catch (err) {
-    console.error('Erro na rota POST /api/projetos:', err);
+    console.error('Erro na rota POST /api/leads:', err);
     res.status(500).json({ error: 'Erro interno do servidor.', details: err.message });
   }
 });
 
-// 2. Listar todos os projetos salvos
-app.get('/api/projetos', async (req, res) => {
-  try {
-    let supabaseProjects = [];
-    if (isSupabaseActive) {
-      try {
-        const { data, error } = await supabase
-          .from('fila_projetos')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (!error && Array.isArray(data)) {
-          supabaseProjects = data;
-        }
-      } catch (err) {
-        console.warn('[Backend] Falha ao consultar Supabase /api/projetos:', err.message);
-      }
-    }
-
-    const localProjects = getLocalProjects();
-    const seenIds = new Set();
-    const merged = [];
-
-    for (const p of [...localProjects, ...supabaseProjects]) {
-      const key = String(p.id);
-      if (!seenIds.has(key)) {
-        seenIds.add(key);
-        merged.push(p);
-      }
-    }
-
-    res.json(merged);
-  } catch (err) {
-    console.error('Erro na rota GET /api/projetos:', err);
-    res.json(getLocalProjects());
-  }
-});
-
-// 3. Obter status de um projeto específico
-app.get('/api/projetos/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const local = getLocalProjectById(id);
-    if (local) {
-      return res.json(local);
-    }
-
-    if (isSupabaseActive) {
-      const { data, error } = await supabase
-        .from('fila_projetos')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (!error && data) {
-        return res.json(data);
-      }
-    }
-
-    return res.status(404).json({ error: 'Projeto não encontrado na fila.' });
-  } catch (err) {
-    console.error(`Erro na rota GET /api/projetos/${req.params.id}:`, err);
-    const local = getLocalProjectById(req.params.id);
-    if (local) return res.json(local);
-    res.status(500).json({ error: 'Erro interno do servidor.', details: err.message });
-  }
-});
-
-// 4. Disparar processamento da fila (Fábrica de IA)
 // Rota de consulta direta ao Google Places
 app.post('/api/dossie/consultar', async (req, res) => {
   try {
@@ -728,30 +444,6 @@ app.post('/api/dossie/consultar', async (req, res) => {
 app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
   const { id } = req.params;
   try {
-    let local = getLocalProjectById(id);
-    let projeto = local;
-    if (!projeto && isSupabaseActive) {
-      const { data } = await supabase
-        .from('fila_projetos')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-      if (data) projeto = data;
-    }
-
-    // Se ainda não encontrou em fila_projetos por ID direto, tenta encontrar por contact_id em fila_projetos
-    if (!projeto && isSupabaseActive) {
-      try {
-        const { data: qData } = await supabase
-          .from('fila_projetos')
-          .select('*')
-          .filter('resultado_json->>contact_id', 'eq', id)
-          .maybeSingle();
-        if (qData) projeto = qData;
-      } catch {}
-    }
-
-    // Tenta carregar diretamente da tabela contacts
     let contactRecord = null;
     if (isSupabaseActive) {
       const { data: cData } = await supabase
@@ -762,11 +454,9 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
       if (cData) contactRecord = cData;
     }
 
-    if (!projeto && !contactRecord) {
+    if (!contactRecord) {
       return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
     }
-
-    const payload = projeto?.resultado_json || {};
 
     // Extrai possíveis links de Google Maps ou websites de additional_data.links se houver
     let linkFromAdditional = null;
@@ -787,10 +477,6 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
       contactRecord?.additional_data?.website ||
       contactRecord?.company ||
       contactRecord?.name ||
-      payload.website ||
-      payload.briefing_payload?.website ||
-      payload.briefing_payload?.company ||
-      payload.project_name ||
       '';
 
     if (!candidateQuery) {
@@ -801,8 +487,6 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
     const fallbackName =
       contactRecord?.company ||
       contactRecord?.name ||
-      payload.briefing_payload?.company ||
-      payload.project_name ||
       '';
 
     const result = await buildLeadDossier(candidateQuery, mapsKey, {
@@ -813,81 +497,53 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
       return res.status(result.code === 'MISSING_API_KEY' ? 412 : 400).json(result);
     }
 
-    if (local) {
-      const updatedResultado = {
-        ...(local.resultado_json || {}),
-        dossie: result.dossie,
-        maps_url: req.body?.query || local?.resultado_json?.maps_url,
-      };
-      updateLocalProject(id, { resultado_json: updatedResultado });
+    const contactId = contactRecord.id;
+    const { data: contact, error: getErr } = await supabase
+      .from('contacts')
+      .select('id, company, additional_data')
+      .eq('id', contactId)
+      .maybeSingle();
+
+    if (getErr) {
+      console.warn(`[GoogleMaps] Erro ao buscar contact(${contactId}):`, getErr.message);
     }
 
-    if (isSupabaseActive) {
-      if (projeto) {
-        const updatedResultado = {
-          ...(projeto.resultado_json || {}),
-          dossie: result.dossie,
-          maps_url: req.body?.query || projeto?.resultado_json?.maps_url,
-        };
-        const { error: pErr } = await supabase
-          .from('fila_projetos')
-          .update({ resultado_json: updatedResultado })
-          .eq('id', projeto.id);
-        if (pErr) {
-          console.warn(`[GoogleMaps] Erro ao atualizar fila_projetos(${projeto.id}):`, pErr.message);
-        }
+    const currentAddData = contact?.additional_data || {};
+    const verifiedName = result.dossie?.nome_verificado;
+    const verifiedWebsite = result.dossie?.site_oficial;
+
+    const updateContactFields = {
+      additional_data: {
+        ...currentAddData,
+        website: verifiedWebsite || currentAddData.website || '',
+        maps_url: req.body?.query || currentAddData.maps_url || '',
+        maps_search_link: req.body?.query || currentAddData.maps_search_link || '',
+        dossie: result.dossie,
+      },
+    };
+
+    // Preserva o nome do briefing anterior se for diferente do Maps
+    if (contact?.company && verifiedName && contact.company !== verifiedName) {
+      if (!currentAddData.nome_original_briefing) {
+        updateContactFields.additional_data.nome_original_briefing = contact.company;
       }
+    }
 
-      const contactId = payload.contact_id || contactRecord?.id || (isNaN(Number(id)) ? id : null);
-      if (contactId) {
-        const { data: contact, error: getErr } = await supabase
-          .from('contacts')
-          .select('id, company, additional_data')
-          .eq('id', contactId)
-          .maybeSingle();
+    // Atualiza company com o nome oficial verificado
+    if (verifiedName) {
+      updateContactFields.company = verifiedName;
+    }
 
-        if (getErr) {
-          console.warn(`[GoogleMaps] Erro ao buscar contact(${contactId}):`, getErr.message);
-        }
+    // Importante: contacts.phone NUNCA é sobrescrito aqui! Permanece intacto como o WhatsApp do lead.
+    const { error: updErr } = await supabase
+      .from('contacts')
+      .update(updateContactFields)
+      .eq('id', contactId);
 
-        const currentAddData = contact?.additional_data || {};
-        const verifiedName = result.dossie?.nome_verificado;
-        const verifiedWebsite = result.dossie?.site_oficial;
-
-        const updateContactFields = {
-          additional_data: {
-            ...currentAddData,
-            website: verifiedWebsite || currentAddData.website || '',
-            maps_url: req.body?.query || currentAddData.maps_url || '',
-            maps_search_link: req.body?.query || currentAddData.maps_search_link || '',
-            dossie: result.dossie,
-          },
-        };
-
-        // Preserva o nome do briefing anterior se for diferente do Maps
-        if (contact?.company && verifiedName && contact.company !== verifiedName) {
-          if (!currentAddData.nome_original_briefing) {
-            updateContactFields.additional_data.nome_original_briefing = contact.company;
-          }
-        }
-
-        // Atualiza company com o nome oficial verificado
-        if (verifiedName) {
-          updateContactFields.company = verifiedName;
-        }
-
-        // Importante: contacts.phone NUNCA é sobrescrito aqui! Permanece intacto como o WhatsApp do lead.
-        const { error: updErr } = await supabase
-          .from('contacts')
-          .update(updateContactFields)
-          .eq('id', contactId);
-
-        if (updErr) {
-          console.error(`[GoogleMaps] Erro ao salvar dossiê em contacts(${contactId}):`, updErr);
-        } else {
-          console.log(`[GoogleMaps] Dossiê salvo com sucesso em contacts(${contactId})!`);
-        }
-      }
+    if (updErr) {
+      console.error(`[GoogleMaps] Erro ao salvar dossiê em contacts(${contactId}):`, updErr);
+    } else {
+      console.log(`[GoogleMaps] Dossiê salvo com sucesso em contacts(${contactId})!`);
     }
 
     return res.json({ success: true, dossie: result.dossie });
@@ -902,26 +558,17 @@ app.post('/api/leads/:id/scrape-deep', async (req, res) => {
   const reqUrls = req.body?.urls;
 
   try {
-    let local = getLocalProjectById(id);
-    let projeto = local;
     let contactRecord = null;
-
     if (isSupabaseActive) {
-      if (!projeto) {
-        const { data } = await supabase.from('fila_projetos').select('*').eq('id', id).maybeSingle();
-        if (data) projeto = data;
-      }
-      if (!projeto) {
-        try {
-          const { data: qData } = await supabase.from('fila_projetos').select('*').filter('resultado_json->>contact_id', 'eq', id).maybeSingle();
-          if (qData) projeto = qData;
-        } catch {}
-      }
-      const { data: cData } = await supabase.from('contacts').select('*').eq('id', id).maybeSingle();
+      const { data: cData } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
       if (cData) contactRecord = cData;
     }
 
-    if (!projeto && !contactRecord) {
+    if (!contactRecord) {
       return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
     }
 
@@ -931,7 +578,7 @@ app.post('/api/leads/:id/scrape-deep', async (req, res) => {
       candidateUrls = reqUrls.filter((u) => typeof u === 'string' && u.trim().startsWith('http'));
     }
 
-    const currentAddData = contactRecord?.additional_data || projeto?.resultado_json?.additional_data || {};
+    const currentAddData = contactRecord.additional_data || {};
 
     if (candidateUrls.length === 0 && Array.isArray(currentAddData.scraping_urls)) {
       candidateUrls = currentAddData.scraping_urls.filter((u) => typeof u === 'string' && u.trim().startsWith('http'));
@@ -960,7 +607,7 @@ app.post('/api/leads/:id/scrape-deep', async (req, res) => {
       return res.status(400).json({ error: 'Nenhuma URL informada ou cadastrada para este lead para realizar a raspagem.' });
     }
 
-    const pythonServiceUrl = process.env.AI_FACTORY_URL || 'http://localhost:8000';
+    const pythonServiceUrl = AI_FACTORY_URL;
     console.log(`[ScrapeDeep] Disparando raspagem para ${candidateUrls.length} URLs do lead ${id} em ${pythonServiceUrl}`);
 
     const controller = new AbortController();
@@ -988,7 +635,7 @@ app.post('/api/leads/:id/scrape-deep', async (req, res) => {
     const scrapedData = await scraperResponse.json();
 
     // Persistência no Supabase
-    const contactId = contactRecord?.id || projeto?.resultado_json?.contact_id || (isNaN(Number(id)) ? id : null);
+    const contactId = contactRecord.id;
 
     if (isSupabaseActive && contactId) {
       const { data: freshContact } = await supabase
@@ -1014,27 +661,6 @@ app.post('/api/leads/:id/scrape-deep', async (req, res) => {
       }
     }
 
-    if (isSupabaseActive && projeto?.id) {
-      const updatedResJson = {
-        ...(projeto.resultado_json || {}),
-        scraped_data: scrapedData,
-        scraping_urls: candidateUrls,
-      };
-      await supabase
-        .from('fila_projetos')
-        .update({ resultado_json: updatedResJson })
-        .eq('id', projeto.id);
-    }
-
-    if (local) {
-      const updatedResJson = {
-        ...(local.resultado_json || {}),
-        scraped_data: scrapedData,
-        scraping_urls: candidateUrls,
-      };
-      updateLocalProject(id, { resultado_json: updatedResJson });
-    }
-
     return res.status(200).json({
       success: true,
       scraped_data: scrapedData,
@@ -1053,19 +679,6 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
   console.log(`[Diagnostico] Iniciando diagnóstico multimodal da IA para lead ID: ${id}`);
 
   try {
-    const local = getLocalProjectById(id);
-    let projeto = local;
-
-    if (!projeto && isSupabaseActive) {
-      const { data } = await supabase
-        .from('fila_projetos')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-      if (data) projeto = data;
-    }
-
-    // Se ainda não encontrou em fila_projetos, tenta carregar diretamente da tabela contacts
     let contactRecord = null;
     if (isSupabaseActive) {
       const { data: cData } = await supabase
@@ -1076,14 +689,15 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
       if (cData) contactRecord = cData;
     }
 
-    const payload = projeto?.resultado_json?.briefing_payload || projeto?.resultado_json || {};
-    const dossie = projeto?.resultado_json?.dossie || payload?.dossie || contactRecord?.additional_data?.dossie || null;
+    if (!contactRecord) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+
+    const dossie = contactRecord.additional_data?.dossie || null;
     const companyName =
-      payload?.project_name ||
-      contactRecord?.company ||
-      contactRecord?.name ||
+      contactRecord.company ||
+      contactRecord.name ||
       dossie?.nome_verificado ||
-      projeto?.mensagem_lead?.slice(0, 30) ||
       'Empresa';
 
     if (!dossie) {
@@ -1093,12 +707,11 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
       });
     }
 
-    const scrapedData = payload?.scraped_data || contactRecord?.additional_data?.scraped_data || null;
+    const scrapedData = contactRecord.additional_data?.scraped_data || null;
     const mapsUrl =
       dossie?.google_maps_url ||
       contactRecord?.additional_data?.maps_url ||
       contactRecord?.additional_data?.maps_search_link ||
-      local?.resultado_json?.maps_url ||
       '';
 
     const result = await runMultimodalBusinessDiagnosis({
@@ -1114,55 +727,24 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
       return res.status(statusCode).json(result);
     }
 
-    // Persistência Híbrida: Local + Supabase
-    if (local) {
-      const currentRes = local.resultado_json || {};
-      updateLocalProject(id, {
-        resultado_json: {
-          ...currentRes,
+    // Persistência em contacts.additional_data
+    const { data: ct } = await supabase
+      .from('contacts')
+      .select('additional_data')
+      .eq('id', contactRecord.id)
+      .maybeSingle();
+
+    const curAdd = ct?.additional_data || {};
+    await supabase
+      .from('contacts')
+      .update({
+        additional_data: {
+          ...curAdd,
           diagnostico_ia: result.diagnostico,
           prompt_mestre: result.prompt_mestre,
         },
-      });
-    }
-
-    if (isSupabaseActive) {
-      // 1. Atualiza fila_projetos se existir
-      if (projeto) {
-        await supabase
-          .from('fila_projetos')
-          .update({
-            resultado_json: {
-              ...(projeto.resultado_json || {}),
-              diagnostico_ia: result.diagnostico,
-              prompt_mestre: result.prompt_mestre,
-            },
-          })
-          .eq('id', id);
-      }
-
-      // 2. Atualiza contacts.additional_data
-      const contactId = payload?.contact_id || contactRecord?.id || (isNaN(Number(id)) ? id : null);
-      if (contactId) {
-        const { data: ct } = await supabase
-          .from('contacts')
-          .select('additional_data')
-          .eq('id', contactId)
-          .maybeSingle();
-
-        const curAdd = ct?.additional_data || {};
-        await supabase
-          .from('contacts')
-          .update({
-            additional_data: {
-              ...curAdd,
-              diagnostico_ia: result.diagnostico,
-              prompt_mestre: result.prompt_mestre,
-            },
-          })
-          .eq('id', contactId);
-      }
-    }
+      })
+      .eq('id', contactRecord.id);
 
     return res.json({
       success: true,
@@ -1175,259 +757,13 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
   }
 });
 
-app.post('/api/projetos/:id/processar', async (req, res) => {
-  const { id } = req.params;
-  console.log(`Recebida solicitação de compilação para o projeto ID: ${id}`);
-
-  try {
-    const local = getLocalProjectById(id);
-    let projeto = local;
-
-    if (!projeto && isSupabaseActive) {
-      const { data, error: fetchErr } = await supabase
-        .from('fila_projetos')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (!fetchErr && data) {
-        projeto = data;
-      }
-    }
-
-    if (!projeto) {
-      return res.status(404).json({ error: 'Projeto não encontrado na fila.' });
-    }
-
-    // 1. Marca status transitório como 'processando'
-    if (local) {
-      updateLocalProject(id, { status: 'processando' });
-    }
-
-    if (isSupabaseActive) {
-      try {
-        await supabase
-          .from('fila_projetos')
-          .update({ status: 'processando' })
-          .eq('id', id);
-      } catch (sbUpdateErr) {
-        console.warn('[Backend] Erro ao atualizar status no Supabase /processar:', sbUpdateErr.message);
-      }
-    }
-
-    // 2. Orquestração imediata da Modular Tenant Stack
-    const outcome = await orchestrateModularTenantStack(id, projeto);
-
-    // 3. Atualiza status final para 'concluido'
-    const updatedResultado = {
-      ...(projeto.resultado_json || {}),
-      ...outcome,
-    };
-
-    if (local) {
-      updateLocalProject(id, {
-        status: 'concluido',
-        resultado_json: updatedResultado,
-      });
-    }
-
-    if (isSupabaseActive) {
-      try {
-        await supabase
-          .from('fila_projetos')
-          .update({
-            status: 'concluido',
-            resultado_json: updatedResultado,
-          })
-          .eq('id', id);
-      } catch (sbConcluidoErr) {
-        console.warn('[Backend] Erro ao marcar como concluido no Supabase:', sbConcluidoErr.message);
-      }
-    }
-
-    // Despacha notificação para a fila do agente
-    dispatchProjectToFactory(id, { ...projeto, ...outcome, status: 'concluido' });
-
-    res.json({
-      success: true,
-      status: 'concluido',
-      mensagem: 'Modular Tenant Stack provisionada com sucesso!',
-      resultado: outcome,
-    });
-  } catch (err) {
-    console.error(`Erro ao disparar processamento da fábrica para projeto ${id}:`, err.message);
-    updateLocalProject(id, { status: 'erro' });
-    if (isSupabaseActive) {
-      try {
-        await supabase.from('fila_projetos').update({ status: 'erro' }).eq('id', id);
-      } catch {}
-    }
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'Erro ao processar projeto.', details: err.message });
-    }
-  }
-});
-
-// Sincroniza projetos acumulados localmente com o Supabase ao iniciar
-async function syncUnsyncedLocalProjects() {
-  if (!isSupabaseActive) return;
-  const localProjects = getLocalProjects();
-  let modified = false;
-
-  for (let i = 0; i < localProjects.length; i++) {
-    const p = localProjects[i];
-    if (p.is_local && !p.supabase_synced && p.mensagem_lead) {
-      try {
-        const payload = p.resultado_json?.briefing_payload || {};
-        const projectName = payload.project_name || p.resultado_json?.project_name;
-        if (!projectName) continue;
-
-        console.log(`[Sync] Sincronizando projeto local acumulado #${p.id} ("${projectName}") para o Supabase...`);
-
-        let defaultUserId = '2b66650c-a300-4239-b922-2aab9bccac6f';
-        let defaultAccountId = '98006e91-88b1-44ea-9178-50c257cd973f';
-
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('user_id, account_id')
-          .eq('email', 'admin@wacrm.com')
-          .maybeSingle();
-
-        if (profile?.user_id) defaultUserId = profile.user_id;
-        if (profile?.account_id) defaultAccountId = profile.account_id;
-
-        const phone = payload.client_info?.phone || 'Não informado';
-        const phone_normalized = phone.replace(/\D/g, '');
-        const email = payload.client_info?.email || 'Não informado';
-
-        let contactId = null;
-        if (phone_normalized) {
-          const { data: existingContact } = await supabase
-            .from('contacts')
-            .select('id')
-            .eq('account_id', defaultAccountId)
-            .eq('phone_normalized', phone_normalized)
-            .limit(1)
-            .maybeSingle();
-
-          if (existingContact) {
-            contactId = existingContact.id;
-          }
-        }
-
-        if (!contactId && phone !== 'Não informado') {
-          const { data: newContact } = await supabase
-            .from('contacts')
-            .insert([{
-              user_id: defaultUserId,
-              account_id: defaultAccountId,
-              phone: phone,
-              name: projectName,
-              email: email,
-              additional_data: payload.additional_data || {},
-              rag_status: 'idle',
-            }])
-            .select('id')
-            .single();
-
-          if (newContact) contactId = newContact.id;
-        }
-
-        // Não criamos conversas/mensagens no Inbox para leads web
-        if (contactId) {
-          await attachTagToContact(contactId, 'Fábrica de Sites', defaultAccountId, defaultUserId);
-        }
-
-        if (contactId) {
-          let pipelineId = '0a1969dd-bc7e-4a99-a854-a925f32ad923';
-          let stageId = 'e15c3092-f3f9-4550-baa4-88a6f27b6eaa';
-          try {
-            const { data: stages } = await supabase
-              .from('pipeline_stages')
-              .select('id, pipeline_id, position, pipelines!inner(account_id)')
-              .eq('pipelines.account_id', defaultAccountId)
-              .order('position', { ascending: true })
-              .limit(1);
-
-            if (stages && stages.length > 0) {
-              stageId = stages[0].id;
-              pipelineId = stages[0].pipeline_id;
-            }
-          } catch {}
-
-          const dealVal = payload.summary?.total_setup_price || 0;
-          const { data: existingDeal } = await supabase
-            .from('deals')
-            .select('id')
-            .eq('account_id', defaultAccountId)
-            .eq('contact_id', contactId)
-            .eq('title', `Projeto - ${projectName}`)
-            .limit(1)
-            .maybeSingle();
-
-          if (!existingDeal) {
-            await supabase.from('deals').insert([{
-              user_id: defaultUserId,
-              account_id: defaultAccountId,
-              pipeline_id: pipelineId,
-              stage_id: stageId,
-              contact_id: contactId,
-              title: `Projeto - ${projectName}`,
-              value: dealVal,
-              currency: 'BRL',
-              notes: `Módulos: ${payload.modules?.join(', ') || 'site'}`,
-              status: 'open',
-            }]);
-          }
-        }
-
-        // Insere na fila_projetos
-        const { data: insertedFila } = await supabase
-          .from('fila_projetos')
-          .insert([{
-            mensagem_lead: p.mensagem_lead,
-            status: p.status || 'pendente',
-            resultado_json: {
-              ...(p.resultado_json || {}),
-              account_id: defaultAccountId,
-              user_id: defaultUserId,
-              ...(contactId ? { contact_id: contactId } : {}),
-            },
-            supabase_url: p.supabase_url || null,
-            supabase_anon_key: p.supabase_anon_key || null,
-          }])
-          .select('id')
-          .single();
-
-        localProjects[i] = {
-          ...p,
-          is_local: false,
-          supabase_synced: true,
-          supabase_id: insertedFila?.id || null,
-        };
-        modified = true;
-        console.log(`[Sync] Projeto #${p.id} sincronizado com sucesso no Supabase! ID Fila: #${insertedFila?.id}`);
-      } catch (syncErr) {
-        console.warn(`[Sync] Falha ao sincronizar projeto #${p.id}:`, syncErr.message);
-      }
-    }
-  }
-
-  if (modified) {
-    fs.writeFileSync(LOCAL_PROJECTS_FILE, JSON.stringify(localProjects, null, 2), 'utf-8');
-  }
-}
-
 const server = app.listen(PORT, () => {
   console.log(`==================================================`);
   console.log(`Servidor Backend rodando com sucesso na porta ${PORT}`);
   console.log(`URL base da API: http://localhost:${PORT}`);
-  console.log(`Fábrica de IA conectada em: ${SOFTWARE_FACTORY_API_URL}`);
-  console.log(`Status Supabase: ${isSupabaseActive ? supabaseUrl : 'Modo Fila Local Resiliente'}`);
+  console.log(`Serviço de raspagem em: ${AI_FACTORY_URL}`);
+  console.log(`Status Supabase: ${isSupabaseActive ? supabaseUrl : 'não configurado'}`);
   console.log(`==================================================`);
-  syncUnsyncedLocalProjects().catch((err) =>
-    console.warn('[Backend] Erro ao sincronizar projetos locais:', err.message)
-  );
 });
 
 server.keepAliveTimeout = 65000;
