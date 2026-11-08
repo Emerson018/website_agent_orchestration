@@ -1,5 +1,5 @@
 ---
-status: superseded by 0005
+status: superseded by ADR-0011
 ---
 
 # Tiered Fallback Cascade with Antigravity CLI and Gemini 3.8 Flash

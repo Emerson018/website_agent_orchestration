@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0011
 ---
 
 # Modular Tenant Stack Provisioner and Legacy Template Deprecation

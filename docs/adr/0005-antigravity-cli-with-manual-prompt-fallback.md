@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0011
 ---
 
 # 2-Tier Architecture: Antigravity CLI and Manual Prompt Generation
