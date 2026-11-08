@@ -1,12 +1,7 @@
-langgraph
-langchain
 pydantic
 python-dotenv
-langchain-openai
 fastapi
 uvicorn
-supabase
-beautifulsoup4
-pillow
-pdfplumber
-pytesseract
+scrapling
+pytest
+httpx

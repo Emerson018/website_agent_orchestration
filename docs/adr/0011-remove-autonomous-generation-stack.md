@@ -6,7 +6,7 @@ status: accepted
 
 ADR 0010 moved site building to Operator-Driven Generation, but the old autonomous pipeline stayed wired in: the LangGraph orchestrator and its agents, the LLM Gateway, the workspace provisioners, the Gold Template, the project queue (`fila_projetos`) and the brand/RAG analysis. We decided to delete it. The app's pipeline now ends at the Master Prompt: Lead Briefing → Lead Dossier → Deep Web Scraping → Multimodal Business Diagnosis → Master Prompt, which the operator copies into an external frontier AI.
 
-Supersedes ADR 0002, 0003, 0005, 0006, 0008 and 0009.
+Supersedes ADR 0001, 0002, 0003, 0005, 0006, 0008 and 0009.
 
 ## Consequences
 
