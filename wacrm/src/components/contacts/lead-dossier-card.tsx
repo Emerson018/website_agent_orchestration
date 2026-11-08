@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   Star,
   MapPin,
@@ -12,7 +13,6 @@ import {
   Sparkles,
   Loader2,
   Building2,
-  Clock,
   Phone,
   Globe,
   Archive,
@@ -23,9 +23,8 @@ import {
   PhoneCall,
   MessageCircle,
   Pencil,
-  X,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
@@ -82,8 +81,6 @@ interface LeadDossierCardProps {
   leadPhone?: string;
   companyName?: string;
   targetUrl?: string;
-  onTriggerPwaGeneration?: () => void;
-  isGeneratingPwa?: boolean;
   onDossierEnriched?: (dossie: LeadDossierData) => void;
   onArchiveLead?: () => void;
   onUpdateTargetUrl?: (newUrl: string) => void;
@@ -95,8 +92,6 @@ export function LeadDossierCard({
   leadPhone,
   companyName,
   targetUrl,
-  onTriggerPwaGeneration,
-  isGeneratingPwa,
   onDossierEnriched,
   onArchiveLead,
   onUpdateTargetUrl,
@@ -734,24 +729,19 @@ export function LeadDossierCard({
           Decisão Comercial
         </span>
         <div className="flex gap-2">
-          <Button
-            onClick={onTriggerPwaGeneration}
-            disabled={isGeneratingPwa}
-            size="sm"
-            className="flex-1 bg-primary hover:bg-primary/95 text-primary-foreground font-bold text-xs flex items-center justify-center gap-1.5"
-          >
-            {isGeneratingPwa ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>Gerando PWA...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>Aprovar & Gerar PWA</span>
-              </>
-            )}
-          </Button>
+          {leadId ? (
+            <Link
+              href={`/contacts/${leadId}`}
+              className={buttonVariants({
+                size: 'sm',
+                className:
+                  'flex-1 bg-primary hover:bg-primary/95 text-primary-foreground font-bold text-xs flex items-center justify-center gap-1.5',
+              })}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Aprovar & Gerar Prompt Mestre</span>
+            </Link>
+          ) : null}
 
           <Button
             onClick={handleArchiveLead}

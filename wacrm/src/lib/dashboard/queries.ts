@@ -42,7 +42,6 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
     openDeals,
     messagesToday,
     messagesYesterday,
-    projetosFilaRes,
   ] = await Promise.all([
     db.from('conversations').select('id', { count: 'exact', head: true }).eq('status', 'open'),
     db
@@ -74,7 +73,6 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
       .eq('sender_type', 'agent')
       .gte('created_at', yesterdayStart)
       .lt('created_at', todayStart),
-    db.from('fila_projetos').select('id', { count: 'exact', head: true }),
   ])
 
   const openDealsRows = (openDeals.data ?? []) as { value: number | null }[]
@@ -82,7 +80,7 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
 
   return {
     activeConversations: {
-      current: (openConvCur.count ?? 0) + (projetosFilaRes.count ?? 0),
+      current: openConvCur.count ?? 0,
       previous: (newConvToday.count ?? 0) - (newConvYesterday.count ?? 0),
     },
     newContactsToday: {
@@ -268,7 +266,7 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
   // Pull ~10 from each source (plenty of headroom after merge-sort),
   // then interleave by timestamp. The individual per-table limits
   // keep the payload small; the final limit is enforced after sort.
-  const [msgs, contacts, deals, broadcasts, autoLogs, filaProjetos] = await Promise.all([
+  const [msgs, contacts, deals, broadcasts, autoLogs] = await Promise.all([
     db
       .from('messages')
       .select('id, content_text, sender_type, created_at, conversation_id, conversations(contact_id, contacts(name, phone))')
@@ -295,31 +293,9 @@ export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> 
       .select('id, trigger_event, status, created_at, automation:automations(name), contact:contacts(name, phone)')
       .order('created_at', { ascending: false })
       .limit(10),
-    db
-      .from('fila_projetos')
-      .select('id, created_at, mensagem_lead, status')
-      .order('created_at', { ascending: false })
-      .limit(10),
   ])
 
   const items: ActivityItem[] = []
-
-  for (const f of (filaProjetos.data ?? []) as Array<{
-    id: number
-    created_at: string
-    mensagem_lead: string | null
-    status: string
-  }>) {
-    const match = f.mensagem_lead?.match(/Nome do Estabelecimento \/ Marca'?:\s*'([^']+)'/i)
-    const brandName = match ? match[1] : `Projeto #${f.id}`
-    items.push({
-      id: `fila-${f.id}`,
-      kind: 'project',
-      text: `New Lead Project: "${brandName}" (${f.status})`,
-      at: f.created_at,
-      href: '/contacts',
-    })
-  }
 
   // PostgREST returns nested selections as arrays by default, even when
   // the foreign key is 1:1. We normalise by taking [0] on each level.
