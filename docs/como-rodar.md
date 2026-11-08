@@ -1,10 +1,10 @@
 # Guia de Inicialização do Workspace - Fábrica de Software com IA
 
-Este documento orienta sobre como rodar e testar todos os componentes do ecossistema, incluindo o **Orquestrador de Fábrica de IA**, o **Portal Fábrica**, o **WhatsApp CRM** e os **Projetos de Clientes** (como `Marcianos`, `20barranove`, `campeiro_fogo`).
+Este documento orienta sobre como rodar e testar os componentes do ecossistema: o **WhatsApp CRM**, o **Portal Fábrica** (formulário de captação e backend), o **Serviço de Raspagem** e os **sites de clientes entregues** (como `Marcianos`, `20barranove`, `campeiro_fogo`).
 
 > [!TIP]
 > **Inicialização Rápida com 1 Clique**:
-> Para iniciar todos os 6 serviços simultaneamente em terminais dedicados no Windows, basta rodar o script PowerShell na raiz:
+> Para iniciar todos os serviços em terminais dedicados no Windows, rode na raiz:
 > ```powershell
 > .\rodar_apps.ps1
 > ```
@@ -17,151 +17,103 @@ Este documento orienta sobre como rodar e testar todos os componentes do ecossis
 
 ## 1. Visão Geral dos Componentes
 
-O repositório é composto por quatro tipos principais de aplicações:
-
 ```mermaid
 graph TD
-    A[Portal Fábrica: Frontend React] <-->|HTTP / API| B[Portal Fábrica: Backend Node.js]
-    B <-->|Orquestração| C[Orquestrador FastAPI Python]
-    C <-->|Agentes & Execução| D[Workspace: Projetos de Clientes]
-    B <-->|Dados & Fila| E[Supabase Central]
-    C <-->|Controle de Status| E
-    D <-->|Banco de Dados Client| F[Supabase Individual do Cliente]
+    P[Portal Fábrica: Formulário de Captação] -->|POST /api/leads| B[Portal Fábrica: Backend Node.js]
+    B <-->|Contatos, Deals, Dossiê| E[Supabase Central]
     G[WhatsApp CRM: Next.js] <-->|API / Realtime| E
-    G -->|HTTP / API| B
+    G -->|Dossiê, Raspagem, Diagnóstico| B
+    B -->|POST /api/scrape/deep| C[Serviço de Raspagem FastAPI]
 ```
 
-1. **Orquestrador Backend (Python FastAPI - LangGraph)**: Responsável por rodar o grafo de agentes de IA para criar e validar projetos a partir de especificações.
-2. **Portal Fábrica (Backend Node.js & Frontend React/Vite)**: O dashboard que gerencia a fila de projetos e exibe os resultados da automação de software.
-3. **Projetos de Clientes (Frontend React + Backend Serverless Supabase)**: Os websites/aplicações finais gerados pela fábrica que ficam sob a pasta `workspace/`.
-4. **WhatsApp CRM (Next.js)**: Painel CRM para visualizar/qualificar leads do WhatsApp e disparar a geração de sites através da Fábrica de IA.
+1. **WhatsApp CRM (Next.js)**: painel para qualificar leads, consultar o Lead Dossier, rodar a raspagem e o Diagnóstico Multimodal e gerar o Prompt Mestre.
+2. **Portal Fábrica (Backend Node.js & Frontend React/Vite)**: o frontend é o formulário público de captação; o backend registra o lead no CRM e expõe as rotas de Dossiê, raspagem e diagnóstico.
+3. **Serviço de Raspagem (Python FastAPI)**: extrai cardápio, preços e textos institucionais dos sites do lead com Scrapling.
+4. **Sites de Clientes**: sites entregues, construídos fora do app a partir do Prompt Mestre, sob a pasta `workspace/`.
 
 ---
 
 ## 2. Pré-requisitos Gerais
 
-Antes de iniciar qualquer projeto, certifique-se de possuir:
 * **Python 3.10+** (com um ambiente virtual criado na pasta `.venv` da raiz).
-* **Node.js (versão 18+)** e **npm** instalados.
-* Um terminal Powershell ou Git Bash aberto no diretório raiz do projeto.
+* **Node.js (versão 20+)** e **npm** instalados.
+* Um terminal PowerShell ou Git Bash aberto no diretório raiz do projeto.
+* Chaves `GOOGLE_MAPS_API_KEY` e `GEMINI_API_KEY` para o Dossiê e o Diagnóstico Multimodal.
 
 ---
 
-## 3. Como Rodar o Portal Fábrica Manualmente
+## 3. Como Rodar Manualmente
 
-Para ter o sistema completo de geração de projetos funcionando, você pode iniciar 3 processos (de preferência em terminais separados).
+### Passo 3.1: Serviço de Raspagem (FastAPI / Python) — porta `8000`
 
-### Passo 3.1: Iniciar o Orquestrador Backend (FastAPI / Python)
-Este backend roda o fluxo dos agentes (Analista, Cloner, Desenvolvedor e QA) e escuta na porta `8000`.
+```powershell
+.venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+```
 
-1. Abra um terminal na raiz do projeto.
-2. Ative o ambiente virtual Python e instale as dependências caso ainda não tenha feito:
-   ```powershell
-   .venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-3. Inicie o servidor FastAPI:
-   ```powershell
-   python main.py
-   ```
-   * O servidor estará disponível em: `http://localhost:8000`
-   * Configuração de chaves de API / LLM em: `ai_software_factory/.env`
+* Documentação interativa: `http://localhost:8000/docs`
+* Configuração de ambiente em: `ai_software_factory/.env`
 
----
+### Passo 3.2: Backend do Portal Fábrica (Node.js) — porta `5000`
 
-### Passo 3.2: Iniciar o Backend do Portal Fábrica (Node.js)
-Este backend intermedia as requisições do frontend da fábrica, conecta-se à fila do Supabase e aciona o orquestrador Python.
+```powershell
+cd workspace\portal_fabrica\backend
+npm install
+npm run dev
+```
 
-1. Abra um novo terminal no diretório do backend do portal:
-   ```powershell
-   cd workspace\portal_fabrica\backend
-   ```
-2. Instale as dependências (se for a primeira vez):
-   ```powershell
-   npm install
-   ```
-3. Inicie o servidor em modo de desenvolvimento:
-   ```powershell
-   npm run dev
-   ```
-   * O servidor backend do portal rodará na porta `5000` (`http://localhost:5000`).
-   * Configurações de acesso e URLs em: `workspace/portal_fabrica/backend/.env`
+* Configurações em: `workspace/portal_fabrica/backend/.env` (`AI_FACTORY_URL` aponta para o serviço de raspagem).
 
----
+### Passo 3.3: Frontend do Portal Fábrica (Vite / React) — porta `5173`
 
-### Passo 3.3: Iniciar o Frontend do Portal Fábrica (Vite / React)
-Esta é a interface web para gerenciar e simular a criação de novos sites.
+```powershell
+cd workspace\portal_fabrica
+npm install
+npm run dev
+```
 
-1. Abra um novo terminal no diretório raiz do portal:
-   ```powershell
-   cd workspace\portal_fabrica
-   ```
-2. Instale as dependências:
-   ```powershell
-   npm install
-   ```
-3. Inicie o servidor frontend:
-   ```powershell
-   npm run dev
-   ```
-   * O frontend abrirá no navegador, geralmente em: `http://localhost:5173`
+### Passo 3.4: WhatsApp CRM (wacrm) — porta `3000`
+
+```powershell
+cd wacrm
+npm run dev
+```
+
+* As configurações de ambiente ficam em `wacrm/.env.local`.
 
 ---
 
-## 4. Como Rodar os Projetos dos Clientes
+## 4. Do Lead ao Prompt Mestre
 
-Os projetos de clientes gerados pela fábrica estão localizados na pasta `workspace/` (ex: `workspace/Marcianos`, `workspace/20barranove`, `workspace/campeiro_fogo`). Eles não possuem um backend próprio escrito em Node ou Python; em vez disso, são **Serverless**, conectando-se diretamente ao **Supabase**.
-
-Para executar o frontend de um cliente localmente:
-
-1. Acesse a pasta frontend do cliente específico:
-   ```powershell
-   cd workspace\Marcianos\frontend
-   ```
-2. Instale as dependências (se necessário):
-   ```powershell
-   npm install
-   ```
-3. Execute o servidor de desenvolvimento Vite:
-   ```powershell
-   npm run dev
-   ```
-   * O app do cliente estará ativo em uma porta local, por exemplo `http://localhost:5174` (ou a próxima disponível).
+1. O lead preenche o formulário do Portal (`http://localhost:5173`) ou é cadastrado direto no CRM.
+2. No CRM, abra **Contacts** e clique no lead para ir ao perfil (`/contacts/[id]`).
+3. Consulte o **Dossiê do Google Maps**, rode a **Raspagem Profunda** e gere o **Diagnóstico da IA**.
+4. Revise e edite o **Prompt Mestre** e copie-o para a IA de sua preferência.
 
 ---
 
-## 5. Como Rodar o WhatsApp CRM (wacrm)
+## 5. Como Rodar os Sites de Clientes
 
-Este painel do CRM gerencia os seus contatos e leads qualificados e integra o fluxo de geração de sites por IA.
-
-### Passo 5.1: Iniciar o Servidor do CRM
-1. Abra um terminal na pasta do CRM:
-   ```powershell
-   cd wacrm
-   ```
-2. Inicie o servidor de desenvolvimento:
-   ```powershell
-   npm run dev
-   ```
-   * O CRM estará disponível localmente em: `http://localhost:3000`
-   * As configurações de ambiente já estão prontas no arquivo `wacrm/.env.local`.
-
-### Passo 5.2: Disparar a IA a partir do CRM
-1. Acesse o menu **Contacts** no CRM (`http://localhost:3000/contacts`).
-2. Crie ou selecione um contato, defina suas informações e, na aba **Details**, clique no botão **Gerar Site com IA**.
-3. O CRM enviará os dados do cliente para a API da Fábrica (`http://localhost:5000/api/projetos`) e disparará o processamento em segundo plano.
+```powershell
+cd workspace\Marcianos\frontend
+npm install
+npm run dev
+```
 
 ---
 
-## 6. Como Executar Testes Rápidos e Simulações
+## 6. Testes
 
-Além de usar o Portal Fábrica, você pode testar componentes específicos diretamente pela linha de comando:
+```powershell
+# Serviço de raspagem
+.venv\Scripts\python -m pytest ai_software_factory/tests
 
-### Teste de Refinamento do Time de Desenvolvimento (Passe 3)
-Para testar a atuação direta dos agentes desenvolvendo uma feature (ex: criação de uma Sidebar elegante):
+# Backend do Portal (usa um Supabase em memória; não toca no banco real)
+cd workspace\portal_fabrica\backend
+npm test
 
-1. Ative seu ambiente virtual na raiz do projeto.
-2. Execute o script Python localizado em `tests/`:
-   ```powershell
-   python tests/manual_test_dev_team.py
-   ```
+# CRM
+cd wacrm
+npx vitest run
+```
