@@ -70,7 +70,7 @@ full_stack/
 
 | Serviço | URL | Descrição |
 | :--- | :--- | :--- |
-| **WhatsApp CRM** | [http://localhost:3000](http://localhost:3000) | Gestão de leads, Dossiê e Prompt Mestre (`admin@wacrm.com` / `mano018`) |
+| **WhatsApp CRM** | [http://localhost:3000](http://localhost:3000) | Gestão de leads, Dossiê e Prompt Mestre (usuário admin criado por `scratch/manage_wacrm_account.py`) |
 | **Portal Fábrica (Backend)** | [http://localhost:5000](http://localhost:5000) | API de captação, Dossiê, raspagem e diagnóstico |
 | **Portal Fábrica (Frontend)** | [http://localhost:5173](http://localhost:5173) | Formulário público de captação de leads |
 | **Serviço de Raspagem** | [http://localhost:8000/docs](http://localhost:8000/docs) | FastAPI com Swagger interativo |
