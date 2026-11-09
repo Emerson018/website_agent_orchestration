@@ -48,5 +48,29 @@ export function createFakeSupabase(seed = {}) {
     return builder;
   }
 
-  return { tables, from: query };
+  // Storage em memória: objects[bucket][path] = { size, contentType }
+  const objects = {};
+  // Permite simular falhas do Storage nos testes: storageErrors.remove = 'mensagem'
+  const storageErrors = {};
+  const storage = {
+    from(bucket) {
+      const files = (objects[bucket] ||= {});
+      return {
+        async upload(path, buffer, opts = {}) {
+          files[path] = { size: buffer.length, contentType: opts.contentType };
+          return { data: { path }, error: null };
+        },
+        getPublicUrl(path) {
+          return { data: { publicUrl: `https://fake.storage/${bucket}/${path}` } };
+        },
+        async remove(paths) {
+          if (storageErrors.remove) return { data: null, error: { message: storageErrors.remove } };
+          for (const p of paths) delete files[p];
+          return { data: paths, error: null };
+        },
+      };
+    },
+  };
+
+  return { tables, objects, storage, storageErrors, from: query };
 }

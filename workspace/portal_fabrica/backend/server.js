@@ -9,6 +9,8 @@ import { fileURLToPath } from 'url';
 import { buildLeadDossier, extractPlaceQueryFromUrl } from './places_service.js';
 
 import { runMultimodalBusinessDiagnosis, buildMasterPrompt } from './multimodal_diagnosis_service.js';
+import { CATALOG_BUCKET, catalogStoragePath, newCatalogFileId, parseCatalogUpload } from './catalog_files.js';
+import { extractCatalog } from './catalog_extraction.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -674,6 +676,199 @@ app.post('/api/leads/:id/scrape-deep', async (req, res) => {
   }
 });
 
+async function findContact(id) {
+  if (!isSupabaseActive) return null;
+  const { data } = await supabase.from('contacts').select('*').eq('id', id).maybeSingle();
+  return data || null;
+}
+
+// Refaz o Prompt Mestre com o catálogo novo quando o lead já tem diagnóstico (sem chamar o Gemini)
+function rebuildMasterPrompt(contact, additionalData) {
+  if (!additionalData.diagnostico_ia) return null;
+  const dossie = additionalData.dossie || null;
+  return buildMasterPrompt({
+    companyName: contact.company || contact.name || dossie?.nome_verificado || 'Empresa',
+    dossie,
+    diagnostico: additionalData.diagnostico_ia,
+    scrapedData: additionalData.scraped_data || null,
+    mapsUrl: dossie?.google_maps_url || additionalData.maps_url || additionalData.maps_search_link || '',
+    catalogoExtraido: additionalData.catalogo_extraido || null,
+  });
+}
+
+// Salva o Catálogo Extraído e, se houver diagnóstico, o Prompt Mestre refeito
+async function saveExtractedCatalog(contact, catalogoExtraido) {
+  const additionalData = { ...(contact.additional_data || {}), catalogo_extraido: catalogoExtraido };
+  const promptMestre = rebuildMasterPrompt(contact, additionalData);
+  if (promptMestre) additionalData.prompt_mestre = promptMestre;
+  const { error } = await supabase.from('contacts').update({ additional_data: additionalData }).eq('id', contact.id);
+  return { error, promptMestre };
+}
+
+async function saveCatalogFiles(contact, files) {
+  const { error } = await supabase
+    .from('contacts')
+    .update({ additional_data: { ...(contact.additional_data || {}), catalogo_arquivos: files } })
+    .eq('id', contact.id);
+  return error;
+}
+
+// Catálogo Extraído: envio de arquivos (imagens e PDF) do lead
+app.post('/api/leads/:id/catalog-files', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const contact = await findContact(id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+
+    const parsed = parseCatalogUpload(req.body?.files);
+    if (!parsed.ok) {
+      return res.status(parsed.status).json({ error: parsed.error });
+    }
+
+    const stored = [];
+    for (const file of parsed.files) {
+      const path = catalogStoragePath(contact.id, file.name);
+      const { error: upErr } = await supabase.storage
+        .from(CATALOG_BUCKET)
+        .upload(path, file.buffer, { contentType: file.mimeType, upsert: false });
+      if (upErr) {
+        // Desfaz o que já subiu neste envio para não deixar arquivos órfãos
+        if (stored.length > 0) await supabase.storage.from(CATALOG_BUCKET).remove(stored.map((f) => f.path));
+        return res.status(502).json({ error: `Falha ao guardar "${file.name}": ${upErr.message}` });
+      }
+      const { data: urlData } = supabase.storage.from(CATALOG_BUCKET).getPublicUrl(path);
+      stored.push({
+        id: newCatalogFileId(),
+        name: file.name,
+        mime_type: file.mimeType,
+        size: file.buffer.length,
+        path,
+        url: urlData.publicUrl,
+        enviado_em: new Date().toISOString(),
+      });
+    }
+
+    const current = Array.isArray(contact.additional_data?.catalogo_arquivos) ? contact.additional_data.catalogo_arquivos : [];
+    const files = [...current, ...stored];
+    const saveErr = await saveCatalogFiles(contact, files);
+    if (saveErr) {
+      return res.status(502).json({ error: `Falha ao registrar os arquivos no contato: ${saveErr.message}` });
+    }
+    return res.status(201).json({ success: true, files });
+  } catch (err) {
+    console.error(`[Catalogo] Erro ao enviar arquivos do lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao enviar arquivos do catálogo.', details: err.message });
+  }
+});
+
+// Catálogo Extraído: remoção de um arquivo do lead
+app.delete('/api/leads/:id/catalog-files/:fileId', async (req, res) => {
+  const { id, fileId } = req.params;
+  try {
+    const contact = await findContact(id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+
+    const current = Array.isArray(contact.additional_data?.catalogo_arquivos) ? contact.additional_data.catalogo_arquivos : [];
+    const target = current.find((f) => f.id === fileId);
+    if (!target) {
+      return res.status(404).json({ error: 'Arquivo não encontrado no catálogo deste lead.' });
+    }
+
+    if (target.path) {
+      const { error: rmErr } = await supabase.storage.from(CATALOG_BUCKET).remove([target.path]);
+      if (rmErr) {
+        return res.status(502).json({ error: `Falha ao remover "${target.name}" do Storage: ${rmErr.message}` });
+      }
+    }
+    const files = current.filter((f) => f.id !== fileId);
+    const saveErr = await saveCatalogFiles(contact, files);
+    if (saveErr) {
+      return res.status(502).json({ error: `Falha ao atualizar os arquivos do contato: ${saveErr.message}` });
+    }
+    return res.json({ success: true, files });
+  } catch (err) {
+    console.error(`[Catalogo] Erro ao remover arquivo ${fileId} do lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao remover arquivo do catálogo.', details: err.message });
+  }
+});
+
+// Catálogo Extraído: envia todos os arquivos guardados do lead ao Gemini
+app.post('/api/leads/:id/extract-catalog', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const contact = await findContact(id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+
+    const files = Array.isArray(contact.additional_data?.catalogo_arquivos) ? contact.additional_data.catalogo_arquivos : [];
+    const result = await extractCatalog({
+      files,
+      companyName: contact.company || contact.name || contact.additional_data?.dossie?.nome_verificado,
+    });
+
+    if (!result.success) {
+      const status = { NO_FILES: 400, MISSING_API_KEY: 412, FILES_TOO_LARGE: 413 }[result.code] || 502;
+      return res.status(status).json(result);
+    }
+
+    const catalogoExtraido = {
+      markdown: result.markdown,
+      gerado_em: new Date().toISOString(),
+      modelo_utilizado: result.model,
+      arquivos_processados: result.processed,
+      editado_manualmente: false,
+    };
+
+    // Relê o contato para não sobrescrever o que mudou durante a chamada ao Gemini
+    const latestContact = (await findContact(id)) || contact;
+    const { error: saveErr, promptMestre } = await saveExtractedCatalog(latestContact, catalogoExtraido);
+    if (saveErr) {
+      return res.status(502).json({ error: `Falha ao salvar o catálogo no contato: ${saveErr.message}` });
+    }
+
+    return res.json({ success: true, catalogo_extraido: catalogoExtraido, prompt_mestre: promptMestre });
+  } catch (err) {
+    console.error(`[Catalogo] Erro ao extrair catálogo do lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao extrair o catálogo.', details: err.message });
+  }
+});
+
+// Catálogo Extraído: salva a edição manual do operador
+app.put('/api/leads/:id/extracted-catalog', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const markdown = typeof req.body?.markdown === 'string' ? req.body.markdown.trim() : '';
+    if (!markdown) {
+      return res.status(400).json({ error: 'O catálogo não pode ficar vazio.' });
+    }
+
+    const contact = await findContact(id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+
+    const catalogoExtraido = {
+      ...(contact.additional_data?.catalogo_extraido || {}),
+      markdown,
+      editado_manualmente: true,
+      editado_em: new Date().toISOString(),
+    };
+    const { error: saveErr, promptMestre } = await saveExtractedCatalog(contact, catalogoExtraido);
+    if (saveErr) {
+      return res.status(502).json({ error: `Falha ao salvar o catálogo no contato: ${saveErr.message}` });
+    }
+    return res.json({ success: true, catalogo_extraido: catalogoExtraido, prompt_mestre: promptMestre });
+  } catch (err) {
+    console.error(`[Catalogo] Erro ao salvar edição do catálogo do lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao salvar o catálogo.', details: err.message });
+  }
+});
+
 app.post('/api/leads/:id/diagnose', async (req, res) => {
   const { id } = req.params;
   console.log(`[Diagnostico] Iniciando diagnóstico multimodal da IA para lead ID: ${id}`);
@@ -719,6 +914,7 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
       companyName,
       scrapedData,
       mapsUrl,
+      catalogoExtraido: contactRecord.additional_data?.catalogo_extraido || null,
       apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
     });
 

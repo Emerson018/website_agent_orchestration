@@ -114,3 +114,44 @@ test('Master Prompt Synthesizer - Block 2 strictly directs Google Maps links to 
   assert.ok(bloco2Text.includes('e NUNCA para o endereço em texto ou buscas genéricas'));
   assert.ok(bloco2Text.includes('Regra Inegociável para Links de Mapas'));
 });
+
+test('Multimodal Diagnosis - returns the diagnosis and Master Prompt from a Gemini answer', async () => {
+  const http = await import('node:http');
+  let sentParts = null;
+  const server = http.createServer((req, res) => {
+    let body = '';
+    req.on('data', (c) => (body += c));
+    req.on('end', () => {
+      if (req.url === '/foto.jpg') {
+        res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+        return res.end('JPEG');
+      }
+      sentParts = JSON.parse(body).contents[0].parts;
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        candidates: [{ content: { parts: [{ text: '```json\n{"resumo_empresa":"Pizzaria de bairro com forno a lenha.","diferenciais_unicos":["Massa de fermentação natural"]}\n```' }] } }],
+      }));
+    });
+  });
+  await new Promise((r) => server.listen(0, r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  process.env.GEMINI_API_BASE_URL = base;
+  try {
+    const result = await runMultimodalBusinessDiagnosis({
+      dossie: { nome_verificado: 'Pizzaria Bella', nota: 4.8, fotos: [{ id: 1, photo_url: `${base}/foto.jpg` }] },
+      companyName: 'Pizzaria Bella',
+      apiKey: 'chave',
+      models: ['modelo-teste'],
+    });
+    assert.equal(result.success, true);
+    assert.equal(result.diagnostico.resumo_empresa, 'Pizzaria de bairro com forno a lenha.');
+    assert.equal(result.diagnostico.modelo_utilizado, 'modelo-teste');
+    assert.equal(result.diagnostico.fotos_analisadas, 1);
+    assert.ok(result.prompt_mestre.includes('Pizzaria de bairro com forno a lenha.'));
+    assert.ok(result.prompt_mestre.includes('Massa de fermentação natural'));
+    assert.equal(sentParts[1].inlineData.mimeType, 'image/jpeg', 'a foto do dossiê vai como inlineData');
+  } finally {
+    delete process.env.GEMINI_API_BASE_URL;
+    await new Promise((r) => server.close(r));
+  }
+});

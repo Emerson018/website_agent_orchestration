@@ -61,6 +61,12 @@ const SECURITY_HEADERS = [
 ] as const;
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // The middleware buffers request bodies up to this size (default 10MB).
+    // Catálogo Extraído uploads go up to 15MB of files, about 20MB once
+    // base64-encoded in JSON.
+    proxyClientMaxBodySize: "25mb",
+  },
   /**
    * Cache-Control policy.
    *
