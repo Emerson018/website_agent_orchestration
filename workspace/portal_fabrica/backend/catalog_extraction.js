@@ -88,3 +88,16 @@ export async function extractCatalog({ files, companyName, apiKey = defaultGemin
   }
   return { success: true, markdown, model: gemini.model, processed: fileParts.length };
 }
+
+/** O Catálogo Extraído tem ao menos um item (### <Item>) e não é a resposta "sem itens". */
+export function catalogHasItems(markdown) {
+  const text = markdown || '';
+  return /^###\s+\S/m.test(text) && !text.includes(NO_CATALOG_ITEMS_LINE);
+}
+
+/** Seção "## Informações Gerais" do Catálogo Extraído, sem a linha de controle; '' quando não houver. */
+export function catalogGeneralInfo(markdown) {
+  const match = (markdown || '').match(/^## Informações Gerais[ \t]*\n([\s\S]*?)(?=^## |(?![\s\S]))/m);
+  if (!match) return '';
+  return match[1].replace(NO_CATALOG_ITEMS_LINE, '').trim();
+}

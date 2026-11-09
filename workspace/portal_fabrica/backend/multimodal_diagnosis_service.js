@@ -5,6 +5,7 @@ import {
   fileUrlToInlinePart,
   generateGeminiContent,
 } from './gemini_client.js';
+import { catalogGeneralInfo, catalogHasItems } from './catalog_extraction.js';
 
 /**
  * Constrói o Prompt Mestre em 4 blocos para geração do site do zero,
@@ -16,6 +17,7 @@ export function buildMasterPrompt({
   diagnostico,
   scrapedData,
   mapsUrl,
+  catalogoExtraido,
 }) {
   const notaStr = dossie?.nota ? `${dossie.nota.toFixed(1)}★ (${dossie.total_avaliacoes || 0} avaliações)` : 'Excelente reputação local';
   const endereco = dossie?.endereco_formatado || 'Consulte localização';
@@ -41,8 +43,8 @@ export function buildMasterPrompt({
 
   // Bloco de Cardápio e Produtos reais capturados pelo Scrapling
   let blocoProdutosScraped = '';
-  const produtos = scrapedData?.cardapio || [];
-  if (Array.isArray(produtos) && produtos.length > 0) {
+  const produtos = Array.isArray(scrapedData?.cardapio) ? scrapedData.cardapio : [];
+  if (produtos.length > 0) {
     const itensLines = produtos.slice(0, 30).map((it) => {
       const precoStr = it.preco ? ` | **${it.preco}**` : '';
       const descStr = it.descricao ? ` - ${it.descricao}` : '';
@@ -56,6 +58,42 @@ export function buildMasterPrompt({
 O projeto DEVE estruturar e exibir os itens e preços reais abaixo em sua seção de catálogo/cardápio, sem omitir ou inventar valores:
 ${itensLines}
 `;
+  }
+
+  // Catálogo Extraído dos arquivos enviados pelo operador; sem nenhuma fonte de itens, entram marcadores
+  const catalogMarkdown = catalogoExtraido?.markdown || '';
+  let blocoCatalogo = '';
+  if (catalogHasItems(catalogMarkdown)) {
+    blocoCatalogo = `
+---
+
+### BLOCO DE CATÁLOGO (EXTRAÍDO DOS ARQUIVOS ENVIADOS PELO CLIENTE)
+O projeto DEVE estruturar e exibir os itens, preços e informações abaixo em sua seção de catálogo, sem omitir ou inventar valores:
+
+${catalogMarkdown.trim()}
+`;
+  } else {
+    const infoGerais = catalogGeneralInfo(catalogMarkdown);
+    if (infoGerais) {
+      blocoCatalogo = `
+---
+
+### INFORMAÇÕES GERAIS (EXTRAÍDAS DOS ARQUIVOS ENVIADOS PELO CLIENTE)
+${infoGerais}
+`;
+    }
+    if (produtos.length === 0) {
+      blocoCatalogo += `
+---
+
+### BLOCO DE CATÁLOGO (A PREENCHER)
+Nenhum catálogo do cliente foi coletado. Estruture a seção de catálogo do site com os marcadores abaixo, para serem substituídos pelos itens reais:
+
+## Catálogo
+### [Categoria — inserir aqui]
+- **[Nome do item — inserir aqui]**: [descrição — inserir aqui] — [preço — inserir aqui]
+`;
+    }
   }
 
   // Textos institucionais oficiais coletados do site do cliente
@@ -100,7 +138,7 @@ ${diferenciais}${blocoInstitucionalScraped}
 - **Horários de Operação:** ${horarios}
 - **Prova Social Real (Depoimentos Verificados):**
 ${elogios}
-${blocoProdutosScraped}
+${blocoCatalogo}${blocoProdutosScraped}
 ---
 
 ### BLOCO 3: INSUMOS CRIATIVOS (DELEGAÇÃO PARA AS SKILLS DE DESIGN & MOTION)
@@ -128,6 +166,7 @@ export async function runMultimodalBusinessDiagnosis({
   companyName,
   scrapedData,
   mapsUrl,
+  catalogoExtraido,
   apiKey = defaultGeminiApiKey(),
   models = defaultGeminiModels(),
 }) {
@@ -231,6 +270,7 @@ Responda APENAS o JSON válido, sem blocos de markdown adicionais.`;
       diagnostico: diagnosticoFinal,
       scrapedData,
       mapsUrl: mapsLink,
+      catalogoExtraido,
     });
 
     return {

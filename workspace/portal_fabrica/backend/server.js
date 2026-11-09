@@ -894,6 +894,7 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
       companyName,
       scrapedData,
       mapsUrl,
+      catalogoExtraido: contactRecord.additional_data?.catalogo_extraido || null,
       apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
     });
 
