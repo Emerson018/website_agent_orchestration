@@ -3,7 +3,7 @@
 // Peças visuais das Etapas do Lead: selo de status, ícone e Painel de Progresso.
 
 import React from 'react';
-import { Check, CircleDashed, Clock, Loader2, Sparkles } from 'lucide-react';
+import { Check, ChevronDown, CircleDashed, Clock, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { LeadStep, StepKey, StepStatus } from '@/lib/contacts/lead-steps';
@@ -107,4 +107,51 @@ export function LeadProgressPanel({ steps, active, onSelect }: LeadProgressPanel
       </ol>
     </nav>
   );
+}
+
+interface LeadStepSectionProps {
+  step: LeadStep;
+  open: boolean;
+  onOpen: (key: StepKey) => void;
+  /** Ação principal da etapa, mostrada no cabeçalho quando aberta. */
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}
+
+/** Molde único de cada Etapa do Lead: fechada vira uma linha de resumo; aberta mostra status, ação e conteúdo. */
+export function LeadStepSection({ step, open, onOpen, action, children }: LeadStepSectionProps) {
+  const headingId = `etapa-${step.key}-titulo`;
+  return (
+    <section id={`etapa-${step.key}`} aria-labelledby={headingId} className="scroll-mt-6 border-b border-border/60 last:border-b-0">
+      <div className={cn('flex flex-wrap items-center gap-3 px-5 py-3', open && 'bg-muted/30')}>
+        <button
+          type="button"
+          onClick={() => onOpen(step.key)}
+          aria-expanded={open}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md"
+        >
+          <StepIcon status={step.status} />
+          <span className="min-w-0 flex-1">
+            <span id={headingId} className="block text-sm font-semibold">
+              {step.label}
+            </span>
+            {!open && <span className="block truncate text-xs text-muted-foreground">{step.summary}</span>}
+          </span>
+          <ChevronDown className={cn('size-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} aria-hidden />
+        </button>
+        {open && (
+          <div className="flex items-center gap-2">
+            <StatusChip status={step.status} />
+            {action}
+          </div>
+        )}
+      </div>
+      {open && <div className="px-5 pb-5 pt-3">{children}</div>}
+    </section>
+  );
+}
+
+/** Estado vazio de uma etapa: diz o que falta e o que fazer. */
+export function StepEmptyState({ children }: { children: React.ReactNode }) {
+  return <p className="text-sm text-muted-foreground">{children}</p>;
 }

@@ -5,16 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { getContactById } from '@/lib/crm-repository';
-import type { Contact, Tag, ContactTag } from '@/types';
+import type { Contact, Tag } from '@/types';
 import {
   ArrowLeft,
-  Building2,
-  Phone,
-  Mail,
   MapPin,
   Star,
-  Clock,
-  Globe,
   Sparkles,
   Copy,
   Check,
@@ -42,11 +37,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { ScraplingDeepScraperCard } from '@/components/contacts/scrapling-deep-scraper-card';
 import { ExtractedCatalogCard } from '@/components/contacts/extracted-catalog-card';
-import { LeadProgressPanel, NextStepButton } from '@/components/contacts/lead-steps-ui';
+import { LeadProgressPanel, LeadStepSection, NextStepButton, StepEmptyState } from '@/components/contacts/lead-steps-ui';
 import { computeLeadSteps, nextLeadStep, type LeadStep, type StepKey } from '@/lib/contacts/lead-steps';
 
 export default function ContactProfilePage() {
@@ -58,6 +52,8 @@ export default function ContactProfilePage() {
   const [contact, setContact] = useState<Contact | null>(null);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
+  // Etapa do Lead aberta; null = abrir o Próximo Passo
+  const [openStepKey, setOpenStepKey] = useState<StepKey | null>(null);
   const [enrichingDossier, setEnrichingDossier] = useState(false);
   const [diagnosing, setDiagnosing] = useState(false);
   const [activePhoto, setActivePhoto] = useState<string | null>(null);
@@ -125,33 +121,29 @@ export default function ContactProfilePage() {
   const leadSteps = contact ? computeLeadSteps(contact) : [];
   const nextStep = nextLeadStep(leadSteps);
 
-  // Âncoras de cada Etapa do Lead na página
-  const STEP_ANCHORS: Record<StepKey, string> = {
-    briefing: 'etapa-briefing',
-    dossie: 'etapa-dossie',
-    raspagem: 'etapa-raspagem',
-    catalogo: 'etapa-catalogo',
-    diagnostico: 'etapa-diagnostico',
-    prompt: 'etapa-prompt',
-  };
-  const scrollToStep = (key: StepKey) => {
-    document.getElementById(STEP_ANCHORS[key])?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const openStep: StepKey = openStepKey ?? nextStep?.key ?? 'dossie';
+  const stepOf = (key: StepKey) => leadSteps.find((s) => s.key === key)!;
+  const startEditingCompany = () => {
+    setCompanyInput(contact?.company || dossie?.nome_verificado || '');
+    setIsEditingCompany(true);
   };
   const runNextStep = (step: LeadStep) => {
     switch (step.key) {
       case 'briefing':
-        setIsEditingCompany(true);
-        scrollToStep('briefing');
+        setOpenStepKey('briefing');
+        if (step.missing?.includes('empresa')) startEditingCompany();
         break;
       case 'dossie':
+        setOpenStepKey('dossie');
         handleEnrichDossier();
         break;
       case 'diagnostico':
       case 'prompt':
+        setOpenStepKey('diagnostico');
         handleRunAiDiagnosis();
         break;
       default:
-        scrollToStep(step.key);
+        setOpenStepKey(step.key);
     }
   };
   const diagnostico = additionalData.diagnostico_ia || null;
@@ -189,6 +181,11 @@ export default function ContactProfilePage() {
     )?.url ||
     (contact?.website && (contact.website.includes('maps') || contact.website.includes('goo.gl')) ? contact.website : '') ||
     '';
+
+  const openMapsLinkDialog = () => {
+    setMapsLinkInput(currentMapsUrl);
+    setIsEditingMapsLink(true);
+  };
 
   // Handler para salvar e atualizar o link do Google Maps
   const handleSaveMapsLink = async (newUrl: string) => {
@@ -405,661 +402,561 @@ export default function ContactProfilePage() {
   }
 
   return (
-    <div className="space-y-6 pb-16">
-      <span id="etapa-briefing" className="block scroll-mt-6" aria-hidden />
-      {/* 1. Executive Top Bar & Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push('/contacts')}
-            className="gap-2 text-muted-foreground hover:text-foreground"
+    <div className="space-y-5 pb-16">
+      {/* Cabeçalho: lead, atalhos e Próximo Passo */}
+      <header className="flex flex-col gap-4 border-b border-border pb-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0 space-y-2">
+          <Link
+            href="/contacts"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="size-4" />
-            <span>Voltar para Contatos</span>
-          </Button>
-          <div className="h-5 w-px bg-border" />
-          <div>
-            {isEditingCompany ? (
-              <div className="flex items-center gap-2 mb-1">
-                <input
-                  type="text"
-                  value={companyInput}
-                  onChange={(e) => setCompanyInput(e.target.value)}
-                  placeholder="Nome do estabelecimento"
-                  className="px-3 py-1 text-lg font-bold bg-muted/80 border border-primary rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-primary h-9 w-72 sm:w-80 shadow-sm"
-                  autoFocus
-                  disabled={isSavingCompany}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveCompany();
-                    if (e.key === 'Escape') {
-                      setCompanyInput(contact?.company || '');
-                      setIsEditingCompany(false);
-                    }
-                  }}
-                />
-                <Button
-                  size="sm"
-                  onClick={handleSaveCompany}
-                  disabled={isSavingCompany}
-                  className="h-8 px-2.5 gap-1 bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm"
-                >
-                  {isSavingCompany ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
-                  <span className="text-xs">Salvar</span>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
+            <ArrowLeft className="size-3.5" />
+            Contatos
+          </Link>
+          {isEditingCompany ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                value={companyInput}
+                onChange={(e) => setCompanyInput(e.target.value)}
+                placeholder="Nome do estabelecimento"
+                aria-label="Nome do estabelecimento"
+                className="h-9 w-72 rounded-lg border border-primary bg-muted/80 px-3 text-lg font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary sm:w-80"
+                autoFocus
+                disabled={isSavingCompany}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveCompany();
+                  if (e.key === 'Escape') {
                     setCompanyInput(contact?.company || '');
                     setIsEditingCompany(false);
-                  }}
-                  disabled={isSavingCompany}
-                  className="h-8 px-2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="size-3.5" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                  {contact?.company || dossie?.nome_verificado ? (
-                    contact?.company || dossie?.nome_verificado
-                  ) : (
-                    <span className="text-muted-foreground italic text-lg font-normal">
-                      Estabelecimento sem nome definido
-                    </span>
-                  )}
-                  {dossie?.nota && (
-                    <Badge variant="secondary" className="gap-1 font-mono text-xs">
-                      <Star className="size-3 text-amber-500 fill-amber-500" />
-                      {dossie.nota.toFixed(1)} ({dossie.total_avaliacoes || 0})
-                    </Badge>
-                  )}
-                </h1>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCompanyInput(contact?.company || dossie?.nome_verificado || '');
-                    setIsEditingCompany(true);
-                  }}
-                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 transition flex items-center gap-1 text-xs"
-                  title="Editar nome do estabelecimento"
-                >
-                  <Pencil className="size-3.5 text-amber-500" />
-                  <span className="text-[11px] underline decoration-muted-foreground/40">Editar</span>
-                </button>
-              </div>
-            )}
-            <p className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5 flex-wrap">
-              <span>WhatsApp: <strong>{contact.phone}</strong></span>
-              {contact.email && <span>• {contact.email}</span>}
-              {dossie?.telefone_estabelecimento &&
-                contact.phone?.replace(/\D/g, '') !== dossie.telefone_estabelecimento.replace(/\D/g, '') && (
-                  <span className="flex items-center gap-1 text-blue-400">
-                    • <PhoneCall className="size-3" /> Maps: <strong>{dossie.telefone_estabelecimento}</strong>
-                    <Badge variant="outline" className="text-[9px] py-0 px-1 border-blue-500/40 text-blue-400">Divergente</Badge>
-                  </span>
+                  }
+                }}
+              />
+              <Button size="sm" onClick={handleSaveCompany} disabled={isSavingCompany} className="h-8 gap-1">
+                {isSavingCompany ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                Salvar
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setCompanyInput(contact?.company || '');
+                  setIsEditingCompany(false);
+                }}
+                disabled={isSavingCompany}
+                className="h-8 px-2"
+                aria-label="Cancelar edição do nome"
+              >
+                <X className="size-3.5" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                {contact?.company || dossie?.nome_verificado || (
+                  <span className="text-lg font-normal italic text-muted-foreground">Estabelecimento sem nome definido</span>
                 )}
-              {dossie?.nicho_detectado && (
-                <span className="capitalize text-primary">• {dossie.nicho_detectado}</span>
+              </h1>
+              {dossie?.nota && (
+                <Badge variant="secondary" className="gap-1 text-xs tabular-nums">
+                  <Star className="size-3 fill-amber-500 text-amber-500" />
+                  {dossie.nota.toFixed(1)} ({dossie.total_avaliacoes || 0})
+                </Badge>
               )}
-            </p>
-          </div>
+              <button
+                type="button"
+                onClick={startEditingCompany}
+                className="rounded-md p-1.5 text-muted-foreground transition hover:bg-muted/80 hover:text-foreground"
+                title="Editar nome do estabelecimento"
+                aria-label="Editar nome do estabelecimento"
+              >
+                <Pencil className="size-3.5" />
+              </button>
+            </div>
+          )}
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+            <span>
+              {contact.name || 'Responsável não informado'} · WhatsApp <strong className="text-foreground">{contact.phone}</strong>
+            </span>
+            {contact.email && <span>· {contact.email}</span>}
+            {dossie?.nicho_detectado && <span className="capitalize">· {dossie.nicho_detectado}</span>}
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setMapsLinkInput(currentMapsUrl);
-              setIsEditingMapsLink(true);
-            }}
-            className="gap-1.5"
-            title="Alterar o link do Google Maps usado na busca deste lead"
-          >
-            <MapPin className="size-3.5 text-amber-500" />
-            Alterar Link do Maps
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleEnrichDossier()}
-            disabled={enrichingDossier}
-            className="gap-1.5"
-          >
-            <RefreshCw className={`size-3.5 ${enrichingDossier ? 'animate-spin' : ''}`} />
-            {enrichingDossier ? 'Consultando Maps...' : 'Atualizar Maps'}
-          </Button>
-
-          <Button
-            onClick={handleRunAiDiagnosis}
-            disabled={diagnosing}
-            size="sm"
-            className="gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold shadow-sm"
-          >
-            <Sparkles className={`size-3.5 ${diagnosing ? 'animate-spin' : ''}`} />
-            {diagnosing ? 'IA Diagnosticando...' : 'Diagnosticar com IA'}
-          </Button>
-
+        <div className="flex flex-wrap items-center gap-2">
           {dossie?.link_cardapio && (
             <a
               href={dossie.link_cardapio}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition shadow-sm"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-foreground transition hover:bg-muted"
             >
               <Utensils className="size-3.5" />
               Cardápio
             </a>
           )}
-
           {contact.phone && (
             <a
               href={`https://wa.me/${contact.phone.replace(/\D/g, '')}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-foreground transition hover:bg-muted"
             >
-              <MessageCircle className="size-3.5" />
+              <MessageCircle className="size-3.5 text-emerald-500" />
               WhatsApp
             </a>
           )}
-        </div>
-      </div>
-
-      {/* Painel de Progresso das Etapas do Lead */}
-      <section aria-label="Progresso do lead" className="rounded-2xl border border-border bg-card p-4 space-y-3">
-        <LeadProgressPanel steps={leadSteps} active={nextStep?.key} onSelect={scrollToStep} />
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
-          <p className="text-sm text-muted-foreground">
-            {nextStep ? (
-              <>
-                Próximo passo: <span className="font-medium text-foreground">{nextStep.label}</span>
-                <span className="text-muted-foreground"> · {nextStep.summary}</span>
-              </>
-            ) : (
-              'Todas as etapas obrigatórias estão prontas.'
-            )}
-          </p>
           <NextStepButton step={nextStep} busy={enrichingDossier || diagnosing} onRun={runNextStep} />
         </div>
-      </section>
+      </header>
 
-      {/* 2. Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Business Intelligence Dossier (7 Cols) */}
-        <div className="lg:col-span-7 space-y-6">
-          <span id="etapa-dossie" className="block scroll-mt-6" aria-hidden />
-          {/* Card: Fotos de Alta Resolução do Google Maps */}
-          {dossie?.fotos && dossie.fotos.length > 0 && (
-            <div className="p-5 rounded-2xl bg-card border border-border space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-sm font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-2">
-                  <Building2 className="size-4 text-primary" />
-                  Galeria de Fotos do Local ({dossie.fotos.length})
-                </h2>
-                <span className="text-xs text-muted-foreground">Extraídas do Google Maps</span>
-              </div>
+      {/* Painel de Progresso das Etapas do Lead */}
+      <LeadProgressPanel steps={leadSteps} active={openStep} onSelect={setOpenStepKey} />
 
-              {/* Grid de Fotos */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {dossie.fotos.slice(0, 6).map((foto: any, index: number) => (
-                  <div
-                    key={index}
-                    onClick={() => setActivePhoto(foto.photo_url)}
-                    className="relative aspect-video rounded-xl overflow-hidden border border-border/60 cursor-pointer group hover:border-primary transition bg-muted/30"
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        {/* Etapas do Lead: uma aberta por vez */}
+        <div className="lg:col-span-7 xl:col-span-8">
+          <div className="overflow-hidden rounded-2xl border border-border bg-card">
+            {/* 1. Briefing */}
+            <LeadStepSection step={stepOf('briefing')} open={openStep === 'briefing'} onOpen={setOpenStepKey}>
+              {stepOf('briefing').missing && (
+                <p className="mb-3 text-sm text-amber-300">
+                  Falta {stepOf('briefing').missing!.join(', ')} para completar o briefing.
+                  {stepOf('briefing').missing!.includes('empresa') && (
+                    <Button variant="link" size="sm" className="h-auto px-1 text-sm" onClick={startEditingCompany}>
+                      Definir nome do estabelecimento
+                    </Button>
+                  )}
+                </p>
+              )}
+              <dl className="grid grid-cols-[9rem_1fr] gap-x-4 gap-y-2 text-sm">
+                <dt className="text-muted-foreground">Responsável</dt>
+                <dd>{contact.name || <span className="italic text-muted-foreground">Não informado</span>}</dd>
+                <dt className="text-muted-foreground">Empresa</dt>
+                <dd>{contact.company || <span className="italic text-muted-foreground">Não informada</span>}</dd>
+                <dt className="text-muted-foreground">WhatsApp</dt>
+                <dd>{contact.phone || <span className="italic text-muted-foreground">Não informado</span>}</dd>
+                <dt className="text-muted-foreground">E-mail</dt>
+                <dd>{contact.email || <span className="italic text-muted-foreground">Não informado</span>}</dd>
+                <dt className="text-muted-foreground">Site</dt>
+                <dd className="break-all">
+                  {contact.website ? (
+                    <a href={contact.website} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                      {contact.website}
+                    </a>
+                  ) : (
+                    <span className="italic text-muted-foreground">Não informado</span>
+                  )}
+                </dd>
+                {dossie?.telefone_estabelecimento &&
+                  contact.phone?.replace(/\D/g, '') !== dossie.telefone_estabelecimento.replace(/\D/g, '') && (
+                    <>
+                      <dt className="text-muted-foreground">Telefone no Maps</dt>
+                      <dd className="flex items-center gap-1.5">
+                        <PhoneCall className="size-3.5 text-muted-foreground" />
+                        {dossie.telefone_estabelecimento}
+                        <Badge variant="outline" className="px-1 py-0 text-[10px]">
+                          Diferente do WhatsApp
+                        </Badge>
+                      </dd>
+                    </>
+                  )}
+              </dl>
+            </LeadStepSection>
+
+            {/* 2. Dossiê */}
+            <LeadStepSection
+              step={stepOf('dossie')}
+              open={openStep === 'dossie'}
+              onOpen={setOpenStepKey}
+              action={
+                <>
+                  <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs" onClick={openMapsLinkDialog}>
+                    <MapPin className="size-3.5" />
+                    Alterar link
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs"
+                    onClick={() => handleEnrichDossier()}
+                    disabled={enrichingDossier}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={foto.photo_url}
-                      alt={`Foto ${index + 1} de ${companyName}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                      loading="lazy"
-                    />
-                    {foto.tipo === 'cardapio' && (
-                      <span className="absolute bottom-1 left-1 bg-amber-600/90 text-white font-bold text-[9px] px-1.5 py-0.5 rounded shadow">
-                        Cardápio
-                      </span>
-                    )}
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                      <ExternalLink className="size-4 text-white drop-shadow" />
+                    <RefreshCw className={`size-3.5 ${enrichingDossier ? 'animate-spin' : ''}`} />
+                    {enrichingDossier ? 'Consultando...' : dossie ? 'Atualizar Maps' : 'Consultar Google Maps'}
+                  </Button>
+                </>
+              }
+            >
+              {!dossie ? (
+                <StepEmptyState>
+                  Nenhum dossiê ainda. Consulte o Google Maps para trazer fotos, avaliações, horários, endereço e o pitch
+                  comercial. A busca usa {currentMapsUrl ? 'o link do Maps cadastrado' : 'o nome do estabelecimento'}.
+                </StepEmptyState>
+              ) : (
+                <div className="space-y-6">
+                  {dossie.fotos && dossie.fotos.length > 0 && (
+                    <div className="space-y-2">
+                      <h3 className="text-xs font-semibold text-muted-foreground">Fotos do Google Maps ({dossie.fotos.length})</h3>
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                        {dossie.fotos.slice(0, 6).map((foto: any, index: number) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => setActivePhoto(foto.photo_url)}
+                            className="group relative aspect-square overflow-hidden rounded-lg bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-label={`Ampliar foto ${index + 1} de ${companyName}`}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={foto.photo_url}
+                              alt=""
+                              className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                              loading="lazy"
+                            />
+                            {foto.tipo === 'cardapio' && (
+                              <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                                Cardápio
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <h3 className="text-xs font-semibold text-muted-foreground">Endereço</h3>
+                      <p className="text-sm">{dossie.endereco_formatado || 'Não informado no Maps'}</p>
+                      {dossie.google_maps_url && (
+                        <a
+                          href={dossie.google_maps_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                        >
+                          Ver no Google Maps
+                          <ExternalLink className="size-3" />
+                        </a>
+                      )}
+                      <p className="break-all pt-1 text-[11px] text-muted-foreground">
+                        Busca do Maps: {currentMapsUrl || 'automática pelo nome'}
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-xs font-semibold text-muted-foreground">Horários</h3>
+                        {dossie.aberto_agora !== undefined && (
+                          <span className={`text-[11px] ${dossie.aberto_agora ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                            {dossie.aberto_agora ? 'Aberto agora' : 'Fechado agora'}
+                          </span>
+                        )}
+                      </div>
+                      {dossie.horarios_funcionamento && dossie.horarios_funcionamento.length > 0 ? (
+                        <ul className="space-y-0.5 text-sm">
+                          {dossie.horarios_funcionamento.map((horario: string, idx: number) => (
+                            <li key={idx}>{horario}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Sem horários no Maps.</p>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* Card: Localização & Horários de Funcionamento */}
-          <div className="p-5 rounded-2xl bg-card border border-border space-y-4">
-            <h2 className="text-sm font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-2">
-              <MapPin className="size-4 text-primary" />
-              Localização & Horários de Operação
-            </h2>
+                  {(dossie.modalidades_atendimento || dossie.informacoes_relevantes) && (
+                    <div className="space-y-2">
+                      <h3 className="text-xs font-semibold text-muted-foreground">Atendimento e comodidades</h3>
+                      <div className="flex flex-wrap gap-1.5">
+                        {dossie.modalidades_atendimento?.permite_entrega && (
+                          <Badge variant="outline" className="gap-1 text-[11px]">
+                            <Bike className="size-3" /> Entrega
+                          </Badge>
+                        )}
+                        {dossie.modalidades_atendimento?.permite_consumo_local && (
+                          <Badge variant="outline" className="gap-1 text-[11px]">
+                            <Store className="size-3" /> Consumo no local
+                          </Badge>
+                        )}
+                        {dossie.modalidades_atendimento?.permite_retirada && (
+                          <Badge variant="outline" className="gap-1 text-[11px]">
+                            <Utensils className="size-3" /> Retirada
+                          </Badge>
+                        )}
+                        {dossie.informacoes_relevantes?.faixa_preco && dossie.informacoes_relevantes.faixa_preco !== 'Não informado' && (
+                          <Badge variant="outline" className="text-[11px]">
+                            {dossie.informacoes_relevantes.faixa_preco}
+                          </Badge>
+                        )}
+                        {(dossie.informacoes_relevantes?.comodidades || []).map((item: string, idx: number) => (
+                          <Badge key={idx} variant="secondary" className="text-[11px] font-normal">
+                            {item}
+                          </Badge>
+                        ))}
+                      </div>
+                      {dossie.informacoes_relevantes?.resumo_editorial && (
+                        <p className="text-sm italic text-muted-foreground">“{dossie.informacoes_relevantes.resumo_editorial}”</p>
+                      )}
+                    </div>
+                  )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-            {/* Modalidades de Atendimento */}
-            {dossie?.modalidades_atendimento && (
-              <div className="flex flex-wrap gap-2 pt-2 border-t border-border/40">
-                {dossie.modalidades_atendimento.permite_entrega && (
-                  <Badge variant="outline" className="text-[10px] gap-1 bg-emerald-500/10 border-emerald-500/30 text-emerald-400">
-                    <Bike className="size-3" />
-                    Entrega / Delivery
-                  </Badge>
-                )}
-                {dossie.modalidades_atendimento.permite_consumo_local && (
-                  <Badge variant="outline" className="text-[10px] gap-1 bg-blue-500/10 border-blue-500/30 text-blue-400">
-                    <Store className="size-3" />
-                    Consumo no Local
-                  </Badge>
-                )}
-                {dossie.modalidades_atendimento.permite_retirada && (
-                  <Badge variant="outline" className="text-[10px] gap-1 bg-amber-500/10 border-amber-500/30 text-amber-400">
-                    <Utensils className="size-3" />
-                    Retirada no Local
-                  </Badge>
-                )}
-              </div>
-            )}
+                  {dossie.resultados_web && dossie.resultados_web.length > 0 && (
+                    <div className="space-y-2">
+                      <h3 className="text-xs font-semibold text-muted-foreground">Presença na web</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {dossie.resultados_web.map((link: any, idx: number) => (
+                          <a
+                            key={idx}
+                            href={link.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs transition hover:bg-muted"
+                          >
+                            {link.titulo}
+                            <ExternalLink className="size-3 text-muted-foreground" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-              {/* Endereço */}
-              <div className="space-y-2">
-                <span className="text-xs font-medium text-muted-foreground">Endereço Físico</span>
-                <p className="text-sm text-foreground">
-                  {dossie?.endereco_formatado || contact.company || 'Consulte o perfil no Maps'}
-                </p>
-                {dossie?.google_maps_url && (
-                  <a
-                    href={dossie.google_maps_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium"
-                  >
-                    <span>Ver no Google Maps</span>
-                    <ExternalLink className="size-3" />
-                  </a>
-                )}
-
-                {/* Seção de Link de Busca com Botão de Alteração */}
-                <div className="pt-2 mt-2 border-t border-border/40 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
-                      <MapPin className="size-3 text-amber-500" />
-                      Link de Busca do Maps
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setMapsLinkInput(currentMapsUrl);
-                        setIsEditingMapsLink(true);
-                      }}
-                      className="h-6 px-2 text-xs text-amber-500 hover:text-amber-400 gap-1 hover:bg-amber-500/10"
-                    >
-                      <Pencil className="size-3" />
-                      Alterar Link
-                    </Button>
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <h3 className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+                        <ThumbsUp className="size-3.5" />
+                        Avaliações 5 estrelas
+                      </h3>
+                      {dossie.avaliacoes_positivas && dossie.avaliacoes_positivas.length > 0 ? (
+                        <ul className="space-y-2.5">
+                          {dossie.avaliacoes_positivas.slice(0, 4).map((p: any, idx: number) => (
+                            <li key={idx} className="text-sm">
+                              <p className="text-foreground/90">“{p.text}”</p>
+                              <p className="text-[11px] text-muted-foreground">{p.author}</p>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Nenhuma avaliação 5 estrelas no Maps.</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="flex items-center gap-1.5 text-xs font-semibold text-amber-300">
+                        <AlertTriangle className="size-3.5" />
+                        Dores de atendimento
+                      </h3>
+                      {dossie.dores_destaque &&
+                      dossie.dores_destaque.some((d: any) => d.text !== 'Sem nenhuma avaliação negativa.') ? (
+                        <ul className="space-y-2.5">
+                          {dossie.dores_destaque.slice(0, 2).map((d: any, idx: number) => (
+                            <li key={idx} className="text-sm">
+                              <p className="text-foreground/90">“{d.text}”</p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {d.author} · ★ {d.rating}
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="flex items-center gap-1.5 text-sm text-emerald-400">
+                          <CheckCircle2 className="size-4" />
+                          Sem avaliações negativas.
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-xs font-mono text-muted-foreground break-all bg-muted/40 p-2 rounded-lg border border-border/40 select-all">
-                    {currentMapsUrl || 'Nenhum link direto configurado (busca automática por nome)'}
-                  </p>
-                </div>
-              </div>
 
-              {/* Horários */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-muted-foreground">Funcionamento</span>
-                  {dossie?.aberto_agora !== undefined && (
-                    <Badge variant={dossie.aberto_agora ? 'default' : 'secondary'} className="text-[10px]">
-                      {dossie.aberto_agora ? '🟢 Aberto agora' : '🔴 Fechado'}
-                    </Badge>
+                  {dossie.pitch_comercial_sugerido && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-xs font-semibold text-muted-foreground">Pitch comercial para WhatsApp</h3>
+                        <Button variant="ghost" size="sm" onClick={handleCopyPitch} className="h-7 gap-1.5 text-xs">
+                          {copiedPitch ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
+                          {copiedPitch ? 'Copiado' : 'Copiar pitch'}
+                        </Button>
+                      </div>
+                      <p className="text-sm leading-relaxed text-muted-foreground">{dossie.pitch_comercial_sugerido}</p>
+                    </div>
                   )}
                 </div>
-                {dossie?.horarios_funcionamento && dossie.horarios_funcionamento.length > 0 ? (
-                  <div className="space-y-1 text-xs text-muted-foreground max-h-36 overflow-y-auto pr-1">
-                    {dossie.horarios_funcionamento.map((horario: string, idx: number) => (
-                      <div key={idx} className="flex justify-between py-0.5 border-b border-border/40 last:border-0">
-                        <span>{horario}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">Horários sob consulta.</p>
-                )}
-              </div>
-            </div>
-          </div>
+              )}
+            </LeadStepSection>
 
-          {/* Card: Informações Relevantes & Comodidades */}
-          {dossie?.informacoes_relevantes && (
-            <div className="p-5 rounded-2xl bg-card border border-border space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-2">
-                  <Sparkles className="size-4 text-primary" />
-                  Informações Relevantes & Comodidades
-                </h2>
-                {dossie.informacoes_relevantes.faixa_preco && dossie.informacoes_relevantes.faixa_preco !== 'Não informado' && (
-                  <Badge variant="outline" className="text-xs">
-                    {dossie.informacoes_relevantes.faixa_preco}
-                  </Badge>
-                )}
-              </div>
-
-              {dossie.informacoes_relevantes.resumo_editorial && (
-                <p className="text-xs text-muted-foreground italic border-l-2 border-primary/50 pl-2.5 py-0.5">
-                  &quot;{dossie.informacoes_relevantes.resumo_editorial}&quot;
+            {/* 3. Raspagem */}
+            <LeadStepSection step={stepOf('raspagem')} open={openStep === 'raspagem'} onOpen={setOpenStepKey}>
+              {stepOf('raspagem').status === 'opcional' && (
+                <p className="mb-3 text-sm text-muted-foreground">
+                  Este lead não tem site nem URL cadastrada, então a raspagem é opcional. Adicione uma URL abaixo se houver.
                 </p>
               )}
+              <ScraplingDeepScraperCard
+                embedded
+                leadId={contact.id}
+                scrapedData={additionalData.scraped_data}
+                initialUrls={
+                  Array.isArray(additionalData.scraping_urls)
+                    ? additionalData.scraping_urls
+                    : Array.isArray(additionalData.links)
+                    ? additionalData.links.map((l: any) => (typeof l === 'string' ? l : l?.url)).filter(Boolean)
+                    : []
+                }
+                websiteUrl={contact.website || additionalData.website || dossie?.site_oficial}
+                onScraped={(newData, updatedUrls) => {
+                  setContact((prev: any) =>
+                    prev
+                      ? {
+                          ...prev,
+                          additional_data: {
+                            ...(prev.additional_data || {}),
+                            scraping_urls: updatedUrls,
+                            scraped_data: newData,
+                          },
+                        }
+                      : prev
+                  );
+                }}
+              />
+            </LeadStepSection>
 
-              {dossie.informacoes_relevantes.comodidades && dossie.informacoes_relevantes.comodidades.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {dossie.informacoes_relevantes.comodidades.map((item: string, idx: number) => (
-                    <Badge key={idx} variant="secondary" className="text-[11px] font-normal py-0.5 px-2">
-                      {item}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">Nenhuma comodidade adicional especificada no Maps.</p>
-              )}
-            </div>
-          )}
+            {/* 4. Catálogo Extraído */}
+            <LeadStepSection step={stepOf('catalogo')} open={openStep === 'catalogo'} onOpen={setOpenStepKey}>
+              <ExtractedCatalogCard
+                embedded
+                leadId={contact.id}
+                files={Array.isArray(additionalData.catalogo_arquivos) ? additionalData.catalogo_arquivos : []}
+                onFilesChange={(files) => {
+                  setContact((prev: any) =>
+                    prev ? { ...prev, additional_data: { ...(prev.additional_data || {}), catalogo_arquivos: files } } : prev
+                  );
+                }}
+                catalog={additionalData.catalogo_extraido || null}
+                onCatalogChange={(catalog, newPrompt) => {
+                  setContact((prev: any) =>
+                    prev
+                      ? {
+                          ...prev,
+                          additional_data: {
+                            ...(prev.additional_data || {}),
+                            catalogo_extraido: catalog,
+                            ...(newPrompt ? { prompt_mestre: newPrompt, prompt_mestre_gerado_em: new Date().toISOString() } : {}),
+                          },
+                        }
+                      : prev
+                  );
+                  if (newPrompt) {
+                    setPromptMestre(newPrompt);
+                    setOriginalPrompt(newPrompt);
+                  }
+                }}
+              />
+            </LeadStepSection>
 
-          {/* Card: Resultados da Web & Presença Digital */}
-          {dossie?.resultados_web && dossie.resultados_web.length > 0 && (
-            <div className="p-5 rounded-2xl bg-card border border-border space-y-3">
-              <h2 className="text-sm font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-2">
-                <Globe className="size-4 text-primary" />
-                Resultados da Web & Presença Digital
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {dossie.resultados_web.map((link: any, idx: number) => (
-                  <a
-                    key={idx}
-                    href={link.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/80 bg-background hover:bg-muted/50 hover:border-primary text-xs text-foreground transition group"
-                  >
-                    <span className="font-medium">{link.titulo}</span>
-                    <ExternalLink className="size-3 text-muted-foreground group-hover:text-primary transition" />
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <span id="etapa-raspagem" className="block scroll-mt-6" aria-hidden />
-          {/* Card: Raspagem Profunda com Scrapling */}
-          <ScraplingDeepScraperCard
-            leadId={contact.id}
-            scrapedData={additionalData.scraped_data}
-            initialUrls={
-              Array.isArray(additionalData.scraping_urls)
-                ? additionalData.scraping_urls
-                : Array.isArray(additionalData.links)
-                ? additionalData.links.map((l: any) => (typeof l === 'string' ? l : l?.url)).filter(Boolean)
-                : []
-            }
-            websiteUrl={contact.website || additionalData.website || dossie?.site_oficial}
-            onScraped={(newData, updatedUrls) => {
-              setContact((prev: any) => {
-                if (!prev) return prev;
-                return {
-                  ...prev,
-                  additional_data: {
-                    ...(prev.additional_data || {}),
-                    scraping_urls: updatedUrls,
-                    scraped_data: newData,
-                  },
-                };
-              });
-            }}
-          />
-
-          <span id="etapa-catalogo" className="block scroll-mt-6" aria-hidden />
-          {/* Card: Catálogo Extraído (arquivos enviados pelo operador) */}
-          <ExtractedCatalogCard
-            leadId={contact.id}
-            files={Array.isArray(additionalData.catalogo_arquivos) ? additionalData.catalogo_arquivos : []}
-            onFilesChange={(files) => {
-              setContact((prev: any) =>
-                prev ? { ...prev, additional_data: { ...(prev.additional_data || {}), catalogo_arquivos: files } } : prev
-              );
-            }}
-            catalog={additionalData.catalogo_extraido || null}
-            onCatalogChange={(catalog, newPrompt) => {
-              setContact((prev: any) =>
-                prev
-                  ? {
-                      ...prev,
-                      additional_data: {
-                        ...(prev.additional_data || {}),
-                        catalogo_extraido: catalog,
-                        ...(newPrompt ? { prompt_mestre: newPrompt } : {}),
-                      },
-                    }
-                  : prev
-              );
-              if (newPrompt) {
-                setPromptMestre(newPrompt);
-                setOriginalPrompt(newPrompt);
+            {/* 5. Diagnóstico */}
+            <LeadStepSection
+              step={stepOf('diagnostico')}
+              open={openStep === 'diagnostico'}
+              onOpen={setOpenStepKey}
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs"
+                  onClick={handleRunAiDiagnosis}
+                  disabled={diagnosing || !dossie}
+                >
+                  <Sparkles className={`size-3.5 ${diagnosing ? 'animate-spin' : ''}`} />
+                  {diagnosing ? 'Diagnosticando...' : diagnostico ? 'Gerar de novo' : 'Gerar Diagnóstico'}
+                </Button>
               }
-            }}
-          />
-
-          {/* Card: Depoimentos e Sentimento Real dos Clientes */}
-          <div className="p-5 rounded-2xl bg-card border border-border space-y-4">
-            <h2 className="text-sm font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-2">
-              <Star className="size-4 text-amber-500" />
-              Depoimentos e Percepção dos Clientes
-            </h2>
-
-            <div className="space-y-4">
-              {/* Últimas avaliações com 5 estrelas */}
-              {dossie?.avaliacoes_positivas && dossie.avaliacoes_positivas.length > 0 && (
-                <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20 space-y-2">
-                  <h3 className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 uppercase">
-                    <ThumbsUp className="size-3.5" />
-                    Últimas avaliações com 5 estrelas
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    {dossie.avaliacoes_positivas.slice(0, 4).map((p: any, idx: number) => (
-                      <div key={idx} className="p-2.5 rounded-lg bg-background/40 border border-emerald-500/20 space-y-1">
-                        <div className="flex items-center justify-between text-[11px] font-semibold text-foreground">
-                          <span>{p.author}</span>
-                          <span className="text-amber-400">★ {p.rating}</span>
-                        </div>
-                        <p className="italic text-muted-foreground line-clamp-3">&quot;{p.text}&quot;</p>
-                      </div>
-                    ))}
+            >
+              {!diagnostico ? (
+                <StepEmptyState>
+                  {dossie
+                    ? 'Gere o diagnóstico para a IA descrever a empresa, o estilo visual, o público e os diferenciais. Ele também gera o Prompt Mestre.'
+                    : 'O diagnóstico depende do dossiê. Consulte o Google Maps primeiro.'}
+                </StepEmptyState>
+              ) : (
+                <dl className="space-y-3 text-sm">
+                  <div>
+                    <dt className="text-xs font-semibold text-muted-foreground">O que a empresa é</dt>
+                    <dd className="leading-relaxed">{diagnostico.resumo_empresa}</dd>
                   </div>
-                </div>
+                  <div>
+                    <dt className="text-xs font-semibold text-muted-foreground">Estilo visual</dt>
+                    <dd className="leading-relaxed">{diagnostico.estilo_visual_vibe}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold text-muted-foreground">Público</dt>
+                    <dd className="leading-relaxed">{diagnostico.publico_alvo}</dd>
+                  </div>
+                  {diagnostico.diferenciais_unicos && diagnostico.diferenciais_unicos.length > 0 && (
+                    <div>
+                      <dt className="text-xs font-semibold text-muted-foreground">Diferenciais</dt>
+                      <dd>
+                        <ul className="list-inside list-disc">
+                          {diagnostico.diferenciais_unicos.map((dif: string, idx: number) => (
+                            <li key={idx}>{dif}</li>
+                          ))}
+                        </ul>
+                      </dd>
+                    </div>
+                  )}
+                  {diagnostico.gerado_em && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Gerado em {new Date(diagnostico.gerado_em).toLocaleDateString('pt-BR')}
+                    </p>
+                  )}
+                </dl>
               )}
+            </LeadStepSection>
 
-              {/* Desafios & Dores de Atendimento (Últimas avaliações <= 3 estrelas) */}
-              <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-500/20 space-y-2">
-                <h3 className="text-xs font-bold text-amber-400 flex items-center gap-1.5 uppercase">
-                  <AlertTriangle className="size-3.5" />
-                  Desafios & Dores de Atendimento (Google Maps)
-                </h3>
-                {dossie?.dores_destaque && dossie.dores_destaque.length > 0 ? (
-                  <div className="space-y-2 text-xs">
-                    {dossie.dores_destaque.slice(0, 2).map((d: any, idx: number) => {
-                      const isNoNegative = d.text === 'Sem nenhuma avaliação negativa.';
-                      return isNoNegative ? (
-                        <div key={idx} className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
-                          <CheckCircle2 className="size-4" />
-                          <span>Sem nenhuma avaliação negativa.</span>
-                        </div>
-                      ) : (
-                        <div key={idx} className="p-2.5 rounded-lg bg-background/40 border border-amber-500/20 space-y-1">
-                          <div className="flex items-center justify-between text-[11px] font-semibold text-foreground">
-                            <span>{d.author}</span>
-                            <span className="text-amber-400">★ {d.rating}</span>
-                          </div>
-                          <p className="italic text-muted-foreground">&quot;{d.text}&quot;</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
-                    <CheckCircle2 className="size-4" />
-                    <span>Sem nenhuma avaliação negativa.</span>
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* 6. Prompt Mestre */}
+            <LeadStepSection step={stepOf('prompt')} open={openStep === 'prompt'} onOpen={setOpenStepKey}>
+              <StepEmptyState>
+                {additionalData.prompt_mestre
+                  ? 'O Prompt Mestre fica sempre à mão, na coluna ao lado.'
+                  : 'O Prompt Mestre é gerado junto com o diagnóstico e aparece na coluna ao lado.'}
+              </StepEmptyState>
+            </LeadStepSection>
           </div>
         </div>
 
-        {/* Right Column: AI Diagnosis & Master Prompt Studio (5 Cols) */}
-        <div className="lg:col-span-5 space-y-6">
-          <span id="etapa-diagnostico" className="block scroll-mt-6" aria-hidden />
-          {/* Card: Diagnóstico Multimodal da IA */}
-          <div className="p-5 rounded-2xl bg-card border border-border space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-sm font-semibold tracking-wider uppercase text-foreground flex items-center gap-2">
-                <Sparkles className="size-4 text-amber-500" />
-                Diagnóstico de Identidade (IA)
-              </h2>
-              {diagnostico?.gerado_em && (
-                <span className="text-[10px] text-muted-foreground">
-                  {new Date(diagnostico.gerado_em).toLocaleDateString('pt-BR')}
-                </span>
-              )}
-            </div>
-
-            {diagnostico ? (
-              <div className="space-y-3 text-xs">
-                <div>
-                  <span className="font-semibold text-muted-foreground block mb-0.5">O que a empresa é:</span>
-                  <p className="text-foreground leading-relaxed">{diagnostico.resumo_empresa}</p>
-                </div>
-                <div>
-                  <span className="font-semibold text-muted-foreground block mb-0.5">Estética & Vibe Visual:</span>
-                  <p className="text-foreground leading-relaxed">{diagnostico.estilo_visual_vibe}</p>
-                </div>
-                <div>
-                  <span className="font-semibold text-muted-foreground block mb-0.5">Público-Alvo:</span>
-                  <p className="text-foreground leading-relaxed">{diagnostico.publico_alvo}</p>
-                </div>
-                {diagnostico.diferenciais_unicos && diagnostico.diferenciais_unicos.length > 0 && (
-                  <div>
-                    <span className="font-semibold text-muted-foreground block mb-1">Diferenciais Competitivos:</span>
-                    <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
-                      {diagnostico.diferenciais_unicos.map((dif: string, idx: number) => (
-                        <li key={idx} className="text-foreground">{dif}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="p-4 rounded-xl bg-muted/40 text-center space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  Nenhum diagnóstico multimodal gerado ainda para este lead.
-                </p>
-                <Button
-                  onClick={handleRunAiDiagnosis}
-                  disabled={diagnosing}
-                  size="sm"
-                  variant="outline"
-                  className="text-xs"
-                >
-                  <Sparkles className="size-3.5 mr-1 text-amber-500" />
-                  Gerar Diagnóstico com IA Agora
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <span id="etapa-prompt" className="block scroll-mt-6" aria-hidden />
-          {/* Card: Master Prompt Studio (Zero-Template Engine) */}
-          <div className="p-5 rounded-2xl bg-card border border-border space-y-4">
-            <div className="flex justify-between items-center">
+        {/* Coluna lateral: Prompt Mestre */}
+        <aside className="space-y-6 lg:col-span-5 xl:col-span-4">
+          <div className="space-y-3 rounded-2xl border border-border bg-card p-5">
+            <div className="flex items-start justify-between gap-2">
               <div>
-                <h2 className="text-sm font-semibold tracking-wider uppercase text-foreground flex items-center gap-2">
-                  <Copy className="size-4 text-primary" />
-                  Prompt Mestre (Site do Zero)
-                </h2>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Copie e cole na sua IA (Claude, ChatGPT, v0) para gerar o site.
-                </p>
+                <h2 className="text-sm font-semibold">Prompt Mestre</h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">Copie e cole na sua IA (Claude, ChatGPT, v0) para gerar o site.</p>
               </div>
               {originalPrompt && promptMestre !== originalPrompt && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setPromptMestre(originalPrompt)}
-                  className="text-xs text-muted-foreground hover:text-foreground gap-1"
+                  className="h-7 gap-1 text-xs text-muted-foreground"
                 >
                   <RotateCcw className="size-3" />
                   Restaurar
                 </Button>
               )}
             </div>
-
-            <div className="space-y-3">
-              <textarea
-                value={promptMestre}
-                onChange={(e) => setPromptMestre(e.target.value)}
-                placeholder="Clique em 'Diagnosticar com IA' para gerar automaticamente o Prompt Mestre de engenharia reversa deste lead..."
-                rows={12}
-                className="w-full p-3.5 rounded-xl bg-black/40 border border-border font-mono text-xs text-foreground leading-relaxed focus:outline-none focus:border-primary resize-y"
-              />
-
-              <Button
-                onClick={handleCopyPrompt}
-                disabled={!promptMestre}
-                className="w-full py-3 font-bold bg-primary text-black hover:opacity-90 transition shadow flex items-center justify-center gap-2 text-xs"
-              >
-                {copiedPrompt ? (
-                  <>
-                    <Check className="size-4 text-black" />
-                    <span>Prompt Mestre Copiado!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="size-4" />
-                    <span>Copiar Prompt Mestre para a IA</span>
-                  </>
-                )}
-              </Button>
-            </div>
+            <textarea
+              value={promptMestre}
+              onChange={(e) => setPromptMestre(e.target.value)}
+              placeholder="O Prompt Mestre aparece aqui depois do diagnóstico."
+              aria-label="Prompt Mestre"
+              rows={14}
+              className="w-full resize-y rounded-xl border border-border bg-background/60 p-3 font-mono text-xs leading-relaxed text-foreground focus:border-primary focus:outline-none"
+            />
+            <Button onClick={handleCopyPrompt} disabled={!promptMestre} className="w-full gap-2">
+              {copiedPrompt ? <Check className="size-4" /> : <Copy className="size-4" />}
+              {copiedPrompt ? 'Prompt Mestre copiado' : 'Copiar Prompt Mestre'}
+            </Button>
           </div>
-
-          {/* Card: Pitch Comercial Pronto para WhatsApp */}
-          {dossie?.pitch_comercial_sugerido && (
-            <div className="p-5 rounded-2xl bg-card border border-border space-y-3">
-              <div className="flex justify-between items-center">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
-                  <MessageCircle className="size-4 text-emerald-500" />
-                  Pitch para WhatsApp
-                </h2>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopyPitch}
-                  className="text-xs gap-1.5"
-                >
-                  {copiedPitch ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
-                  {copiedPitch ? 'Copiado!' : 'Copiar Pitch'}
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground bg-muted/40 p-3 rounded-xl italic leading-relaxed">
-                &quot;{dossie.pitch_comercial_sugerido}&quot;
-              </p>
-            </div>
-          )}
-        </div>
+        </aside>
       </div>
+
       {/* Dialog para Alterar Link do Google Maps */}
       <Dialog open={isEditingMapsLink} onOpenChange={setIsEditingMapsLink}>
         <DialogContent className="sm:max-w-md">

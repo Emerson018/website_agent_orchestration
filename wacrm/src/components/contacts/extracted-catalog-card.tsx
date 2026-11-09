@@ -30,6 +30,8 @@ export interface ExtractedCatalogCardProps {
   onFilesChange: (files: CatalogFile[]) => void;
   /** promptMestre vem preenchido quando o backend refez o Prompt Mestre com o catálogo novo. */
   onCatalogChange: (catalog: ExtractedCatalog, promptMestre: string | null) => void;
+  /** Dentro de uma Etapa do Lead: sem moldura e sem título próprio. */
+  embedded?: boolean;
 }
 
 function readAsBase64(file: File): Promise<string> {
@@ -51,7 +53,14 @@ async function readJson(
   }
 }
 
-export function ExtractedCatalogCard({ leadId, files, catalog, onFilesChange, onCatalogChange }: ExtractedCatalogCardProps) {
+export function ExtractedCatalogCard({
+  leadId,
+  files,
+  catalog,
+  onFilesChange,
+  onCatalogChange,
+  embedded = false,
+}: ExtractedCatalogCardProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -159,13 +168,15 @@ export function ExtractedCatalogCard({ leadId, files, catalog, onFilesChange, on
   }
 
   return (
-    <div className="p-5 rounded-2xl bg-card border border-border space-y-4">
+    <div className={embedded ? 'space-y-4' : 'p-5 rounded-2xl bg-card border border-border space-y-4'}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/50 pb-3">
         <div>
-          <h2 className="text-sm font-semibold tracking-wider uppercase text-foreground flex items-center gap-2">
-            <BookOpen className="size-4 text-primary" />
-            Catálogo Extraído
-          </h2>
+          {!embedded && (
+            <h2 className="text-sm font-semibold tracking-wider uppercase text-foreground flex items-center gap-2">
+              <BookOpen className="size-4 text-primary" />
+              Catálogo Extraído
+            </h2>
+          )}
           <p className="text-xs text-muted-foreground mt-0.5">
             Envie fotos ou PDFs de cardápios, tabelas de preço ou catálogos. JPG, PNG, WEBP ou PDF, até 15 MB por envio.
           </p>
