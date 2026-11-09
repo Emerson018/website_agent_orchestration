@@ -682,6 +682,29 @@ async function findContact(id) {
   return data || null;
 }
 
+// Refaz o Prompt Mestre com o catálogo novo quando o lead já tem diagnóstico (sem chamar o Gemini)
+function rebuildMasterPrompt(contact, additionalData) {
+  if (!additionalData.diagnostico_ia) return null;
+  const dossie = additionalData.dossie || null;
+  return buildMasterPrompt({
+    companyName: contact.company || contact.name || dossie?.nome_verificado || 'Empresa',
+    dossie,
+    diagnostico: additionalData.diagnostico_ia,
+    scrapedData: additionalData.scraped_data || null,
+    mapsUrl: dossie?.google_maps_url || additionalData.maps_url || additionalData.maps_search_link || '',
+    catalogoExtraido: additionalData.catalogo_extraido || null,
+  });
+}
+
+// Salva o Catálogo Extraído e, se houver diagnóstico, o Prompt Mestre refeito
+async function saveExtractedCatalog(contact, catalogoExtraido) {
+  const additionalData = { ...(contact.additional_data || {}), catalogo_extraido: catalogoExtraido };
+  const promptMestre = rebuildMasterPrompt(contact, additionalData);
+  if (promptMestre) additionalData.prompt_mestre = promptMestre;
+  const { error } = await supabase.from('contacts').update({ additional_data: additionalData }).eq('id', contact.id);
+  return { error, promptMestre };
+}
+
 async function saveCatalogFiles(contact, files) {
   const { error } = await supabase
     .from('contacts')
@@ -756,7 +779,10 @@ app.delete('/api/leads/:id/catalog-files/:fileId', async (req, res) => {
     }
 
     if (target.path) {
-      await supabase.storage.from(CATALOG_BUCKET).remove([target.path]);
+      const { error: rmErr } = await supabase.storage.from(CATALOG_BUCKET).remove([target.path]);
+      if (rmErr) {
+        return res.status(502).json({ error: `Falha ao remover "${target.name}" do Storage: ${rmErr.message}` });
+      }
     }
     const files = current.filter((f) => f.id !== fileId);
     const saveErr = await saveCatalogFiles(contact, files);
@@ -786,7 +812,7 @@ app.post('/api/leads/:id/extract-catalog', async (req, res) => {
     });
 
     if (!result.success) {
-      const status = { NO_FILES: 400, MISSING_API_KEY: 412 }[result.code] || 502;
+      const status = { NO_FILES: 400, MISSING_API_KEY: 412, FILES_TOO_LARGE: 413 }[result.code] || 502;
       return res.status(status).json(result);
     }
 
@@ -799,16 +825,13 @@ app.post('/api/leads/:id/extract-catalog', async (req, res) => {
     };
 
     // Relê o contato para não sobrescrever o que mudou durante a chamada ao Gemini
-    const fresh = (await findContact(id)) || contact;
-    const { error: saveErr } = await supabase
-      .from('contacts')
-      .update({ additional_data: { ...(fresh.additional_data || {}), catalogo_extraido: catalogoExtraido } })
-      .eq('id', contact.id);
+    const latestContact = (await findContact(id)) || contact;
+    const { error: saveErr, promptMestre } = await saveExtractedCatalog(latestContact, catalogoExtraido);
     if (saveErr) {
       return res.status(502).json({ error: `Falha ao salvar o catálogo no contato: ${saveErr.message}` });
     }
 
-    return res.json({ success: true, catalogo_extraido: catalogoExtraido });
+    return res.json({ success: true, catalogo_extraido: catalogoExtraido, prompt_mestre: promptMestre });
   } catch (err) {
     console.error(`[Catalogo] Erro ao extrair catálogo do lead ${id}:`, err.message);
     return res.status(500).json({ error: 'Erro ao extrair o catálogo.', details: err.message });
@@ -835,14 +858,11 @@ app.put('/api/leads/:id/extracted-catalog', async (req, res) => {
       editado_manualmente: true,
       editado_em: new Date().toISOString(),
     };
-    const { error: saveErr } = await supabase
-      .from('contacts')
-      .update({ additional_data: { ...(contact.additional_data || {}), catalogo_extraido: catalogoExtraido } })
-      .eq('id', contact.id);
+    const { error: saveErr, promptMestre } = await saveExtractedCatalog(contact, catalogoExtraido);
     if (saveErr) {
       return res.status(502).json({ error: `Falha ao salvar o catálogo no contato: ${saveErr.message}` });
     }
-    return res.json({ success: true, catalogo_extraido: catalogoExtraido });
+    return res.json({ success: true, catalogo_extraido: catalogoExtraido, prompt_mestre: promptMestre });
   } catch (err) {
     console.error(`[Catalogo] Erro ao salvar edição do catálogo do lead ${id}:`, err.message);
     return res.status(500).json({ error: 'Erro ao salvar o catálogo.', details: err.message });

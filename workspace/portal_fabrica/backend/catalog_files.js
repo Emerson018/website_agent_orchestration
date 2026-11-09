@@ -8,6 +8,23 @@ export const MAX_CATALOG_UPLOAD_BYTES = 15 * 1024 * 1024;
 
 export const CATALOG_BUCKET = 'lead-documents';
 
+// Confere os primeiros bytes do arquivo contra o tipo declarado pelo navegador
+function matchesSignature(buffer, mimeType) {
+  const ascii = (start, end) => buffer.subarray(start, end).toString('latin1');
+  switch (mimeType) {
+    case 'image/png':
+      return buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+    case 'image/jpeg':
+      return buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+    case 'image/webp':
+      return ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP';
+    case 'application/pdf':
+      return ascii(0, 5) === '%PDF-';
+    default:
+      return false;
+  }
+}
+
 /**
  * Valida um envio de arquivos do catálogo e decodifica o base64.
  * @returns {{ ok: true, files: Array<{name, mimeType, buffer}> } | { ok: false, status: number, error: string }}
@@ -40,6 +57,15 @@ export function parseCatalogUpload(files) {
 
   if (total > MAX_CATALOG_UPLOAD_BYTES) {
     return { ok: false, status: 413, error: 'O envio passa de 15 MB. Envie menos arquivos por vez ou arquivos menores.' };
+  }
+
+  const mismatched = parsed.find((f) => !matchesSignature(f.buffer, f.mimeType));
+  if (mismatched) {
+    return {
+      ok: false,
+      status: 400,
+      error: `O conteúdo de "${mismatched.name}" não é um arquivo JPG, PNG, WEBP ou PDF válido.`,
+    };
   }
 
   return { ok: true, files: parsed };

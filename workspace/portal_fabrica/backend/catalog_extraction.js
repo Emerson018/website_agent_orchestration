@@ -1,4 +1,5 @@
 import { cleanApiKey, defaultGeminiApiKey, fileUrlToInlinePart, generateGeminiContent } from './gemini_client.js';
+import { MAX_CATALOG_UPLOAD_BYTES } from './catalog_files.js';
 
 // Linha que marca uma extração sem itens; o Prompt Mestre usa para decidir pelos marcadores
 export const NO_CATALOG_ITEMS_LINE = 'Nenhum item de catálogo encontrado nos arquivos.';
@@ -52,7 +53,7 @@ function stripCodeFence(text) {
  * Envia os arquivos do Catálogo Extraído ao Gemini e devolve o markdown.
  * @returns {Promise<{success: true, markdown: string, model: string, processed: number} | {success: false, code: string, error: string}>}
  */
-export async function extractCatalog({ files, companyName, apiKey = defaultGeminiApiKey(), models }) {
+export async function extractCatalog({ files, companyName, apiKey = defaultGeminiApiKey() }) {
   if (!Array.isArray(files) || files.length === 0) {
     return { success: false, code: 'NO_FILES', error: 'Envie ao menos um arquivo antes de extrair o catálogo.' };
   }
@@ -64,29 +65,44 @@ export async function extractCatalog({ files, companyName, apiKey = defaultGemin
     };
   }
 
+  // Todos os arquivos vão numa só requisição ao Gemini, que tem limite de tamanho
+  const totalBytes = files.reduce((sum, f) => sum + (Number(f.size) || 0), 0);
+  if (totalBytes > MAX_CATALOG_UPLOAD_BYTES) {
+    return {
+      success: false,
+      code: 'FILES_TOO_LARGE',
+      error: 'Os arquivos guardados somam mais de 15 MB. Remova alguns antes de extrair o catálogo.',
+    };
+  }
+
   const fileParts = [];
+  const unavailable = [];
   for (const file of files) {
     const part = await fileUrlToInlinePart(file.url, { timeoutMs: 15000, fallbackMimeType: file.mime_type });
     if (part) fileParts.push(part);
+    else unavailable.push(file.name);
   }
-  if (fileParts.length === 0) {
-    return { success: false, code: 'FILES_UNAVAILABLE', error: 'Não foi possível baixar nenhum dos arquivos enviados.' };
+  if (unavailable.length > 0) {
+    return {
+      success: false,
+      code: 'FILES_UNAVAILABLE',
+      error: `Não foi possível baixar: ${unavailable.join(', ')}. Remova ou envie esses arquivos de novo.`,
+    };
   }
 
-  const gemini = await generateGeminiContent({
+  const reply = await generateGeminiContent({
     apiKey,
-    ...(models ? { models } : {}),
     parts: [{ text: buildCatalogExtractionPrompt({ companyName }) }, ...fileParts],
     generationConfig: { temperature: 0.1 },
     timeoutMs: 60000,
   });
-  if (!gemini.success) return gemini;
+  if (!reply.success) return reply;
 
-  const markdown = stripCodeFence(gemini.text);
+  const markdown = stripCodeFence(reply.text);
   if (!markdown) {
     return { success: false, code: 'EMPTY_RESPONSE', error: 'O Gemini não devolveu conteúdo para o catálogo.' };
   }
-  return { success: true, markdown, model: gemini.model, processed: fileParts.length };
+  return { success: true, markdown, model: reply.model, processed: fileParts.length };
 }
 
 /** O Catálogo Extraído tem ao menos um item (### <Item>) e não é a resposta "sem itens". */

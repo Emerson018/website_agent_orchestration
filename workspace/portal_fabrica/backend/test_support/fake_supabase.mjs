@@ -50,6 +50,8 @@ export function createFakeSupabase(seed = {}) {
 
   // Storage em memória: objects[bucket][path] = { size, contentType }
   const objects = {};
+  // Permite simular falhas do Storage nos testes: storageErrors.remove = 'mensagem'
+  const storageErrors = {};
   const storage = {
     from(bucket) {
       const files = (objects[bucket] ||= {});
@@ -62,6 +64,7 @@ export function createFakeSupabase(seed = {}) {
           return { data: { publicUrl: `https://fake.storage/${bucket}/${path}` } };
         },
         async remove(paths) {
+          if (storageErrors.remove) return { data: null, error: { message: storageErrors.remove } };
           for (const p of paths) delete files[p];
           return { data: paths, error: null };
         },
@@ -69,5 +72,5 @@ export function createFakeSupabase(seed = {}) {
     },
   };
 
-  return { tables, objects, storage, from: query };
+  return { tables, objects, storage, storageErrors, from: query };
 }

@@ -777,10 +777,23 @@ export default function ContactProfilePage() {
               );
             }}
             catalog={additionalData.catalogo_extraido || null}
-            onCatalogChange={(catalog) => {
+            onCatalogChange={(catalog, newPrompt) => {
               setContact((prev: any) =>
-                prev ? { ...prev, additional_data: { ...(prev.additional_data || {}), catalogo_extraido: catalog } } : prev
+                prev
+                  ? {
+                      ...prev,
+                      additional_data: {
+                        ...(prev.additional_data || {}),
+                        catalogo_extraido: catalog,
+                        ...(newPrompt ? { prompt_mestre: newPrompt } : {}),
+                      },
+                    }
+                  : prev
               );
+              if (newPrompt) {
+                setPromptMestre(newPrompt);
+                setOriginalPrompt(newPrompt);
+              }
             }}
           />
 

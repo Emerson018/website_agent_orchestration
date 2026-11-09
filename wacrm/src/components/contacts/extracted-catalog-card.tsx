@@ -28,7 +28,8 @@ export interface ExtractedCatalogCardProps {
   files: CatalogFile[];
   catalog: ExtractedCatalog | null;
   onFilesChange: (files: CatalogFile[]) => void;
-  onCatalogChange: (catalog: ExtractedCatalog) => void;
+  /** promptMestre vem preenchido quando o backend refez o Prompt Mestre com o catálogo novo. */
+  onCatalogChange: (catalog: ExtractedCatalog, promptMestre: string | null) => void;
 }
 
 function readAsBase64(file: File): Promise<string> {
@@ -42,7 +43,7 @@ function readAsBase64(file: File): Promise<string> {
 
 async function readJson(
   res: Response
-): Promise<{ error?: string; files?: CatalogFile[]; catalogo_extraido?: ExtractedCatalog }> {
+): Promise<{ error?: string; files?: CatalogFile[]; catalogo_extraido?: ExtractedCatalog; prompt_mestre?: string | null }> {
   try {
     return await res.json();
   } catch {
@@ -86,7 +87,7 @@ export function ExtractedCatalogCard({ leadId, files, catalog, onFilesChange, on
       });
       const data = await readJson(res);
       if (!res.ok || !data.catalogo_extraido) throw new Error(data.error || 'Falha ao salvar o catálogo.');
-      onCatalogChange(data.catalogo_extraido);
+      onCatalogChange(data.catalogo_extraido, data.prompt_mestre ?? null);
       toast.success('Catálogo salvo.');
     } catch (err) {
       toast.error((err as Error).message);
@@ -102,7 +103,7 @@ export function ExtractedCatalogCard({ leadId, files, catalog, onFilesChange, on
       const res = await fetch(`/api/leads/${leadId}/extract-catalog`, { method: 'POST' });
       const data = await readJson(res);
       if (!res.ok || !data.catalogo_extraido) throw new Error(data.error || 'Falha ao extrair o catálogo.');
-      onCatalogChange(data.catalogo_extraido);
+      onCatalogChange(data.catalogo_extraido, data.prompt_mestre ?? null);
       toast.success('Catálogo extraído com sucesso.');
     } catch (err) {
       toast.error((err as Error).message);
