@@ -53,3 +53,13 @@ export function formatFileSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+/** Reextrair substitui o catálogo; pede confirmação quando há edições manuais salvas. */
+export function needsReextractConfirmation(catalog: ExtractedCatalog | null): boolean {
+  return Boolean(catalog?.editado_manualmente);
+}
+
+/** O rascunho da área de texto difere do catálogo salvo. */
+export function hasUnsavedCatalogEdit(draft: string, catalog: ExtractedCatalog | null): boolean {
+  return draft !== (catalog?.markdown ?? '');
+}

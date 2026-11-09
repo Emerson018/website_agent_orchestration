@@ -1,5 +1,25 @@
 import { describe, it, expect } from 'vitest';
-import { validateCatalogSelection, MAX_CATALOG_UPLOAD_BYTES } from './extracted-catalog';
+import {
+  validateCatalogSelection,
+  MAX_CATALOG_UPLOAD_BYTES,
+  needsReextractConfirmation,
+  hasUnsavedCatalogEdit,
+} from './extracted-catalog';
+
+describe('Catálogo Extraído: re-extraction and editing', () => {
+  it('asks for confirmation only when the saved catalog has manual edits', () => {
+    expect(needsReextractConfirmation(null)).toBe(false);
+    expect(needsReextractConfirmation({ markdown: '## A', editado_manualmente: false })).toBe(false);
+    expect(needsReextractConfirmation({ markdown: '## A' })).toBe(false);
+    expect(needsReextractConfirmation({ markdown: '## A', editado_manualmente: true })).toBe(true);
+  });
+
+  it('detects a draft that differs from the saved catalog', () => {
+    expect(hasUnsavedCatalogEdit('## A', { markdown: '## A' })).toBe(false);
+    expect(hasUnsavedCatalogEdit('## A\n- novo', { markdown: '## A' })).toBe(true);
+    expect(hasUnsavedCatalogEdit('', null)).toBe(false);
+  });
+});
 
 const file = (name: string, type: string, size = 1000) => ({ name, type, size });
 

@@ -815,6 +815,40 @@ app.post('/api/leads/:id/extract-catalog', async (req, res) => {
   }
 });
 
+// Catálogo Extraído: salva a edição manual do operador
+app.put('/api/leads/:id/extracted-catalog', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const markdown = typeof req.body?.markdown === 'string' ? req.body.markdown.trim() : '';
+    if (!markdown) {
+      return res.status(400).json({ error: 'O catálogo não pode ficar vazio.' });
+    }
+
+    const contact = await findContact(id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+
+    const catalogoExtraido = {
+      ...(contact.additional_data?.catalogo_extraido || {}),
+      markdown,
+      editado_manualmente: true,
+      editado_em: new Date().toISOString(),
+    };
+    const { error: saveErr } = await supabase
+      .from('contacts')
+      .update({ additional_data: { ...(contact.additional_data || {}), catalogo_extraido: catalogoExtraido } })
+      .eq('id', contact.id);
+    if (saveErr) {
+      return res.status(502).json({ error: `Falha ao salvar o catálogo no contato: ${saveErr.message}` });
+    }
+    return res.json({ success: true, catalogo_extraido: catalogoExtraido });
+  } catch (err) {
+    console.error(`[Catalogo] Erro ao salvar edição do catálogo do lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao salvar o catálogo.', details: err.message });
+  }
+});
+
 app.post('/api/leads/:id/diagnose', async (req, res) => {
   const { id } = req.params;
   console.log(`[Diagnostico] Iniciando diagnóstico multimodal da IA para lead ID: ${id}`);

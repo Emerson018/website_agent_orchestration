@@ -1,12 +1,23 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { BookOpen, FileText, ImageIcon, Loader2, Sparkles, Trash2, Upload } from 'lucide-react';
+import { BookOpen, FileText, ImageIcon, Loader2, Save, Sparkles, Trash2, Undo2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import {
   CATALOG_ACCEPT,
   formatFileSize,
+  hasUnsavedCatalogEdit,
+  needsReextractConfirmation,
   validateCatalogSelection,
   type CatalogFile,
   type ExtractedCatalog,
@@ -44,8 +55,48 @@ export function ExtractedCatalogCard({ leadId, files, catalog, onFilesChange, on
   const [isUploading, setIsUploading] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Rascunho da área de texto, reiniciado quando o catálogo salvo muda
+  const savedMarkdown = catalog?.markdown ?? '';
+  const [draft, setDraft] = useState(savedMarkdown);
+  const [syncedMarkdown, setSyncedMarkdown] = useState(savedMarkdown);
+  if (savedMarkdown !== syncedMarkdown) {
+    setSyncedMarkdown(savedMarkdown);
+    setDraft(savedMarkdown);
+  }
+  const isDirty = hasUnsavedCatalogEdit(draft, catalog);
+
+  function requestExtract() {
+    if (needsReextractConfirmation(catalog) || isDirty) {
+      setConfirmOpen(true);
+      return;
+    }
+    void handleExtract();
+  }
+
+  async function handleSave() {
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/leads/${leadId}/extracted-catalog`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markdown: draft }),
+      });
+      const data = await readJson(res);
+      if (!res.ok || !data.catalogo_extraido) throw new Error(data.error || 'Falha ao salvar o catálogo.');
+      onCatalogChange(data.catalogo_extraido);
+      toast.success('Catálogo salvo.');
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   async function handleExtract() {
+    setConfirmOpen(false);
     setIsExtracting(true);
     try {
       const res = await fetch(`/api/leads/${leadId}/extract-catalog`, { method: 'POST' });
@@ -177,7 +228,7 @@ export function ExtractedCatalogCard({ leadId, files, catalog, onFilesChange, on
           size="sm"
           className="w-full gap-1.5 text-xs"
           disabled={files.length === 0 || isExtracting || isUploading}
-          onClick={handleExtract}
+          onClick={requestExtract}
           title={files.length === 0 ? 'Envie ao menos um arquivo para extrair o catálogo' : undefined}
         >
           {isExtracting ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
@@ -185,17 +236,67 @@ export function ExtractedCatalogCard({ leadId, files, catalog, onFilesChange, on
         </Button>
 
         {catalog?.markdown ? (
-          <div className="space-y-1">
+          <div className="space-y-2">
             <p className="text-[11px] text-muted-foreground">
               {catalog.gerado_em ? `Gerado em ${new Date(catalog.gerado_em).toLocaleString('pt-BR')}` : 'Catálogo salvo'}
               {catalog.arquivos_processados ? ` a partir de ${catalog.arquivos_processados} arquivo(s)` : ''}
+              {catalog.editado_manualmente ? ' · editado manualmente' : ''}
             </p>
-            <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-muted/40 p-3 text-xs text-foreground">
-              {catalog.markdown}
-            </pre>
+            <Textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              disabled={isSaving || isExtracting}
+              className="min-h-72 font-mono text-xs leading-relaxed"
+              aria-label="Markdown do Catálogo Extraído"
+            />
+            {isDirty && (
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  disabled={isSaving || !draft.trim()}
+                  onClick={handleSave}
+                >
+                  {isSaving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+                  Salvar edição
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  disabled={isSaving}
+                  onClick={() => setDraft(savedMarkdown)}
+                >
+                  <Undo2 className="size-3.5" />
+                  Descartar
+                </Button>
+              </div>
+            )}
           </div>
         ) : null}
       </div>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Extrair o catálogo de novo?</DialogTitle>
+            <DialogDescription>
+              Uma nova extração usa todos os arquivos guardados e substitui o catálogo atual, incluindo as suas edições
+              manuais.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmOpen(false)}>
+              Manter catálogo atual
+            </Button>
+            <Button type="button" onClick={() => void handleExtract()}>
+              Extrair de novo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
