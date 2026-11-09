@@ -45,7 +45,6 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { ContactForm } from '@/components/contacts/contact-form';
-import { ContactDetailView } from '@/components/contacts/contact-detail-view';
 import { ImportModal } from '@/components/contacts/import-modal';
 import { CustomFieldsManager } from '@/components/contacts/custom-fields-manager';
 import { useCan } from '@/hooks/use-can';
@@ -70,8 +69,6 @@ export default function ContactsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editContact, setEditContact] = useState<Contact | null>(null);
   const [editContactTags, setEditContactTags] = useState<ContactTag[]>([]);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [detailContactId, setDetailContactId] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -526,14 +523,6 @@ export default function ContactsPage() {
           setFormOpen(false);
           openDetail(id);
         }}
-      />
-
-      {/* Contact Detail Sheet */}
-      <ContactDetailView
-        open={detailOpen}
-        onOpenChange={setDetailOpen}
-        contactId={detailContactId}
-        onUpdated={fetchContacts}
       />
 
       {/* Import Modal */}
