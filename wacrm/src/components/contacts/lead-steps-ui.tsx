@@ -113,21 +113,22 @@ export function LeadProgressPanel({ steps, active, onSelect }: LeadProgressPanel
 interface LeadStepSectionProps {
   step: LeadStep;
   open: boolean;
-  onOpen: (key: StepKey) => void;
+  /** Abre a etapa fechada e fecha a etapa aberta. */
+  onToggle: (key: StepKey) => void;
   /** Ação principal da etapa, mostrada no cabeçalho quando aberta. */
   action?: React.ReactNode;
   children: React.ReactNode;
 }
 
 /** Molde único de cada Etapa do Lead: fechada vira uma linha de resumo; aberta mostra status, ação e conteúdo. */
-export function LeadStepSection({ step, open, onOpen, action, children }: LeadStepSectionProps) {
+export function LeadStepSection({ step, open, onToggle, action, children }: LeadStepSectionProps) {
   const headingId = `etapa-${step.key}-titulo`;
   return (
     <section id={`etapa-${step.key}`} aria-labelledby={headingId} className="scroll-mt-6 border-b border-border/60 last:border-b-0">
       <div className={cn('flex flex-wrap items-center gap-3 px-5 py-3', open && 'bg-muted/30')}>
         <button
           type="button"
-          onClick={() => onOpen(step.key)}
+          onClick={() => onToggle(step.key)}
           aria-expanded={open}
           className="flex min-w-0 flex-1 items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md"
         >

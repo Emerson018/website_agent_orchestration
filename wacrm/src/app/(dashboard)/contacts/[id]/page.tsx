@@ -62,8 +62,8 @@ export default function ContactProfilePage() {
   const [contact, setContact] = useState<Contact | null>(null);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
-  // Etapa do Lead aberta; null = abrir o Próximo Passo
-  const [openStepKey, setOpenStepKey] = useState<StepKey | null>(null);
+  // Etapa do Lead aberta: undefined = ainda não escolhida (abre o Próximo Passo); null = todas fechadas
+  const [openStepKey, setOpenStepKey] = useState<StepKey | null | undefined>(undefined);
   // Próximo Passo da Raspagem: pede ao card que inicie a raspagem
   const [autoScrape, setAutoScrape] = useState(false);
   const [enrichingDossier, setEnrichingDossier] = useState(false);
@@ -94,7 +94,7 @@ export default function ContactProfilePage() {
       if (data) {
         setContact(data);
         // A página abre no Próximo Passo; depois disso a etapa aberta é escolha do operador
-        setOpenStepKey((prev) => prev ?? nextLeadStep(computeLeadSteps(data))?.key ?? 'dossie');
+        setOpenStepKey((prev) => (prev === undefined ? nextLeadStep(computeLeadSteps(data))?.key ?? 'dossie' : prev));
         const addData = data.additional_data as Record<string, any> || {};
         const savedPrompt = addData.prompt_mestre || '';
         setPromptMestre(savedPrompt);
@@ -136,7 +136,9 @@ export default function ContactProfilePage() {
   const nextStep = nextLeadStep(leadSteps);
 
   const disqualification: Disqualification | null = additionalData.desqualificacao || null;
-  const openStep: StepKey = openStepKey ?? nextStep?.key ?? 'dossie';
+  const openStep: StepKey | null = openStepKey === undefined ? nextStep?.key ?? 'dossie' : openStepKey;
+  // A seta da etapa abre a etapa fechada e fecha a etapa aberta
+  const toggleStep = (key: StepKey) => setOpenStepKey(openStep === key ? null : key);
   const setDisqualification = (record: Disqualification | null) => {
     setContact((prev: any) => {
       if (!prev) return prev;
@@ -558,7 +560,7 @@ export default function ContactProfilePage() {
             <LeadStepSection
               step={stepOf('briefing')}
               open={openStep === 'briefing'}
-              onOpen={setOpenStepKey}
+              onToggle={toggleStep}
               action={
                 <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={startEditingCompany}>
                   <Pencil className="size-3.5" />
@@ -602,9 +604,6 @@ export default function ContactProfilePage() {
                       <dd className="flex items-center gap-1.5">
                         <PhoneCall className="size-3.5 text-muted-foreground" />
                         {dossie.telefone_estabelecimento}
-                        <Badge variant="outline" className="px-1 py-0 text-[10px]">
-                          Diferente do WhatsApp
-                        </Badge>
                       </dd>
                     </>
                   )}
@@ -615,7 +614,7 @@ export default function ContactProfilePage() {
             <LeadStepSection
               step={stepOf('dossie')}
               open={openStep === 'dossie'}
-              onOpen={setOpenStepKey}
+              onToggle={toggleStep}
               action={
                 <>
                   <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs" onClick={openMapsLinkDialog}>
@@ -830,7 +829,7 @@ export default function ContactProfilePage() {
             </LeadStepSection>
 
             {/* 3. Raspagem */}
-            <LeadStepSection step={stepOf('raspagem')} open={openStep === 'raspagem'} onOpen={setOpenStepKey}>
+            <LeadStepSection step={stepOf('raspagem')} open={openStep === 'raspagem'} onToggle={toggleStep}>
               {stepOf('raspagem').status === 'opcional' && (
                 <p className="mb-3 text-sm text-muted-foreground">
                   Este lead não tem site nem URL cadastrada, então a raspagem é opcional. Adicione uma URL abaixo se houver.
@@ -868,7 +867,7 @@ export default function ContactProfilePage() {
             </LeadStepSection>
 
             {/* 4. Catálogo Extraído */}
-            <LeadStepSection step={stepOf('catalogo')} open={openStep === 'catalogo'} onOpen={setOpenStepKey}>
+            <LeadStepSection step={stepOf('catalogo')} open={openStep === 'catalogo'} onToggle={toggleStep}>
               <ExtractedCatalogCard
                 embedded
                 leadId={contact.id}
@@ -904,7 +903,7 @@ export default function ContactProfilePage() {
             <LeadStepSection
               step={stepOf('diagnostico')}
               open={openStep === 'diagnostico'}
-              onOpen={setOpenStepKey}
+              onToggle={toggleStep}
               action={
                 <Button
                   variant="outline"
@@ -960,7 +959,7 @@ export default function ContactProfilePage() {
             </LeadStepSection>
 
             {/* 6. Prompt Mestre */}
-            <LeadStepSection step={stepOf('prompt')} open={openStep === 'prompt'} onOpen={setOpenStepKey}>
+            <LeadStepSection step={stepOf('prompt')} open={openStep === 'prompt'} onToggle={toggleStep}>
               <StepEmptyState>
                 {additionalData.prompt_mestre
                   ? 'O Prompt Mestre fica sempre à mão, na coluna ao lado.'
