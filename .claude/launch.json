@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "orquestrador-ia",
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": ["-u", "-m", "uvicorn", "ai_software_factory.main:app_api", "--host", "0.0.0.0", "--port", "8000"],
+      "port": 8000
+    },
+    {
+      "name": "portal-backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "workspace/portal_fabrica/backend", "run", "dev"],
+      "port": 5000
+    },
+    {
+      "name": "portal-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "workspace/portal_fabrica", "run", "dev", "--", "--port", "5180", "--strictPort"],
+      "port": 5180
+    },
+    {
+      "name": "wacrm",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "wacrm", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}
