@@ -49,6 +49,8 @@ import {
   StepEmptyState,
 } from '@/components/contacts/lead-steps-ui';
 import { computeSiteChecklist } from '@/lib/contacts/site-checklist';
+import { DisqualifiedBanner, DisqualifyButton } from '@/components/contacts/disqualification';
+import type { Disqualification } from '@/lib/contacts/disqualification';
 import { computeLeadSteps, nextLeadStep, type LeadStep, type StepKey } from '@/lib/contacts/lead-steps';
 
 export default function ContactProfilePage() {
@@ -129,7 +131,17 @@ export default function ContactProfilePage() {
   const leadSteps = contact ? computeLeadSteps(contact) : [];
   const nextStep = nextLeadStep(leadSteps);
 
+  const disqualification: Disqualification | null = additionalData.desqualificacao || null;
   const openStep: StepKey = openStepKey ?? nextStep?.key ?? 'dossie';
+  const setDisqualification = (record: Disqualification | null) => {
+    setContact((prev: any) => {
+      if (!prev) return prev;
+      const nextData = { ...(prev.additional_data || {}) };
+      if (record) nextData.desqualificacao = record;
+      else delete nextData.desqualificacao;
+      return { ...prev, additional_data: nextData };
+    });
+  };
   const stepOf = (key: StepKey) => leadSteps.find((s) => s.key === key)!;
   const startEditingCompany = () => {
     setCompanyInput(contact?.company || dossie?.nome_verificado || '');
@@ -514,9 +526,18 @@ export default function ContactProfilePage() {
               WhatsApp
             </a>
           )}
-          <NextStepButton step={nextStep} busy={enrichingDossier || diagnosing} onRun={runNextStep} />
+          {!disqualification && (
+            <>
+              <DisqualifyButton leadId={contact.id} onDisqualified={setDisqualification} />
+              <NextStepButton step={nextStep} busy={enrichingDossier || diagnosing} onRun={runNextStep} />
+            </>
+          )}
         </div>
       </header>
+
+      {disqualification && (
+        <DisqualifiedBanner leadId={contact.id} record={disqualification} onReopened={() => setDisqualification(null)} />
+      )}
 
       {/* Painel de Progresso das Etapas do Lead */}
       <LeadProgressPanel steps={leadSteps} active={openStep} onSelect={setOpenStepKey} />

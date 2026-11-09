@@ -874,6 +874,88 @@ app.put('/api/leads/:id/extracted-catalog', async (req, res) => {
   }
 });
 
+// Desqualificação (Decision Gate): motivos aceitos
+const DISQUALIFY_REASONS = ['Já tem site', 'Sem perfil para o serviço', 'Sem resposta', 'Fora da região', 'Outro'];
+
+// Desqualifica o lead: Deals abertos viram perdidos e o motivo fica registrado no contato
+app.post('/api/leads/:id/disqualify', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const motivo = typeof req.body?.motivo === 'string' ? req.body.motivo.trim() : '';
+    if (!DISQUALIFY_REASONS.includes(motivo)) {
+      return res.status(400).json({ error: `Escolha um motivo: ${DISQUALIFY_REASONS.join(', ')}.` });
+    }
+    const detalhe = typeof req.body?.detalhe === 'string' ? req.body.detalhe.trim() : '';
+
+    const contact = await findContact(id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+
+    const { data: deals, error: dealsErr } = await supabase.from('deals').select('id, status').eq('contact_id', contact.id);
+    if (dealsErr) {
+      return res.status(502).json({ error: `Falha ao consultar os Deals do lead: ${dealsErr.message}` });
+    }
+    const openDeals = (deals || []).filter((d) => d.status === 'open').map((d) => d.id);
+    for (const dealId of openDeals) {
+      const { error } = await supabase.from('deals').update({ status: 'lost' }).eq('id', dealId);
+      if (error) {
+        return res.status(502).json({ error: `Falha ao marcar o Deal como perdido: ${error.message}` });
+      }
+    }
+
+    const desqualificacao = {
+      motivo,
+      ...(detalhe ? { detalhe } : {}),
+      em: new Date().toISOString(),
+      deals_fechados: openDeals,
+    };
+    const { error: saveErr } = await supabase
+      .from('contacts')
+      .update({ additional_data: { ...(contact.additional_data || {}), desqualificacao } })
+      .eq('id', contact.id);
+    if (saveErr) {
+      return res.status(502).json({ error: `Falha ao registrar a desqualificação: ${saveErr.message}` });
+    }
+    return res.json({ success: true, desqualificacao });
+  } catch (err) {
+    console.error(`[DecisionGate] Erro ao desqualificar o lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao desqualificar o lead.', details: err.message });
+  }
+});
+
+// Reabre um lead desqualificado: reabre só os Deals fechados pela desqualificação
+app.post('/api/leads/:id/reopen', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const contact = await findContact(id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+    const record = contact.additional_data?.desqualificacao;
+    if (!record) {
+      return res.status(409).json({ error: 'Este lead não está desqualificado.' });
+    }
+
+    for (const dealId of Array.isArray(record.deals_fechados) ? record.deals_fechados : []) {
+      const { error } = await supabase.from('deals').update({ status: 'open' }).eq('id', dealId);
+      if (error) {
+        return res.status(502).json({ error: `Falha ao reabrir o Deal: ${error.message}` });
+      }
+    }
+
+    const { desqualificacao: _removed, ...rest } = contact.additional_data || {};
+    const { error: saveErr } = await supabase.from('contacts').update({ additional_data: rest }).eq('id', contact.id);
+    if (saveErr) {
+      return res.status(502).json({ error: `Falha ao remover a desqualificação: ${saveErr.message}` });
+    }
+    return res.json({ success: true });
+  } catch (err) {
+    console.error(`[DecisionGate] Erro ao reabrir o lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao reabrir o lead.', details: err.message });
+  }
+});
+
 app.post('/api/leads/:id/diagnose', async (req, res) => {
   const { id } = req.params;
   console.log(`[Diagnostico] Iniciando diagnóstico multimodal da IA para lead ID: ${id}`);
