@@ -3,15 +3,15 @@
 
 :root {
   /* Semantic Design Direction Tokens */
-  --primary-color: #6366F1;
+  --primary-color: #EAB308;
   --secondary-color: #1A1A1A;
-  --bg-color: #0F172A;
-  --surface-color: #1E293B;
+  --bg-color: #1C1917;
+  --surface-color: #292524;
   --border-color: #26221F;
-  --text-color: #F8FAFC;
-  --muted-color: #94A3B8;
-  --font-display: 'Space Grotesk', sans-serif;
-  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  --text-color: #FAFAF9;
+  --muted-color: #D6D3D1;
+  --font-display: 'Fraunces', sans-serif;
+  --font-sans: 'DM Sans', sans-serif;
 }
 
 html {
