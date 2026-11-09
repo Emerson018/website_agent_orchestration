@@ -45,6 +45,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { ScraplingDeepScraperCard } from '@/components/contacts/scrapling-deep-scraper-card';
+import { ExtractedCatalogCard } from '@/components/contacts/extracted-catalog-card';
 
 export default function ContactProfilePage() {
   const params = useParams();
@@ -763,6 +764,17 @@ export default function ContactProfilePage() {
                   },
                 };
               });
+            }}
+          />
+
+          {/* Card: Catálogo Extraído (arquivos enviados pelo operador) */}
+          <ExtractedCatalogCard
+            leadId={contact.id}
+            files={Array.isArray(additionalData.catalogo_arquivos) ? additionalData.catalogo_arquivos : []}
+            onFilesChange={(files) => {
+              setContact((prev: any) =>
+                prev ? { ...prev, additional_data: { ...(prev.additional_data || {}), catalogo_arquivos: files } } : prev
+              );
             }}
           />
 

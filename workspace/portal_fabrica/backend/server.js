@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import { buildLeadDossier, extractPlaceQueryFromUrl } from './places_service.js';
 
 import { runMultimodalBusinessDiagnosis, buildMasterPrompt } from './multimodal_diagnosis_service.js';
+import { CATALOG_BUCKET, catalogStoragePath, newCatalogFileId, parseCatalogUpload } from './catalog_files.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -671,6 +672,100 @@ app.post('/api/leads/:id/scrape-deep', async (req, res) => {
     return res.status(500).json({
       error: `Erro ao executar raspagem profunda: ${error.message}`,
     });
+  }
+});
+
+async function findContact(id) {
+  if (!isSupabaseActive) return null;
+  const { data } = await supabase.from('contacts').select('*').eq('id', id).maybeSingle();
+  return data || null;
+}
+
+async function saveCatalogFiles(contact, files) {
+  const { error } = await supabase
+    .from('contacts')
+    .update({ additional_data: { ...(contact.additional_data || {}), catalogo_arquivos: files } })
+    .eq('id', contact.id);
+  return error;
+}
+
+// Catálogo Extraído: envio de arquivos (imagens e PDF) do lead
+app.post('/api/leads/:id/catalog-files', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const contact = await findContact(id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+
+    const parsed = parseCatalogUpload(req.body?.files);
+    if (!parsed.ok) {
+      return res.status(parsed.status).json({ error: parsed.error });
+    }
+
+    const stored = [];
+    for (const file of parsed.files) {
+      const path = catalogStoragePath(contact.id, file.name);
+      const { error: upErr } = await supabase.storage
+        .from(CATALOG_BUCKET)
+        .upload(path, file.buffer, { contentType: file.mimeType, upsert: false });
+      if (upErr) {
+        // Desfaz o que já subiu neste envio para não deixar arquivos órfãos
+        if (stored.length > 0) await supabase.storage.from(CATALOG_BUCKET).remove(stored.map((f) => f.path));
+        return res.status(502).json({ error: `Falha ao guardar "${file.name}": ${upErr.message}` });
+      }
+      const { data: urlData } = supabase.storage.from(CATALOG_BUCKET).getPublicUrl(path);
+      stored.push({
+        id: newCatalogFileId(),
+        name: file.name,
+        mime_type: file.mimeType,
+        size: file.buffer.length,
+        path,
+        url: urlData.publicUrl,
+        enviado_em: new Date().toISOString(),
+      });
+    }
+
+    const current = Array.isArray(contact.additional_data?.catalogo_arquivos) ? contact.additional_data.catalogo_arquivos : [];
+    const files = [...current, ...stored];
+    const saveErr = await saveCatalogFiles(contact, files);
+    if (saveErr) {
+      return res.status(502).json({ error: `Falha ao registrar os arquivos no contato: ${saveErr.message}` });
+    }
+    return res.status(201).json({ success: true, files });
+  } catch (err) {
+    console.error(`[Catalogo] Erro ao enviar arquivos do lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao enviar arquivos do catálogo.', details: err.message });
+  }
+});
+
+// Catálogo Extraído: remoção de um arquivo do lead
+app.delete('/api/leads/:id/catalog-files/:fileId', async (req, res) => {
+  const { id, fileId } = req.params;
+  try {
+    const contact = await findContact(id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+
+    const current = Array.isArray(contact.additional_data?.catalogo_arquivos) ? contact.additional_data.catalogo_arquivos : [];
+    const target = current.find((f) => f.id === fileId);
+    if (!target) {
+      return res.status(404).json({ error: 'Arquivo não encontrado no catálogo deste lead.' });
+    }
+
+    if (target.path) {
+      await supabase.storage.from(CATALOG_BUCKET).remove([target.path]);
+    }
+    const files = current.filter((f) => f.id !== fileId);
+    const saveErr = await saveCatalogFiles(contact, files);
+    if (saveErr) {
+      return res.status(502).json({ error: `Falha ao atualizar os arquivos do contato: ${saveErr.message}` });
+    }
+    return res.json({ success: true, files });
+  } catch (err) {
+    console.error(`[Catalogo] Erro ao remover arquivo ${fileId} do lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao remover arquivo do catálogo.', details: err.message });
   }
 });
 
