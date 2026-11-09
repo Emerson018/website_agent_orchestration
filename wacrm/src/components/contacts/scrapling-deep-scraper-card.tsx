@@ -62,6 +62,9 @@ export interface ScraplingDeepScraperCardProps {
   className?: string;
   /** Dentro de uma Etapa do Lead: sem moldura e sem título próprio. */
   embedded?: boolean;
+  /** Inicia a raspagem assim que possível (Próximo Passo); onAutoStarted avisa que já começou. */
+  autoStart?: boolean;
+  onAutoStarted?: () => void;
 }
 
 export function ScraplingDeepScraperCard({
@@ -72,6 +75,8 @@ export function ScraplingDeepScraperCard({
   onScraped,
   className = '',
   embedded = false,
+  autoStart = false,
+  onAutoStarted,
 }: ScraplingDeepScraperCardProps) {
   // Inicializa a lista de URLs com as já cadastradas ou com o site do lead
   const [urls, setUrls] = useState<string[]>(() => {
@@ -178,6 +183,14 @@ export function ScraplingDeepScraperCard({
       setIsScraping(false);
     }
   };
+
+  // Próximo Passo pediu a raspagem: dispara uma vez e avisa a página
+  React.useEffect(() => {
+    if (!autoStart) return;
+    onAutoStarted?.();
+    void handleExecuteScrape();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart]);
 
   const items = scrapedData?.cardapio || [];
   const inst = scrapedData?.institucional;

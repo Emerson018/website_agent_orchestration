@@ -702,12 +702,13 @@ function rebuildMasterPrompt(contact, additionalData) {
 async function saveExtractedCatalog(contact, catalogoExtraido) {
   const additionalData = { ...(contact.additional_data || {}), catalogo_extraido: catalogoExtraido };
   const promptMestre = rebuildMasterPrompt(contact, additionalData);
+  const promptMestreGeradoEm = promptMestre ? new Date().toISOString() : null;
   if (promptMestre) {
     additionalData.prompt_mestre = promptMestre;
-    additionalData.prompt_mestre_gerado_em = new Date().toISOString();
+    additionalData.prompt_mestre_gerado_em = promptMestreGeradoEm;
   }
   const { error } = await supabase.from('contacts').update({ additional_data: additionalData }).eq('id', contact.id);
-  return { error, promptMestre };
+  return { error, promptMestre, promptMestreGeradoEm };
 }
 
 async function saveCatalogFiles(contact, files) {
@@ -831,12 +832,17 @@ app.post('/api/leads/:id/extract-catalog', async (req, res) => {
 
     // Relê o contato para não sobrescrever o que mudou durante a chamada ao Gemini
     const latestContact = (await findContact(id)) || contact;
-    const { error: saveErr, promptMestre } = await saveExtractedCatalog(latestContact, catalogoExtraido);
+    const { error: saveErr, promptMestre, promptMestreGeradoEm } = await saveExtractedCatalog(latestContact, catalogoExtraido);
     if (saveErr) {
       return res.status(502).json({ error: `Falha ao salvar o catálogo no contato: ${saveErr.message}` });
     }
 
-    return res.json({ success: true, catalogo_extraido: catalogoExtraido, prompt_mestre: promptMestre });
+    return res.json({
+      success: true,
+      catalogo_extraido: catalogoExtraido,
+      prompt_mestre: promptMestre,
+      prompt_mestre_gerado_em: promptMestreGeradoEm,
+    });
   } catch (err) {
     console.error(`[Catalogo] Erro ao extrair catálogo do lead ${id}:`, err.message);
     return res.status(500).json({ error: 'Erro ao extrair o catálogo.', details: err.message });
@@ -863,11 +869,16 @@ app.put('/api/leads/:id/extracted-catalog', async (req, res) => {
       editado_manualmente: true,
       editado_em: new Date().toISOString(),
     };
-    const { error: saveErr, promptMestre } = await saveExtractedCatalog(contact, catalogoExtraido);
+    const { error: saveErr, promptMestre, promptMestreGeradoEm } = await saveExtractedCatalog(contact, catalogoExtraido);
     if (saveErr) {
       return res.status(502).json({ error: `Falha ao salvar o catálogo no contato: ${saveErr.message}` });
     }
-    return res.json({ success: true, catalogo_extraido: catalogoExtraido, prompt_mestre: promptMestre });
+    return res.json({
+      success: true,
+      catalogo_extraido: catalogoExtraido,
+      prompt_mestre: promptMestre,
+      prompt_mestre_gerado_em: promptMestreGeradoEm,
+    });
   } catch (err) {
     console.error(`[Catalogo] Erro ao salvar edição do catálogo do lead ${id}:`, err.message);
     return res.status(500).json({ error: 'Erro ao salvar o catálogo.', details: err.message });
@@ -897,13 +908,8 @@ app.post('/api/leads/:id/disqualify', async (req, res) => {
       return res.status(502).json({ error: `Falha ao consultar os Deals do lead: ${dealsErr.message}` });
     }
     const openDeals = (deals || []).filter((d) => d.status === 'open').map((d) => d.id);
-    for (const dealId of openDeals) {
-      const { error } = await supabase.from('deals').update({ status: 'lost' }).eq('id', dealId);
-      if (error) {
-        return res.status(502).json({ error: `Falha ao marcar o Deal como perdido: ${error.message}` });
-      }
-    }
 
+    // Grava o registro primeiro: se fechar algum Deal falhar, o Reabrir ainda sabe quais reabrir
     const desqualificacao = {
       motivo,
       ...(detalhe ? { detalhe } : {}),
@@ -916,6 +922,15 @@ app.post('/api/leads/:id/disqualify', async (req, res) => {
       .eq('id', contact.id);
     if (saveErr) {
       return res.status(502).json({ error: `Falha ao registrar a desqualificação: ${saveErr.message}` });
+    }
+
+    for (const dealId of openDeals) {
+      const { error } = await supabase.from('deals').update({ status: 'lost' }).eq('id', dealId);
+      if (error) {
+        return res.status(502).json({
+          error: `Desqualificação registrada, mas falhou ao marcar o Deal como perdido: ${error.message}`,
+        });
+      }
     }
     return res.json({ success: true, desqualificacao });
   } catch (err) {

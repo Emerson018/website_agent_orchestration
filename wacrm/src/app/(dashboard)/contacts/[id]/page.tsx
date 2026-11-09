@@ -64,6 +64,8 @@ export default function ContactProfilePage() {
   const [loading, setLoading] = useState(true);
   // Etapa do Lead aberta; null = abrir o Próximo Passo
   const [openStepKey, setOpenStepKey] = useState<StepKey | null>(null);
+  // Próximo Passo da Raspagem: pede ao card que inicie a raspagem
+  const [autoScrape, setAutoScrape] = useState(false);
   const [enrichingDossier, setEnrichingDossier] = useState(false);
   const [diagnosing, setDiagnosing] = useState(false);
   const [activePhoto, setActivePhoto] = useState<string | null>(null);
@@ -91,6 +93,8 @@ export default function ContactProfilePage() {
       const data = await getContactById(supabase, contactId);
       if (data) {
         setContact(data);
+        // A página abre no Próximo Passo; depois disso a etapa aberta é escolha do operador
+        setOpenStepKey((prev) => prev ?? nextLeadStep(computeLeadSteps(data))?.key ?? 'dossie');
         const addData = data.additional_data as Record<string, any> || {};
         const savedPrompt = addData.prompt_mestre || '';
         setPromptMestre(savedPrompt);
@@ -161,6 +165,10 @@ export default function ContactProfilePage() {
       case 'prompt':
         setOpenStepKey('diagnostico');
         handleRunAiDiagnosis();
+        break;
+      case 'raspagem':
+        setOpenStepKey('raspagem');
+        setAutoScrape(true);
         break;
       default:
         setOpenStepKey(step.key);
@@ -547,7 +555,17 @@ export default function ContactProfilePage() {
         <div className="lg:col-span-7 xl:col-span-8">
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             {/* 1. Briefing */}
-            <LeadStepSection step={stepOf('briefing')} open={openStep === 'briefing'} onOpen={setOpenStepKey}>
+            <LeadStepSection
+              step={stepOf('briefing')}
+              open={openStep === 'briefing'}
+              onOpen={setOpenStepKey}
+              action={
+                <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={startEditingCompany}>
+                  <Pencil className="size-3.5" />
+                  Editar nome
+                </Button>
+              }
+            >
               {stepOf('briefing').missing && (
                 <p className="mb-3 text-sm text-amber-300">
                   Falta {stepOf('briefing').missing!.join(', ')} para completar o briefing.
@@ -820,6 +838,8 @@ export default function ContactProfilePage() {
               )}
               <ScraplingDeepScraperCard
                 embedded
+                autoStart={autoScrape}
+                onAutoStarted={() => setAutoScrape(false)}
                 leadId={contact.id}
                 scrapedData={additionalData.scraped_data}
                 initialUrls={
@@ -859,7 +879,7 @@ export default function ContactProfilePage() {
                   );
                 }}
                 catalog={additionalData.catalogo_extraido || null}
-                onCatalogChange={(catalog, newPrompt) => {
+                onCatalogChange={(catalog, newPrompt, promptAt) => {
                   setContact((prev: any) =>
                     prev
                       ? {
@@ -867,7 +887,7 @@ export default function ContactProfilePage() {
                           additional_data: {
                             ...(prev.additional_data || {}),
                             catalogo_extraido: catalog,
-                            ...(newPrompt ? { prompt_mestre: newPrompt, prompt_mestre_gerado_em: new Date().toISOString() } : {}),
+                            ...(newPrompt ? { prompt_mestre: newPrompt, prompt_mestre_gerado_em: promptAt } : {}),
                           },
                         }
                       : prev

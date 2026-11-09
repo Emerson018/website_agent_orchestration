@@ -164,7 +164,7 @@ export function SiteChecklistPanel({ items }: { items: SiteChecklistItem[] }) {
     <section aria-labelledby="checklist-site-titulo" className="space-y-2">
       <div className="flex items-baseline justify-between gap-2">
         <h2 id="checklist-site-titulo" className="text-sm font-semibold">
-          Dados do site
+          Checklist de Dados do Site
         </h2>
         <span className={cn('text-xs', missing ? 'text-amber-300' : 'text-emerald-400')}>
           {missing ? `${missing} faltando` : 'Completo'}

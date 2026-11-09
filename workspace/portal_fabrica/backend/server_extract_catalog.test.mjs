@@ -134,6 +134,7 @@ test('POST /api/leads/:id/extract-catalog turns stored files into the Catálogo 
     assert.ok(body.prompt_mestre.includes('Pizzaria de bairro.'));
     assert.equal(saved.prompt_mestre, body.prompt_mestre);
     assert.ok(Date.parse(saved.prompt_mestre_gerado_em), 'grava quando o prompt foi refeito');
+    assert.equal(body.prompt_mestre_gerado_em, saved.prompt_mestre_gerado_em, 'devolve a data que gravou');
     assert.equal(geminiCalls.length, 1);
   } finally {
     delete process.env.GEMINI_API_BASE_URL;

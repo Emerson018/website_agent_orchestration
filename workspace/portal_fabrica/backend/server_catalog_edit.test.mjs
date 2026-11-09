@@ -32,7 +32,7 @@ test('PUT /api/leads/:id/extracted-catalog saves the operator edit and marks it 
   try {
     const res = await put('c-1', { markdown: '## Pizzas\n### Margherita\n- **Preço:** R$ 50,00' });
     assert.equal(res.status, 200);
-    const { catalogo_extraido, prompt_mestre } = await res.json();
+    const { catalogo_extraido, prompt_mestre, prompt_mestre_gerado_em } = await res.json();
     assert.ok(prompt_mestre.includes('### Margherita'));
     assert.equal(catalogo_extraido.markdown, '## Pizzas\n### Margherita\n- **Preço:** R$ 50,00');
     assert.equal(catalogo_extraido.editado_manualmente, true);
@@ -42,6 +42,7 @@ test('PUT /api/leads/:id/extracted-catalog saves the operator edit and marks it 
     const saved = fake.tables.contacts[0].additional_data;
     assert.ok(saved.prompt_mestre.includes('R$ 50,00'), 'o Prompt Mestre é refeito com a edição');
     assert.ok(Date.parse(saved.prompt_mestre_gerado_em), 'grava quando o prompt foi refeito');
+    assert.equal(prompt_mestre_gerado_em, saved.prompt_mestre_gerado_em, 'devolve a data que gravou');
     assert.equal(saved.catalogo_extraido.editado_manualmente, true);
     assert.equal(saved.catalogo_arquivos.length, 1, 'os arquivos continuam guardados');
 
