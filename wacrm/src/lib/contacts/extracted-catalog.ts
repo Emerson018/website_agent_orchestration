@@ -63,3 +63,12 @@ export function needsReextractConfirmation(catalog: ExtractedCatalog | null): bo
 export function hasUnsavedCatalogEdit(draft: string, catalog: ExtractedCatalog | null): boolean {
   return draft !== (catalog?.markdown ?? '');
 }
+
+// Mesma regra do backend do Portal (catalog_extraction.js): ao menos um "### <Item>"
+// e não ser a resposta "sem itens".
+export const NO_CATALOG_ITEMS_LINE = 'Nenhum item de catálogo encontrado nos arquivos.';
+
+export function catalogHasItems(markdown?: string | null): boolean {
+  const text = markdown || '';
+  return /^###\s+\S/m.test(text) && !text.includes(NO_CATALOG_ITEMS_LINE);
+}

@@ -498,6 +498,8 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
     if (!result.success) {
       return res.status(result.code === 'MISSING_API_KEY' ? 412 : 400).json(result);
     }
+    // Data da consulta: o Prompt Mestre fica Desatualizado quando o dossiê é mais novo que ele
+    result.dossie = { ...result.dossie, consultado_em: new Date().toISOString() };
 
     const contactId = contactRecord.id;
     const { data: contact, error: getErr } = await supabase
@@ -700,7 +702,10 @@ function rebuildMasterPrompt(contact, additionalData) {
 async function saveExtractedCatalog(contact, catalogoExtraido) {
   const additionalData = { ...(contact.additional_data || {}), catalogo_extraido: catalogoExtraido };
   const promptMestre = rebuildMasterPrompt(contact, additionalData);
-  if (promptMestre) additionalData.prompt_mestre = promptMestre;
+  if (promptMestre) {
+    additionalData.prompt_mestre = promptMestre;
+    additionalData.prompt_mestre_gerado_em = new Date().toISOString();
+  }
   const { error } = await supabase.from('contacts').update({ additional_data: additionalData }).eq('id', contact.id);
   return { error, promptMestre };
 }
@@ -938,6 +943,7 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
           ...curAdd,
           diagnostico_ia: result.diagnostico,
           prompt_mestre: result.prompt_mestre,
+          prompt_mestre_gerado_em: new Date().toISOString(),
         },
       })
       .eq('id', contactRecord.id);

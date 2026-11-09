@@ -41,6 +41,7 @@ test('PUT /api/leads/:id/extracted-catalog saves the operator edit and marks it 
 
     const saved = fake.tables.contacts[0].additional_data;
     assert.ok(saved.prompt_mestre.includes('R$ 50,00'), 'o Prompt Mestre é refeito com a edição');
+    assert.ok(Date.parse(saved.prompt_mestre_gerado_em), 'grava quando o prompt foi refeito');
     assert.equal(saved.catalogo_extraido.editado_manualmente, true);
     assert.equal(saved.catalogo_arquivos.length, 1, 'os arquivos continuam guardados');
 

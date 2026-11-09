@@ -46,6 +46,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { ScraplingDeepScraperCard } from '@/components/contacts/scrapling-deep-scraper-card';
 import { ExtractedCatalogCard } from '@/components/contacts/extracted-catalog-card';
+import { LeadProgressPanel, NextStepButton } from '@/components/contacts/lead-steps-ui';
+import { computeLeadSteps, nextLeadStep, type LeadStep, type StepKey } from '@/lib/contacts/lead-steps';
 
 export default function ContactProfilePage() {
   const params = useParams();
@@ -120,6 +122,38 @@ export default function ContactProfilePage() {
 
   const additionalData = (contact?.additional_data || {}) as Record<string, any>;
   const dossie = additionalData.dossie || null;
+  const leadSteps = contact ? computeLeadSteps(contact) : [];
+  const nextStep = nextLeadStep(leadSteps);
+
+  // Âncoras de cada Etapa do Lead na página
+  const STEP_ANCHORS: Record<StepKey, string> = {
+    briefing: 'etapa-briefing',
+    dossie: 'etapa-dossie',
+    raspagem: 'etapa-raspagem',
+    catalogo: 'etapa-catalogo',
+    diagnostico: 'etapa-diagnostico',
+    prompt: 'etapa-prompt',
+  };
+  const scrollToStep = (key: StepKey) => {
+    document.getElementById(STEP_ANCHORS[key])?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  const runNextStep = (step: LeadStep) => {
+    switch (step.key) {
+      case 'briefing':
+        setIsEditingCompany(true);
+        scrollToStep('briefing');
+        break;
+      case 'dossie':
+        handleEnrichDossier();
+        break;
+      case 'diagnostico':
+      case 'prompt':
+        handleRunAiDiagnosis();
+        break;
+      default:
+        scrollToStep(step.key);
+    }
+  };
   const diagnostico = additionalData.diagnostico_ia || null;
   const companyName = contact?.company || dossie?.nome_verificado || contact?.name || 'Lead Sem Nome';
 
@@ -372,6 +406,7 @@ export default function ContactProfilePage() {
 
   return (
     <div className="space-y-6 pb-16">
+      <span id="etapa-briefing" className="block scroll-mt-6" aria-hidden />
       {/* 1. Executive Top Bar & Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
         <div className="flex items-center gap-3">
@@ -536,10 +571,29 @@ export default function ContactProfilePage() {
         </div>
       </div>
 
+      {/* Painel de Progresso das Etapas do Lead */}
+      <section aria-label="Progresso do lead" className="rounded-2xl border border-border bg-card p-4 space-y-3">
+        <LeadProgressPanel steps={leadSteps} active={nextStep?.key} onSelect={scrollToStep} />
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
+          <p className="text-sm text-muted-foreground">
+            {nextStep ? (
+              <>
+                Próximo passo: <span className="font-medium text-foreground">{nextStep.label}</span>
+                <span className="text-muted-foreground"> · {nextStep.summary}</span>
+              </>
+            ) : (
+              'Todas as etapas obrigatórias estão prontas.'
+            )}
+          </p>
+          <NextStepButton step={nextStep} busy={enrichingDossier || diagnosing} onRun={runNextStep} />
+        </div>
+      </section>
+
       {/* 2. Main Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Business Intelligence Dossier (7 Cols) */}
         <div className="lg:col-span-7 space-y-6">
+          <span id="etapa-dossie" className="block scroll-mt-6" aria-hidden />
           {/* Card: Fotos de Alta Resolução do Google Maps */}
           {dossie?.fotos && dossie.fotos.length > 0 && (
             <div className="p-5 rounded-2xl bg-card border border-border space-y-4">
@@ -740,6 +794,7 @@ export default function ContactProfilePage() {
             </div>
           )}
 
+          <span id="etapa-raspagem" className="block scroll-mt-6" aria-hidden />
           {/* Card: Raspagem Profunda com Scrapling */}
           <ScraplingDeepScraperCard
             leadId={contact.id}
@@ -767,6 +822,7 @@ export default function ContactProfilePage() {
             }}
           />
 
+          <span id="etapa-catalogo" className="block scroll-mt-6" aria-hidden />
           {/* Card: Catálogo Extraído (arquivos enviados pelo operador) */}
           <ExtractedCatalogCard
             leadId={contact.id}
@@ -865,6 +921,7 @@ export default function ContactProfilePage() {
 
         {/* Right Column: AI Diagnosis & Master Prompt Studio (5 Cols) */}
         <div className="lg:col-span-5 space-y-6">
+          <span id="etapa-diagnostico" className="block scroll-mt-6" aria-hidden />
           {/* Card: Diagnóstico Multimodal da IA */}
           <div className="p-5 rounded-2xl bg-card border border-border space-y-4">
             <div className="flex justify-between items-center">
@@ -923,6 +980,7 @@ export default function ContactProfilePage() {
             )}
           </div>
 
+          <span id="etapa-prompt" className="block scroll-mt-6" aria-hidden />
           {/* Card: Master Prompt Studio (Zero-Template Engine) */}
           <div className="p-5 rounded-2xl bg-card border border-border space-y-4">
             <div className="flex justify-between items-center">
