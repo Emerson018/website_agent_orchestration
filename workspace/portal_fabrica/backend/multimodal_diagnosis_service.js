@@ -1,28 +1,10 @@
-import fetch from 'node-fetch';
-
-/**
- * Converte uma URL de foto em base64 inlineData para o Gemini Vision
- */
-async function fetchPhotoAsBase64(photoUrl, timeoutMs = 2500) {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
-    const res = await fetch(photoUrl, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (!res.ok) return null;
-    const arrayBuffer = await res.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const mimeType = res.headers.get('content-type') || 'image/jpeg';
-    return {
-      inlineData: {
-        data: buffer.toString('base64'),
-        mimeType: mimeType.split(';')[0],
-      },
-    };
-  } catch (err) {
-    return null;
-  }
-}
+import {
+  cleanApiKey,
+  defaultGeminiApiKey,
+  defaultGeminiModels,
+  fileUrlToInlinePart,
+  generateGeminiContent,
+} from './gemini_client.js';
 
 /**
  * Constrói o Prompt Mestre em 4 blocos para geração do site do zero,
@@ -146,15 +128,10 @@ export async function runMultimodalBusinessDiagnosis({
   companyName,
   scrapedData,
   mapsUrl,
-  apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
-  models = [
-    process.env.GEMINI_MODEL,
-    'gemini-3.8-flash',
-    'gemini-3.5-flash-lite',
-    'gemini-3.1-flash-lite',
-  ].filter(Boolean),
+  apiKey = defaultGeminiApiKey(),
+  models = defaultGeminiModels(),
 }) {
-  const cleanKey = (apiKey || '').trim().replace(/^['"]|['"]$/g, '').trim();
+  const cleanKey = cleanApiKey(apiKey);
 
   // Regra estrita: fail-fast quando a chave não estiver configurada
   if (!cleanKey) {
@@ -181,7 +158,7 @@ export async function runMultimodalBusinessDiagnosis({
   const imageParts = [];
   for (const foto of photos.slice(0, 3)) {
     if (foto.photo_url) {
-      const part = await fetchPhotoAsBase64(foto.photo_url);
+      const part = await fileUrlToInlinePart(foto.photo_url);
       if (part) imageParts.push(part);
     }
   }
@@ -212,82 +189,23 @@ Sua tarefa é diagnosticar com precisão extrema o que essa empresa realmente é
 
 Responda APENAS o JSON válido, sem blocos de markdown adicionais.`;
 
-  const contents = [
-    {
-      role: 'user',
-      parts: [
-        { text: promptText },
-        ...imageParts,
-      ],
-    },
-  ];
+  const gemini = await generateGeminiContent({
+    apiKey: cleanKey,
+    models,
+    parts: [{ text: promptText }, ...imageParts],
+    generationConfig: { temperature: 0.2, responseMimeType: 'application/json' },
+  });
 
-  const candidateModels = Array.isArray(models) && models.length > 0
-    ? Array.from(new Set(models))
-    : ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.8-flash'];
-
-  let lastError = null;
-  let successData = null;
-  let modelUsed = candidateModels[0];
-
-  for (const model of candidateModels) {
-    try {
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanKey}`;
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 20000);
-
-      const res = await fetch(geminiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents,
-          generationConfig: {
-            temperature: 0.2,
-            responseMimeType: 'application/json',
-          },
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-
-      if (res.ok) {
-        successData = await res.json();
-        modelUsed = model;
-        lastError = null;
-        break;
-      }
-
-      const errBody = await res.text().catch(() => '');
-      lastError = `A API do Google Gemini retornou erro (${res.status}): ${errBody || res.statusText}`;
-
-      // Se for 503 (alta demanda transitória), 429 (rate limit) ou 404 (modelo indisponível), tenta o próximo modelo
-      if (res.status === 503 || res.status === 429 || res.status === 404) {
-        await new Promise((r) => setTimeout(r, 800));
-        continue;
-      }
-
-      // Erro fatal (ex: 403 API_KEY_SERVICE_BLOCKED, 400 Bad Request) -> interrompe imediatamente
-      break;
-    } catch (err) {
-      lastError = `Não foi possível gerar o diagnóstico da IA: ${err.message}`;
-      // Em caso de timeout/abort da requisição individual, tenta o próximo modelo
-      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
-        continue;
-      }
-      break;
-    }
-  }
-
-  if (!successData) {
+  if (!gemini.success) {
     return {
       success: false,
       code: 'AI_DIAGNOSIS_FAILED',
-      error: lastError || 'A API do Google Gemini não pôde processar a requisição.',
+      error: gemini.error,
     };
   }
 
   try {
-    const rawText = successData?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    const rawText = gemini.text || '{}';
     let diagnosticoJson = {};
 
     try {
@@ -303,7 +221,7 @@ Responda APENAS o JSON válido, sem blocos de markdown adicionais.`;
     const diagnosticoFinal = {
       ...diagnosticoJson,
       gerado_em: new Date().toISOString(),
-      modelo_utilizado: modelUsed,
+      modelo_utilizado: gemini.model,
       fotos_analisadas: imageParts.length,
     };
 
