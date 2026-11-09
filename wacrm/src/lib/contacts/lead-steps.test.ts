@@ -73,6 +73,20 @@ describe('Etapas do Lead: status rules', () => {
     }
   });
 
+  it('says which inputs changed after a stale Master Prompt', () => {
+    const ad = complete.additional_data!;
+    const steps = computeLeadSteps({
+      ...complete,
+      additional_data: {
+        ...ad,
+        dossie: { consultado_em: '2026-11-05T00:00:00Z' },
+        catalogo_extraido: { markdown: ITEMS, editado_em: '2026-11-06T00:00:00Z' },
+      },
+    });
+    expect(steps.find((s) => s.key === 'prompt')!.changed).toEqual(['Dossiê', 'Catálogo Extraído']);
+    expect(computeLeadSteps(complete).find((s) => s.key === 'prompt')!.changed).toBeUndefined();
+  });
+
   it('never marks a prompt Desatualizado when the prompt has no timestamp', () => {
     const ad = { ...complete.additional_data! };
     delete (ad as Record<string, unknown>).prompt_mestre_gerado_em;

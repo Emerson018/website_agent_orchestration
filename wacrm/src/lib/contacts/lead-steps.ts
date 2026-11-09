@@ -14,6 +14,8 @@ export interface LeadStep {
   summary: string;
   /** Só no Briefing: os campos que faltam. */
   missing?: string[];
+  /** Só no Prompt Mestre desatualizado: as etapas que mudaram depois dele. */
+  changed?: string[];
 }
 
 /** Os campos de `contacts.additional_data` que as regras leem. */
@@ -82,11 +84,14 @@ export function computeLeadSteps(input: LeadStepsInput): LeadStep[] {
   const hasSite = leadHasSite(input);
   const catalogItems = catalogHasItems(catalog?.markdown);
 
-  const promptStale =
-    Boolean(ad.prompt_mestre) &&
-    (isAfter(dossie?.consultado_em, promptAt) ||
-      isAfter(scraped?.raspado_em, promptAt) ||
-      isAfter(catalog?.editado_em || catalog?.gerado_em, promptAt));
+  const changed = ad.prompt_mestre
+    ? [
+        isAfter(dossie?.consultado_em, promptAt) && STEP_LABELS.dossie,
+        isAfter(scraped?.raspado_em, promptAt) && STEP_LABELS.raspagem,
+        isAfter(catalog?.editado_em || catalog?.gerado_em, promptAt) && STEP_LABELS.catalogo,
+      ].filter(Boolean) as string[]
+    : [];
+  const promptStale = changed.length > 0;
 
   const steps: Array<Omit<LeadStep, 'label'>> = [
     {
@@ -123,6 +128,7 @@ export function computeLeadSteps(input: LeadStepsInput): LeadStep[] {
       key: 'prompt',
       status: !ad.prompt_mestre ? 'faltando' : promptStale ? 'desatualizado' : 'feito',
       summary: !ad.prompt_mestre ? 'Ainda não gerado' : promptStale ? 'Dados mudaram depois do prompt' : 'Pronto para copiar',
+      ...(promptStale ? { changed } : {}),
     },
   ];
 

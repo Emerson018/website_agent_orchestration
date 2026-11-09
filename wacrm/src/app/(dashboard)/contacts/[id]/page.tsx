@@ -40,7 +40,15 @@ import {
 import { toast } from 'sonner';
 import { ScraplingDeepScraperCard } from '@/components/contacts/scrapling-deep-scraper-card';
 import { ExtractedCatalogCard } from '@/components/contacts/extracted-catalog-card';
-import { LeadProgressPanel, LeadStepSection, NextStepButton, StepEmptyState } from '@/components/contacts/lead-steps-ui';
+import {
+  LeadProgressPanel,
+  LeadStepSection,
+  NextStepButton,
+  SiteChecklistPanel,
+  StatusChip,
+  StepEmptyState,
+} from '@/components/contacts/lead-steps-ui';
+import { computeSiteChecklist } from '@/lib/contacts/site-checklist';
 import { computeLeadSteps, nextLeadStep, type LeadStep, type StepKey } from '@/lib/contacts/lead-steps';
 
 export default function ContactProfilePage() {
@@ -921,12 +929,15 @@ export default function ContactProfilePage() {
           </div>
         </div>
 
-        {/* Coluna lateral: Prompt Mestre */}
-        <aside className="space-y-6 lg:col-span-5 xl:col-span-4">
+        {/* Coluna lateral fixa: Prompt Mestre e Checklist de Dados do Site */}
+        <aside className="space-y-4 lg:col-span-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:self-start lg:overflow-y-auto xl:col-span-4">
           <div className="space-y-3 rounded-2xl border border-border bg-card p-5">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h2 className="text-sm font-semibold">Prompt Mestre</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-semibold">Prompt Mestre</h2>
+                  <StatusChip status={stepOf('prompt').status} />
+                </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">Copie e cole na sua IA (Claude, ChatGPT, v0) para gerar o site.</p>
               </div>
               {originalPrompt && promptMestre !== originalPrompt && (
@@ -941,6 +952,25 @@ export default function ContactProfilePage() {
                 </Button>
               )}
             </div>
+            {stepOf('prompt').status === 'desatualizado' && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-orange-500/10 px-3 py-2 text-xs text-orange-300">
+                <span className="flex items-center gap-1.5">
+                  <AlertTriangle className="size-3.5 shrink-0" />
+                  {stepOf('prompt').changed?.join(' e ')} {(stepOf('prompt').changed?.length ?? 0) > 1 ? 'mudaram' : 'mudou'}{' '}
+                  depois deste prompt.
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1 text-xs"
+                  onClick={handleRunAiDiagnosis}
+                  disabled={diagnosing}
+                >
+                  <RefreshCw className={`size-3 ${diagnosing ? 'animate-spin' : ''}`} />
+                  Atualizar
+                </Button>
+              </div>
+            )}
             <textarea
               value={promptMestre}
               onChange={(e) => setPromptMestre(e.target.value)}
@@ -953,6 +983,9 @@ export default function ContactProfilePage() {
               {copiedPrompt ? <Check className="size-4" /> : <Copy className="size-4" />}
               {copiedPrompt ? 'Prompt Mestre copiado' : 'Copiar Prompt Mestre'}
             </Button>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <SiteChecklistPanel items={computeSiteChecklist(contact)} />
           </div>
         </aside>
       </div>

@@ -3,10 +3,11 @@
 // Peças visuais das Etapas do Lead: selo de status, ícone e Painel de Progresso.
 
 import React from 'react';
-import { Check, ChevronDown, CircleDashed, Clock, Loader2, Sparkles } from 'lucide-react';
+import { Check, ChevronDown, CircleDashed, Clock, Loader2, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { LeadStep, StepKey, StepStatus } from '@/lib/contacts/lead-steps';
+import type { SiteChecklistItem } from '@/lib/contacts/site-checklist';
 
 export const STATUS_META: Record<StepStatus, { label: string; tone: string; bar: string; icon: React.ElementType }> = {
   feito: { label: 'Feito', tone: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25', bar: 'bg-emerald-500', icon: Check },
@@ -154,4 +155,34 @@ export function LeadStepSection({ step, open, onOpen, action, children }: LeadSt
 /** Estado vazio de uma etapa: diz o que falta e o que fazer. */
 export function StepEmptyState({ children }: { children: React.ReactNode }) {
   return <p className="text-sm text-muted-foreground">{children}</p>;
+}
+
+/** Checklist de Dados do Site: cada dado que o site precisa, presente ou faltando, com a fonte. */
+export function SiteChecklistPanel({ items }: { items: SiteChecklistItem[] }) {
+  const missing = items.filter((i) => !i.present).length;
+  return (
+    <section aria-labelledby="checklist-site-titulo" className="space-y-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 id="checklist-site-titulo" className="text-sm font-semibold">
+          Dados do site
+        </h2>
+        <span className={cn('text-xs', missing ? 'text-amber-300' : 'text-emerald-400')}>
+          {missing ? `${missing} faltando` : 'Completo'}
+        </span>
+      </div>
+      <ul className="divide-y divide-border/60">
+        {items.map((item) => (
+          <li key={item.key} className="flex items-center gap-2 py-1.5 text-sm">
+            {item.present ? (
+              <Check className="size-3.5 shrink-0 text-emerald-400" aria-label="Presente" />
+            ) : (
+              <X className="size-3.5 shrink-0 text-amber-300" aria-label="Faltando" />
+            )}
+            <span className={cn('flex-1', !item.present && 'text-muted-foreground')}>{item.label}</span>
+            <span className="text-right text-[11px] text-muted-foreground">{item.source || 'Faltando'}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
