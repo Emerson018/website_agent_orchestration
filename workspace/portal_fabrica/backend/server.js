@@ -10,6 +10,7 @@ import { buildLeadDossier, extractPlaceQueryFromUrl } from './places_service.js'
 
 import { runMultimodalBusinessDiagnosis, buildMasterPrompt } from './multimodal_diagnosis_service.js';
 import { CATALOG_BUCKET, catalogStoragePath, newCatalogFileId, parseCatalogUpload } from './catalog_files.js';
+import { extractCatalog } from './catalog_extraction.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -766,6 +767,51 @@ app.delete('/api/leads/:id/catalog-files/:fileId', async (req, res) => {
   } catch (err) {
     console.error(`[Catalogo] Erro ao remover arquivo ${fileId} do lead ${id}:`, err.message);
     return res.status(500).json({ error: 'Erro ao remover arquivo do catálogo.', details: err.message });
+  }
+});
+
+// Catálogo Extraído: envia todos os arquivos guardados do lead ao Gemini
+app.post('/api/leads/:id/extract-catalog', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const contact = await findContact(id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+
+    const files = Array.isArray(contact.additional_data?.catalogo_arquivos) ? contact.additional_data.catalogo_arquivos : [];
+    const result = await extractCatalog({
+      files,
+      companyName: contact.company || contact.name || contact.additional_data?.dossie?.nome_verificado,
+    });
+
+    if (!result.success) {
+      const status = { NO_FILES: 400, MISSING_API_KEY: 412 }[result.code] || 502;
+      return res.status(status).json(result);
+    }
+
+    const catalogoExtraido = {
+      markdown: result.markdown,
+      gerado_em: new Date().toISOString(),
+      modelo_utilizado: result.model,
+      arquivos_processados: result.processed,
+      editado_manualmente: false,
+    };
+
+    // Relê o contato para não sobrescrever o que mudou durante a chamada ao Gemini
+    const fresh = (await findContact(id)) || contact;
+    const { error: saveErr } = await supabase
+      .from('contacts')
+      .update({ additional_data: { ...(fresh.additional_data || {}), catalogo_extraido: catalogoExtraido } })
+      .eq('id', contact.id);
+    if (saveErr) {
+      return res.status(502).json({ error: `Falha ao salvar o catálogo no contato: ${saveErr.message}` });
+    }
+
+    return res.json({ success: true, catalogo_extraido: catalogoExtraido });
+  } catch (err) {
+    console.error(`[Catalogo] Erro ao extrair catálogo do lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao extrair o catálogo.', details: err.message });
   }
 });
 

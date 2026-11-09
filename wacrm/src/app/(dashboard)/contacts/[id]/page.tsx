@@ -776,6 +776,12 @@ export default function ContactProfilePage() {
                 prev ? { ...prev, additional_data: { ...(prev.additional_data || {}), catalogo_arquivos: files } } : prev
               );
             }}
+            catalog={additionalData.catalogo_extraido || null}
+            onCatalogChange={(catalog) => {
+              setContact((prev: any) =>
+                prev ? { ...prev, additional_data: { ...(prev.additional_data || {}), catalogo_extraido: catalog } } : prev
+              );
+            }}
           />
 
           {/* Card: Depoimentos e Sentimento Real dos Clientes */}

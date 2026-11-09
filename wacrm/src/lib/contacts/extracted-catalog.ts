@@ -19,6 +19,15 @@ export interface CatalogFile {
   enviado_em?: string;
 }
 
+/** O Catálogo Extraído salvo em `contacts.additional_data.catalogo_extraido`. */
+export interface ExtractedCatalog {
+  markdown: string;
+  gerado_em?: string;
+  modelo_utilizado?: string;
+  arquivos_processados?: number;
+  editado_manualmente?: boolean;
+}
+
 interface SelectedFile {
   name: string;
   type: string;

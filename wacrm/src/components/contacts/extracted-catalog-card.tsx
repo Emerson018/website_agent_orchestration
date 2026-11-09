@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { BookOpen, FileText, ImageIcon, Loader2, Trash2, Upload } from 'lucide-react';
+import { BookOpen, FileText, ImageIcon, Loader2, Sparkles, Trash2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import {
@@ -9,12 +9,15 @@ import {
   formatFileSize,
   validateCatalogSelection,
   type CatalogFile,
+  type ExtractedCatalog,
 } from '@/lib/contacts/extracted-catalog';
 
 export interface ExtractedCatalogCardProps {
   leadId: string;
   files: CatalogFile[];
+  catalog: ExtractedCatalog | null;
   onFilesChange: (files: CatalogFile[]) => void;
+  onCatalogChange: (catalog: ExtractedCatalog) => void;
 }
 
 function readAsBase64(file: File): Promise<string> {
@@ -26,7 +29,9 @@ function readAsBase64(file: File): Promise<string> {
   });
 }
 
-async function readJson(res: Response): Promise<{ error?: string; files?: CatalogFile[] }> {
+async function readJson(
+  res: Response
+): Promise<{ error?: string; files?: CatalogFile[]; catalogo_extraido?: ExtractedCatalog }> {
   try {
     return await res.json();
   } catch {
@@ -34,10 +39,26 @@ async function readJson(res: Response): Promise<{ error?: string; files?: Catalo
   }
 }
 
-export function ExtractedCatalogCard({ leadId, files, onFilesChange }: ExtractedCatalogCardProps) {
+export function ExtractedCatalogCard({ leadId, files, catalog, onFilesChange, onCatalogChange }: ExtractedCatalogCardProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+
+  async function handleExtract() {
+    setIsExtracting(true);
+    try {
+      const res = await fetch(`/api/leads/${leadId}/extract-catalog`, { method: 'POST' });
+      const data = await readJson(res);
+      if (!res.ok || !data.catalogo_extraido) throw new Error(data.error || 'Falha ao extrair o catálogo.');
+      onCatalogChange(data.catalogo_extraido);
+      toast.success('Catálogo extraído com sucesso.');
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setIsExtracting(false);
+    }
+  }
 
   async function handleSelect(event: React.ChangeEvent<HTMLInputElement>) {
     const selected = Array.from(event.target.files || []);
@@ -150,6 +171,31 @@ export function ExtractedCatalogCard({ leadId, files, onFilesChange }: Extracted
           ))}
         </ul>
       )}
+      <div className="space-y-2 border-t border-border/50 pt-3">
+        <Button
+          type="button"
+          size="sm"
+          className="w-full gap-1.5 text-xs"
+          disabled={files.length === 0 || isExtracting || isUploading}
+          onClick={handleExtract}
+          title={files.length === 0 ? 'Envie ao menos um arquivo para extrair o catálogo' : undefined}
+        >
+          {isExtracting ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+          {isExtracting ? 'Extraindo com IA...' : 'Extrair com IA'}
+        </Button>
+
+        {catalog?.markdown ? (
+          <div className="space-y-1">
+            <p className="text-[11px] text-muted-foreground">
+              {catalog.gerado_em ? `Gerado em ${new Date(catalog.gerado_em).toLocaleString('pt-BR')}` : 'Catálogo salvo'}
+              {catalog.arquivos_processados ? ` a partir de ${catalog.arquivos_processados} arquivo(s)` : ''}
+            </p>
+            <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-muted/40 p-3 text-xs text-foreground">
+              {catalog.markdown}
+            </pre>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
