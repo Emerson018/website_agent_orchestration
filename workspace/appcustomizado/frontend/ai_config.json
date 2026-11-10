@@ -1,70 +1,11 @@
 {
-  "app_name": "AppCustomizado",
-  "primary_color": "#6366F1",
+  "app_name": "App Customizado",
+  "primary_color": "#D4AF37",
   "secondary_color": "#1A1A1A",
   "nicho_detectado": "servicos",
-  "modules": [
-    "servicos",
-    "agendar"
-  ],
+  "modules": ["servicos", "agendar"],
   "logo_url": "/logo.png",
-  "address": "Av. Principal, 1000 - Centro - Porto Alegre/RS",
-  "phone": "(51) 99999-9999",
-  "working_hours": "Segunda a Sábado das 9h às 18h",
-  "bg_color": "#0F172A",
-  "surface_color": "#1E293B",
-  "text_color": "#F8FAFC",
-  "muted_color": "#94A3B8",
-  "theme": "dark",
-  "font_heading": "Space Grotesk",
-  "font_body": "Plus Jakarta Sans",
-  "niche": "Serviços Especializados",
-  "tagline": "Atendimento com hora marcada na AppCustomizado",
-  "brand_essence": "AppCustomizado posiciona-se no segmento de Serviços Especializados combinando domínio técnico em Atendimento Individual, Avaliação e Diagnóstico e Agendamento Online Direto com uma atmosfera moderno, tecnológico, dinâmico e profissional.",
-  "value_proposition": "Oferecer Atendimento Individual, Avaliação e Diagnóstico e Agendamento Online Direto no AppCustomizado com agendamento digital sem fila de espera, preparo prévio da equipe e transparência de valores e horários.",
-  "target_audience": "Clientes de AppCustomizado que buscam atendimento individual, avaliação e diagnóstico e agendamento online direto com pontualidade, atendimento personalizado e confirmação imediata pelo celular ou computador.",
-  "brand_pillars": [
-    "Especialização em Atendimento Individual com padrão consistente de entrega",
-    "Arquitetura visual Bento Grid Modular de Alta Precisão desenhada para leitura rápida e decisão imediata",
-    "Reserva online integrada em tempo real com confirmação direta de data e horário"
-  ],
-  "real_services": [
-    {
-      "name": "Atendimento Individual",
-      "price": "Sob consulta",
-      "description": "Sessão dedicada com horário reservado exclusivamente para a sua demanda.",
-      "badge": "Mais procurado"
-    },
-    {
-      "name": "Avaliação e Diagnóstico",
-      "price": "Sob consulta",
-      "description": "Análise técnica detalhada com apresentação de etapas e prazos claros.",
-      "badge": "Hora marcada"
-    },
-    {
-      "name": "Agendamento Online Direto",
-      "price": "Online",
-      "description": "Seleção imediata de data e horário disponível com confirmação automática.",
-      "badge": "Hora marcada"
-    }
-  ],
-  "color_reasoning": "Paleta 'Indigo Tech Moderno' (#6366F1 sobre #0F172A) calibrada para sustentar a identidade de AppCustomizado em tema dark.",
-  "layout_archetype": "bento_modular",
-  "layout_concept": "Bento Grid Modular de Alta Precisão: Composição em mosaico técnico de células assimétricas (col-span-8 + col-span-4), combinando vitrine principal, células de métricas/horários ao vivo e grade modular de serviços.",
-  "focal_element": "Painel tipográfico de abertura com chamada direta para reserva de horário online.",
-  "design_critique": "Removidos jargões genéricos de IA e decorações supérfluas; foco em clareza de escopo, horários e reserva.",
-  "copy_tone": "Objetivo, claro e orientado à ação do cliente.",
-  "section_blueprint": [
-    "1. Bento Hero Mosaico: Célula principal (8 colunas) com proposta de valor + 2 células laterais (4 colunas) com horário e localização rápida",
-    "2. Matriz Modular de Serviços: Grid assimétrico em células com bordas expostas, badge técnico, preço em destaque e link para /agendar",
-    "3. Painel de Diferenciais Operacionais: 3 células técnicas lado a lado detalhando os pilares reais da marca",
-    "4. Barra de Ação & Atendimento Direto: Bloco compacto de conversão imediata para a agenda online"
-  ],
-  "recommended_sections": [
-    "1. Bento Hero Mosaico: Célula principal (8 colunas) com proposta de valor + 2 células laterais (4 colunas) com horário e localização rápida",
-    "2. Matriz Modular de Serviços: Grid assimétrico em células com bordas expostas, badge técnico, preço em destaque e link para /agendar",
-    "3. Painel de Diferenciais Operacionais: 3 células técnicas lado a lado detalhando os pilares reais da marca",
-    "4. Barra de Ação & Atendimento Direto: Bloco compacto de conversão imediata para a agenda online"
-  ],
-  "execution_engine": "Motor Analítico Contextual + Gemini (gemini-3.8-flash)"
+  "address": "Atendimento Local & Online",
+  "phone": "",
+  "working_hours": "Segunda a Sábado"
 }

@@ -42,17 +42,41 @@ _Avoid_: Brute-force scraping, rigid crawler, unhandled headless dependency
 The structured payload stored in `contacts.additional_data.scraped_data`, comprising categorized menu items/services, institutional copy, and clean Markdown feedable directly into the Master Prompt Studio.
 _Avoid_: Raw html dump, unparsed text, temp cache
 
+**Catálogo Extraído (Extracted Catalog)**:
+The organized Markdown that Gemini produces from files the operator uploads for a lead (photos or PDFs of menus, price lists, brochures), listing only what the files contain: general business information plus categories of items, each with description, price, variations, add-ons and notes. It is generic to any kind of business, not only restaurants, and when a file holds no catalog content only the general information is kept. It is editable by the operator and stored in `contacts.additional_data.catalogo_extraido`.
+_Avoid_: Menu scrape, OCR dump, cardápio (when the business is not a restaurant), Dados Raspados
+
 **Avaliações 5 Estrelas e Desafios de Atendimento (5-Star Reviews & Operational Pain Points)**:
 The strict chronological review partitioning in the Lead Dossier separating up to 4 latest 5-star customer reviews (for genuine social proof and brand advocacy) and up to 2 latest constructive/negative reviews (rating <= 3, or fallback to 'Sem nenhuma avaliação negativa.') to equip the operator with actionable hooks for sales pitches and friction resolution.
 _Avoid_: Random reviews, all praise, unfiltered testimonials
 
 **Decision Gate**:
-The mandatory human evaluation checkpoint in the CRM where an operator inspects the Lead Dossier and decides either to generate the Master Prompt or to disqualify the lead.
+The mandatory human evaluation checkpoint on the Lead Profile Page where an operator inspects the Lead Dossier and decides either to generate the Master Prompt or to disqualify the lead (see Desqualificação).
 _Avoid_: Auto-builder, silent pipeline, background generator
 
+**Desqualificação (Lead Disqualification)**:
+The operator's recorded decision, at the Decision Gate, that a lead will not get a site: its Deal is marked lost in the sales pipeline and the reason and date are kept on the contact. It can be undone, which reopens the Deal.
+_Avoid_: Archive, delete, hide
+
 **Lead Profile Page**:
-The dedicated full-screen view (/contacts/[id]) in WACRM that replaces the narrow sidebar drawer, presenting an immersive dashboard of the business: high-resolution photo gallery, review sentiment analysis, operating hours, geolocation, and AI-powered intelligence.
+The dedicated full-screen view (/contacts/[id]) in WACRM where the operator works a lead through the Etapas do Lead in order, from Lead Briefing to Master Prompt, with a Progress Panel on top and the Site Data Checklist and Master Prompt always in view.
 _Avoid_: Contact drawer, sidebar sheet, modal popover
+
+**Etapas do Lead (Lead Steps)**:
+The ordered stages a lead goes through on the Lead Profile Page: Lead Briefing, Lead Dossier, Deep Web Scraping, Catálogo Extraído, Multimodal Business Diagnosis and Master Prompt. Each step has a status.
+_Avoid_: Tabs, sections, phases, pipeline stages (those are the sales pipeline's)
+
+**Painel de Progresso (Progress Panel)**:
+The summary at the top of the Lead Profile Page showing every Etapa do Lead with its status and a Próximo Passo button.
+_Avoid_: Stepper, wizard, timeline
+
+**Próximo Passo (Next Step)**:
+The action of the first required Etapa do Lead that still needs work, offered as a single button on the Progress Panel.
+_Avoid_: Suggested action, CTA
+
+**Checklist de Dados do Site (Site Data Checklist)**:
+The list of data a client site needs (business name, phone/WhatsApp, address, Google Maps link, hours, official website, photos, 5-star reviews, catalog items, payment methods), each marked present or missing with the source it came from.
+_Avoid_: Completeness score, data quality report
 
 **Multimodal Business Diagnosis**:
 An AI-driven analysis endpoint powered by Gemini Multimodal Vision and semantic NLP that evaluates both Google Maps imagery (interior ambiance, facade, products/services) and text data to synthesize exactly what the company is, its brand personality, target audience, and unique value proposition.

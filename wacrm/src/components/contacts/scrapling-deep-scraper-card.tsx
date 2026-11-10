@@ -60,6 +60,11 @@ export interface ScraplingDeepScraperCardProps {
   websiteUrl?: string;
   onScraped?: (data: ScrapedData, urls: string[]) => void;
   className?: string;
+  /** Dentro de uma Etapa do Lead: sem moldura e sem título próprio. */
+  embedded?: boolean;
+  /** Inicia a raspagem assim que possível (Próximo Passo); onAutoStarted avisa que já começou. */
+  autoStart?: boolean;
+  onAutoStarted?: () => void;
 }
 
 export function ScraplingDeepScraperCard({
@@ -69,6 +74,9 @@ export function ScraplingDeepScraperCard({
   websiteUrl,
   onScraped,
   className = '',
+  embedded = false,
+  autoStart = false,
+  onAutoStarted,
 }: ScraplingDeepScraperCardProps) {
   // Inicializa a lista de URLs com as já cadastradas ou com o site do lead
   const [urls, setUrls] = useState<string[]>(() => {
@@ -176,19 +184,29 @@ export function ScraplingDeepScraperCard({
     }
   };
 
+  // Próximo Passo pediu a raspagem: dispara uma vez e avisa a página
+  React.useEffect(() => {
+    if (!autoStart) return;
+    onAutoStarted?.();
+    void handleExecuteScrape();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart]);
+
   const items = scrapedData?.cardapio || [];
   const inst = scrapedData?.institucional;
   const contatos = inst?.contato;
 
   return (
-    <div className={`p-5 rounded-2xl bg-card border border-border space-y-4 ${className}`}>
+    <div className={embedded ? `space-y-4 ${className}` : `p-5 rounded-2xl bg-card border border-border space-y-4 ${className}`}>
       {/* 1. Header com Status do Método */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/50 pb-3">
         <div>
-          <h2 className="text-sm font-semibold tracking-wider uppercase text-foreground flex items-center gap-2">
-            <Globe className="size-4 text-primary" />
-            Raspagem Profunda de Sites & Cardápios (Scrapling)
-          </h2>
+          {!embedded && (
+            <h2 className="text-sm font-semibold tracking-wider uppercase text-foreground flex items-center gap-2">
+              <Globe className="size-4 text-primary" />
+              Raspagem Profunda de Sites & Cardápios (Scrapling)
+            </h2>
+          )}
           <p className="text-xs text-muted-foreground mt-0.5">
             Extrai catálogo de produtos, preços em R$ e textos institucionais com bypass anti-bot e fallback automático.
           </p>

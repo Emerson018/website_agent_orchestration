@@ -1,633 +1,242 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-
-const heroContainerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.14,
-      delayChildren: 0.05,
-    },
-  },
-};
-
-const heroItemVariants = {
-  hidden: { opacity: 0, y: 18 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
-  },
-};
-
-const servicesData = [
-  {
-    name: 'Atendimento Individual',
-    price: 'Sob consulta',
-    description:
-      'Sessão dedicada com horário reservado exclusivamente para a sua demanda.',
-    badge: 'Mais procurado',
-    image:
-      'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80',
-    spanClass: 'lg:col-span-7',
-    featured: true,
-  },
-  {
-    name: 'Avaliação e Diagnóstico',
-    price: 'Sob consulta',
-    description:
-      'Análise técnica detalhada com apresentação de etapas e prazos claros.',
-    badge: 'Hora marcada',
-    image:
-      'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80',
-    spanClass: 'lg:col-span-5',
-    featured: false,
-  },
-  {
-    name: 'Agendamento Online Direto',
-    price: 'Online',
-    description:
-      'Seleção imediata de data e horário disponível com confirmação automática.',
-    badge: 'Hora marcada',
-    image:
-      'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=600&q=80',
-    spanClass: 'lg:col-span-12',
-    featured: false,
-  },
-];
-
-const operationalPillars = [
-  {
-    title: 'Atendimento individual preparado antes da sua chegada',
-    summary:
-      'Nossa equipe revisa a sua solicitação antes do horário marcado para conduzir uma sessão objetiva e sem atrasos.',
-    metric: 'Sessão dedicada',
-    detail: 'Zero fila de espera na recepção',
-  },
-  {
-    title: 'Estrutura de decisão clara sobre etapas e valores',
-    summary:
-      'Você recebe o escopo completo da avaliação técnica e os horários disponíveis antes de confirmar o seu comparecimento.',
-    metric: 'Escopo transparente',
-    detail: 'Etapas definidas desde o primeiro contato',
-  },
-  {
-    title: 'Reserva online integrada com confirmação imediata',
-    summary:
-      'Escolha o dia e a janela de atendimento pelo celular ou computador e garanta seu horário em poucos cliques.',
-    metric: 'Agenda em tempo real',
-    detail: 'Confirmação direta no sistema',
-  },
-];
 
 export default function LandingPage() {
+  const menuItems = [
+    {
+      id: 1,
+      name: "Mini Burgers Salgados",
+      description: "Mais de 15 sabores de mini hambúrgueres servidos em pães artesanais coloridos (Verde Alien, Vermelho Marte e Roxo Nebulosa). Sabores incluem Blend Bovino Premium, muito cheddar derretido, cebola caramelizada, bacon crocante, gorgonzola, costela desfiada e opções vegetarianas.",
+      price: "Incluso no Rodízio",
+      image: "https://images.unsplash.com/photo-1525059696034-4967a8e1dca2?auto=format&fit=crop&w=400&q=80",
+      tag: "Rodízio Livre"
+    },
+    {
+      id: 2,
+      name: "Mini Burgers Doces",
+      description: "A sobremesa mais amada da galáxia! Mini pães doces com recheio generoso de Nutella com morangos frescos, Doce de Leite artesanal, Chocolate Branco Galáctico e marshmallow tostado no fogo.",
+      price: "Incluso no Rodízio",
+      image: "https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=format&fit=crop&w=400&q=80",
+      tag: "Doce"
+    },
+    {
+      id: 3,
+      name: "Mini Pastéis & Espetinhos",
+      description: "Pastéis sequinhos e crocantes fritos na hora nos sabores queijo, carne e pizza, além de espetinhos artesanais grelhados (carne bovina, frango com bacon e queijo coalho com melaço) servidos diretamente na mesa.",
+      price: "Incluso no Rodízio",
+      image: "https://images.unsplash.com/photo-1563379971899-660589a01cf3?auto=format&fit=crop&w=400&q=80",
+      tag: "Petiscos"
+    },
+    {
+      id: 4,
+      name: "Sorvetes & Refil de Bebidas",
+      description: "Buffet livre de sorvetes artesanais com caldas de chocolate e caramelo espacial, granulados e coberturas, além da opção de refil livre de refrigerantes, água e suco durante toda a sua permanência.",
+      price: "Sob Consulta / Adicional",
+      image: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=400&q=80",
+      tag: "Sobremesa/Bebidas"
+    }
+  ];
+
+  const instagramPosts = [
+    "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?auto=format&fit=crop&w=300&q=80",
+    "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=300&q=80",
+    "https://images.unsplash.com/photo-1553979459-d2229ba7433b?auto=format&fit=crop&w=300&q=80",
+    "https://images.unsplash.com/photo-1538510122447-24839e4871ef?auto=format&fit=crop&w=300&q=80"
+  ];
+
   return (
-    <div
-      className="min-h-screen font-sans antialiased selection:bg-[var(--primary-color)] selection:text-white"
-      style={{
-        backgroundColor: 'var(--bg-color)',
-        color: 'var(--text-color)',
-      }}
-    >
-      {/* 1. Bento Hero Mosaico */}
-      <section
-        id="inicio"
-        className="scroll-mt-24 pt-8 pb-16 md:pt-12 md:pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
-      >
-        <motion.div
-          variants={heroContainerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5"
-        >
-          {/* Célula Principal (8 colunas) */}
-          <motion.div
-            variants={heroItemVariants}
-            className="lg:col-span-8 rounded-2xl p-6 sm:p-10 md:p-12 border flex flex-col justify-between relative overflow-hidden"
-            style={{
-              backgroundColor: 'var(--surface-color)',
-              borderColor: 'rgba(148, 163, 184, 0.16)',
-            }}
-          >
-            <div className="relative z-10 max-w-2xl">
-              <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full text-sm font-medium mb-6 border"
-                style={{
-                  backgroundColor: 'rgba(99, 102, 241, 0.12)',
-                  borderColor: 'rgba(99, 102, 241, 0.35)',
-                  color: 'var(--text-color)',
-                }}
-              >
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: 'var(--primary-color)' }}
-                />
-                <span>Atendimento com hora marcada na AppCustomizado</span>
-              </div>
-
-              <h1 className="font-display text-3xl sm:text-5xl lg:text-[3.35rem] font-bold tracking-tight leading-[1.08] mb-6">
-                Serviços especializados com horário reservado e diagnóstico claro.
-              </h1>
-
-              <p
-                className="text-base sm:text-lg leading-relaxed max-w-prose mb-8"
-                style={{ color: 'var(--muted-color)' }}
-              >
-                Realize seu Atendimento Individual ou Avaliação e Diagnóstico sem fila de espera. Escolha o dia pelo celular ou computador e conte com preparo prévio da nossa equipe.
-              </p>
-            </div>
-
-            <div className="relative z-10 pt-6 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-              style={{ borderColor: 'rgba(148, 163, 184, 0.14)' }}
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+      {/* Hero Section */}
+      <section className="relative py-20 px-6 sm:px-12 flex flex-col md:flex-row items-center justify-between max-w-6xl mx-auto w-full gap-12">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full filter blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-10 right-1/4 w-80 h-80 bg-indigo-500/5 rounded-full filter blur-3xl pointer-events-none"></div>
+        
+        <div className="flex-1 text-left z-10">
+          <span className="text-xs font-bold text-primary uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
+            Marciano's Burguer 🛸
+          </span>
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight mt-6 leading-tight">
+            O Maior Rodízio <br />
+            de Mini Burgers do <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-400">
+              Universo! 🍔✨
+            </span>
+          </h1>
+          <p className="mt-6 text-base sm:text-lg opacity-85 max-w-lg leading-relaxed">
+            Venha se deliciar com nosso rodízio livre de mini hambúrgueres coloridos (salgados e doces), mini pastéis sequinhos, espetinhos grelhados e buffet de sorvetes. Tudo em um ambiente temático espacial instagramável com boliche integrado em Porto Alegre!
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center gap-4">
+            <Link 
+              to="/agendar"
+              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/25 hover:brightness-110 hover:shadow-primary/35 transition-all flex items-center justify-center gap-2 group cursor-pointer"
             >
-              <div className="flex flex-wrap items-center gap-3">
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }}>
-                  <Link
-                    to="/agendar"
-                    className="inline-flex items-center justify-center min-h-[48px] px-7 py-3.5 rounded-xl font-medium text-white shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                    style={{ backgroundColor: 'var(--primary-color)' }}
-                  >
-                    Reservar horário online
-                  </Link>
-                </motion.div>
-
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }}>
-                  <a
-                    href="#destaques"
-                    className="inline-flex items-center justify-center min-h-[48px] px-6 py-3.5 rounded-xl font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2"
-                    style={{
-                      backgroundColor: 'rgba(15, 23, 42, 0.55)',
-                      borderColor: 'rgba(148, 163, 184, 0.24)',
-                      color: 'var(--text-color)',
-                    }}
-                  >
-                    Conhecer modalidades
-                  </a>
-                </motion.div>
-              </div>
-
-              <div className="text-sm" style={{ color: 'var(--muted-color)' }}>
-                Confirmação direta na agenda
-              </div>
-            </div>
-          </motion.div>
-
-          {/* 2 Células Laterais Empilhadas (4 colunas) */}
-          <div className="lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 md:gap-5">
-            {/* Célula Lateral 1: Imagem + Horário ao vivo */}
-            <motion.div
-              variants={heroItemVariants}
-              className="rounded-2xl overflow-hidden border flex flex-col justify-between"
-              style={{
-                backgroundColor: 'var(--surface-color)',
-                borderColor: 'rgba(148, 163, 184, 0.16)',
-              }}
-            >
-              <div className="relative h-44 overflow-hidden">
-                <img
-                  src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80"
-                  alt="Ambiente de atendimento AppCustomizado"
-                  className="w-full h-full object-cover"
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      'linear-gradient(to top, var(--surface-color) 4%, rgba(15, 23, 42, 0.25) 60%, transparent 100%)',
-                  }}
-                />
-                <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
-                  <span
-                    className="px-3 py-1 rounded-lg text-xs font-medium border backdrop-blur-md"
-                    style={{
-                      backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                      borderColor: 'rgba(148, 163, 184, 0.25)',
-                      color: 'var(--text-color)',
-                    }}
-                  >
-                    Unidade Centro
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-5 sm:p-6">
-                <p
-                  className="text-xs font-medium mb-1"
-                  style={{ color: 'var(--muted-color)' }}
-                >
-                  Janela de funcionamento
-                </p>
-                <p className="font-display text-lg font-bold mb-3">
-                  Segunda a Sábado das 9h às 18h
-                </p>
-                <p className="text-sm leading-snug" style={{ color: 'var(--muted-color)' }}>
-                  Horários organizados para evitar espera e garantir pontualidade.
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Célula Lateral 2: Localização rápida e contato */}
-            <motion.div
-              variants={heroItemVariants}
-              className="rounded-2xl p-5 sm:p-6 border flex flex-col justify-between"
-              style={{
-                backgroundColor: 'var(--surface-color)',
-                borderColor: 'rgba(148, 163, 184, 0.16)',
-              }}
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <span
-                    className="text-sm font-medium"
-                    style={{ color: 'var(--muted-color)' }}
-                  >
-                    Endereço e acesso rápido
-                  </span>
-                  <span
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: 'var(--primary-color)' }}
-                  />
-                </div>
-                <p className="font-display text-lg font-bold leading-snug mb-2">
-                  Av. Principal, 1000 - Centro - Porto Alegre/RS
-                </p>
-                <p className="text-sm mb-4" style={{ color: 'var(--muted-color)' }}>
-                  Telefone de suporte: (51) 99999-9999
-                </p>
-              </div>
-
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }}>
-                <Link
-                  to="/agendar"
-                  className="w-full inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2"
-                  style={{
-                    backgroundColor: 'rgba(99, 102, 241, 0.12)',
-                    borderColor: 'rgba(99, 102, 241, 0.4)',
-                    color: 'var(--text-color)',
-                  }}
-                >
-                  Consultar horários vagos
-                </Link>
-              </motion.div>
-            </motion.div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* 2. Matriz Modular de Serviços */}
-      <section
-        id="destaques"
-        className="scroll-mt-24 py-16 md:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
-      >
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
-          <div className="max-w-2xl">
-            <h2 className="font-display text-2xl sm:text-4xl font-bold tracking-tight mb-3">
-              Modalidades de atendimento disponíveis para reserva
-            </h2>
-            <p
-              className="text-base sm:text-lg max-w-prose"
-              style={{ color: 'var(--muted-color)' }}
-            >
-              Selecione o serviço adequado para a sua necessidade e confirme sua data diretamente na plataforma.
-            </p>
-          </div>
-          <div>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }}>
-              <Link
-                to="/agendar"
-                className="inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-xl text-sm font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2"
-                style={{
-                  backgroundColor: 'var(--surface-color)',
-                  borderColor: 'rgba(148, 163, 184, 0.24)',
-                  color: 'var(--text-color)',
-                }}
-              >
-                Abrir calendário completo
-              </Link>
-            </motion.div>
+              <span>Realizar reserva</span>
+              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5">
-          {servicesData.map((service, idx) => (
-            <motion.article
-              key={service.name}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.45, delay: idx * 0.08 }}
-              className={`${service.spanClass} rounded-2xl border overflow-hidden flex flex-col justify-between`}
-              style={{
-                backgroundColor: 'var(--surface-color)',
-                borderColor: service.featured
-                  ? 'rgba(99, 102, 241, 0.45)'
-                  : 'rgba(148, 163, 184, 0.16)',
-              }}
+        <div className="flex-1 w-full max-w-md md:max-w-none flex justify-center z-10">
+          <div className="relative p-2 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl shadow-primary/10 overflow-hidden">
+            <img 
+              src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80" 
+              alt="Rodízio de Mini Burgers Marcianos" 
+              className="rounded-2xl max-h-[380px] object-cover transition-transform duration-500 hover:scale-105"
+            />
+            <div className="absolute bottom-6 left-6 right-6 p-4 rounded-xl bg-slate-950/90 backdrop-blur border border-slate-800 text-left">
+              <span className="text-xs font-semibold text-primary">Estilo Único</span>
+              <p className="text-sm font-bold mt-1">Mais de 20 sabores livres com pães coloridos.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Diferenciais Section */}
+      <section className="py-16 bg-slate-900/40 border-y border-slate-900 px-6 sm:px-12 w-full">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 text-left">
+          <div className="flex gap-4 items-start">
+            <div className="p-3 rounded-lg bg-primary/10 text-primary">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="font-bold text-lg">Temática & Diversão</h4>
+              <p className="text-sm opacity-70 mt-1">Ambiente com luzes neon e temática alienígena incrível, além de pistas de boliche integradas.</p>
+            </div>
+          </div>
+          <div className="flex gap-4 items-start">
+            <div className="p-3 rounded-lg bg-primary/10 text-primary">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="font-bold text-lg">Rodízio Super Completo</h4>
+              <p className="text-sm opacity-70 mt-1">Mini burgers de dar água na boca, petiscos variados, pastéis e sobremesas inclusas.</p>
+            </div>
+          </div>
+          <div className="flex gap-4 items-start">
+            <div className="p-3 rounded-lg bg-primary/10 text-primary">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="font-bold text-lg">Localização Privilegiada</h4>
+              <p className="text-sm opacity-70 mt-1">Av. Padre Cacique, 580 - Menino Deus, Porto Alegre (ao lado do Estádio Beira-Rio).</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Menu/Rodízio Section */}
+      <section className="py-24 px-6 sm:px-12 max-w-6xl mx-auto w-full">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">O que está incluso no seu Rodízio</h2>
+          <p className="text-sm sm:text-base opacity-60 mt-3 max-w-md mx-auto">Prepare-se para uma viagem de sabores ilimitados que passam pela sua mesa.</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {menuItems.map((item) => (
+            <div 
+              key={item.id}
+              className="flex flex-col sm:flex-row gap-6 p-5 rounded-2xl border bg-slate-900 border-slate-800/80 transition-all duration-300 hover:border-primary/45 hover:-translate-y-1 text-left items-center sm:items-start"
             >
-              <div
-                className={`grid grid-cols-1 ${
-                  idx === 2 ? 'md:grid-cols-12 items-center' : ''
-                } h-full`}
-              >
-                <div
-                  className={`${
-                    idx === 2 ? 'md:col-span-5 h-56 md:h-full' : 'h-52'
-                  } relative overflow-hidden`}
-                >
-                  <img
-                    src={service.image}
-                    alt={service.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background:
-                        'linear-gradient(to top, rgba(15, 23, 42, 0.7) 0%, transparent 65%)',
-                    }}
-                  />
-                  <div className="absolute top-4 left-4">
-                    <span
-                      className="px-3 py-1 rounded-lg text-xs font-medium border"
-                      style={{
-                        backgroundColor: 'rgba(15, 23, 42, 0.85)',
-                        borderColor: 'rgba(99, 102, 241, 0.45)',
-                        color: 'var(--text-color)',
-                      }}
-                    >
-                      {service.badge}
+              <img 
+                src={item.image} 
+                alt={item.name} 
+                className="w-32 h-32 rounded-xl object-cover border border-slate-800 shadow"
+              />
+              <div className="flex-1 flex flex-col justify-between h-full w-full">
+                <div>
+                  <div className="flex items-center justify-between w-full">
+                    <h3 className="text-xl font-bold text-slate-100">{item.name}</h3>
+                    <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-0.5 rounded-full">
+                      {item.tag}
                     </span>
                   </div>
+                  <p className="text-sm opacity-70 mt-2 line-clamp-3">{item.description}</p>
                 </div>
-
-                <div
-                  className={`${
-                    idx === 2 ? 'md:col-span-7' : ''
-                  } p-6 sm:p-8 flex flex-col justify-between flex-1`}
-                >
-                  <div>
-                    <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
-                      <h3 className="font-display text-xl sm:text-2xl font-bold">
-                        {service.name}
-                      </h3>
-                      <span
-                        className="px-3 py-1 rounded-lg text-sm font-semibold"
-                        style={{
-                          backgroundColor: 'rgba(99, 102, 241, 0.14)',
-                          color: 'var(--text-color)',
-                        }}
-                      >
-                        {service.price}
-                      </span>
-                    </div>
-
-                    <p
-                      className="text-base leading-relaxed max-w-prose mb-6"
-                      style={{ color: 'var(--muted-color)' }}
-                    >
-                      {service.description}
-                    </p>
-                  </div>
-
-                  <div
-                    className="pt-4 border-t flex items-center justify-between gap-4"
-                    style={{ borderColor: 'rgba(148, 163, 184, 0.14)' }}
-                  >
-                    <span
-                      className="text-sm"
-                      style={{ color: 'var(--muted-color)' }}
-                    >
-                      Disponível na unidade Centro
-                    </span>
-                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }}>
-                      <Link
-                        to="/agendar"
-                        className="inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-colors focus-visible:outline-none focus-visible:ring-2"
-                        style={{ backgroundColor: 'var(--primary-color)' }}
-                      >
-                        Escolher este serviço
-                      </Link>
-                    </motion.div>
-                  </div>
+                <div className="mt-4 flex items-center justify-between w-full pt-2 border-t border-slate-800/40">
+                  <span className="text-xs opacity-50 uppercase font-semibold">Valor do Rodízio</span>
+                  <span className="text-base font-black text-primary">{item.price}</span>
                 </div>
               </div>
-            </motion.article>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* 3. Painel de Diferenciais Operacionais */}
-      <section
-        id="sobre"
-        className="scroll-mt-24 py-16 md:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5 mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.45 }}
-            className="lg:col-span-8 rounded-2xl p-6 sm:p-10 border"
-            style={{
-              backgroundColor: 'var(--surface-color)',
-              borderColor: 'rgba(148, 163, 184, 0.16)',
-            }}
-          >
-            <h2 className="font-display text-2xl sm:text-4xl font-bold tracking-tight mb-4">
-              Como funciona o padrão de atendimento na AppCustomizado
-            </h2>
-            <p
-              className="text-base sm:text-lg leading-relaxed max-w-prose"
-              style={{ color: 'var(--muted-color)' }}
-            >
-              Organizamos nossa operação para que você tenha previsibilidade de horário, clareza sobre cada etapa técnica e acompanhamento dedicado do início ao fim.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.45, delay: 0.08 }}
-            className="lg:col-span-4 rounded-2xl p-6 sm:p-8 border flex flex-col justify-between"
-            style={{
-              backgroundColor: 'rgba(99, 102, 241, 0.1)',
-              borderColor: 'rgba(99, 102, 241, 0.35)',
-            }}
-          >
-            <div>
-              <p
-                className="text-sm font-medium mb-2"
-                style={{ color: 'var(--muted-color)' }}
-              >
-                Segmento de atuação
-              </p>
-              <p className="font-display text-2xl font-bold mb-2">
-                Serviços Especializados
-              </p>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--muted-color)' }}>
-                Foco em Atendimento Individual, Avaliação e Diagnóstico e Agendamento Online Direto em Porto Alegre.
-              </p>
+      {/* Como Funciona Section */}
+      <section className="py-20 bg-slate-900/20 border-t border-slate-900 px-6 sm:px-12 w-full text-center">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold">Como Funciona a sua Visita</h2>
+          <p className="text-sm opacity-70 mt-2 max-w-md mx-auto">Recomendamos reservar sua mesa para garantir pistas de boliche livres e evitar filas na entrada.</p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-12">
+            <div className="flex flex-col items-center">
+              <span className="w-10 h-10 rounded-full bg-primary/15 text-primary border border-primary/30 flex items-center justify-center font-bold text-lg">1</span>
+              <h4 className="font-bold mt-4">Faça a Reserva Online</h4>
+              <p className="text-xs opacity-70 mt-2">Escolha o dia, horário e quantidade de astronautas para sua mesa.</p>
             </div>
-            <div className="mt-6 pt-4 border-t" style={{ borderColor: 'rgba(99, 102, 241, 0.25)' }}>
-              <span className="text-sm font-medium">
-                Atendimento de Segunda a Sábado
-              </span>
+            <div className="flex flex-col items-center">
+              <span className="w-10 h-10 rounded-full bg-primary/15 text-primary border border-primary/30 flex items-center justify-center font-bold text-lg">2</span>
+              <h4 className="font-bold mt-4">Diga Sim ao Boliche</h4>
+              <p className="text-xs opacity-70 mt-2">Indique em observações se deseja reservar horário para jogar boliche antes ou após comer.</p>
             </div>
-          </motion.div>
+            <div className="flex flex-col items-center">
+              <span className="w-10 h-10 rounded-full bg-primary/15 text-primary border border-primary/30 flex items-center justify-center font-bold text-lg">3</span>
+              <h4 className="font-bold mt-4">Aproveite Sem Limites</h4>
+              <p className="text-xs opacity-70 mt-2">Nosso time servirá os mini burgers e acompanhamentos continuamente até você estar satisfeito.</p>
+            </div>
+          </div>
         </div>
+      </section>
 
-        {/* 3 Células Técnicas Lado a Lado */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-          {operationalPillars.map((pillar, index) => (
-            <motion.div
-              key={pillar.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.45, delay: index * 0.1 }}
-              className="rounded-2xl p-6 sm:p-8 border flex flex-col justify-between"
-              style={{
-                backgroundColor: 'var(--surface-color)',
-                borderColor: 'rgba(148, 163, 184, 0.16)',
-              }}
-            >
-              <div>
-                <div className="inline-block px-3 py-1 rounded-lg text-xs font-medium mb-5 border"
-                  style={{
-                    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                    borderColor: 'rgba(148, 163, 184, 0.2)',
-                    color: 'var(--text-color)',
-                  }}
+      {/* Instagram feed simulation Section */}
+      <section className="py-20 px-6 sm:px-12 max-w-6xl mx-auto w-full text-center">
+        <h2 className="text-2xl sm:text-3xl font-extrabold">Siga @marcianos.burguer no Instagram</h2>
+        <p className="text-sm opacity-60 mt-2">Acompanhe fotos reais de nossos clientes, boliches e novidades intergalácticas.</p>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
+          {instagramPosts.map((url, i) => (
+            <div key={i} className="relative group overflow-hidden rounded-2xl border border-slate-900 shadow-lg">
+              <img 
+                src={url} 
+                alt={`Instagram Post ${i + 1}`} 
+                className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <a 
+                  href="https://www.instagram.com/marcianosoficial/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="p-3 rounded-full bg-primary text-white hover:scale-110 transition-transform"
                 >
-                  {pillar.metric}
-                </div>
-                <h3 className="font-display text-xl font-bold leading-snug mb-3">
-                  {pillar.title}
-                </h3>
-                <p
-                  className="text-sm sm:text-base leading-relaxed max-w-prose mb-6"
-                  style={{ color: 'var(--muted-color)' }}
-                >
-                  {pillar.summary}
-                </p>
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+                  </svg>
+                </a>
               </div>
-
-              <div
-                className="pt-4 border-t text-xs font-medium"
-                style={{
-                  borderColor: 'rgba(148, 163, 184, 0.14)',
-                  color: 'var(--muted-color)',
-                }}
-              >
-                {pillar.detail}
-              </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* 4. Barra de Ação & Atendimento Direto */}
-      <section
-        id="contato"
-        className="scroll-mt-24 pt-8 pb-20 md:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.5 }}
-          className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5"
+      {/* Call to Action Section */}
+      <section className="py-16 px-6 sm:px-12 bg-primary/5 border border-primary/10 rounded-3xl max-w-5xl mx-auto w-full my-10 text-center flex flex-col items-center">
+        <h3 className="text-2xl font-bold">Ficou com fome de outro planeta?</h3>
+        <p className="text-sm opacity-80 mt-3 max-w-md">Reserve a sua mesa agora mesmo e venha desfrutar do melhor rodízio livre de mini burgers com sua equipe ou família!</p>
+        <Link 
+          to="/agendar"
+          className="mt-8 px-8 py-4 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/25 hover:brightness-105 transition-all"
         >
-          {/* Bloco Principal de Conversão (8 colunas) */}
-          <div
-            className="lg:col-span-8 rounded-2xl p-6 sm:p-10 md:p-12 border flex flex-col justify-between"
-            style={{
-              backgroundColor: 'var(--surface-color)',
-              borderColor: 'rgba(99, 102, 241, 0.4)',
-            }}
-          >
-            <div className="max-w-xl mb-8">
-              <h2 className="font-display text-2xl sm:text-4xl font-bold tracking-tight mb-4">
-                Reserve seu horário na AppCustomizado agora mesmo
-              </h2>
-              <p
-                className="text-base sm:text-lg leading-relaxed max-w-prose"
-                style={{ color: 'var(--muted-color)' }}
-              >
-                Acesse a agenda em tempo real, selecione entre Atendimento Individual ou Avaliação e Diagnóstico e confirme sua visita sem burocracia.
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }}>
-                <Link
-                  to="/agendar"
-                  className="inline-flex items-center justify-center min-h-[48px] px-8 py-4 rounded-xl font-medium text-white shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2"
-                  style={{ backgroundColor: 'var(--primary-color)' }}
-                >
-                  Confirmar horário na agenda online
-                </Link>
-              </motion.div>
-            </div>
-          </div>
-
-          {/* Bloco de Dados de Atendimento (4 colunas) */}
-          <div
-            className="lg:col-span-4 rounded-2xl p-6 sm:p-8 border flex flex-col justify-between gap-6"
-            style={{
-              backgroundColor: 'var(--surface-color)',
-              borderColor: 'rgba(148, 163, 184, 0.16)',
-            }}
-          >
-            <div>
-              <h3 className="font-display text-lg font-bold mb-4">
-                Informações da unidade
-              </h3>
-
-              <div className="space-y-4 text-sm">
-                <div>
-                  <p style={{ color: 'var(--muted-color)' }}>Endereço</p>
-                  <p className="font-medium mt-0.5">
-                    Av. Principal, 1000 - Centro - Porto Alegre/RS
-                  </p>
-                </div>
-
-                <div>
-                  <p style={{ color: 'var(--muted-color)' }}>Horário de atendimento</p>
-                  <p className="font-medium mt-0.5">
-                    Segunda a Sábado das 9h às 18h
-                  </p>
-                </div>
-
-                <div>
-                  <p style={{ color: 'var(--muted-color)' }}>Telefone direto</p>
-                  <p className="font-medium mt-0.5">(51) 99999-9999</p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className="pt-4 border-t"
-              style={{ borderColor: 'rgba(148, 163, 184, 0.14)' }}
-            >
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }}>
-                <Link
-                  to="/agendar"
-                  className="w-full inline-flex items-center justify-center min-h-[44px] px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2"
-                  style={{
-                    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                    borderColor: 'rgba(148, 163, 184, 0.24)',
-                    color: 'var(--text-color)',
-                  }}
-                >
-                  Ver datas disponíveis
-                </Link>
-              </motion.div>
-            </div>
-          </div>
-        </motion.div>
+          Realizar reserva
+        </Link>
       </section>
     </div>
   );

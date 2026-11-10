@@ -118,7 +118,9 @@
         "https://pizzariabella.com.br"
       ]
     },
-    "is_local": true
+    "is_local": false,
+    "supabase_synced": true,
+    "supabase_id": 189
   },
   {
     "id": 187,

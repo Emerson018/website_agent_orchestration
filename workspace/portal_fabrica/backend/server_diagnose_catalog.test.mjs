@@ -39,6 +39,7 @@ test('POST /api/leads/:id/diagnose puts the stored Catálogo Extraído into the 
     const body = await res.json();
     assert.ok(body.prompt_mestre.includes('### Margherita'));
     assert.ok(fake.tables.contacts[0].additional_data.prompt_mestre.includes('R$ 48,00'));
+    assert.ok(Date.parse(fake.tables.contacts[0].additional_data.prompt_mestre_gerado_em), 'grava quando o prompt foi gerado');
   } finally {
     delete process.env.GEMINI_API_BASE_URL;
     delete process.env.GEMINI_API_KEY;

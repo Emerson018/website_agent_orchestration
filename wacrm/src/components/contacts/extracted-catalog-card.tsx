@@ -29,7 +29,9 @@ export interface ExtractedCatalogCardProps {
   catalog: ExtractedCatalog | null;
   onFilesChange: (files: CatalogFile[]) => void;
   /** promptMestre vem preenchido quando o backend refez o Prompt Mestre com o catálogo novo. */
-  onCatalogChange: (catalog: ExtractedCatalog, promptMestre: string | null) => void;
+  onCatalogChange: (catalog: ExtractedCatalog, promptMestre: string | null, promptMestreGeradoEm: string | null) => void;
+  /** Dentro de uma Etapa do Lead: sem moldura e sem título próprio. */
+  embedded?: boolean;
 }
 
 function readAsBase64(file: File): Promise<string> {
@@ -43,7 +45,13 @@ function readAsBase64(file: File): Promise<string> {
 
 async function readJson(
   res: Response
-): Promise<{ error?: string; files?: CatalogFile[]; catalogo_extraido?: ExtractedCatalog; prompt_mestre?: string | null }> {
+): Promise<{
+  error?: string;
+  files?: CatalogFile[];
+  catalogo_extraido?: ExtractedCatalog;
+  prompt_mestre?: string | null;
+  prompt_mestre_gerado_em?: string | null;
+}> {
   try {
     return await res.json();
   } catch {
@@ -51,7 +59,14 @@ async function readJson(
   }
 }
 
-export function ExtractedCatalogCard({ leadId, files, catalog, onFilesChange, onCatalogChange }: ExtractedCatalogCardProps) {
+export function ExtractedCatalogCard({
+  leadId,
+  files,
+  catalog,
+  onFilesChange,
+  onCatalogChange,
+  embedded = false,
+}: ExtractedCatalogCardProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -87,7 +102,7 @@ export function ExtractedCatalogCard({ leadId, files, catalog, onFilesChange, on
       });
       const data = await readJson(res);
       if (!res.ok || !data.catalogo_extraido) throw new Error(data.error || 'Falha ao salvar o catálogo.');
-      onCatalogChange(data.catalogo_extraido, data.prompt_mestre ?? null);
+      onCatalogChange(data.catalogo_extraido, data.prompt_mestre ?? null, data.prompt_mestre_gerado_em ?? null);
       toast.success('Catálogo salvo.');
     } catch (err) {
       toast.error((err as Error).message);
@@ -103,7 +118,7 @@ export function ExtractedCatalogCard({ leadId, files, catalog, onFilesChange, on
       const res = await fetch(`/api/leads/${leadId}/extract-catalog`, { method: 'POST' });
       const data = await readJson(res);
       if (!res.ok || !data.catalogo_extraido) throw new Error(data.error || 'Falha ao extrair o catálogo.');
-      onCatalogChange(data.catalogo_extraido, data.prompt_mestre ?? null);
+      onCatalogChange(data.catalogo_extraido, data.prompt_mestre ?? null, data.prompt_mestre_gerado_em ?? null);
       toast.success('Catálogo extraído com sucesso.');
     } catch (err) {
       toast.error((err as Error).message);
@@ -159,13 +174,15 @@ export function ExtractedCatalogCard({ leadId, files, catalog, onFilesChange, on
   }
 
   return (
-    <div className="p-5 rounded-2xl bg-card border border-border space-y-4">
+    <div className={embedded ? 'space-y-4' : 'p-5 rounded-2xl bg-card border border-border space-y-4'}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/50 pb-3">
         <div>
-          <h2 className="text-sm font-semibold tracking-wider uppercase text-foreground flex items-center gap-2">
-            <BookOpen className="size-4 text-primary" />
-            Catálogo Extraído
-          </h2>
+          {!embedded && (
+            <h2 className="text-sm font-semibold tracking-wider uppercase text-foreground flex items-center gap-2">
+              <BookOpen className="size-4 text-primary" />
+              Catálogo Extraído
+            </h2>
+          )}
           <p className="text-xs text-muted-foreground mt-0.5">
             Envie fotos ou PDFs de cardápios, tabelas de preço ou catálogos. JPG, PNG, WEBP ou PDF, até 15 MB por envio.
           </p>

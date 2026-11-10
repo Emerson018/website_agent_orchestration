@@ -498,6 +498,8 @@ app.post('/api/leads/:id/enrich-dossier', async (req, res) => {
     if (!result.success) {
       return res.status(result.code === 'MISSING_API_KEY' ? 412 : 400).json(result);
     }
+    // Data da consulta: o Prompt Mestre fica Desatualizado quando o dossiê é mais novo que ele
+    result.dossie = { ...result.dossie, consultado_em: new Date().toISOString() };
 
     const contactId = contactRecord.id;
     const { data: contact, error: getErr } = await supabase
@@ -700,9 +702,13 @@ function rebuildMasterPrompt(contact, additionalData) {
 async function saveExtractedCatalog(contact, catalogoExtraido) {
   const additionalData = { ...(contact.additional_data || {}), catalogo_extraido: catalogoExtraido };
   const promptMestre = rebuildMasterPrompt(contact, additionalData);
-  if (promptMestre) additionalData.prompt_mestre = promptMestre;
+  const promptMestreGeradoEm = promptMestre ? new Date().toISOString() : null;
+  if (promptMestre) {
+    additionalData.prompt_mestre = promptMestre;
+    additionalData.prompt_mestre_gerado_em = promptMestreGeradoEm;
+  }
   const { error } = await supabase.from('contacts').update({ additional_data: additionalData }).eq('id', contact.id);
-  return { error, promptMestre };
+  return { error, promptMestre, promptMestreGeradoEm };
 }
 
 async function saveCatalogFiles(contact, files) {
@@ -826,12 +832,17 @@ app.post('/api/leads/:id/extract-catalog', async (req, res) => {
 
     // Relê o contato para não sobrescrever o que mudou durante a chamada ao Gemini
     const latestContact = (await findContact(id)) || contact;
-    const { error: saveErr, promptMestre } = await saveExtractedCatalog(latestContact, catalogoExtraido);
+    const { error: saveErr, promptMestre, promptMestreGeradoEm } = await saveExtractedCatalog(latestContact, catalogoExtraido);
     if (saveErr) {
       return res.status(502).json({ error: `Falha ao salvar o catálogo no contato: ${saveErr.message}` });
     }
 
-    return res.json({ success: true, catalogo_extraido: catalogoExtraido, prompt_mestre: promptMestre });
+    return res.json({
+      success: true,
+      catalogo_extraido: catalogoExtraido,
+      prompt_mestre: promptMestre,
+      prompt_mestre_gerado_em: promptMestreGeradoEm,
+    });
   } catch (err) {
     console.error(`[Catalogo] Erro ao extrair catálogo do lead ${id}:`, err.message);
     return res.status(500).json({ error: 'Erro ao extrair o catálogo.', details: err.message });
@@ -858,14 +869,105 @@ app.put('/api/leads/:id/extracted-catalog', async (req, res) => {
       editado_manualmente: true,
       editado_em: new Date().toISOString(),
     };
-    const { error: saveErr, promptMestre } = await saveExtractedCatalog(contact, catalogoExtraido);
+    const { error: saveErr, promptMestre, promptMestreGeradoEm } = await saveExtractedCatalog(contact, catalogoExtraido);
     if (saveErr) {
       return res.status(502).json({ error: `Falha ao salvar o catálogo no contato: ${saveErr.message}` });
     }
-    return res.json({ success: true, catalogo_extraido: catalogoExtraido, prompt_mestre: promptMestre });
+    return res.json({
+      success: true,
+      catalogo_extraido: catalogoExtraido,
+      prompt_mestre: promptMestre,
+      prompt_mestre_gerado_em: promptMestreGeradoEm,
+    });
   } catch (err) {
     console.error(`[Catalogo] Erro ao salvar edição do catálogo do lead ${id}:`, err.message);
     return res.status(500).json({ error: 'Erro ao salvar o catálogo.', details: err.message });
+  }
+});
+
+// Desqualificação (Decision Gate): motivos aceitos
+const DISQUALIFY_REASONS = ['Já tem site', 'Sem perfil para o serviço', 'Sem resposta', 'Fora da região', 'Outro'];
+
+// Desqualifica o lead: Deals abertos viram perdidos e o motivo fica registrado no contato
+app.post('/api/leads/:id/disqualify', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const motivo = typeof req.body?.motivo === 'string' ? req.body.motivo.trim() : '';
+    if (!DISQUALIFY_REASONS.includes(motivo)) {
+      return res.status(400).json({ error: `Escolha um motivo: ${DISQUALIFY_REASONS.join(', ')}.` });
+    }
+    const detalhe = typeof req.body?.detalhe === 'string' ? req.body.detalhe.trim() : '';
+
+    const contact = await findContact(id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+
+    const { data: deals, error: dealsErr } = await supabase.from('deals').select('id, status').eq('contact_id', contact.id);
+    if (dealsErr) {
+      return res.status(502).json({ error: `Falha ao consultar os Deals do lead: ${dealsErr.message}` });
+    }
+    const openDeals = (deals || []).filter((d) => d.status === 'open').map((d) => d.id);
+
+    // Grava o registro primeiro: se fechar algum Deal falhar, o Reabrir ainda sabe quais reabrir
+    const desqualificacao = {
+      motivo,
+      ...(detalhe ? { detalhe } : {}),
+      em: new Date().toISOString(),
+      deals_fechados: openDeals,
+    };
+    const { error: saveErr } = await supabase
+      .from('contacts')
+      .update({ additional_data: { ...(contact.additional_data || {}), desqualificacao } })
+      .eq('id', contact.id);
+    if (saveErr) {
+      return res.status(502).json({ error: `Falha ao registrar a desqualificação: ${saveErr.message}` });
+    }
+
+    for (const dealId of openDeals) {
+      const { error } = await supabase.from('deals').update({ status: 'lost' }).eq('id', dealId);
+      if (error) {
+        return res.status(502).json({
+          error: `Desqualificação registrada, mas falhou ao marcar o Deal como perdido: ${error.message}`,
+        });
+      }
+    }
+    return res.json({ success: true, desqualificacao });
+  } catch (err) {
+    console.error(`[DecisionGate] Erro ao desqualificar o lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao desqualificar o lead.', details: err.message });
+  }
+});
+
+// Reabre um lead desqualificado: reabre só os Deals fechados pela desqualificação
+app.post('/api/leads/:id/reopen', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const contact = await findContact(id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+    const record = contact.additional_data?.desqualificacao;
+    if (!record) {
+      return res.status(409).json({ error: 'Este lead não está desqualificado.' });
+    }
+
+    for (const dealId of Array.isArray(record.deals_fechados) ? record.deals_fechados : []) {
+      const { error } = await supabase.from('deals').update({ status: 'open' }).eq('id', dealId);
+      if (error) {
+        return res.status(502).json({ error: `Falha ao reabrir o Deal: ${error.message}` });
+      }
+    }
+
+    const { desqualificacao: _removed, ...rest } = contact.additional_data || {};
+    const { error: saveErr } = await supabase.from('contacts').update({ additional_data: rest }).eq('id', contact.id);
+    if (saveErr) {
+      return res.status(502).json({ error: `Falha ao remover a desqualificação: ${saveErr.message}` });
+    }
+    return res.json({ success: true });
+  } catch (err) {
+    console.error(`[DecisionGate] Erro ao reabrir o lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao reabrir o lead.', details: err.message });
   }
 });
 
@@ -938,6 +1040,7 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
           ...curAdd,
           diagnostico_ia: result.diagnostico,
           prompt_mestre: result.prompt_mestre,
+          prompt_mestre_gerado_em: new Date().toISOString(),
         },
       })
       .eq('id', contactRecord.id);
