@@ -244,8 +244,8 @@ export default function LandingPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} noValidate className="space-y-4">
-                  <div className="flex items-baseline justify-between gap-4">
-                    <h2 className="text-2xl leading-none sm:text-[1.75rem]">Peça a sua proposta</h2>
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                    <h2 className="whitespace-nowrap text-2xl leading-none sm:text-[1.75rem]">Peça a sua proposta</h2>
                     <span className="text-xs text-bone-faint">Sem compromisso</span>
                   </div>
 
