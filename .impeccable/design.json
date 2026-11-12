@@ -1,0 +1,377 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-11T00:00:00Z",
+  "title": "Design System: Aether",
+  "extensions": {
+    "colorMeta": {
+      "void": {
+        "role": "neutral",
+        "displayName": "Void",
+        "canonical": "oklch(11.6% 0.006 285.4)",
+        "tonalRamp": [
+          "oklch(15% 0.003 285.4)",
+          "oklch(26% 0.003 285.4)",
+          "oklch(38% 0.005 285.4)",
+          "oklch(49% 0.005 285.4)",
+          "oklch(61% 0.005 285.4)",
+          "oklch(72% 0.005 285.4)",
+          "oklch(84% 0.003 285.4)",
+          "oklch(95% 0.003 285.4)"
+        ]
+      },
+      "void-raised": {
+        "role": "neutral",
+        "displayName": "Raised Void",
+        "canonical": "oklch(14.9% 0.013 292.4)",
+        "tonalRamp": [
+          "oklch(15% 0.005 292.4)",
+          "oklch(26% 0.008 292.4)",
+          "oklch(38% 0.010 292.4)",
+          "oklch(49% 0.012 292.4)",
+          "oklch(61% 0.012 292.4)",
+          "oklch(72% 0.010 292.4)",
+          "oklch(84% 0.008 292.4)",
+          "oklch(95% 0.005 292.4)"
+        ]
+      },
+      "bone": {
+        "role": "neutral",
+        "displayName": "Bone",
+        "canonical": "oklch(93.9% 0.007 97.4)",
+        "tonalRamp": [
+          "oklch(15% 0.003 97.4)",
+          "oklch(26% 0.004 97.4)",
+          "oklch(38% 0.005 97.4)",
+          "oklch(49% 0.006 97.4)",
+          "oklch(61% 0.006 97.4)",
+          "oklch(72% 0.005 97.4)",
+          "oklch(84% 0.004 97.4)",
+          "oklch(95% 0.003 97.4)"
+        ]
+      },
+      "bone-muted": {
+        "role": "neutral",
+        "displayName": "Muted Bone",
+        "canonical": "oklch(71.3% 0.01 299.2)",
+        "tonalRamp": [
+          "oklch(15% 0.004 299.2)",
+          "oklch(26% 0.006 299.2)",
+          "oklch(38% 0.008 299.2)",
+          "oklch(49% 0.009 299.2)",
+          "oklch(61% 0.009 299.2)",
+          "oklch(72% 0.008 299.2)",
+          "oklch(84% 0.006 299.2)",
+          "oklch(95% 0.004 299.2)"
+        ]
+      },
+      "bone-faint": {
+        "role": "neutral",
+        "displayName": "Faint Bone",
+        "canonical": "oklch(63.1% 0.013 296.2)",
+        "tonalRamp": [
+          "oklch(15% 0.005 296.2)",
+          "oklch(26% 0.008 296.2)",
+          "oklch(38% 0.010 296.2)",
+          "oklch(49% 0.012 296.2)",
+          "oklch(61% 0.012 296.2)",
+          "oklch(72% 0.010 296.2)",
+          "oklch(84% 0.008 296.2)",
+          "oklch(95% 0.005 296.2)"
+        ]
+      },
+      "signal": {
+        "role": "primary",
+        "displayName": "Signal Red",
+        "canonical": "oklch(63.7% 0.208 25.3)",
+        "tonalRamp": [
+          "oklch(15% 0.087 25.3)",
+          "oklch(26% 0.120 25.3)",
+          "oklch(38% 0.157 25.3)",
+          "oklch(49% 0.190 25.3)",
+          "oklch(61% 0.190 25.3)",
+          "oklch(72% 0.157 25.3)",
+          "oklch(84% 0.120 25.3)",
+          "oklch(95% 0.087 25.3)"
+        ]
+      },
+      "signal-hover": {
+        "role": "primary",
+        "displayName": "Lit Signal",
+        "canonical": "oklch(67.4% 0.183 23.4)",
+        "tonalRamp": [
+          "oklch(15% 0.077 23.4)",
+          "oklch(26% 0.106 23.4)",
+          "oklch(38% 0.138 23.4)",
+          "oklch(49% 0.167 23.4)",
+          "oklch(61% 0.167 23.4)",
+          "oklch(72% 0.138 23.4)",
+          "oklch(84% 0.106 23.4)",
+          "oklch(95% 0.077 23.4)"
+        ]
+      },
+      "violet": {
+        "role": "secondary",
+        "displayName": "Deep Aether Violet",
+        "canonical": "oklch(21.1% 0.121 288)",
+        "tonalRamp": [
+          "oklch(15% 0.051 288.0)",
+          "oklch(26% 0.070 288.0)",
+          "oklch(38% 0.091 288.0)",
+          "oklch(49% 0.110 288.0)",
+          "oklch(61% 0.110 288.0)",
+          "oklch(72% 0.091 288.0)",
+          "oklch(84% 0.070 288.0)",
+          "oklch(95% 0.051 288.0)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "rgb(236 235 230 / 0.12)",
+        "tonalRamp": [
+          "rgb(236 235 230 / 0.04)",
+          "rgb(236 235 230 / 0.08)",
+          "rgb(236 235 230 / 0.12)",
+          "rgb(236 235 230 / 0.16)",
+          "rgb(236 235 230 / 0.20)",
+          "rgb(236 235 230 / 0.24)",
+          "rgb(236 235 230 / 0.32)",
+          "rgb(236 235 230 / 0.40)"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Strong Hairline",
+        "canonical": "rgb(236 235 230 / 0.24)",
+        "tonalRamp": [
+          "rgb(236 235 230 / 0.04)",
+          "rgb(236 235 230 / 0.08)",
+          "rgb(236 235 230 / 0.12)",
+          "rgb(236 235 230 / 0.16)",
+          "rgb(236 235 230 / 0.20)",
+          "rgb(236 235 230 / 0.24)",
+          "rgb(236 235 230 / 0.32)",
+          "rgb(236 235 230 / 0.40)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The single first-viewport h1."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section h2s, constrained to 14-18ch."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Step titles, definition terms, work names, the form heading."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Section paragraphs in muted bone."
+      },
+      "body-small": {
+        "displayName": "Body small",
+        "purpose": "Links, buttons, captions, footer text."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Form field labels, sentence case."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "The Aether name in header and footer."
+      }
+    },
+    "shadows": [
+      {
+        "name": "signal-halo",
+        "value": "0 0 0 4px rgb(239 68 68 / 0.18)",
+        "purpose": "Glow ring on the awakened step point."
+      },
+      {
+        "name": "underline-focus",
+        "value": "0 1px 0 0 var(--color-signal)",
+        "purpose": "Thickens a focused field underline to 2px."
+      }
+    ],
+    "focus": {
+      "value": "outline: 2px solid var(--color-signal); outline-offset: 3px",
+      "purpose": "Global :focus-visible ring."
+    },
+    "motion": [
+      {
+        "name": "aether-rise",
+        "value": "1.1s cubic-bezier(0.16, 1, 0.3, 1) both; from opacity 0, translateY(14px), blur(6px)",
+        "purpose": "The only entrance: first-viewport copy rises out of the dark."
+      },
+      {
+        "name": "ease-color",
+        "value": "150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Hover and focus color, border and underline transitions."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation and transition durations 0.01ms",
+        "purpose": "Global prefers-reduced-motion fallback; the hero canvas becomes a still image."
+      }
+    ],
+    "gradients": [
+      {
+        "name": "violet-field-diferenciais",
+        "value": "radial-gradient(ellipse 70% 90% at 8% 0%, rgb(27 0 75 / 0.75), transparent 70%)"
+      },
+      {
+        "name": "violet-field-fechamento",
+        "value": "radial-gradient(ellipse 60% 100% at 85% 30%, rgb(27 0 75 / 0.9), transparent 72%)"
+      },
+      {
+        "name": "hero-veil-desktop",
+        "value": "linear-gradient(90deg, #050507 0%, rgb(5 5 7 / 0.9) 34%, rgb(5 5 7 / 0.15) 58%, transparent 70%)"
+      },
+      {
+        "name": "hero-veil-mobile",
+        "value": "linear-gradient(180deg, transparent 55%, rgb(5 5 7 / 0.85) 85%, #050507 100%)"
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Signal-red pill for the one main action; the arrow nudges on hover.",
+      "html": "<button class=\"ds-btn-primary\">Quero a minha proposta <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></button>",
+      "css": ":host{--color-void:#050507;--color-void-raised:#0b0a10;--color-bone:#ecebe6;--color-bone-muted:#a3a1a8;--color-bone-faint:#8a8891;--color-signal:#ef4444;--color-signal-hover:#f25e5e;--color-violet:#1b004b;--color-line:rgb(236 235 230 / 0.12);--color-line-strong:rgb(236 235 230 / 0.24);--font-display:\"Cormorant Garamond\",Georgia,serif;--font-sans:\"Plus Jakarta Sans\",system-ui,-apple-system,sans-serif;} .ds-btn-primary{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;background:var(--color-signal);color:var(--color-void);font-family:var(--font-sans);font-size:14px;line-height:20px;font-weight:600;padding:12px 24px;border:0;border-radius:9999px;cursor:pointer;transition:background-color .15s cubic-bezier(.4,0,.2,1);} .ds-btn-primary svg{transition:transform .15s cubic-bezier(.4,0,.2,1);} .ds-btn-primary:hover{background:var(--color-signal-hover);} .ds-btn-primary:hover svg{transform:translateX(2px);} .ds-btn-primary:focus-visible{outline:2px solid var(--color-signal);outline-offset:3px;} .ds-btn-primary:disabled{opacity:.7;cursor:wait;}"
+    },
+    {
+      "name": "Outline Pill",
+      "kind": "button",
+      "refersTo": "button-outline-pill",
+      "description": "Header CTA: a hairline pill that turns signal on hover.",
+      "html": "<a href=\"#\" class=\"ds-btn-pill\">Pedir proposta</a>",
+      "css": ":host{--color-void:#050507;--color-void-raised:#0b0a10;--color-bone:#ecebe6;--color-bone-muted:#a3a1a8;--color-bone-faint:#8a8891;--color-signal:#ef4444;--color-signal-hover:#f25e5e;--color-violet:#1b004b;--color-line:rgb(236 235 230 / 0.12);--color-line-strong:rgb(236 235 230 / 0.24);--font-display:\"Cormorant Garamond\",Georgia,serif;--font-sans:\"Plus Jakarta Sans\",system-ui,-apple-system,sans-serif;} .ds-btn-pill{display:inline-block;color:var(--color-bone);font-family:var(--font-sans);font-size:14px;line-height:20px;font-weight:500;padding:8px 16px;border:1px solid var(--color-line-strong);border-radius:9999px;text-decoration:none;transition:color .15s,border-color .15s;} .ds-btn-pill:hover{border-color:var(--color-signal);color:var(--color-signal);} .ds-btn-pill:focus-visible{outline:2px solid var(--color-signal);outline-offset:3px;}"
+    },
+    {
+      "name": "Quiet Link",
+      "kind": "button",
+      "refersTo": "link-quiet",
+      "description": "Secondary WhatsApp action beside a primary pill.",
+      "html": "<a href=\"#\" class=\"ds-link-quiet\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\"/></svg> Ou chame no WhatsApp</a>",
+      "css": ":host{--color-void:#050507;--color-void-raised:#0b0a10;--color-bone:#ecebe6;--color-bone-muted:#a3a1a8;--color-bone-faint:#8a8891;--color-signal:#ef4444;--color-signal-hover:#f25e5e;--color-violet:#1b004b;--color-line:rgb(236 235 230 / 0.12);--color-line-strong:rgb(236 235 230 / 0.24);--font-display:\"Cormorant Garamond\",Georgia,serif;--font-sans:\"Plus Jakarta Sans\",system-ui,-apple-system,sans-serif;} .ds-link-quiet{display:inline-flex;align-items:center;gap:6px;color:var(--color-bone-muted);font-family:var(--font-sans);font-size:14px;line-height:20px;text-decoration:none;transition:color .15s;} .ds-link-quiet:hover{color:var(--color-bone);} .ds-link-quiet:focus-visible{outline:2px solid var(--color-signal);outline-offset:3px;}"
+    },
+    {
+      "name": "Underline Field",
+      "kind": "input",
+      "refersTo": "input-underline",
+      "description": "Underline-only input; a 2px signal underline and a brightened label on focus.",
+      "html": "<div class=\"ds-field\"><label for=\"ds-f1\">WhatsApp</label><input id=\"ds-f1\" type=\"tel\" placeholder=\"(51) 99999-9999\"></div>",
+      "css": ":host{--color-void:#050507;--color-void-raised:#0b0a10;--color-bone:#ecebe6;--color-bone-muted:#a3a1a8;--color-bone-faint:#8a8891;--color-signal:#ef4444;--color-signal-hover:#f25e5e;--color-violet:#1b004b;--color-line:rgb(236 235 230 / 0.12);--color-line-strong:rgb(236 235 230 / 0.24);--font-display:\"Cormorant Garamond\",Georgia,serif;--font-sans:\"Plus Jakarta Sans\",system-ui,-apple-system,sans-serif;} .ds-field{background:var(--color-void);padding:16px;} .ds-field label{display:block;font-family:var(--font-sans);font-size:12px;font-weight:500;letter-spacing:.025em;color:var(--color-bone-muted);transition:color .15s;} .ds-field:focus-within label{color:var(--color-bone);} .ds-field input{display:block;width:100%;margin-top:6px;padding:8px 0;border:0;border-bottom:1px solid var(--color-line-strong);border-radius:0;background:transparent;color:var(--color-bone);caret-color:var(--color-signal);font-family:var(--font-sans);font-size:15px;transition:border-color .15s,box-shadow .15s;} .ds-field input::placeholder{color:var(--color-bone-faint);} .ds-field input:focus{outline:none;border-color:var(--color-signal);box-shadow:0 1px 0 0 var(--color-signal);}"
+    },
+    {
+      "name": "Form Slab",
+      "kind": "card",
+      "refersTo": "form-slab",
+      "description": "The only framed container: translucent void with a hairline frame and square corners.",
+      "html": "<div class=\"ds-slab\"><h2>Peça a sua proposta</h2><p>Fields and the primary action sit here.</p></div>",
+      "css": ":host{--color-void:#050507;--color-void-raised:#0b0a10;--color-bone:#ecebe6;--color-bone-muted:#a3a1a8;--color-bone-faint:#8a8891;--color-signal:#ef4444;--color-signal-hover:#f25e5e;--color-violet:#1b004b;--color-line:rgb(236 235 230 / 0.12);--color-line-strong:rgb(236 235 230 / 0.24);--font-display:\"Cormorant Garamond\",Georgia,serif;--font-sans:\"Plus Jakarta Sans\",system-ui,-apple-system,sans-serif;} .ds-slab{background:rgb(5 5 7 / .85);border:1px solid var(--color-line);border-radius:0;padding:24px 28px;color:var(--color-bone);font-family:var(--font-sans);} .ds-slab h2{margin:0;font-family:var(--font-display);font-weight:500;font-size:1.75rem;line-height:1;} .ds-slab p{margin:16px 0 0;font-size:14px;color:var(--color-bone-muted);}"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "description": "Wordmark on the left; muted anchor links and the outline pill on the right.",
+      "html": "<header class=\"ds-nav\"><a href=\"#\" class=\"ds-nav-mark\">Aether</a><nav><a href=\"#\">Como funciona</a><a href=\"#\">Trabalhos</a><a href=\"#\" class=\"ds-nav-cta\">Pedir proposta</a></nav></header>",
+      "css": ":host{--color-void:#050507;--color-void-raised:#0b0a10;--color-bone:#ecebe6;--color-bone-muted:#a3a1a8;--color-bone-faint:#8a8891;--color-signal:#ef4444;--color-signal-hover:#f25e5e;--color-violet:#1b004b;--color-line:rgb(236 235 230 / 0.12);--color-line-strong:rgb(236 235 230 / 0.24);--font-display:\"Cormorant Garamond\",Georgia,serif;--font-sans:\"Plus Jakarta Sans\",system-ui,-apple-system,sans-serif;} .ds-nav{display:flex;align-items:center;justify-content:space-between;height:80px;padding:0 48px;background:var(--color-void);} .ds-nav-mark{font-family:var(--font-display);font-weight:500;font-size:1.75rem;line-height:1;letter-spacing:.02em;color:var(--color-bone);text-decoration:none;} .ds-nav nav{display:flex;align-items:center;gap:28px;font-family:var(--font-sans);font-size:14px;} .ds-nav nav a{color:var(--color-bone-muted);text-decoration:none;transition:color .15s;} .ds-nav nav a:hover{color:var(--color-bone);} .ds-nav nav a.ds-nav-cta{color:var(--color-bone);font-weight:500;padding:8px 16px;border:1px solid var(--color-line-strong);border-radius:9999px;transition:color .15s,border-color .15s;} .ds-nav nav a.ds-nav-cta:hover{color:var(--color-signal);border-color:var(--color-signal);} .ds-nav a:focus-visible{outline:2px solid var(--color-signal);outline-offset:3px;}"
+    },
+    {
+      "name": "Step Rail",
+      "kind": "custom",
+      "description": "Points joined by a hairline filament; the last point is awakened in signal.",
+      "html": "<ol class=\"ds-rail\"><li><span class=\"ds-pt\"></span><h3>Você deixa o contato</h3><p>Leva menos de um minuto.</p></li><li><span class=\"ds-pt\"></span><h3>A gente estuda o seu negócio</h3><p>Maps, avaliações, fotos, cardápio.</p></li><li><span class=\"ds-pt ds-pt-lit\"></span><h3>Você recebe a proposta</h3><p>Um site com a sua cara.</p></li></ol>",
+      "css": ":host{--color-void:#050507;--color-void-raised:#0b0a10;--color-bone:#ecebe6;--color-bone-muted:#a3a1a8;--color-bone-faint:#8a8891;--color-signal:#ef4444;--color-signal-hover:#f25e5e;--color-violet:#1b004b;--color-line:rgb(236 235 230 / 0.12);--color-line-strong:rgb(236 235 230 / 0.24);--font-display:\"Cormorant Garamond\",Georgia,serif;--font-sans:\"Plus Jakarta Sans\",system-ui,-apple-system,sans-serif;} .ds-rail{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin:0;padding:0;list-style:none;background:var(--color-void);color:var(--color-bone);} .ds-rail::before{content:\"\";position:absolute;left:0;right:0;top:5px;height:1px;background:var(--color-line-strong);} .ds-rail li{position:relative;padding-top:40px;} .ds-pt{position:absolute;left:0;top:0;width:11px;height:11px;border-radius:9999px;background:var(--color-bone);} .ds-pt-lit{background:var(--color-signal);box-shadow:0 0 0 4px rgb(239 68 68 / .18);} .ds-rail h3{margin:0;font-family:var(--font-display);font-weight:500;font-size:1.65rem;line-height:1.25;} .ds-rail p{margin:12px 0 0;max-width:34ch;font-family:var(--font-sans);font-size:15px;line-height:1.625;color:var(--color-bone-muted);}"
+    },
+    {
+      "name": "Hairline List on Violet Field",
+      "kind": "custom",
+      "description": "Open section content divided by hairlines over a radial violet depth field.",
+      "html": "<section class=\"ds-violet\"><dl><div><dt>Feito do zero, nunca de modelo</dt><dd>Cada site nasce do seu negócio.</dd></div><div><dt>Pensado para o celular</dt><dd>O seu site funciona bem lá.</dd></div></dl></section>",
+      "css": ":host{--color-void:#050507;--color-void-raised:#0b0a10;--color-bone:#ecebe6;--color-bone-muted:#a3a1a8;--color-bone-faint:#8a8891;--color-signal:#ef4444;--color-signal-hover:#f25e5e;--color-violet:#1b004b;--color-line:rgb(236 235 230 / 0.12);--color-line-strong:rgb(236 235 230 / 0.24);--font-display:\"Cormorant Garamond\",Georgia,serif;--font-sans:\"Plus Jakarta Sans\",system-ui,-apple-system,sans-serif;} .ds-violet{padding:48px;background-color:var(--color-void);background-image:radial-gradient(ellipse 70% 90% at 8% 0%,rgb(27 0 75 / .75),transparent 70%);color:var(--color-bone);} .ds-violet dl{margin:0;border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line);} .ds-violet dl>div{display:grid;grid-template-columns:2fr 3fr;gap:32px;padding:28px 0;} .ds-violet dl>div+div{border-top:1px solid var(--color-line);} .ds-violet dt{font-family:var(--font-display);font-weight:500;font-size:1.5rem;line-height:1.25;} .ds-violet dd{margin:0;font-family:var(--font-sans);font-size:15px;line-height:1.625;color:var(--color-bone-muted);}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Lit Mesh",
+    "overview": "Aether is a dark, open field where light marks what matters. The ground is near-black, the ink is a warm bone white, and the only saturated color is a signal red that appears where the visitor can act. Everything else is quiet: a bone serif for statements, a clean sans for explanation, and 1px hairlines doing the work that cards and shadows do elsewhere.\n\nThe world comes from the \"Ecos de Luz\" hero, a point-graph sculpture of a hand touching a face that brightens under the pointer. The page borrows its materials directly: bone points and filaments become hairlines and text, the red awakened points become the action color, the deep violet glow becomes a radial depth field behind a few sections. Sections are open fields separated by a hairline, never boxed. Density is low; whitespace and large serif headlines carry the pace.\n\nMotion is nearly absent by design. The first-viewport copy rises once out of the dark; the sculpture itself responds to the pointer; nothing else animates beyond color transitions on hover.",
+    "keyCharacteristics": [
+      "Near-black ground, bone ink, one red for action and focus.",
+      "Cormorant Garamond display over Plus Jakarta Sans text.",
+      "Hairline rules instead of cards, glass or shadows; square frames, pill-shaped actions.",
+      "Violet only as a soft radial field, never as a fill or text color.",
+      "One entrance animation, fully neutralized under reduced motion."
+    ],
+    "rules": [
+      {
+        "name": "The One Red Rule",
+        "body": "Signal red marks only what you can do or where you are: actions, focus, caret, selection, errors, and the awakened point. It never colors a headline, an accent word, or decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Field Not Fill Rule",
+        "body": "Violet is applied only as a radial gradient fading into void behind an open section. Never a solid background, border, or text color.",
+        "section": "colors"
+      },
+      {
+        "name": "The Bone Italic Rule",
+        "body": "Emphasis inside a serif headline is Cormorant italic in bone, the same color as the line (the \"aceso\" accent). Never red, never a different weight jump.",
+        "section": "typography"
+      },
+      {
+        "name": "The Serif Speaks Rule",
+        "body": "h1-h3, definition terms, work names and the wordmark are Cormorant at 500 with balanced wrapping; all explanation, labels and actions are Plus Jakarta Sans.",
+        "section": "typography"
+      },
+      {
+        "name": "The Clear Art Rule",
+        "body": "Art never sits behind text. In Fechamento the sculpture image is a band above the copy on phones (288px, 384px from sm, masked to fade downward) and an absolutely positioned 52% panel on the right on desktop, masked to fade leftward. The hero uses directional void gradients to the same end.",
+        "section": "layout"
+      },
+      {
+        "name": "The Hairline Not Shadow Rule",
+        "body": "Separation is a 1px bone line at 12% or 24% alpha. If a surface seems to need a shadow, give it a hairline frame instead.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** keep signal red for actions, focus, caret, selection, errors and the awakened point (The One Red Rule).",
+      "**Do** separate sections with a 1px hairline (line) and leave them as open fields inside the 1400px container.",
+      "**Do** set emphasis in a serif headline as bone italic (The Bone Italic Rule).",
+      "**Do** build form fields as underline-only, with a signal underline and a brightened label on focus.",
+      "**Do** place violet only as a radial field fading to transparent behind a section.",
+      "**Do** keep art clear of text: above it on phones, beside it on desktop, or behind a void gradient (The Clear Art Rule).",
+      "**Do** pair every primary pill with at most one quiet link as the secondary action."
+    ],
+    "donts": [
+      "**Don't** use cards, glass panels, or drop shadows to separate content; use hairlines.",
+      "**Don't** color headline words, decoration or large surfaces signal red.",
+      "**Don't** use violet as a solid fill, border, or text color.",
+      "**Don't** round frames, inputs or images; roundness belongs to actions and points.",
+      "**Don't** add entrance animations beyond the single first-viewport rise, and never ship motion without the reduced-motion fallback.",
+      "**Don't** draw boxed inputs or remove the global signal focus outline from anything but underline fields."
+    ]
+  }
+}

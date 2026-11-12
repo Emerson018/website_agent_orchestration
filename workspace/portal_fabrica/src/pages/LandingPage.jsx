@@ -26,7 +26,7 @@ const TRABALHOS = [
 const PASSOS = [
   {
     title: 'Você deixa o contato',
-    text: 'Seu nome, seu WhatsApp e, se tiver, o site ou o Instagram do seu negócio. Leva menos de um minuto.'
+    text: 'Seu nome, e-mail e WhatsApp e, se tiver, o site ou o Instagram do seu negócio. Leva menos de um minuto.'
   },
   {
     title: 'A gente estuda o seu negócio',
@@ -56,8 +56,9 @@ const DIFERENCIAIS = [
 const STORAGE_KEY = 'portal_fabrica_submitted_lead';
 
 const fieldClass =
-  'mt-1.5 block w-full rounded-none border-0 border-b border-line-strong bg-transparent px-0 py-2 text-[15px] text-bone placeholder:text-bone-faint transition-colors focus:border-signal focus:outline-none focus-visible:outline-none';
-const labelClass = 'block text-xs font-medium tracking-wide text-bone-muted';
+  'mt-1.5 block w-full rounded-none border-0 border-b border-line-strong bg-transparent px-0 py-2 text-[15px] text-bone placeholder:text-bone-faint transition-[border-color,box-shadow] focus:border-signal focus:shadow-[0_1px_0_0_var(--color-signal)] focus:outline-none';
+const labelClass = 'block text-xs font-medium tracking-wide text-bone-muted transition-colors';
+const fieldWrapClass = 'focus-within:[&>label]:text-bone';
 
 export default function LandingPage() {
   // Form State
@@ -71,6 +72,8 @@ export default function LandingPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  // true quando o envio falhou (não a validação): mostra a saída pelo WhatsApp
+  const [sendFailed, setSendFailed] = useState(false);
 
   // Mantém os dados da solicitação persistidos para que a tela não suma mesmo em recargas
   const [submittedData, setSubmittedData] = useState(() => {
@@ -116,6 +119,7 @@ export default function LandingPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
+    setSendFailed(false);
 
     const trimmedName = formData.name.trim();
     const trimmedCompany = formData.company.trim();
@@ -154,19 +158,7 @@ export default function LandingPage() {
       });
 
       if (!res.ok) {
-        let serverMessage = 'Erro ao enviar solicitação (Código ' + res.status + ').';
-        try {
-          const text = await res.text();
-          try {
-            const errBody = JSON.parse(text);
-            if (errBody?.error) serverMessage = errBody.error;
-          } catch {
-            if (text.includes('ECONNREFUSED') || text.includes('proxy error') || res.status === 500) {
-              serverMessage = 'Não foi possível conectar ao servidor backend (porta 5000). Verifique se o serviço está em execução.';
-            }
-          }
-        } catch {}
-        throw new Error(serverMessage);
+        throw new Error(`Envio recusado (HTTP ${res.status})`);
       }
 
       const submitted = {
@@ -189,7 +181,8 @@ export default function LandingPage() {
       }, 50);
     } catch (err) {
       console.error('Erro ao enviar lead:', err);
-      setErrorMessage(err.message || 'Falha ao conectar com o servidor. Verifique sua conexão e tente novamente.');
+      setSendFailed(true);
+      setErrorMessage('Não conseguimos enviar o seu contato agora. Tente de novo em instantes ou fale com a gente direto no WhatsApp.');
     } finally {
       setIsSubmitting(false);
     }
@@ -214,11 +207,10 @@ export default function LandingPage() {
         <div className="pointer-events-none mx-auto grid min-h-[100svh] max-w-[1400px] items-end px-5 pb-16 pt-[46svh] sm:px-8 lg:items-center lg:pb-12 lg:pt-24 lg:px-12">
           <div className="aether-rise w-full max-w-[34rem]">
             <h1 id="titulo-aether" className="text-[clamp(2.6rem,5vw,4.5rem)] leading-[0.95] tracking-[-0.015em]">
-              Cada detalhe do seu negócio, <em className="font-medium italic text-signal">aceso</em> num site só seu.
+              Cada detalhe do seu negócio, <em className="font-medium italic">aceso</em> num site só seu.
             </h1>
-            <p className="mt-5 max-w-[30rem] text-base leading-relaxed text-bone-muted sm:text-[17px]">
-              A gente estuda o seu negócio de verdade (fotos, avaliações, cardápio, o jeito de atender) e cria um site do
-              zero a partir disso. Sem modelo pronto.
+            <p className="mt-5 max-w-[30rem] text-base leading-relaxed text-bone-muted [text-wrap:balance] sm:text-[17px]">
+              Estudamos o seu negócio de verdade e criamos o site do zero a partir dele.
             </p>
 
             <div id="formulario" className="pointer-events-auto mt-8 scroll-mt-24 border border-line bg-void/85 p-6 sm:px-7 sm:py-6">
@@ -250,7 +242,7 @@ export default function LandingPage() {
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
+                    <div className={fieldWrapClass}>
                       <label htmlFor="field-name" className={labelClass}>
                         Seu nome
                       </label>
@@ -264,7 +256,7 @@ export default function LandingPage() {
                         required
                       />
                     </div>
-                    <div>
+                    <div className={fieldWrapClass}>
                       <label htmlFor="field-company" className={labelClass}>
                         Nome do negócio <span className="text-bone-faint">(opcional)</span>
                       </label>
@@ -277,7 +269,7 @@ export default function LandingPage() {
                         className={fieldClass}
                       />
                     </div>
-                    <div>
+                    <div className={fieldWrapClass}>
                       <label htmlFor="field-email" className={labelClass}>
                         E-mail
                       </label>
@@ -291,7 +283,7 @@ export default function LandingPage() {
                         required
                       />
                     </div>
-                    <div>
+                    <div className={fieldWrapClass}>
                       <label htmlFor="field-phone" className={labelClass}>
                         WhatsApp
                       </label>
@@ -302,13 +294,13 @@ export default function LandingPage() {
                         autoComplete="tel"
                         value={formData.phone}
                         onChange={handlePhoneChange}
-                        placeholder="(11) 99999-9999"
+                        placeholder="(51) 99999-9999"
                         className={fieldClass}
                         required
                       />
                     </div>
                   </div>
-                  <div>
+                  <div className={fieldWrapClass}>
                     <label htmlFor="field-website" className={labelClass}>
                       Site ou Instagram <span className="text-bone-faint">(opcional)</span>
                     </label>
@@ -326,6 +318,14 @@ export default function LandingPage() {
                   {errorMessage && (
                     <p role="alert" className="text-sm text-signal">
                       {errorMessage}
+                      {sendFailed && (
+                        <>
+                          {' '}
+                          <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="font-medium text-bone underline underline-offset-4">
+                            Abrir o WhatsApp
+                          </a>
+                        </>
+                      )}
                     </p>
                   )}
 
@@ -389,7 +389,10 @@ export default function LandingPage() {
       </section>
 
       {/* Diferenciais */}
-      <section aria-labelledby="titulo-diferenciais" className="border-t border-line bg-dusk">
+      <section
+        aria-labelledby="titulo-diferenciais"
+        className="border-t border-line bg-void bg-[radial-gradient(ellipse_70%_90%_at_8%_0%,rgb(27_0_75/0.75),transparent_70%)]"
+      >
         <div className="mx-auto grid max-w-[1400px] gap-14 px-5 py-24 sm:px-8 sm:py-32 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:px-12">
           <h2 id="titulo-diferenciais" className="max-w-[14ch] text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
             Um site que só podia ser do seu negócio.
@@ -436,13 +439,24 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Fechamento */}
-      <section aria-labelledby="titulo-fechamento" className="border-t border-line">
-        <div className="mx-auto flex max-w-[1400px] flex-col items-start gap-8 px-5 py-24 sm:px-8 lg:flex-row lg:items-end lg:justify-between lg:px-12">
+      {/* Fechamento: a mão da escultura volta, parada, sobre o campo violeta */}
+      <section
+        aria-labelledby="titulo-fechamento"
+        className="relative isolate overflow-hidden border-t border-line bg-void bg-[radial-gradient(ellipse_60%_100%_at_85%_30%,rgb(27_0_75/0.9),transparent_72%)]"
+      >
+        <img
+          src="/assets/ecos-de-luz.jpg"
+          alt=""
+          aria-hidden
+          loading="lazy"
+          className="pointer-events-none relative -z-10 block h-72 w-full object-cover object-[75%_8%] opacity-70 mix-blend-screen [mask-image:linear-gradient(180deg,black_50%,transparent)] sm:h-96 lg:absolute lg:right-0 lg:top-0 lg:h-full lg:w-[52%] lg:[mask-image:linear-gradient(90deg,transparent,black_40%)]"
+        />
+        {/* Texto e ações sempre sobre o campo escuro: no celular a arte fica acima, no desktop à direita */}
+        <div className="mx-auto flex max-w-[1400px] flex-col items-start gap-8 px-5 pb-28 pt-2 sm:px-8 sm:pb-36 lg:px-12 lg:py-36">
           <h2 id="titulo-fechamento" className="max-w-[16ch] text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
             O seu negócio já tem o que é preciso. Vamos acender.
           </h2>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
             <a
               href="#formulario"
               className="inline-flex items-center gap-2 rounded-full bg-signal px-6 py-3 text-sm font-semibold text-void transition-colors hover:bg-signal-hover"

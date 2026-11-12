@@ -21,6 +21,6 @@ STORY: the owner sees their business as raw material made visible, believes the 
 
 FIRST VIEWPORT: the Ecos de Luz canvas full-bleed, sculpture anchored right; left column: Aether wordmark, a three-line display headline, one line of subcopy, the working form directly below in a black slab with a hairline frame, red primary button, WhatsApp as the quiet secondary. Phone: sculpture centered behind a dark fade, headline then form.
 
-FORM: user-pinned direction (the Ecos de Luz hero), no roll. seed: none (unavailable). Signature interaction: the pointer awakens the mesh; motion grammar: one slow fade-up of the first-viewport copy, nothing else animates.
+FORM: user-pinned direction (the Ecos de Luz hero); the direction roll ran (seed:d4704dbcaa756824) and the pinned direction beats it, as new-work allows. Signature interaction: the pointer awakens the mesh; motion grammar: one slow fade-up of the first-viewport copy, nothing else animates.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
