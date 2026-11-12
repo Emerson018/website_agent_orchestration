@@ -1,34 +1,63 @@
 import React, { useState } from 'react';
+import { ArrowRight, ArrowUpRight, Check, Loader2, MessageCircle } from 'lucide-react';
 import { apiFetch, formatBrazilianPhone, isValidBrazilianPhone } from '../lib/api';
+import { WHATSAPP_URL } from '../lib/contact';
+import EcosDeLuzBackdrop from '../components/EcosDeLuzBackdrop';
 
-const HOMOLOGATED_CASES = [
+// Sites que a Aether já fez (PRODUCT.md, Evidence on Hand): nome, tipo de negócio e captura de tela, sem links.
+const TRABALHOS = [
   {
-    code: 'ESP-104',
-    client: 'Sorriso Perfeito',
-    sector: 'Clínica Odontológica',
-    outcome:
-      'Site institucional com agendamento PWA integrado, confirmações automáticas por WhatsApp e identidade visual exclusiva.',
-    highlight: 'Taxa de confirmação de consultas subiu para 94%'
+    name: '20barranove',
+    kind: 'Parrilla e hamburgueria artesanal',
+    image: '/assets/trabalhos/20barranove.jpg'
   },
   {
-    code: 'ESP-118',
-    client: 'Navalha de Ouro',
-    sector: 'Barbearia & Estética',
-    outcome:
-      'Atendimento automatizado com consulta de horários em tempo real, sem perdas por demora no retorno e sincronizado com o CRM.',
-    highlight: 'Zero conflitos de horários na agenda'
+    name: 'Campeiro Fogão',
+    kind: 'Gastronomia campeira e fogo de chão',
+    image: '/assets/trabalhos/campeiro-fogao.jpg'
   },
   {
-    code: 'ESP-129',
-    client: 'Pampas Barber',
-    sector: 'Rede de Barbearias',
-    outcome:
-      'Implantação de aplicativo web instalável de alta velocidade, centralizando unidades e captando novos clientes locais.',
-    highlight: 'Carregamento instantâneo e offline'
+    name: 'Marcianos',
+    kind: 'Restaurante com reserva online',
+    image: '/assets/trabalhos/marcianos.jpg'
+  }
+];
+
+const PASSOS = [
+  {
+    title: 'Você deixa o contato',
+    text: 'Seu nome, seu WhatsApp e, se tiver, o site ou o Instagram do seu negócio. Leva menos de um minuto.'
+  },
+  {
+    title: 'A gente estuda o seu negócio',
+    text: 'Olhamos o seu perfil no Google Maps, o que os clientes dizem nas avaliações, as suas fotos e o seu cardápio ou catálogo.'
+  },
+  {
+    title: 'Você recebe a proposta',
+    text: 'Um site pensado a partir do que já faz o seu negócio ser escolhido, com a sua cara e o seu jeito de atender.'
+  }
+];
+
+const DIFERENCIAIS = [
+  {
+    title: 'Feito do zero, nunca de modelo',
+    text: 'Cada site nasce do seu negócio: as suas cores, as suas fotos, o seu jeito de falar com o cliente. Nada de tema pronto trocando só o logo.'
+  },
+  {
+    title: 'Com o que os seus clientes já dizem',
+    text: 'As avaliações reais do seu Google Maps viram prova de confiança para quem ainda não conhece você.'
+  },
+  {
+    title: 'Pensado para o celular',
+    text: 'É no celular que as pessoas procuram onde comer, cortar o cabelo ou marcar um horário. O seu site funciona bem lá.'
   }
 ];
 
 const STORAGE_KEY = 'portal_fabrica_submitted_lead';
+
+const fieldClass =
+  'mt-1.5 block w-full rounded-none border-0 border-b border-line-strong bg-transparent px-0 py-2 text-[15px] text-bone placeholder:text-bone-faint transition-colors focus:border-signal focus:outline-none focus-visible:outline-none';
+const labelClass = 'block text-xs font-medium tracking-wide text-bone-muted';
 
 export default function LandingPage() {
   // Form State
@@ -166,299 +195,270 @@ export default function LandingPage() {
     }
   };
 
+
   return (
-    <div className="bg-[#12151B] text-[#ECEEF2] min-h-screen">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24 border-b border-[#282F3D]">
-        <div className="absolute inset-0 bg-radial from-[#E59A28]/10 via-transparent to-transparent pointer-events-none" />
+    <div id="topo">
+      {/* Primeira dobra: a escultura Ecos de Luz ao fundo, o título e o formulário */}
+      <section className="relative isolate overflow-hidden" aria-labelledby="titulo-aether">
+        <div className="absolute inset-x-0 top-0 -z-10 h-[50svh] lg:h-[100svh] lg:min-h-[640px]">
+          <EcosDeLuzBackdrop />
+          {/* Escurece o lado do texto para a leitura; não bloqueia o ponteiro sobre a escultura */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgb(5_5_7/0.85)_85%,#050507_100%)] lg:bg-[linear-gradient(90deg,#050507_0%,rgb(5_5_7/0.9)_34%,rgb(5_5_7/0.15)_58%,transparent_70%)]"
+          />
+          {/* Esmaece o topo para o menu não disputar com a escultura */}
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(180deg,#050507_10%,transparent)]" />
+        </div>
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E59A28]/10 border border-[#E59A28]/25 text-[#E59A28] text-xs font-semibold uppercase tracking-wider">
-              <span className="w-2 h-2 rounded-full bg-[#E59A28] animate-pulse" />
-              Fábrica de Sites & Softwares Sob Medida
-            </div>
-
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#ECEEF2] font-display">
-              Projetos exclusivos gerados sob medida para o seu negócio
+        <div className="pointer-events-none mx-auto grid min-h-[100svh] max-w-[1400px] items-end px-5 pb-16 pt-[46svh] sm:px-8 lg:items-center lg:pb-12 lg:pt-24 lg:px-12">
+          <div className="aether-rise w-full max-w-[34rem]">
+            <h1 id="titulo-aether" className="text-[clamp(2.6rem,5vw,4.5rem)] leading-[0.95] tracking-[-0.015em]">
+              Cada detalhe do seu negócio, <em className="font-medium italic text-signal">aceso</em> num site só seu.
             </h1>
-
-            <p className="text-base sm:text-lg text-[#949BA8] leading-relaxed">
-              Diga adeus a modelos genéricos. Criamos sites de alta performance, agendadores PWA e automações de atendimento integradas ao WhatsApp e ao CRM.
+            <p className="mt-5 max-w-[30rem] text-base leading-relaxed text-bone-muted sm:text-[17px]">
+              A gente estuda o seu negócio de verdade (fotos, avaliações, cardápio, o jeito de atender) e cria um site do
+              zero a partir disso. Sem modelo pronto.
             </p>
-          </div>
 
-          {/* Form / Success Container */}
-          <div id="formulario" className="mt-12 max-w-2xl mx-auto scroll-mt-24">
-            {submittedData ? (
-              /* Success State (Permanente com botão de Voltar) */
-              <div className="rounded-xl border border-emerald-500/30 bg-[#161B22] p-8 sm:p-10 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-500">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600" />
-
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 mx-auto flex items-center justify-center text-3xl font-bold shadow-inner">
-                    ✓
+            <div id="formulario" className="pointer-events-auto mt-8 scroll-mt-24 border border-line bg-void/85 p-6 sm:px-7 sm:py-6">
+              {submittedData ? (
+                <div role="status" className="space-y-5">
+                  <span className="grid size-10 place-items-center rounded-full border border-signal text-signal">
+                    <Check className="size-5" aria-hidden />
+                  </span>
+                  <div className="space-y-2">
+                    <h2 className="text-3xl leading-tight">Recebemos, {submittedData.name.split(' ')[0]}.</h2>
+                    <p className="text-sm leading-relaxed text-bone-muted">
+                      Vamos estudar {submittedData.company ? <strong className="text-bone">{submittedData.company}</strong> : 'o seu negócio'} e
+                      chamar você no WhatsApp <strong className="text-bone">{submittedData.phone}</strong> com a proposta.
+                    </p>
                   </div>
-
-                  <h2 className="text-2xl sm:text-3xl font-bold text-[#ECEEF2] font-display">
-                    Solicitação Recebida com Sucesso!
-                  </h2>
-
-                  <p className="text-sm sm:text-base text-[#949BA8] leading-relaxed">
-                    Obrigado, <strong className="text-[#ECEEF2]">{submittedData.name}</strong>! Os dados da sua solicitação foram registrados com sucesso no nosso sistema.
-                  </p>
-
-                  <div className="p-4 rounded-lg bg-[#12151B] border border-[#282F3D] text-left text-xs sm:text-sm space-y-2 mt-6">
-                    <div className="text-xs font-semibold uppercase tracking-wider text-[#949BA8] pb-1 border-b border-[#282F3D]">
-                      Resumo da Solicitação
-                    </div>
-                    <div className="flex justify-between py-0.5">
-                      <span className="text-[#949BA8]">Responsável:</span>
-                      <span className="text-[#ECEEF2] font-medium">{submittedData.name}</span>
-                    </div>
-                    <div className="flex justify-between py-0.5">
-                      <span className="text-[#949BA8]">Empresa:</span>
-                      <span className="text-[#ECEEF2] font-medium">{submittedData.company || 'Identificação automática via Google Maps'}</span>
-                    </div>
-                    <div className="flex justify-between py-0.5">
-                      <span className="text-[#949BA8]">E-mail:</span>
-                      <span className="text-[#ECEEF2] font-medium">{submittedData.email}</span>
-                    </div>
-                    <div className="flex justify-between py-0.5">
-                      <span className="text-[#949BA8]">WhatsApp:</span>
-                      <span className="text-emerald-400 font-medium">{submittedData.phone}</span>
-                    </div>
-                    {submittedData.website && (
-                      <div className="flex justify-between py-0.5">
-                        <span className="text-[#949BA8]">Site Atual:</span>
-                        <a
-                          href={submittedData.website.startsWith('http') ? submittedData.website : `https://${submittedData.website}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[#E59A28] hover:underline truncate max-w-[200px]"
-                        >
-                          {submittedData.website}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="pt-4 text-xs text-[#949BA8] flex items-center justify-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                    Nosso time entrará em contato pelo WhatsApp para apresentar o direcionamento de design exclusivo.
-                  </div>
-
-                  {/* Botão de Voltar solicitado */}
-                  <div className="pt-6 border-t border-[#282F3D]/60 flex items-center justify-center">
-                    <button
-                      type="button"
-                      onClick={handleResetForm}
-                      className="w-full sm:w-auto px-8 py-3 rounded-lg bg-[#E59A28] hover:bg-[#D48817] text-[#12151B] font-bold text-sm transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:shadow-[#E59A28]/20"
-                    >
-                      <span>← Voltar / Fazer Nova Solicitação</span>
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleResetForm}
+                    className="text-sm text-bone-muted underline decoration-line-strong underline-offset-4 transition-colors hover:text-bone"
+                  >
+                    Enviar outro contato
+                  </button>
                 </div>
-              </div>
-            ) : (
-              /* The 5 Fields Lead Capture Form */
-              <div className="rounded-xl border border-[#282F3D] bg-[#161B22] p-6 sm:p-10 shadow-xl">
-                <div className="mb-6 border-b border-[#282F3D] pb-4">
-                  <h2 className="text-xl sm:text-2xl font-bold text-[#ECEEF2]">
-                    Solicite seu Orçamento & Proposta Visual
-                  </h2>
-                  <p className="text-xs sm:text-sm text-[#949BA8] mt-1">
-                    Preencha as informações essenciais abaixo para que nossa equipe monte a estrutura ideal para sua marca.
-                  </p>
-                </div>
-
-                {errorMessage && (
-                  <div className="mb-6 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs sm:text-sm flex items-center gap-2">
-                    <span className="font-bold text-base">⚠️</span>
-                    <span>{errorMessage}</span>
-                  </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  {/* Campo 1: Nome */}
-                  <div className="space-y-1.5">
-                    <label htmlFor="field-name" className="block text-xs sm:text-sm font-semibold text-[#ECEEF2]">
-                      Nome Completo <span className="text-[#E59A28]">*</span>
-                    </label>
-                    <input
-                      id="field-name"
-                      type="text"
-                      required
-                      
-                      value={formData.name}
-                      onChange={handleChange('name')}
-                      className="w-full px-3.5 py-2.5 rounded-lg bg-[#12151B] border border-[#282F3D] text-[#ECEEF2] placeholder-[#5A6272] text-sm focus:outline-none focus:border-[#E59A28] transition-colors"
-                    />
+              ) : (
+                <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <h2 className="text-2xl leading-none sm:text-[1.75rem]">Peça a sua proposta</h2>
+                    <span className="text-xs text-bone-faint">Sem compromisso</span>
                   </div>
 
-                  {/* Grid de Contato: E-mail e WhatsApp */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Campo 3: E-mail */}
-                    <div className="space-y-1.5">
-                      <label htmlFor="field-email" className="block text-xs sm:text-sm font-semibold text-[#ECEEF2]">
-                        E-mail de Contato <span className="text-[#E59A28]">*</span>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="field-name" className={labelClass}>
+                        Seu nome
+                      </label>
+                      <input
+                        id="field-name"
+                        type="text"
+                        autoComplete="name"
+                        value={formData.name}
+                        onChange={handleChange('name')}
+                        className={fieldClass}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="field-company" className={labelClass}>
+                        Nome do negócio <span className="text-bone-faint">(opcional)</span>
+                      </label>
+                      <input
+                        id="field-company"
+                        type="text"
+                        autoComplete="organization"
+                        value={formData.company}
+                        onChange={handleChange('company')}
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="field-email" className={labelClass}>
+                        E-mail
                       </label>
                       <input
                         id="field-email"
                         type="email"
-                        required
-                        
+                        autoComplete="email"
                         value={formData.email}
                         onChange={handleChange('email')}
-                        className="w-full px-3.5 py-2.5 rounded-lg bg-[#12151B] border border-[#282F3D] text-[#ECEEF2] placeholder-[#5A6272] text-sm focus:outline-none focus:border-[#E59A28] transition-colors"
+                        className={fieldClass}
+                        required
                       />
                     </div>
-
-                    {/* Campo 4: WhatsApp */}
-                    <div className="space-y-1.5">
-                      <label htmlFor="field-phone" className="block text-xs sm:text-sm font-semibold text-[#ECEEF2]">
-                        WhatsApp Comercial <span className="text-[#E59A28]">*</span>
+                    <div>
+                      <label htmlFor="field-phone" className={labelClass}>
+                        WhatsApp
                       </label>
                       <input
                         id="field-phone"
                         type="tel"
-                        required
-                        placeholder="(11) 99999-9999"
+                        inputMode="tel"
+                        autoComplete="tel"
                         value={formData.phone}
                         onChange={handlePhoneChange}
-                        className="w-full px-3.5 py-2.5 rounded-lg bg-[#12151B] border border-[#282F3D] text-[#ECEEF2] placeholder-[#5A6272] text-sm focus:outline-none focus:border-[#E59A28] transition-colors"
+                        placeholder="(11) 99999-9999"
+                        className={fieldClass}
+                        required
                       />
                     </div>
                   </div>
-
-                  {/* Campo 5: Site (Opcional) */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label htmlFor="field-website" className="block text-xs sm:text-sm font-semibold text-[#ECEEF2]">
-                        Site Atual ou Link do Google Maps
-                      </label>
-                      <span className="text-[11px] text-[#949BA8] font-normal">Opcional</span>
-                    </div>
+                  <div>
+                    <label htmlFor="field-website" className={labelClass}>
+                      Site ou Instagram <span className="text-bone-faint">(opcional)</span>
+                    </label>
                     <input
                       id="field-website"
-                      type="url"
-                      placeholder="https://www.suaempresa.com.br"
+                      type="text"
+                      inputMode="url"
                       value={formData.website}
                       onChange={handleChange('website')}
-                      className="w-full px-3.5 py-2.5 rounded-lg bg-[#12151B] border border-[#282F3D] text-[#ECEEF2] placeholder-[#5A6272] text-sm focus:outline-none focus:border-[#E59A28] transition-colors"
+                      placeholder="seunegocio.com.br ou @seunegocio"
+                      className={fieldClass}
                     />
-                    <p className="text-[11px] text-[#949BA8]">
-                      Se você possui um site ou link do Google Maps, insira a URL aqui para identificação automática do seu negócio.
-                    </p>
                   </div>
 
-                  {/* Botão de Envio */}
-                  <div className="pt-2">
+                  {errorMessage && (
+                    <p role="alert" className="text-sm text-signal">
+                      {errorMessage}
+                    </p>
+                  )}
+
+                  <div className="flex flex-col gap-4 pt-1 sm:flex-row sm:items-center sm:justify-between">
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full py-3.5 px-6 rounded-lg bg-[#E59A28] hover:bg-[#D48817] disabled:bg-[#E59A28]/50 text-[#12151B] font-bold text-sm sm:text-base transition-all transform active:scale-[0.99] shadow-lg hover:shadow-[#E59A28]/20 flex items-center justify-center gap-2 cursor-pointer"
+                      className="group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-signal px-6 py-3 text-sm font-semibold text-void transition-colors hover:bg-signal-hover disabled:cursor-wait disabled:opacity-70"
                     >
                       {isSubmitting ? (
                         <>
-                          <span className="w-4 h-4 border-2 border-[#12151B] border-t-transparent rounded-full animate-spin" />
-                          <span>Registrando sua solicitação...</span>
+                          <Loader2 className="size-4 animate-spin" aria-hidden />
+                          Enviando...
                         </>
                       ) : (
-                        <span>Solicitar Orçamento & Direção de Design →</span>
+                        <>
+                          Quero a minha proposta
+                          <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+                        </>
                       )}
                     </button>
+                    <a
+                      href={WHATSAPP_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-sm text-bone-muted transition-colors hover:text-bone"
+                    >
+                      <MessageCircle className="size-4" aria-hidden />
+                      Ou chame no WhatsApp
+                    </a>
                   </div>
-
-                  <p className="text-center text-[11px] text-[#949BA8]">
-                    🔒 Seus dados estão seguros e serão utilizados exclusivamente para a elaboração do projeto comercial.
-                  </p>
                 </form>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Institutional Highlights */}
-      <section id="diferenciais" className="py-16 sm:py-20 bg-[#141820] border-b border-[#282F3D] scroll-mt-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold font-display text-[#ECEEF2]">
-              Por que nossa Fábrica de Software é diferente?
-            </h2>
-            <p className="text-sm text-[#949BA8] mt-2">
-              Desenvolvemos aplicações com foco em retenção de clientes e geração de receita real.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-xl bg-[#161B22] border border-[#282F3D] space-y-3">
-              <div className="w-10 h-10 rounded-lg bg-[#E59A28]/10 text-[#E59A28] flex items-center justify-center text-xl font-bold">
-                ⚡
-              </div>
-              <h3 className="text-base font-bold text-[#ECEEF2]">PWA Instalável & Ultra Rápido</h3>
-              <p className="text-xs text-[#949BA8] leading-relaxed">
-                Seu aplicativo fica disponível na tela inicial do celular do cliente, com carregamento instantâneo e suporte offline.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-xl bg-[#161B22] border border-[#282F3D] space-y-3">
-              <div className="w-10 h-10 rounded-lg bg-[#E59A28]/10 text-[#E59A28] flex items-center justify-center text-xl font-bold">
-                📱
-              </div>
-              <h3 className="text-base font-bold text-[#ECEEF2]">Integração Nativa com WhatsApp CRM</h3>
-              <p className="text-xs text-[#949BA8] leading-relaxed">
-                Receba agendamentos, envie lembretes automatizados e qualifique clientes diretamente no painel do seu WhatsApp.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-xl bg-[#161B22] border border-[#282F3D] space-y-3">
-              <div className="w-10 h-10 rounded-lg bg-[#E59A28]/10 text-[#E59A28] flex items-center justify-center text-xl font-bold">
-                🎨
-              </div>
-              <h3 className="text-base font-bold text-[#ECEEF2]">Direção de Design Exclusiva</h3>
-              <p className="text-xs text-[#949BA8] leading-relaxed">
-                Sem layouts repetitivos. Cada projeto recebe uma paleta semântica personalizada e tipografia alinhada à autoridade do seu nicho.
-              </p>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Homologated Cases */}
-      <section id="cases" className="py-16 sm:py-20 bg-[#12151B] scroll-mt-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <div className="inline-block px-3 py-1 rounded-full bg-[#282F3D] text-[#949BA8] text-xs font-semibold uppercase tracking-wider mb-2">
-              Cases Homologados
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold font-display text-[#ECEEF2]">
-              Negócios que já operam com a nossa tecnologia
-            </h2>
-          </div>
+      {/* Como funciona: três pontos ligados por um fio */}
+      <section id="como-funciona" aria-labelledby="titulo-como" className="scroll-mt-8 border-t border-line">
+        <div className="mx-auto max-w-[1400px] px-5 py-24 sm:px-8 sm:py-32 lg:px-12">
+          <h2 id="titulo-como" className="max-w-[18ch] text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
+            Do seu negócio real até o site, em três passos.
+          </h2>
+          <ol className="relative mt-16 grid gap-12 md:grid-cols-3 md:gap-10">
+            <span aria-hidden className="absolute left-[5px] top-2 bottom-2 w-px bg-line-strong md:inset-x-0 md:top-[5px] md:bottom-auto md:h-px md:w-auto" />
+            {PASSOS.map((passo, i) => (
+              <li key={passo.title} className="relative pl-8 md:pl-0 md:pt-10">
+                <span
+                  aria-hidden
+                  className={`absolute left-0 top-1.5 size-[11px] rounded-full md:top-0 ${
+                    i === 2 ? 'bg-signal shadow-[0_0_0_4px_rgb(239_68_68/0.18)]' : 'bg-bone'
+                  }`}
+                />
+                <h3 className="text-[1.65rem] leading-tight">{passo.title}</h3>
+                <p className="mt-3 max-w-[34ch] text-[15px] leading-relaxed text-bone-muted">{passo.text}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {HOMOLOGATED_CASES.map((item) => (
-              <div
-                key={item.code}
-                className="p-6 rounded-xl bg-[#161B22] border border-[#282F3D] hover:border-[#E59A28]/40 transition-colors flex flex-col justify-between"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-[#E59A28] bg-[#E59A28]/10 px-2 py-0.5 rounded">
-                      {item.code}
-                    </span>
-                    <span className="text-xs text-[#949BA8]">{item.sector}</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-[#ECEEF2] font-display">{item.client}</h3>
-                  <p className="text-xs text-[#949BA8] leading-relaxed">{item.outcome}</p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-[#282F3D] text-[11px] font-semibold text-emerald-400">
-                  ✓ {item.highlight}
-                </div>
+      {/* Diferenciais */}
+      <section aria-labelledby="titulo-diferenciais" className="border-t border-line bg-dusk">
+        <div className="mx-auto grid max-w-[1400px] gap-14 px-5 py-24 sm:px-8 sm:py-32 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:px-12">
+          <h2 id="titulo-diferenciais" className="max-w-[14ch] text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
+            Um site que só podia ser do seu negócio.
+          </h2>
+          <dl className="divide-y divide-line border-y border-line">
+            {DIFERENCIAIS.map((d) => (
+              <div key={d.title} className="grid gap-2 py-7 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-8">
+                <dt className="font-display text-2xl leading-tight">{d.title}</dt>
+                <dd className="text-[15px] leading-relaxed text-bone-muted">{d.text}</dd>
               </div>
             ))}
+          </dl>
+        </div>
+      </section>
+
+      {/* Trabalhos */}
+      <section id="trabalhos" aria-labelledby="titulo-trabalhos" className="scroll-mt-8 border-t border-line">
+        <div className="mx-auto max-w-[1400px] px-5 py-24 sm:px-8 sm:py-32 lg:px-12">
+          <h2 id="titulo-trabalhos" className="text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
+            Alguns sites que já fizemos.
+          </h2>
+          <ul className="mt-14 grid gap-x-8 gap-y-12 md:grid-cols-3">
+            {TRABALHOS.map((t) => (
+              <li key={t.name}>
+                <figure>
+                  <div className="overflow-hidden border border-line bg-void-raised">
+                    <img
+                      src={t.image}
+                      alt={`Página inicial do site ${t.name}`}
+                      width="800"
+                      height="500"
+                      loading="lazy"
+                      className="aspect-[16/10] w-full object-cover object-top"
+                    />
+                  </div>
+                  <figcaption className="mt-4">
+                    <p className="font-display text-2xl leading-tight">{t.name}</p>
+                    <p className="mt-1 text-sm text-bone-muted">{t.kind}</p>
+                  </figcaption>
+                </figure>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* Fechamento */}
+      <section aria-labelledby="titulo-fechamento" className="border-t border-line">
+        <div className="mx-auto flex max-w-[1400px] flex-col items-start gap-8 px-5 py-24 sm:px-8 lg:flex-row lg:items-end lg:justify-between lg:px-12">
+          <h2 id="titulo-fechamento" className="max-w-[16ch] text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
+            O seu negócio já tem o que é preciso. Vamos acender.
+          </h2>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <a
+              href="#formulario"
+              className="inline-flex items-center gap-2 rounded-full bg-signal px-6 py-3 text-sm font-semibold text-void transition-colors hover:bg-signal-hover"
+            >
+              Quero a minha proposta
+              <ArrowUpRight className="size-4" aria-hidden />
+            </a>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-bone-muted transition-colors hover:text-bone"
+            >
+              <MessageCircle className="size-4" aria-hidden />
+              Chamar no WhatsApp
+            </a>
           </div>
         </div>
       </section>

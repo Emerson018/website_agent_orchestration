@@ -1,70 +1,44 @@
-import React from 'react';
 import { Outlet } from 'react-router-dom';
+import { WHATSAPP_URL, WHATSAPP_LABEL } from '../lib/contact';
 
 export default function MainLayout({ children }) {
   return (
-    <div className="min-h-screen flex flex-col bg-[#12151B] text-[#ECEEF2]">
-      {/* Top Studio Workbench Bar */}
-      <header className="sticky top-0 z-40 bg-[#12151B]/95 backdrop-blur-sm border-b border-[#282F3D]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-          <a href="#" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-md bg-[#E59A28] text-[#12151B] flex items-center justify-center font-mono text-xs font-bold tracking-tight group-hover:bg-[#F2AA3C] transition-colors">
-              PF
-            </div>
-            <div className="flex flex-col">
-              <span className="font-display font-bold text-base leading-none text-[#ECEEF2]">
-                Portal Fábrica
-              </span>
-              <span className="text-xs text-[#949BA8] mt-0.5">
-                Mesa de especificação e despacho de software
-              </span>
-            </div>
+    <div className="flex min-h-screen flex-col bg-void text-bone">
+      <header className="absolute inset-x-0 top-0 z-30">
+        <div className="mx-auto flex h-20 max-w-[1400px] items-center justify-between px-5 sm:px-8 lg:px-12">
+          <a href="#topo" className="font-display text-[1.75rem] leading-none tracking-[0.02em] text-bone">
+            Aether
           </a>
-
-          <nav aria-label="Navegação principal" className="hidden md:flex items-center gap-6 text-sm font-medium text-[#949BA8]">
-            <a href="#formulario" className="hover:text-[#ECEEF2] transition-colors">
-              Solicitar Orçamento
+          <nav aria-label="Navegação principal" className="flex items-center gap-7 text-sm">
+            <a href="#como-funciona" className="hidden text-bone-muted transition-colors hover:text-bone md:inline">
+              Como funciona
             </a>
-            <a href="#diferenciais" className="hover:text-[#ECEEF2] transition-colors">
-              Diferenciais
+            <a href="#trabalhos" className="hidden text-bone-muted transition-colors hover:text-bone md:inline">
+              Trabalhos
             </a>
-            <a href="#cases" className="hover:text-[#ECEEF2] transition-colors">
-              Cases Homologados
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-3">
             <a
               href="#formulario"
-              className="px-4 py-2 rounded-md bg-[#E59A28] hover:bg-[#D48817] text-[#12151B] text-sm font-semibold transition-colors"
+              className="rounded-full border border-line-strong px-4 py-2 font-medium text-bone transition-colors hover:border-signal hover:text-signal"
             >
-              Solicitar Proposta
+              Pedir proposta
             </a>
-          </div>
+          </nav>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-grow">
-        {children || <Outlet />}
-      </main>
+      <main className="flex-1">{children || <Outlet />}</main>
 
-      {/* Studio Technical Footer */}
-      <footer className="border-t border-[#282F3D] bg-[#141820] py-12 text-sm text-[#949BA8]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="space-y-1">
-            <p className="font-display font-semibold text-[#ECEEF2]">
-              Portal Fábrica
-            </p>
-            <p className="text-xs text-[#949BA8] max-w-md">
-              Sistema integrado de especificação técnica, coleta de briefing e provisionamento automatizado de aplicações web e mobile.
-            </p>
+      <footer className="border-t border-line">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-8 px-5 py-14 sm:px-8 md:flex-row md:items-end md:justify-between lg:px-12">
+          <div className="space-y-2">
+            <p className="font-display text-3xl leading-none">Aether</p>
+            <p className="text-sm text-bone-muted">Sites feitos do zero para negócios locais.</p>
           </div>
-
-          <div className="flex flex-wrap items-center gap-6 text-xs font-mono text-[#949BA8]">
-            <span>Motor: LangGraph + FastAPI</span>
-            <span>Persistência: Supabase</span>
-            <span>© {new Date().getFullYear()} Portal Fábrica</span>
+          <div className="flex flex-col gap-1 text-sm md:items-end">
+            <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="text-bone transition-colors hover:text-signal">
+              WhatsApp {WHATSAPP_LABEL}
+            </a>
+            <p className="text-bone-faint">© {new Date().getFullYear()} Aether</p>
           </div>
         </div>
       </footer>
