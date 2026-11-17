@@ -75,13 +75,12 @@ export async function extractCatalog({ files, companyName, apiKey = defaultGemin
     };
   }
 
-  const fileParts = [];
-  const unavailable = [];
-  for (const file of files) {
-    const part = await fileUrlToInlinePart(file.url, { timeoutMs: 15000, fallbackMimeType: file.mime_type });
-    if (part) fileParts.push(part);
-    else unavailable.push(file.name);
-  }
+  // Downloads independentes vão juntos; a ordem dos arquivos se mantém
+  const downloaded = await Promise.all(
+    files.map((file) => fileUrlToInlinePart(file.url, { timeoutMs: 15000, fallbackMimeType: file.mime_type }))
+  );
+  const fileParts = downloaded.filter(Boolean);
+  const unavailable = files.filter((_, i) => !downloaded[i]).map((file) => file.name);
   if (unavailable.length > 0) {
     return {
       success: false,
@@ -95,6 +94,7 @@ export async function extractCatalog({ files, companyName, apiKey = defaultGemin
     parts: [{ text: buildCatalogExtractionPrompt({ companyName }) }, ...fileParts],
     generationConfig: { temperature: 0.1 },
     timeoutMs: 60000,
+    totalTimeoutMs: 90000,
   });
   if (!reply.success) return reply;
 

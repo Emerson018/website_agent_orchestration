@@ -44,9 +44,7 @@ test('Lead 5-fields intake registers Contact with website and tag, Deal, without
       'Tag "Fábrica de Sites" was not associated to contact'
     );
 
-    const deal = fake.tables.deals.find((d) => d.contact_id === contact_id);
-    assert.ok(deal, 'Deal was not created in CRM deals table');
-    assert.ok(deal.title.includes(testCompany), 'Deal title should contain company name');
+    assert.equal(fake.tables.deals, undefined, 'Web leads no longer create Deals');
 
     assert.equal(fake.tables.conversations, undefined, 'Conversations should NOT be created for web leads');
     assert.equal(fake.tables.messages, undefined, 'Messages should NOT be created for web leads');

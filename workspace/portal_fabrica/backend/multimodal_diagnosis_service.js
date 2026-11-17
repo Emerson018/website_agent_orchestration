@@ -238,7 +238,8 @@ Responda APENAS o JSON válido, sem blocos de markdown adicionais.`;
   if (!gemini.success) {
     return {
       success: false,
-      code: 'AI_DIAGNOSIS_FAILED',
+      // Créditos, cota, bloqueio e demora mantêm o código próprio para o operador saber o que fazer
+      code: gemini.code === 'GEMINI_FAILED' ? 'AI_DIAGNOSIS_FAILED' : gemini.code,
       error: gemini.error,
     };
   }

@@ -11,6 +11,7 @@ import { buildLeadDossier, extractPlaceQueryFromUrl } from './places_service.js'
 import { runMultimodalBusinessDiagnosis, buildMasterPrompt } from './multimodal_diagnosis_service.js';
 import { CATALOG_BUCKET, catalogStoragePath, newCatalogFileId, parseCatalogUpload } from './catalog_files.js';
 import { extractCatalog } from './catalog_extraction.js';
+import { geminiErrorStatus } from './gemini_client.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -240,6 +241,12 @@ app.post('/api/leads', async (req, res) => {
       finalAdditionalData.links = existingLinks;
     }
 
+    // Orçamento do projeto fica no próprio contato (o CRM não tem mais Pipelines/Deals).
+    const quotedValue = Number(summary?.total_setup_price);
+    if (Number.isFinite(quotedValue) && quotedValue > 0) {
+      finalAdditionalData.orcamento = { valor: quotedValue, moeda: 'BRL' };
+    }
+
     let defaultUserId = '2b66650c-a300-4239-b922-2aab9bccac6f';
     let defaultAccountId = '98006e91-88b1-44ea-9178-50c257cd973f';
     let contactId = incomingContactId || null;
@@ -345,66 +352,6 @@ app.post('/api/leads', async (req, res) => {
       // 2. Associa tag 'Fábrica de Sites' ao contato
       if (contactId) {
         await attachTagToContact(contactId, 'Fábrica de Sites', defaultAccountId, defaultUserId);
-      }
-
-      // 3. Cria Oportunidade (Deal) no Funil de Vendas do WACRM (Sem conversa no Inbox)
-      if (contactId) {
-        let pipelineId = '0a1969dd-bc7e-4a99-a854-a925f32ad923';
-        let stageId = 'e15c3092-f3f9-4550-baa4-88a6f27b6eaa';
-
-        try {
-          const { data: stages } = await supabase
-            .from('pipeline_stages')
-            .select('id, pipeline_id, position, pipelines!inner(account_id)')
-            .eq('pipelines.account_id', defaultAccountId)
-            .order('position', { ascending: true })
-            .limit(1);
-
-          if (stages && stages.length > 0) {
-            stageId = stages[0].id;
-            pipelineId = stages[0].pipeline_id;
-          }
-        } catch (stageErr) {
-          console.warn('[Backend] Falha ao consultar pipeline stages:', stageErr.message);
-        }
-
-        const dealValue = summary?.total_setup_price || 0;
-
-        const { data: existingDeal } = await supabase
-          .from('deals')
-          .select('id')
-          .eq('account_id', defaultAccountId)
-          .eq('contact_id', contactId)
-          .eq('title', `Projeto - ${companyName || contactName}`)
-          .limit(1)
-          .maybeSingle();
-
-        if (!existingDeal) {
-          const { error: dealError } = await supabase
-            .from('deals')
-            .insert([
-              {
-                user_id: defaultUserId,
-                account_id: defaultAccountId,
-                pipeline_id: pipelineId,
-                stage_id: stageId,
-                contact_id: contactId,
-                title: `Projeto - ${companyName || contactName}`,
-                value: dealValue,
-                currency: 'BRL',
-                notes: `Responsável: ${contactName} | Site: ${website || 'Não informado'}`,
-                status: 'open'
-              }
-            ]);
-
-          if (dealError) {
-            console.warn('[Backend] Erro ao criar Oportunidade (Deal) no CRM:', dealError.message);
-          } else {
-            console.log(`[Backend] Oportunidade (Deal) criada com sucesso no funil do CRM no valor de R$ ${dealValue}!`);
-          }
-        } else {
-          console.log(`[Backend] Oportunidade (Deal) já existente no CRM para ${companyName} (ID: ${existingDeal.id}).`);
-        }
       }
     } catch (crmResolveErr) {
       console.warn('[Backend] Aviso ao sincronizar CRM com Supabase:', crmResolveErr.message);
@@ -818,7 +765,7 @@ app.post('/api/leads/:id/extract-catalog', async (req, res) => {
     });
 
     if (!result.success) {
-      const status = { NO_FILES: 400, MISSING_API_KEY: 412, FILES_TOO_LARGE: 413 }[result.code] || 502;
+      const status = { NO_FILES: 400, FILES_TOO_LARGE: 413 }[result.code] || geminiErrorStatus(result.code);
       return res.status(status).json(result);
     }
 
@@ -1021,7 +968,7 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
     });
 
     if (!result.success) {
-      const statusCode = result.code === 'MISSING_API_KEY' ? 412 : 502;
+      const statusCode = geminiErrorStatus(result.code);
       return res.status(statusCode).json(result);
     }
 
