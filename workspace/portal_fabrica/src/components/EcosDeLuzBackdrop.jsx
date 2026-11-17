@@ -45,7 +45,7 @@ export default function EcosDeLuzBackdrop() {
       activeColorIndex="cycle"
       pulseIntensity={0.4}
       lightIntensity={1.4}
-      brushRadius={45}
+      brushRadius={10}
       chainClick={false}
       persistentHighlight={false}
       relaxMode={false}

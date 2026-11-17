@@ -55,6 +55,8 @@ export interface SculptureNode {
   targetHighlight: number;
   // Assigned color when clicked (null = pure luminous white)
   colorIndex: number | null;
+  /** Ordem em que o ponto recebeu a cor atual; a linha entre dois pontos coloridos usa a do mais recente */
+  colorStamp?: number;
   // Color transition blend [0..1] animated by GSAP
   colorBlend: number;
   // Connected neighbor node indices

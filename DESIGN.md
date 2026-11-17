@@ -7,9 +7,11 @@ colors:
   bone: "#ecebe6"
   bone-muted: "#a3a1a8"
   bone-faint: "#8a8891"
-  signal: "#ef4444"
-  signal-hover: "#f25e5e"
-  violet: "#1b004b"
+  tertiary: "#c6f432"
+  signal: "#c6f432"
+  signal-hover: "#d4f76a"
+  lavender: "#b9a7ff"
+  lime-mist: "#e6fca6"
   line: "rgb(236 235 230 / 0.12)"
   line-strong: "rgb(236 235 230 / 0.24)"
 typography:
@@ -99,31 +101,34 @@ components:
 
 **Creative North Star: "The Lit Mesh"**
 
-Aether is a dark, open field where light marks what matters. The ground is near-black, the ink is a warm bone white, and the only saturated color is a signal red that appears where the visitor can act. Everything else is quiet: a bone serif for statements, a clean sans for explanation, and 1px hairlines doing the work that cards and shadows do elsewhere.
+Aether is a dark, open field where light marks what matters. The ground is near-black, the ink is a warm bone white, and the only saturated color is a lime tertiary (#C6F432) that appears where the visitor can act and where the sculpture lights up. Everything else is quiet: a bone serif for statements, a clean sans for explanation, and 1px hairlines doing the work that cards and shadows do elsewhere.
 
-The world comes from the "Ecos de Luz" hero, a point-graph sculpture of a hand touching a face that brightens under the pointer. The page borrows its materials directly: bone points and filaments become hairlines and text, the red awakened points become the action color, the deep violet glow becomes a radial depth field behind a few sections. Sections are open fields separated by a hairline, never boxed. Density is low; whitespace and large serif headlines carry the pace.
+The world comes from the "Ecos de Luz" hero, a point-graph sculpture of a hand touching a face that brightens under the pointer. The page borrows its materials directly: bone points and filaments become hairlines and text, the lime awakened points become the action color, and a faint lime glow becomes a radial depth field behind a few sections. Sections are open fields separated by a hairline, never boxed. Density is low; whitespace and large serif headlines carry the pace.
 
-Motion is nearly absent by design. The first-viewport copy rises once out of the dark; the sculpture itself responds to the pointer; nothing else animates beyond color transitions on hover.
+Motion is quiet and lights things up as you arrive. The first-viewport copy rises once out of the dark; the sculpture responds to the pointer; each section below reveals once as it scrolls into view, in a short cascade, like points of the mesh awakening. Everything else is a color transition on hover, plus press and form feedback.
 
 **Key Characteristics:**
-- Near-black ground, bone ink, one red for action and focus.
+- Near-black ground (primary), bone ink (secondary), one lime tertiary for action, focus and light.
 - Cormorant Garamond display over Plus Jakarta Sans text.
 - Hairline rules instead of cards, glass or shadows; square frames, pill-shaped actions.
-- Violet only as a soft radial field, never as a fill or text color.
-- One entrance animation, fully neutralized under reduced motion.
+- Lime as a surface only in a faint radial field (7-9% alpha), never as a large solid fill.
+- One reveal per section, once per visit, softened to a plain fade under reduced motion.
 
 ## Colors
 
-A near-monochrome dark palette of void and bone, with one hot red and one deep violet borrowed from the sculpture's light.
+A near-monochrome dark palette of void (primary) and bone (secondary), with one electric lime tertiary borrowed from the sculpture's light. Lime is the only saturated color on the page.
 
-### Primary
-- **Signal Red** (signal): the action color. Primary button fills, the header CTA's hover border and text, the footer WhatsApp link hover, the focus-visible outline, the input caret and focused underline, text selection, error messages, the success check ring, and the single "awakened" point on the step rail. Hover deepens to **Lit Signal** (signal-hover), a slightly lighter red.
+### Tertiary
+- **Signal Lime** (tertiary, aliased as signal): #C6F432, the action and light color. Primary button fills, the header CTA's hover border and text, the footer WhatsApp link hover, the focus-visible outline, the input caret and focused underline, text selection, error messages, the success check ring, and the single "awakened" point on the step rail. Hover lifts to **Lit Signal** (signal-hover, #d4f76a), a paler lime. It is also one of the two glow colors of the Ecos de Luz sculpture, alongside a deep violet (#1b004b) that appears only there.
 
-### Secondary
-- **Deep Aether Violet** (violet): exists only inside radial gradients (at 0.75 and 0.9 alpha, fading to transparent by 70-72%) behind Diferenciais and Fechamento, and as the sculpture's second glow color. It is depth, not a color you read.
+- **Lime field**: the same lime inside radial gradients (at 0.07 and 0.09 alpha, fading to transparent by 70-72%) behind Diferenciais and Fechamento. It is depth, not a color you read.
+
+### Headline accents
+- **Lavender** (lavender, #b9a7ff): the hero sculpture's violet lifted to a readable tint. Only for the rotating word "agenda" in the hero title.
+- **Lime Mist** (lime-mist, #e6fca6): the lime at its palest, almost pure light. Only for the rotating word "app" in the hero title; "site" uses Signal Lime.
 
 ### Neutral
-- **Void** (void): page, body and theme-color background; the text color on red buttons; the base of every darkening gradient over the hero.
+- **Void** (void): page, body and theme-color background; the text color on lime buttons; the base of every darkening gradient over the hero.
 - **Raised Void** (void-raised): the backing plate behind work screenshots, visible only while images load or letterbox.
 - **Bone** (bone): headlines, primary text, the wordmark, active labels, nav hover.
 - **Muted Bone** (bone-muted): subcopy, body paragraphs, field labels at rest, quiet links at rest.
@@ -132,9 +137,9 @@ A near-monochrome dark palette of void and bone, with one hot red and one deep v
 - **Strong Hairline** (line-strong): input underlines at rest, the outline pill border, the step-rail connector, underline decoration on text buttons.
 
 ### Named Rules
-**The One Red Rule.** Signal red marks only what you can do or where you are: actions, focus, caret, selection, errors, and the awakened point. It never colors a headline, an accent word, or decoration.
+**The One Lime Rule.** Signal lime marks only what you can do or where you are: actions, focus, caret, selection, errors, and the awakened point. It never colors decoration. The one exception is the rotating word in the hero title (see The Rotating Word Rule).
 
-**The Field Not Fill Rule.** Violet is applied only as a radial gradient fading into void behind an open section. Never a solid background, border, or text color.
+**The Field Not Fill Rule.** As a surface, lime is applied only as a faint radial gradient (under 10% alpha) fading into void behind an open section. Never a large solid background.
 
 ## Typography
 
@@ -152,7 +157,9 @@ A near-monochrome dark palette of void and bone, with one hot red and one deep v
 - **Label** (500, 12px, 0.025em tracking, sentence case): form field labels and the inline note beside the form heading.
 
 ### Named Rules
-**The Bone Italic Rule.** Emphasis inside a serif headline is Cormorant italic in bone, the same color as the line (the "aceso" accent). Never red, never a different weight jump.
+**The Bone Italic Rule.** Emphasis inside a serif headline is Cormorant italic at the same weight. In section headlines it stays bone. Never a different weight jump.
+
+**The Rotating Word Rule.** The hero title reads "Conecte site / agenda / app ao crescimento do seu negócio." Only the noun changes: Cormorant italic in its own accent (site in Signal Lime, agenda in Lavender, app in Lime Mist), swapping every 1.8s. Never gradient text. Screen readers get one static sentence through aria-label.
 
 **The Serif Speaks Rule.** h1-h3, definition terms, work names and the wordmark are Cormorant at 500 with balanced wrapping; all explanation, labels and actions are Plus Jakarta Sans.
 
@@ -169,10 +176,10 @@ Content patterns in use: a three-column step rail from md (stacked with a vertic
 
 ## Elevation & Depth
 
-Flat. There are no drop shadows. Depth comes from three things only: void gradients over the hero canvas, radial violet fields behind open sections, and the luminous sculpture itself (screen-blended at 0.7 opacity when shown as a still in Fechamento). The form slab separates from the art by a translucent void fill (0.85 alpha) and a hairline frame, not by elevation.
+Flat. There are no drop shadows. Depth comes from three things only: void gradients over the hero canvas, faint radial lime fields behind open sections, and the luminous sculpture itself (screen-blended at 0.7 opacity when shown as a still in Fechamento). The form slab separates from the art by a translucent void fill (0.85 alpha) and a hairline frame, not by elevation.
 
 ### Shadow Vocabulary
-- **Signal halo** (`box-shadow: 0 0 0 4px rgb(239 68 68 / 0.18)`): the awakened (third) point on the step rail. A glow ring, not a lift.
+- **Signal halo** (`box-shadow: 0 0 0 4px rgb(198 244 50 / 0.18)`): the awakened (third) point on the step rail. A glow ring, not a lift.
 - **Underline thickener** (`box-shadow: 0 1px 0 0 var(--color-signal)`): doubles a focused input's underline to 2px.
 
 ### Named Rules
@@ -208,26 +215,30 @@ An absolutely positioned 80px header over the hero: the Cormorant wordmark on th
 Three steps on a 1px strong-hairline connector (horizontal from md, vertical on phones), each marked by an 11px round point: bone for the first two, signal with the halo for the last. It repeats the sculpture's grammar of points joined by filaments, with the final point awakened.
 
 ### Ecos de Luz Canvas
-The signature surface: an interactive GSAP point-graph canvas drawn on void, bone/blue-white filaments and points, with signal and violet as its two glow colors. The pointer attracts and lights the mesh. Anchored at 82% across on desktop and centered on phones. Under prefers-reduced-motion it is replaced by the still image at the same anchor.
+The signature surface: an interactive GSAP point-graph canvas drawn on void, bone/blue-white filaments and points, with signal lime and deep violet (#1b004b) as its two glow colors, alternating on each click. Violet lives only inside the hero sculpture. The pointer attracts and lights the mesh gently: hovering lights only the points within about 8px of the cursor, easing in over roughly a second, and a press or touch-and-hold grows a slow wave (45px/s on desktop, 28px/s on phones) that stops at a 110px radius (70px on phones) instead of taking over the whole sculpture. Points that wake fade their color in over 1.4s (1.8s on phones) with no elastic pop. Anchored at 82% across on desktop and centered on phones. Under prefers-reduced-motion it is replaced by the still image at the same anchor.
 
 ### Motion
-One entrance only: the first-viewport copy uses aether-rise (1.1s, cubic-bezier(0.16, 1, 0.3, 1), from 14px down, transparent and 6px blurred). Everything else is a color transition on hover or focus. A global reduced-motion block collapses all animation and transition durations to 0.01ms.
+- **Hero word swap:** every word sits in the same grid cell, so the title never changes height; a new word arrives every 1.8s. The leaving word rises 0.32em and blurs out in 320ms; the next one rises in from 0.32em below over 700ms (opacity and blur 600ms) after a 90ms overlap, all on cubic-bezier(0.23, 1, 0.32, 1). The word's slot width eases between word widths over 650ms with cubic-bezier(0.77, 0, 0.175, 1), so nothing jumps. "Conecte" and the word stay on one line; the rest of the sentence wraps below. Reduced motion keeps only a 400ms crossfade.
+- **First viewport:** the copy uses aether-rise (1.1s, cubic-bezier(0.16, 1, 0.3, 1), from 14px down, transparent and 6px blurred).
+- **Section reveals:** each section below the hero (Como funciona, Diferenciais, Trabalhos, Fechamento) is a reveal group, revealed once by an IntersectionObserver when it is 15% into the viewport, never replayed. Items cascade 70ms apart (`--i`). Headings, steps, list rows and work cards rise 16px from transparent over 700ms with the strong ease-out cubic-bezier(0.23, 1, 0.32, 1). The step-rail filament draws itself over 1000ms with cubic-bezier(0.77, 0, 0.175, 1) (scaleX on desktop, scaleY on phones), and the last point awakens from scale 0.6 when the filament reaches it (1000ms delay). Work screenshots open with a clip-path curtain from the bottom (900ms) while the image settles from scale 1.06 (1200ms). The Fechamento art fades in over 1200ms. Content is only hidden once JS marks the page `reveal-ready`, so nothing stays invisible without JS.
+- **Feedback:** pressable pills scale to 0.97 on press (160ms ease-out). The form's success message enters in 250ms (8px rise plus 2px blur), its check ring grows from scale 0.9 60ms later, and errors drop in 4px over 200ms.
+- **Reduced motion:** a global block collapses durations to 0.01ms; reveals and form messages keep only a short opacity fade (200-300ms) with no movement, clipping or scaling, and scrolling jumps instead of gliding.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** keep signal red for actions, focus, caret, selection, errors and the awakened point (The One Red Rule).
+- **Do** keep signal lime for actions, focus, caret, selection, errors, the awakened point and the sculpture's light (The One Lime Rule).
 - **Do** separate sections with a 1px hairline (line) and leave them as open fields inside the 1400px container.
 - **Do** set emphasis in a serif headline as bone italic (The Bone Italic Rule).
 - **Do** build form fields as underline-only, with a signal underline and a brightened label on focus.
-- **Do** place violet only as a radial field fading to transparent behind a section.
+- **Do** place lime as a surface only as a faint radial field fading to transparent behind a section.
 - **Do** keep art clear of text: above it on phones, beside it on desktop, or behind a void gradient (The Clear Art Rule).
 - **Do** pair every primary pill with at most one quiet link as the secondary action.
 
 ### Don't:
 - **Don't** use cards, glass panels, or drop shadows to separate content; use hairlines.
-- **Don't** color headline words, decoration or large surfaces signal red.
-- **Don't** use violet as a solid fill, border, or text color.
+- **Don't** color headline words, decoration or large surfaces signal lime.
+- **Don't** reintroduce red, or use violet outside the hero sculpture's light.
 - **Don't** round frames, inputs or images; roundness belongs to actions and points.
-- **Don't** add entrance animations beyond the single first-viewport rise, and never ship motion without the reduced-motion fallback.
+- **Don't** replay reveals on every scroll, stagger more than 80ms between items, or ship motion without the reduced-motion fallback.
 - **Don't** draw boxed inputs or remove the global signal focus outline from anything but underline fields.

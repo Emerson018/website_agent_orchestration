@@ -143,6 +143,9 @@ function computeBreathingCycle(elapsedSec: number, pattern: BreathingPattern): B
   }
 }
 
+// Cresce a cada ponto pintado; decide a cor das linhas entre dois pontos coloridos
+let colorStampCounter = 0;
+
 export const InteractiveSculptureCanvas: React.FC<InteractiveSculptureCanvasProps> = ({
   renderMode,
   physicsMode,
@@ -284,8 +287,9 @@ export const InteractiveSculptureCanvas: React.FC<InteractiveSculptureCanvasProp
   // Setup GSAP quickTo interpolators on mount
   useEffect(() => {
     const p = pointerRef.current;
-    quickPointerX.current = gsap.quickTo(p, 'x', { duration: 0.22, ease: 'power3.out' });
-    quickPointerY.current = gsap.quickTo(p, 'y', { duration: 0.22, ease: 'power3.out' });
+    // Curto o bastante para o efeito ficar sob o cursor, sem rastro distante
+    quickPointerX.current = gsap.quickTo(p, 'x', { duration: 0.08, ease: 'power3.out' });
+    quickPointerY.current = gsap.quickTo(p, 'y', { duration: 0.08, ease: 'power3.out' });
     quickNormX.current = gsap.quickTo(p, 'normX', { duration: 0.65, ease: 'power2.out' });
     quickNormY.current = gsap.quickTo(p, 'normY', { duration: 0.65, ease: 'power2.out' });
   }, []);
@@ -312,7 +316,8 @@ export const InteractiveSculptureCanvas: React.FC<InteractiveSculptureCanvasProp
           if (idx % 5 === 0) {
             // Assign serene cyan, violet, or emerald accents to key constellation stars
             const sereneSwatches = [0, 3, 4]; // cyan, emerald, violet
-            n.colorIndex = sereneSwatches[idx % sereneSwatches.length];
+            n.colorIndex = sereneSwatches[idx % sereneSwatches.length] % LUMINOUS_PALETTE.length;
+            n.colorStamp = ++colorStampCounter;
             gsap.to(n, {
               colorBlend: 0.65,
               duration: 2.4,
@@ -397,6 +402,7 @@ export const InteractiveSculptureCanvas: React.FC<InteractiveSculptureCanvasProp
       const n = primaries[i];
       const swatchIdx = (i + colorBurstSignal) % LUMINOUS_PALETTE.length;
       n.colorIndex = swatchIdx;
+      n.colorStamp = ++colorStampCounter;
       n.targetHighlight = 1;
       gsap.fromTo(
         n,
@@ -451,6 +457,7 @@ export const InteractiveSculptureCanvas: React.FC<InteractiveSculptureCanvasProp
 
       const applyColorToNode = (target: SculptureNode, delaySec: number, scalePeak: number) => {
         target.colorIndex = chosenColorIdx;
+        target.colorStamp = ++colorStampCounter;
         target.targetHighlight = 1;
 
         gsap.killTweensOf(target);
@@ -476,6 +483,7 @@ export const InteractiveSculptureCanvas: React.FC<InteractiveSculptureCanvasProp
           if (!neighbor) return;
           if (!neighbor.isPrimary) {
             neighbor.colorIndex = chosenColorIdx;
+            neighbor.colorStamp = ++colorStampCounter;
             neighbor.colorBlend = 1;
           }
           pulsesRef.current.push({
@@ -682,7 +690,7 @@ export const InteractiveSculptureCanvas: React.FC<InteractiveSculptureCanvasProp
         auraRadius
       );
       const auraAlpha = relaxMode ? 0.025 + breathVal * 0.04 : 0.02;
-      auraGrad.addColorStop(0, `rgba(239, 68, 68, ${auraAlpha})`);
+      auraGrad.addColorStop(0, `rgba(198, 244, 50, ${auraAlpha})`);
       auraGrad.addColorStop(0.5, `rgba(27, 0, 75, ${auraAlpha * 0.65})`);
       auraGrad.addColorStop(1, 'rgba(5, 5, 7, 0)');
       ctx.fillStyle = auraGrad;
@@ -816,14 +824,16 @@ export const InteractiveSculptureCanvas: React.FC<InteractiveSculptureCanvasProp
           // If mouse button is held down, progressively expand the awakening + coloring wave
           if (p.isDown) {
             const holdElapsed = Math.max(0, timeSec - p.downStartTime);
-            // Slower, gentler wave expansion on mobile screens so lights turn on more gradually
-            const linearSpeed = width < 640 ? 90 : 195;
-            const accelSpeed = width < 640 ? 12 : 32;
+            // Onda lenta e curta: cresce devagar a partir do dedo/cursor e para num raio pequeno,
+            // em vez de tomar a escultura inteira
+            const linearSpeed = width < 640 ? 28 : 45;
+            const accelSpeed = width < 640 ? 2 : 4;
+            const maxHoldR = width < 640 ? 70 : 110;
             const currentHoldR =
               brushR * (width < 640 ? 0.32 : 0.45) +
               holdElapsed * linearSpeed +
               holdElapsed * holdElapsed * accelSpeed;
-            p.holdRadius = Math.min(Math.max(drawW, drawH) * 1.15, currentHoldR);
+            p.holdRadius = Math.min(maxHoldR, currentHoldR);
 
             const holdRSq = p.holdRadius * p.holdRadius;
             if (d2 <= holdRSq) {
@@ -833,23 +843,26 @@ export const InteractiveSculptureCanvas: React.FC<InteractiveSculptureCanvasProp
               if (n.isPrimary && !p.holdActivatedIds.has(n.id)) {
                 p.holdActivatedIds.add(n.id);
                 n.colorIndex = chosenIdx;
+                n.colorStamp = ++colorStampCounter;
                 n.targetHighlight = 1;
 
                 if (isPrimaryActiveOnViewport(n.id, width)) {
                   gsap.killTweensOf(n);
                   gsap.fromTo(
                     n,
+                    // Acende devagar: a cor entra aos poucos e o ponto cresce pouco, sem estouro elástico
                     {
-                      gsapScale: width < 640 ? 1.35 : 1.9,
-                      gsapFlash: width < 640 ? 0.32 : 0.45,
+                      gsapScale: 1,
+                      gsapFlash: 0.15,
+                      colorBlend: 0,
                     },
                     {
-                      gsapScale: width < 640 ? 1.08 : 1.24,
+                      gsapScale: width < 640 ? 1.06 : 1.14,
                       gsapFlash: 0,
                       highlightLevel: 1,
                       colorBlend: 1,
-                      duration: width < 640 ? 1.35 : 0.85,
-                      ease: width < 640 ? 'power2.out' : 'elastic.out(1, 0.42)',
+                      duration: width < 640 ? 1.8 : 1.4,
+                      ease: 'power2.out',
                     }
                   );
 
@@ -874,26 +887,27 @@ export const InteractiveSculptureCanvas: React.FC<InteractiveSculptureCanvasProp
                 }
               } else if (!n.isPrimary) {
                 n.colorIndex = chosenIdx;
+                n.colorStamp = ++colorStampCounter;
                 n.colorBlend = 1;
                 n.targetHighlight = 1;
-                n.highlightLevel = Math.max(n.highlightLevel, 0.65);
               }
             }
           }
 
-          // Hover awakening radius strictly proportional to the mouse cursor size (~14px radius)
-          const cursorHoverR = width < 640 ? 12 : 14;
+          // Hover awakening radius: só a ponta do cursor (~8px)
+          const cursorHoverR = width < 640 ? 7 : 8;
           const cursorHoverRSq = cursorHoverR * cursorHoverR;
           if (d2 <= cursorHoverRSq) {
             const dCursor = Math.sqrt(d2) || 0.001;
             const normCursor = 1 - dCursor / cursorHoverR;
             const smoothCursor = normCursor * normCursor * (3 - 2 * normCursor);
 
-            const primaryGain = width < 640 ? 1.5 : 3.2;
-            const secondaryGain = width < 640 ? 0.95 : 2.0;
+            // Acende aos poucos sob o cursor/dedo; o brilho segue o alvo pelo lerp mais abaixo,
+            // sem pular direto para o valor final
+            const primaryGain = width < 640 ? 0.6 : 1.1;
+            const secondaryGain = width < 640 ? 0.4 : 0.7;
             const awakenGain = (n.isPrimary ? primaryGain : secondaryGain) * smoothCursor * dt;
             n.targetHighlight = Math.min(1, n.targetHighlight + awakenGain);
-            n.highlightLevel = Math.min(1, Math.max(n.highlightLevel, n.targetHighlight));
 
             if (n.isPrimary && isPrimaryActiveOnViewport(n.id, width) && dCursor < closestHoverDist) {
               closestHoverDist = dCursor;
@@ -935,7 +949,7 @@ export const InteractiveSculptureCanvas: React.FC<InteractiveSculptureCanvasProp
         }
 
         const targetH = renderMode === 'full_bloom' ? 1 : n.targetHighlight;
-        const highlightLerpSpeed = relaxMode ? 2.8 : width < 640 ? 3.4 : 6.5;
+        const highlightLerpSpeed = relaxMode ? 2.8 : width < 640 ? 1.8 : 2.6;
         n.highlightLevel += (targetH - n.highlightLevel) * Math.min(1, dt * highlightLerpSpeed);
 
         const springK = relaxMode ? 0.06 : 0.12;
@@ -950,7 +964,6 @@ export const InteractiveSculptureCanvas: React.FC<InteractiveSculptureCanvasProp
 
       // 4. Render Connecting Wireframe Filaments (Edges)
       const edges = edgesRef.current;
-      const currentSessionIdx = activeSessionColorRef.current % LUMINOUS_PALETTE.length;
       ctx.lineCap = 'round';
 
       for (let i = 0; i < edges.length; i++) {
@@ -996,12 +1009,13 @@ export const InteractiveSculptureCanvas: React.FC<InteractiveSculptureCanvasProp
         const idxB = nb.colorIndex;
 
         if (idxA !== null || idxB !== null) {
-          // Use the endpoint's color; if one endpoint just transitioned to the new session color, match it so lines and balls never clash
+          // A linha segue o ponto pintado por último. Assim ela só muda de cor quando uma das pontas
+          // é repintada (perto do clique), nunca porque a cor do clique seguinte mudou.
           const resolvedIdx =
             idxA !== null && idxB !== null
-              ? idxA === currentSessionIdx || idxB === currentSessionIdx
-                ? currentSessionIdx
-                : idxA
+              ? (na.colorStamp ?? 0) >= (nb.colorStamp ?? 0)
+                ? idxA
+                : idxB
               : (idxA ?? idxB)!;
           const rgb = LUMINOUS_PALETTE[resolvedIdx].rgb;
           ctx.strokeStyle = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${Math.min(0.55, alpha * 1.15)})`;

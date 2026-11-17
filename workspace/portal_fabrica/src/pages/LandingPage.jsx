@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight, ArrowUpRight, Check, Loader2, MessageCircle } from 'lucide-react';
 import { apiFetch, formatBrazilianPhone, isValidBrazilianPhone } from '../lib/api';
 import { WHATSAPP_URL } from '../lib/contact';
 import EcosDeLuzBackdrop from '../components/EcosDeLuzBackdrop';
+import RotatingHeadline from '../components/RotatingHeadline';
 
 // Sites que a Aether já fez (PRODUCT.md, Evidence on Hand): nome, tipo de negócio e captura de tela, sem links.
 const TRABALHOS = [
@@ -17,11 +18,76 @@ const TRABALHOS = [
     image: '/assets/trabalhos/campeiro-fogao.jpg'
   },
   {
-    name: 'Marcianos',
-    kind: 'Restaurante com reserva online',
-    image: '/assets/trabalhos/marcianos.jpg'
+    name: 'Mariana Veiga',
+    kind: 'Consultoria de imagem e estilo pessoal',
+    image: '/assets/trabalhos/mv-consultoria.jpg',
+    // Prévia em movimento: a abertura do site e um trecho da rolagem
+    video: {
+      webm: '/assets/trabalhos/mv-consultoria.webm',
+      mp4: '/assets/trabalhos/mv-consultoria.mp4'
+    }
   }
 ];
+
+/**
+ * Captura de um trabalho. Com vídeo, toca sem som e em loop só enquanto o card está na tela
+ * e só baixa quando chega perto dela. Com "reduzir movimento" ligado, fica a imagem parada.
+ */
+function TrabalhoPreview({ trabalho }) {
+  const videoRef = useRef(null);
+  const [reduceMotion, setReduceMotion] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  );
+
+  useEffect(() => {
+    const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onChange = () => setReduceMotion(mql.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      },
+      { threshold: 0.35 }
+    );
+    observer.observe(video);
+    return () => observer.disconnect();
+  }, [reduceMotion]);
+
+  const alt = `Página inicial do site ${trabalho.name}`;
+  const mediaClass = 'aspect-[16/10] w-full object-cover object-top';
+
+  if (!trabalho.video || reduceMotion) {
+    return <img src={trabalho.image} alt={alt} width="800" height="500" loading="lazy" className={mediaClass} />;
+  }
+
+  return (
+    <video
+      ref={videoRef}
+      poster={trabalho.image}
+      muted
+      loop
+      playsInline
+      preload="none"
+      width="800"
+      height="500"
+      aria-label={alt}
+      className={mediaClass}
+    >
+      <source src={trabalho.video.webm} type="video/webm" />
+      <source src={trabalho.video.mp4} type="video/mp4" />
+    </video>
+  );
+}
 
 const PASSOS = [
   {
@@ -55,12 +121,46 @@ const DIFERENCIAIS = [
 
 const STORAGE_KEY = 'portal_fabrica_submitted_lead';
 
+// Com "reduzir movimento" ligado, a rolagem pula direto em vez de deslizar
+const scrollBehavior = () =>
+  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+
 const fieldClass =
   'mt-1.5 block w-full rounded-none border-0 border-b border-line-strong bg-transparent px-0 py-2 text-[15px] text-bone placeholder:text-bone-faint transition-[border-color,box-shadow] focus:border-signal focus:shadow-[0_1px_0_0_var(--color-signal)] focus:outline-none';
 const labelClass = 'block text-xs font-medium tracking-wide text-bone-muted transition-colors';
 const fieldWrapClass = 'focus-within:[&>label]:text-bone';
 
+// Revela cada seção uma vez, quando ela entra na tela. Sem IntersectionObserver, tudo fica visível.
+function useScrollReveal() {
+  useEffect(() => {
+    const groups = document.querySelectorAll('[data-reveal]');
+    if (!('IntersectionObserver' in window)) return undefined;
+    const root = document.documentElement;
+    root.classList.add('reveal-ready');
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.setAttribute('data-revealed', '');
+          observer.unobserve(entry.target);
+        });
+      },
+      { rootMargin: '0px 0px -15% 0px' }
+    );
+    groups.forEach((el) => observer.observe(el));
+    return () => {
+      observer.disconnect();
+      root.classList.remove('reveal-ready');
+    };
+  }, []);
+}
+
+// Atraso da cascata: cada item entra 70ms depois do anterior
+const stagger = (i) => ({ '--i': i });
+
 export default function LandingPage() {
+  useScrollReveal();
+
   // Form State
   const [formData, setFormData] = useState({
     name: '',
@@ -112,7 +212,7 @@ export default function LandingPage() {
     // Scroll suave de volta para o topo do formulário
     setTimeout(() => {
       const el = document.getElementById('formulario');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
+      if (el) el.scrollIntoView({ behavior: scrollBehavior() });
     }, 50);
   };
 
@@ -177,7 +277,7 @@ export default function LandingPage() {
       // Garante que o scroll fique posicionado no container de sucesso
       setTimeout(() => {
         const el = document.getElementById('formulario');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
+        if (el) el.scrollIntoView({ behavior: scrollBehavior() });
       }, 50);
     } catch (err) {
       console.error('Erro ao enviar lead:', err);
@@ -206,17 +306,16 @@ export default function LandingPage() {
 
         <div className="pointer-events-none mx-auto grid min-h-[100svh] max-w-[1400px] items-end px-5 pb-16 pt-[46svh] sm:px-8 lg:items-center lg:pb-12 lg:pt-24 lg:px-12">
           <div className="aether-rise w-full max-w-[34rem]">
-            <h1 id="titulo-aether" className="text-[clamp(2.6rem,5vw,4.5rem)] leading-[0.95] tracking-[-0.015em]">
-              Cada detalhe do seu negócio, <em className="font-medium italic">aceso</em> num site só seu.
-            </h1>
+            <RotatingHeadline id="titulo-aether" />
             <p className="mt-5 max-w-[30rem] text-base leading-relaxed text-bone-muted [text-wrap:balance] sm:text-[17px]">
               Estudamos o seu negócio de verdade e criamos o site do zero a partir dele.
             </p>
 
-            <div id="formulario" className="pointer-events-auto mt-8 scroll-mt-24 border border-line bg-void/85 p-6 sm:px-7 sm:py-6">
+            <div className="relative isolate mt-8">
+            <div id="formulario" className="pointer-events-auto scroll-mt-24 border border-line bg-void/85 p-6 sm:px-7 sm:py-6">
               {submittedData ? (
-                <div role="status" className="space-y-5">
-                  <span className="grid size-10 place-items-center rounded-full border border-signal text-signal">
+                <div role="status" className="aether-enter space-y-5">
+                  <span className="aether-pop grid size-10 place-items-center rounded-full border border-signal text-signal">
                     <Check className="size-5" aria-hidden />
                   </span>
                   <div className="space-y-2">
@@ -231,7 +330,7 @@ export default function LandingPage() {
                     onClick={handleResetForm}
                     className="text-sm text-bone-muted underline decoration-line-strong underline-offset-4 transition-colors hover:text-bone"
                   >
-                    Enviar outro contato
+                    Voltar ao site
                   </button>
                 </div>
               ) : (
@@ -316,7 +415,7 @@ export default function LandingPage() {
                   </div>
 
                   {errorMessage && (
-                    <p role="alert" className="text-sm text-signal">
+                    <p key={errorMessage} role="alert" className="aether-drop text-sm text-signal">
                       {errorMessage}
                       {sendFailed && (
                         <>
@@ -333,7 +432,7 @@ export default function LandingPage() {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-signal px-6 py-3 text-sm font-semibold text-void transition-colors hover:bg-signal-hover disabled:cursor-wait disabled:opacity-70"
+                      className="group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-signal px-6 py-3 text-sm font-semibold text-void press hover:bg-signal-hover disabled:cursor-wait disabled:opacity-70"
                     >
                       {isSubmitting ? (
                         <>
@@ -342,7 +441,7 @@ export default function LandingPage() {
                         </>
                       ) : (
                         <>
-                          Quero a minha proposta
+                          Solicitar serviço
                           <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
                         </>
                       )}
@@ -360,24 +459,25 @@ export default function LandingPage() {
                 </form>
               )}
             </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Como funciona: três pontos ligados por um fio */}
       <section id="como-funciona" aria-labelledby="titulo-como" className="scroll-mt-8 border-t border-line">
-        <div className="mx-auto max-w-[1400px] px-5 py-24 sm:px-8 sm:py-32 lg:px-12">
-          <h2 id="titulo-como" className="max-w-[18ch] text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
+        <div data-reveal className="mx-auto max-w-[1400px] px-5 py-24 sm:px-8 sm:py-32 lg:px-12">
+          <h2 id="titulo-como" className="r-up max-w-[18ch] text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
             Do seu negócio real até o site, em três passos.
           </h2>
           <ol className="relative mt-16 grid gap-12 md:grid-cols-3 md:gap-10">
-            <span aria-hidden className="absolute left-[5px] top-2 bottom-2 w-px bg-line-strong md:inset-x-0 md:top-[5px] md:bottom-auto md:h-px md:w-auto" />
+            <span aria-hidden style={stagger(1)} className="r-line absolute left-[5px] top-2 bottom-2 w-px bg-line-strong md:inset-x-0 md:top-[5px] md:bottom-auto md:h-px md:w-auto" />
             {PASSOS.map((passo, i) => (
-              <li key={passo.title} className="relative pl-8 md:pl-0 md:pt-10">
+              <li key={passo.title} style={stagger(i + 1)} className="r-up relative pl-8 md:pl-0 md:pt-10">
                 <span
                   aria-hidden
                   className={`absolute left-0 top-1.5 size-[11px] rounded-full md:top-0 ${
-                    i === 2 ? 'bg-signal shadow-[0_0_0_4px_rgb(239_68_68/0.18)]' : 'bg-bone'
+                    i === 2 ? 'r-lit bg-signal shadow-[0_0_0_4px_rgb(198_244_50/0.18)]' : 'bg-bone'
                   }`}
                 />
                 <h3 className="text-[1.65rem] leading-tight">{passo.title}</h3>
@@ -391,15 +491,15 @@ export default function LandingPage() {
       {/* Diferenciais */}
       <section
         aria-labelledby="titulo-diferenciais"
-        className="border-t border-line bg-void bg-[radial-gradient(ellipse_70%_90%_at_8%_0%,rgb(27_0_75/0.75),transparent_70%)]"
+        className="border-t border-line bg-void bg-[radial-gradient(ellipse_70%_90%_at_8%_0%,rgb(198_244_50/0.07),transparent_70%)]"
       >
-        <div className="mx-auto grid max-w-[1400px] gap-14 px-5 py-24 sm:px-8 sm:py-32 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:px-12">
-          <h2 id="titulo-diferenciais" className="max-w-[14ch] text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
+        <div data-reveal className="mx-auto grid max-w-[1400px] gap-14 px-5 py-24 sm:px-8 sm:py-32 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:px-12">
+          <h2 id="titulo-diferenciais" className="r-up max-w-[14ch] text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
             Um site que só podia ser do seu negócio.
           </h2>
           <dl className="divide-y divide-line border-y border-line">
-            {DIFERENCIAIS.map((d) => (
-              <div key={d.title} className="grid gap-2 py-7 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-8">
+            {DIFERENCIAIS.map((d, i) => (
+              <div key={d.title} style={stagger(i + 1)} className="r-up grid gap-2 py-7 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-8">
                 <dt className="font-display text-2xl leading-tight">{d.title}</dt>
                 <dd className="text-[15px] leading-relaxed text-bone-muted">{d.text}</dd>
               </div>
@@ -410,23 +510,16 @@ export default function LandingPage() {
 
       {/* Trabalhos */}
       <section id="trabalhos" aria-labelledby="titulo-trabalhos" className="scroll-mt-8 border-t border-line">
-        <div className="mx-auto max-w-[1400px] px-5 py-24 sm:px-8 sm:py-32 lg:px-12">
-          <h2 id="titulo-trabalhos" className="text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
+        <div data-reveal className="mx-auto max-w-[1400px] px-5 py-24 sm:px-8 sm:py-32 lg:px-12">
+          <h2 id="titulo-trabalhos" className="r-up text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
             Alguns sites que já fizemos.
           </h2>
           <ul className="mt-14 grid gap-x-8 gap-y-12 md:grid-cols-3">
-            {TRABALHOS.map((t) => (
-              <li key={t.name}>
+            {TRABALHOS.map((t, i) => (
+              <li key={t.name} style={stagger(i + 1)} className="r-up">
                 <figure>
-                  <div className="overflow-hidden border border-line bg-void-raised">
-                    <img
-                      src={t.image}
-                      alt={`Página inicial do site ${t.name}`}
-                      width="800"
-                      height="500"
-                      loading="lazy"
-                      className="aspect-[16/10] w-full object-cover object-top"
-                    />
+                  <div className="r-image overflow-hidden border border-line bg-void-raised">
+                    <TrabalhoPreview trabalho={t} />
                   </div>
                   <figcaption className="mt-4">
                     <p className="font-display text-2xl leading-tight">{t.name}</p>
@@ -439,29 +532,30 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Fechamento: a mão da escultura volta, parada, sobre o campo violeta */}
+      {/* Fechamento: a mão da escultura volta, parada, sobre o campo lima */}
       <section
+        data-reveal
         aria-labelledby="titulo-fechamento"
-        className="relative isolate overflow-hidden border-t border-line bg-void bg-[radial-gradient(ellipse_60%_100%_at_85%_30%,rgb(27_0_75/0.9),transparent_72%)]"
+        className="relative isolate overflow-hidden border-t border-line bg-void bg-[radial-gradient(ellipse_60%_100%_at_85%_30%,rgb(198_244_50/0.09),transparent_72%)]"
       >
         <img
           src="/assets/ecos-de-luz.jpg"
           alt=""
           aria-hidden
           loading="lazy"
-          className="pointer-events-none relative -z-10 block h-72 w-full object-cover object-[75%_8%] opacity-70 mix-blend-screen [mask-image:linear-gradient(180deg,black_50%,transparent)] sm:h-96 lg:absolute lg:right-0 lg:top-0 lg:h-full lg:w-[52%] lg:[mask-image:linear-gradient(90deg,transparent,black_40%)]"
+          className="r-fade pointer-events-none relative -z-10 block h-72 w-full object-cover object-[75%_8%] opacity-70 mix-blend-screen [mask-image:linear-gradient(180deg,black_50%,transparent)] sm:h-96 lg:absolute lg:right-0 lg:top-0 lg:h-full lg:w-[52%] lg:[mask-image:linear-gradient(90deg,transparent,black_40%)]"
         />
         {/* Texto e ações sempre sobre o campo escuro: no celular a arte fica acima, no desktop à direita */}
         <div className="mx-auto flex max-w-[1400px] flex-col items-start gap-8 px-5 pb-28 pt-2 sm:px-8 sm:pb-36 lg:px-12 lg:py-36">
-          <h2 id="titulo-fechamento" className="max-w-[16ch] text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
+          <h2 id="titulo-fechamento" style={stagger(1)} className="r-up max-w-[16ch] text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
             O seu negócio já tem o que é preciso. Vamos acender.
           </h2>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+          <div style={stagger(2)} className="r-up flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
             <a
               href="#formulario"
-              className="inline-flex items-center gap-2 rounded-full bg-signal px-6 py-3 text-sm font-semibold text-void transition-colors hover:bg-signal-hover"
+              className="inline-flex items-center gap-2 rounded-full bg-signal px-6 py-3 text-sm font-semibold text-void press hover:bg-signal-hover"
             >
-              Quero a minha proposta
+              Solicitar serviço
               <ArrowUpRight className="size-4" aria-hidden />
             </a>
             <a

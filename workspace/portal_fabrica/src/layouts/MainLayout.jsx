@@ -18,9 +18,9 @@ export default function MainLayout({ children }) {
             </a>
             <a
               href="#formulario"
-              className="rounded-full border border-line-strong px-4 py-2 font-medium text-bone transition-colors hover:border-signal hover:text-signal"
+              className="rounded-full border border-line-strong px-4 py-2 font-medium text-bone press hover:border-signal hover:text-signal"
             >
-              Pedir proposta
+              Solicitar serviço
             </a>
           </nav>
         </div>
