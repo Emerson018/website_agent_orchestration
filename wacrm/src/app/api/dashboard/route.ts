@@ -3,7 +3,6 @@ import { createClient } from '@/lib/supabase/server';
 import {
   loadMetrics,
   loadConversationsSeries,
-  loadPipelineDonut,
   loadResponseTime,
   loadActivity,
 } from '@/lib/dashboard/queries';
@@ -22,10 +21,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const rangeDays = parseInt(searchParams.get('range') || '30', 10);
 
-    const [metrics, series, pipeline, responseTime, activity] = await Promise.all([
+    const [metrics, series, responseTime, activity] = await Promise.all([
       loadMetrics(supabase),
       loadConversationsSeries(supabase, rangeDays),
-      loadPipelineDonut(supabase),
       loadResponseTime(supabase),
       loadActivity(supabase, 50),
     ]);
@@ -33,7 +31,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       metrics,
       series,
-      pipeline,
       responseTime,
       activity,
     });

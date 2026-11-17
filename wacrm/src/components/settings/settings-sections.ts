@@ -1,5 +1,4 @@
 import {
-  Coins,
   FileText,
   LayoutGrid,
   Palette,
@@ -27,7 +26,6 @@ export const SETTINGS_SECTIONS = [
   'whatsapp',
   'templates',
   'fields',
-  'deals',
   'members',
 ] as const;
 
@@ -51,7 +49,6 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   whatsapp: { id: 'whatsapp', label: 'WhatsApp', icon: PlugZap, group: 'workspace' },
   templates: { id: 'templates', label: 'Templates', icon: FileText, group: 'workspace' },
   fields: { id: 'fields', label: 'Fields & tags', icon: Tags, group: 'workspace' },
-  deals: { id: 'deals', label: 'Deals & currency', icon: Coins, group: 'workspace' },
   members: { id: 'members', label: 'Team members', icon: UsersRound, group: 'workspace' },
 };
 

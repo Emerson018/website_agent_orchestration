@@ -33,7 +33,7 @@ describe("formatCurrency", () => {
     expect(out).toContain("1,234");
   });
 
-  it("never throws on a structurally invalid code (no DB CHECK on deals.currency)", () => {
+  it("never throws on a structurally invalid code (stored codes have no DB CHECK)", () => {
     for (const bad of ["United States", "US", "USDD", "12", "u$d"]) {
       expect(() => formatCurrency(1234, bad)).not.toThrow();
       expect(formatCurrency(1234, bad)).toContain("1,234");

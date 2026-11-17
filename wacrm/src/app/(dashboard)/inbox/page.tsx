@@ -44,7 +44,7 @@ export default function InboxPage() {
   const [resyncToken, setResyncToken] = useState(0);
 
   /**
-   * Whether the desktop contact sidebar (tags / deals / notes) is shown.
+   * Whether the desktop contact sidebar (tags / lead data / notes) is shown.
    * Defaults to `true` (the historical behaviour) and is restored from
    * localStorage after mount. We deliberately do NOT read localStorage in
    * the initializer: the server renders with `true`, so reading a stored

@@ -1,5 +1,5 @@
 /**
- * Currency — single source of truth for deal-value formatting and
+ * Currency — single source of truth for money formatting and
  * the currency picker options.
  *
  * Before this module, ~6 components each defined their own
@@ -10,7 +10,7 @@
  * nothing is known.
  */
 
-/** App-wide fallback when no account/deal currency is available. */
+/** App-wide fallback when no currency is available. */
 export const DEFAULT_CURRENCY = "USD";
 
 export interface CurrencyOption {
@@ -45,15 +45,14 @@ export const CURRENCIES: CurrencyOption[] = [
 ];
 
 /**
- * Format a deal value as a currency string. Whole-number output
- * (no minor units) — deal values are tracked to the dollar across
- * the app. `currency` defaults to USD so callers with nothing better
- * stay safe, but pass the account/deal currency wherever known.
+ * Format a money value as a currency string. Whole-number output
+ * (no minor units). `currency` defaults to USD so callers with nothing
+ * better stay safe, but pass the real currency wherever known.
  *
  * Total by design: `Intl.NumberFormat` throws a RangeError on a
- * structurally invalid currency code, and `deals.currency` carries
- * NO DB CHECK (only `accounts.default_currency` does), so legacy
- * rows, imports, or hand-edited data can hold malformed values like
+ * structurally invalid currency code, and stored codes (e.g. the
+ * lead quote in contacts.additional_data) carry no DB CHECK, so
+ * imports or hand-edited data can hold malformed values like
  * "United States". We never let that crash a render — on a bad code
  * we fall back to "CODE 1,234".
  */

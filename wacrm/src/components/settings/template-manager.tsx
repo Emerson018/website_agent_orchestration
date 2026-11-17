@@ -646,7 +646,7 @@ export function TemplateManager() {
             <DialogDescription className="text-muted-foreground">
               {editingId
                 ? 'Save your changes to re-submit to Meta. Status will flip back to PENDING during review.'
-                : 'Build a template and submit it to Meta for approval. Once approved, you can use it in broadcasts and the inbox.'}
+                : 'Build a template and submit it to Meta for approval. Once approved, you can use it in the inbox.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -1099,7 +1099,7 @@ export function TemplateManager() {
             <DialogTitle className="text-popover-foreground">Delete template?</DialogTitle>
             <DialogDescription className="text-muted-foreground">
               {templateToDelete?.meta_template_id
-                ? `"${templateToDelete?.name}" will be deleted from Meta and from wacrm. Active broadcasts using this template will start failing on their next send. This can't be undone.`
+                ? `"${templateToDelete?.name}" will be deleted from Meta and from wacrm. This can't be undone.`
                 : `"${templateToDelete?.name}" will be deleted from wacrm. It was never submitted to Meta, so no remote cleanup is needed.`}
             </DialogDescription>
           </DialogHeader>

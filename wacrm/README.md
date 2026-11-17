@@ -1,8 +1,7 @@
 # wacrm — CRM Template for WhatsApp
 
-> Self-hostable CRM template for WhatsApp® — shared inbox, contacts,
-> sales pipelines, broadcasts, and no-code automations. Fork it, brand
-> it, host it.
+> Self-hostable CRM template for WhatsApp® — shared inbox, contacts
+> and a live dashboard. Fork it, brand it, host it.
 
 <p align="center">
   <a href="https://www.hostinger.com/web-apps-hosting">
@@ -27,14 +26,10 @@ clone or fork it to run your own CRM.
   agents working one number, per-conversation assignment, status, and
   notes.
 - **Contacts + tags + custom fields**, CSV import, deduplication.
-- **Sales pipelines** (Kanban) with deals linked to conversations.
-- **Broadcasts** with Meta-approved templates, delivery + read
-  tracking, per-recipient variable substitution.
-- **No-code automations** — triggers on inbound messages, new
-  contacts, keywords, or schedule; conditional branches, waits,
-  tags, webhooks. Visual builder.
-- **Real-time dashboard** — response times, daily volume, pipeline
-  value, cross-module activity feed.
+- **Message templates** submitted to Meta for approval and usable
+  from the inbox.
+- **Real-time dashboard** — response times, daily volume, and a
+  message + contact activity feed.
 - **Team accounts** — invite teammates by link, role-based access
   (owner / admin / agent / viewer), ownership transfer. Every install
   is account-scoped, so one shared inbox can be staffed by a whole

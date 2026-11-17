@@ -11,7 +11,6 @@ import {
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
-import { DEFAULT_CURRENCY } from "@/lib/currency";
 import {
   canEditSettings as canEditSettingsFor,
   canManageMembers as canManageMembersFor,
@@ -39,9 +38,6 @@ interface Profile {
 interface AccountSummary {
   id: string;
   name: string;
-  /** Default deal currency (ISO-4217). NOT NULL DEFAULT 'USD' in the
-   *  DB (migration 021); narrowed to DEFAULT_CURRENCY when absent. */
-  default_currency: string;
 }
 
 interface AuthContextValue {
@@ -81,12 +77,8 @@ interface AuthContextValue {
   accountId: string | null;
   /** Role within that account. Null while loading. */
   accountRole: AccountRole | null;
-  /** Lightweight account meta — id + name + default_currency. Null while loading. */
+  /** Lightweight account meta — id + name. Null while loading. */
   account: AccountSummary | null;
-  /** Account default deal currency. Falls back to DEFAULT_CURRENCY
-   *  while loading or when no account is resolved, so callers can use
-   *  it unconditionally. */
-  defaultCurrency: string;
   /** True if `accountRole === 'owner'`. */
   isOwner: boolean;
   /** True if `accountRole === 'admin'` (does NOT include owner — use canManageMembers for "admin or above"). */
@@ -136,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // missing account collapses to null rather than a half-
           // populated row (shouldn't happen post-017 NOT NULL, but
           // belt-and-braces against forks running older schemas).
-          "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, account:accounts!inner(id, name, default_currency)",
+          "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, account:accounts!inner(id, name)",
         )
         .eq("user_id", userId)
         .maybeSingle();
@@ -161,16 +153,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           : (data.account as {
               id: string;
               name: string;
-              default_currency: string | null;
             } | null);
-        // Narrow default_currency defensively: forks running pre-021
-        // schemas won't have the column, so a missing/null value reads
-        // as the safe USD fallback rather than crashing the picker.
         const accountRow: AccountSummary | null = accountRaw
           ? {
               id: accountRaw.id,
               name: accountRaw.name,
-              default_currency: accountRaw.default_currency ?? DEFAULT_CURRENCY,
             }
           : null;
 
@@ -242,7 +229,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAccount({
         id: "98006e91-88b1-44ea-9178-50c257cd973f",
         name: "WACRM Workspace",
-        default_currency: DEFAULT_CURRENCY,
       });
       setProfileLoading(false);
     };
@@ -359,7 +345,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut,
         refreshProfile,
         account,
-        defaultCurrency: account?.default_currency ?? DEFAULT_CURRENCY,
         ...derived,
       }}
     >
@@ -389,7 +374,6 @@ export function useAuth(): AuthContextValue {
       },
       refreshProfile: async () => {},
       account: null,
-      defaultCurrency: DEFAULT_CURRENCY,
       accountId: null,
       accountRole: null,
       isOwner: false,
