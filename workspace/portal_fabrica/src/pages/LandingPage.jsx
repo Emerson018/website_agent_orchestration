@@ -159,10 +159,11 @@ function useScrollReveal() {
 const stagger = (i) => ({ '--i': i });
 
 // Tipos de projeto do formulário (múltipla escolha). As chaves são as que o backend aceita.
+// "Painel de resultados" é o nome do Dashboard para o cliente (sem jargão, PRODUCT.md).
 const PROJECT_TYPE_OPTIONS = [
   { key: 'site', label: 'Site' },
-  { key: 'app_mobile', label: 'App mobile' },
-  { key: 'agenda', label: 'Agenda' }
+  { key: 'agenda', label: 'Agenda' },
+  { key: 'dashboard', label: 'Painel de resultados' }
 ];
 
 // "site", "site e agenda", "site, app mobile e agenda"

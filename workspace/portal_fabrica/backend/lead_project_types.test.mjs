@@ -5,8 +5,10 @@ import { normalizeProjectTypes } from './project_types.js';
 
 test('normalizeProjectTypes keeps known types as labels, in a fixed order, without duplicates', () => {
   assert.deepEqual(normalizeProjectTypes(['agenda', 'site']), ['Site', 'Agenda']);
-  assert.deepEqual(normalizeProjectTypes(['app_mobile', 'app_mobile', 'hacker', 42, null]), ['App mobile']);
-  assert.deepEqual(normalizeProjectTypes(['site', 'app_mobile', 'agenda']), ['Site', 'App mobile', 'Agenda']);
+  assert.deepEqual(normalizeProjectTypes(['dashboard', 'dashboard', 'hacker', 42, null]), ['Dashboard']);
+  assert.deepEqual(normalizeProjectTypes(['dashboard', 'site', 'agenda']), ['Site', 'Agenda', 'Dashboard']);
+  // App mobile está desligado por enquanto
+  assert.deepEqual(normalizeProjectTypes(['app_mobile', 'site']), ['Site']);
   assert.deepEqual(normalizeProjectTypes(undefined), []);
   assert.deepEqual(normalizeProjectTypes('site'), []);
 });
@@ -32,12 +34,12 @@ test('Lead intake stores the chosen project types on the CRM contact', async () 
       name: 'Ana Lima',
       email: 'ana@exemplo.com.br',
       phone: '(51) 98888-1111',
-      project_types: ['agenda', 'site', 'desconhecido'],
+      project_types: ['dashboard', 'site', 'desconhecido'],
     });
     assert.equal(withTypes.status, 201);
     const { contact_id } = await withTypes.json();
     const contact = fake.tables.contacts.find((c) => c.id === contact_id);
-    assert.deepEqual(contact.additional_data.tipos_projeto, ['Site', 'Agenda']);
+    assert.deepEqual(contact.additional_data.tipos_projeto, ['Site', 'Dashboard']);
 
     const withoutTypes = await post({ name: 'Bruno Reis', email: 'bruno@exemplo.com.br', phone: '(51) 97777-2222' });
     assert.equal(withoutTypes.status, 201);

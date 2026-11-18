@@ -1,9 +1,10 @@
 // Tipos de projeto que o cliente escolhe no formulário do portal (múltipla escolha).
 // O portal envia as chaves; o CRM guarda os rótulos legíveis em contacts.additional_data.tipos_projeto.
+// App mobile está desligado por enquanto (GLOSSARY.md, Tipo de Projeto).
 export const PROJECT_TYPES = [
   { key: 'site', label: 'Site' },
-  { key: 'app_mobile', label: 'App mobile' },
   { key: 'agenda', label: 'Agenda' },
+  { key: 'dashboard', label: 'Dashboard' },
 ];
 
 /**

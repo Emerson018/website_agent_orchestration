@@ -242,7 +242,7 @@ app.post('/api/leads', async (req, res) => {
       finalAdditionalData.links = existingLinks;
     }
 
-    // Tipos de projeto escolhidos no formulário (Site, App mobile, Agenda), para o CRM mostrar no contato.
+    // Tipos de projeto escolhidos no formulário (Site, Agenda, Dashboard), para o CRM mostrar no contato.
     const projectTypes = normalizeProjectTypes(req.body.project_types);
     if (projectTypes.length > 0) {
       finalAdditionalData.tipos_projeto = projectTypes;

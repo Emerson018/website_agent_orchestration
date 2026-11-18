@@ -1,4 +1,4 @@
-// Tipos de projeto (Site, App mobile, Agenda) que o cliente escolheu no formulário do portal.
+// Tipos de projeto (Site, Agenda, Dashboard) que o cliente escolheu no formulário do portal.
 // O backend do portal grava os rótulos em contacts.additional_data.tipos_projeto.
 
 type WithAdditionalData = { additional_data?: unknown } | null | undefined;

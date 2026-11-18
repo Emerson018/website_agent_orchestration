@@ -14,9 +14,9 @@ describe("projectTypesOf", () => {
 
   it("ignores malformed data", () => {
     expect(projectTypesOf({ additional_data: { tipos_projeto: "Site" } })).toEqual([]);
-    expect(projectTypesOf({ additional_data: { tipos_projeto: ["Site", 3, "", null, "App mobile"] } })).toEqual([
+    expect(projectTypesOf({ additional_data: { tipos_projeto: ["Site", 3, "", null, "Dashboard"] } })).toEqual([
       "Site",
-      "App mobile",
+      "Dashboard",
     ]);
   });
 });
