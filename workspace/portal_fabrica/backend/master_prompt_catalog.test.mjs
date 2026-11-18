@@ -41,16 +41,17 @@ test('Master Prompt uses scraped items alone without placeholders', () => {
   assert.ok(!prompt.includes(PLACEHOLDER));
 });
 
-test('Master Prompt gets the placeholder catalog when there is no catalog source', () => {
+test('Without any catalog source the Master Prompt has no catalog section and lists it in the Pendências', () => {
   const prompt = buildMasterPrompt({ ...base });
-  assert.ok(prompt.includes('## Catálogo'));
-  assert.ok(prompt.includes('### [Categoria — inserir aqui]'));
-  assert.ok(prompt.includes('- **[Nome do item — inserir aqui]**: [descrição — inserir aqui] — [preço — inserir aqui]'));
+  assert.ok(!prompt.includes('### Catálogo'));
+  assert.ok(!prompt.includes(PLACEHOLDER));
+  assert.match(prompt.slice(prompt.indexOf('## Pendências do Prompt')), /Catálogo/);
 });
 
-test('Master Prompt gets placeholders but keeps Informações Gerais when the extraction found no items', () => {
+test('When the extraction found no items the Informações Gerais stay and the catalog is a Pendência', () => {
   const prompt = buildMasterPrompt({ ...base, catalogoExtraido: { markdown: CATALOG_WITHOUT_ITEMS } });
-  assert.ok(prompt.includes(PLACEHOLDER));
+  assert.ok(!prompt.includes(PLACEHOLDER));
   assert.ok(prompt.includes('Ter a Dom, 18h às 23h'), 'Informações Gerais aparecem mesmo sem itens');
   assert.ok(!prompt.includes('Nenhum item de catálogo encontrado'), 'a linha de controle não vai para o prompt');
+  assert.match(prompt.slice(prompt.indexOf('## Pendências do Prompt')), /Catálogo/);
 });

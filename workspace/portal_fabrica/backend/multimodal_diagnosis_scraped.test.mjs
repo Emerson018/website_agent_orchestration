@@ -54,11 +54,11 @@ test('Master Prompt Studio - integra dados raspados via Scrapling', async (t) =>
       scrapedData: mockScrapedData,
     });
 
-    assert.ok(prompt.includes('BLOCO DE PRODUTOS & CATÁLOGO OFICIAL (EXTRAÍDO COM SCRAPLING)'));
+    assert.ok(prompt.includes('Itens publicados no site do negócio'));
     assert.ok(prompt.includes('Gnocchi al Tartufo'));
     assert.ok(prompt.includes('R$ 68,00'));
     assert.ok(prompt.includes('Cannoli Siciliani'));
-    assert.ok(prompt.includes('História & Posicionamento Oficial do Site'));
+    assert.ok(prompt.includes('Como o próprio negócio se apresenta'));
     assert.ok(prompt.includes('Uma história familiar nascida no sul da Itália'));
     assert.ok(prompt.includes('Adega Climatizada'));
   });
@@ -71,8 +71,8 @@ test('Master Prompt Studio - integra dados raspados via Scrapling', async (t) =>
       scrapedData: null,
     });
 
-    assert.ok(promptWithoutScraped.includes('BRIEFING MESTRE DO PROJETO & ARQUITETURA DE EXECUÇÃO'));
-    assert.ok(!promptWithoutScraped.includes('BLOCO DE PRODUTOS & CATÁLOGO OFICIAL'));
+    assert.ok(promptWithoutScraped.includes('# Prompt Mestre: Trattoria del Nonno'));
+    assert.ok(!promptWithoutScraped.includes('Itens publicados no site do negócio'));
     assert.ok(promptWithoutScraped.includes('Trattoria del Nonno'));
   });
 });

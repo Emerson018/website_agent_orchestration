@@ -76,26 +76,23 @@ test('Master Prompt Synthesizer - structures 4 blocks and real client assets', (
     diagnostico: mockDiagnostico,
   });
 
-  // Verify all 4 blocks exist
-  assert.ok(prompt.includes('BLOCO 1: IDENTIDADE, POSICIONAMENTO & ESSÊNCIA DO NEGÓCIO'), 'Must contain Block 1');
-  assert.ok(prompt.includes('BLOCO 2: DADOS & ATIVOS VERIFICADOS (GOOGLE MAPS) — REGRAS ESTRITAS'), 'Must contain Block 2');
-  assert.ok(prompt.includes('BLOCO 3: INSUMOS CRIATIVOS (DELEGAÇÃO PARA AS SKILLS DE DESIGN & MOTION)'), 'Must contain Block 3');
-  assert.ok(prompt.includes('BLOCO 4: DIRETRIZES TÉCNICAS E METODOLOGIA DE CONSTRUÇÃO'), 'Must contain Block 4');
+  // Briefing do Negócio + módulo Site + fim no modo especificar
+  assert.ok(prompt.includes('## Briefing do Negócio: Café & Coworking Aurora'));
+  assert.ok(prompt.includes('## O que construir: Site'));
+  assert.ok(prompt.includes('## Antes de construir'));
 
   // Verify real client data
   assert.ok(prompt.includes('Café & Coworking Aurora'));
   assert.ok(prompt.includes('Av. Ipiranga, 500'));
   assert.ok(prompt.includes('(51) 99888-1122'));
-  assert.ok(prompt.includes('4.9★ (85 avaliações)'));
+  assert.ok(prompt.includes('4.9★ em 85 avaliações'));
   assert.ok(prompt.includes('Melhor café filtrado da cidade'));
   assert.ok(prompt.includes('Verde sálvia'));
-  assert.ok(prompt.includes('React (Vite), Tailwind CSS, Lucide Icons e Framer Motion'));
-  assert.ok(prompt.includes('Link Oficial do Google Maps (Perfil do Cliente)'));
+  assert.ok(prompt.includes('React, Vite, TypeScript e Tailwind CSS'));
   assert.ok(prompt.includes('https://maps.app.goo.gl/aurora123'));
-  assert.ok(prompt.includes('e NUNCA para o endereço em texto'));
 });
 
-test('Master Prompt Synthesizer - Block 2 strictly directs Google Maps links to client maps URL rather than text address', () => {
+test('Master Prompt - every map action uses the client Maps link, never a text address or generic search', () => {
   const prompt = buildMasterPrompt({
     companyName: 'Studio Bella',
     dossie: {
@@ -106,13 +103,10 @@ test('Master Prompt Synthesizer - Block 2 strictly directs Google Maps links to 
     diagnostico: { resumo_empresa: 'Studio de beleza' },
   });
 
-  const bloco2Match = prompt.match(/### BLOCO 2: DADOS & ATIVOS VERIFICADOS \(GOOGLE MAPS\)[\s\S]*?(?=### BLOCO 3)/);
-  assert.ok(bloco2Match, 'Bloco 2 must exist');
-  const bloco2Text = bloco2Match[0];
-
-  assert.ok(bloco2Text.includes('https://maps.app.goo.gl/studiobella99'));
-  assert.ok(bloco2Text.includes('e NUNCA para o endereço em texto ou buscas genéricas'));
-  assert.ok(bloco2Text.includes('Regra Inegociável para Links de Mapas'));
+  const rule = prompt.split('\n').find((line) => line.includes('Toda ação de mapa'));
+  assert.ok(rule, 'the map rule exists');
+  assert.ok(rule.includes('https://maps.app.goo.gl/studiobella99'));
+  assert.ok(!prompt.includes('google.com/maps/search'));
 });
 
 test('Multimodal Diagnosis - returns the diagnosis and Master Prompt from a Gemini answer', async () => {
