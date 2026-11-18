@@ -662,7 +662,11 @@ function rebuildMasterPrompts(contact, additionalData) {
  */
 function withMasterPrompts(additionalData, textosPorTipo) {
   const geradoEm = new Date().toISOString();
-  const atuais = additionalData.prompts_mestre && typeof additionalData.prompts_mestre === 'object' ? additionalData.prompts_mestre : {};
+  const atuais = additionalData.prompts_mestre && typeof additionalData.prompts_mestre === 'object' ? { ...additionalData.prompts_mestre } : {};
+  // Lead antigo: o prompt único vira a aba Site antes de sair, para nada se perder
+  if (!atuais.site && typeof additionalData.prompt_mestre === 'string' && additionalData.prompt_mestre.trim()) {
+    atuais.site = { texto: additionalData.prompt_mestre, gerado_em: additionalData.prompt_mestre_gerado_em || null };
+  }
   const novos = Object.fromEntries(Object.entries(textosPorTipo).map(([tipo, texto]) => [tipo, { texto, gerado_em: geradoEm }]));
   const next = { ...additionalData, prompts_mestre: { ...atuais, ...novos } };
   delete next.prompt_mestre;

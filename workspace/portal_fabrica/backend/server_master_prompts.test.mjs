@@ -19,6 +19,15 @@ test('POST /api/leads/:id/master-prompts rebuilds one Tipo de Projeto from saved
         },
       },
       { id: 'c-sem-diagnostico', company: 'Sem Diagnóstico', additional_data: {} },
+      {
+        id: 'c-legado',
+        company: 'Lead Antigo',
+        additional_data: {
+          diagnostico_ia: { resumo_empresa: 'Lead antigo.' },
+          prompt_mestre: 'prompt único antigo',
+          prompt_mestre_gerado_em: '2025-12-01T00:00:00.000Z',
+        },
+      },
     ],
   });
   setSupabaseClientForTests(fake);
@@ -53,6 +62,12 @@ test('POST /api/leads/:id/master-prompts rebuilds one Tipo de Projeto from saved
     fake.tables.contacts[0].additional_data.tipos_projeto = ['Agenda', 'Dashboard'];
     const dashboardComAgenda = (await (await post('c-1', { tipo: 'dashboard' })).json()).prompts_mestre.dashboard.texto;
     assert.ok(!dashboardComAgenda.includes('Fonte dos dados do Dashboard'));
+
+    // Lead antigo: gerar a Agenda primeiro não pode apagar o prompt único, que vira a aba Site
+    const legado = (await (await post('c-legado', { tipo: 'agenda' })).json()).prompts_mestre;
+    assert.deepEqual(legado.site, { texto: 'prompt único antigo', gerado_em: '2025-12-01T00:00:00.000Z' });
+    assert.ok(legado.agenda.texto.includes('## O que construir: Agenda'));
+    assert.equal(fake.tables.contacts.find((c) => c.id === 'c-legado').additional_data.prompt_mestre, undefined);
 
     assert.equal((await post('c-1', { tipo: 'app_mobile' })).status, 400, 'unknown type');
     assert.equal((await post('c-sem-diagnostico', { tipo: 'site' })).status, 409, 'needs the diagnosis first');
