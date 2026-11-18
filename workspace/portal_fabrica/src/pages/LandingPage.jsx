@@ -92,15 +92,15 @@ function TrabalhoPreview({ trabalho }) {
 const PASSOS = [
   {
     title: 'Você deixa o contato',
-    text: 'Seu nome, e-mail e WhatsApp e, se tiver, o site ou o Instagram do seu negócio. Leva menos de um minuto.'
+    text: 'Seu nome, e-mail, WhatsApp ou o Instagram do seu negócio. Leva menos de um minuto.'
   },
   {
     title: 'A gente estuda o seu negócio',
-    text: 'Olhamos o seu perfil no Google Maps, o que os clientes dizem nas avaliações, as suas fotos e o seu cardápio ou catálogo.'
+    text: 'Analisamos o seu perfil, o que os clientes dizem nas avaliações e seu negócio.'
   },
   {
     title: 'Você recebe a proposta',
-    text: 'Um site pensado a partir do que já faz o seu negócio ser escolhido, com a sua cara e o seu jeito de atender.'
+    text: 'Um projeto pensado a partir do que já faz o seu negócio ser escolhido, com a sua cara e o seu jeito de atender.'
   }
 ];
 
@@ -158,11 +158,26 @@ function useScrollReveal() {
 // Atraso da cascata: cada item entra 70ms depois do anterior
 const stagger = (i) => ({ '--i': i });
 
+// Tipos de projeto do formulário (múltipla escolha). As chaves são as que o backend aceita.
+const PROJECT_TYPE_OPTIONS = [
+  { key: 'site', label: 'Site' },
+  { key: 'app_mobile', label: 'App mobile' },
+  { key: 'agenda', label: 'Agenda' }
+];
+
+// "site", "site e agenda", "site, app mobile e agenda"
+const joinPt = (items) =>
+  items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} e ${items[items.length - 1]}`;
+
+// Título dos diferenciais: palavras que entram depois que a versão genérica é riscada
+const CLAIM_WORDS = ['Um', 'projeto', 'que', 'só', 'podia', 'ser', 'do'];
+
 export default function LandingPage() {
   useScrollReveal();
 
   // Form State
   const [formData, setFormData] = useState({
+    projectTypes: [],
     name: '',
     company: '',
     email: '',
@@ -196,9 +211,20 @@ export default function LandingPage() {
     if (errorMessage) setErrorMessage('');
   };
 
+  const handleProjectTypeToggle = (key) => () => {
+    setFormData((prev) => ({
+      ...prev,
+      projectTypes: prev.projectTypes.includes(key)
+        ? prev.projectTypes.filter((k) => k !== key)
+        : [...prev.projectTypes, key]
+    }));
+    if (errorMessage) setErrorMessage('');
+  };
+
   const handleResetForm = () => {
     setSubmittedData(null);
     setFormData({
+      projectTypes: [],
       name: '',
       company: '',
       email: '',
@@ -227,6 +253,13 @@ export default function LandingPage() {
     const trimmedPhone = formData.phone.trim();
     const trimmedWebsite = formData.website.trim();
 
+    // Na ordem fixa das opções, não na ordem dos cliques
+    const projectTypes = PROJECT_TYPE_OPTIONS.filter((o) => formData.projectTypes.includes(o.key));
+
+    if (projectTypes.length === 0) {
+      setErrorMessage('Escolha pelo menos um tipo de projeto.');
+      return;
+    }
     if (!trimmedName) {
       setErrorMessage('Por favor, informe seu nome completo.');
       return;
@@ -248,7 +281,8 @@ export default function LandingPage() {
         company: trimmedCompany || null,
         email: trimmedEmail,
         phone: trimmedPhone,
-        website: trimmedWebsite || null
+        website: trimmedWebsite || null,
+        project_types: projectTypes.map((o) => o.key)
       };
 
       const res = await apiFetch('/leads', {
@@ -266,7 +300,8 @@ export default function LandingPage() {
         company: trimmedCompany,
         email: trimmedEmail,
         phone: trimmedPhone,
-        website: trimmedWebsite
+        website: trimmedWebsite,
+        projectTypes: projectTypes.map((o) => o.label.toLowerCase())
       };
 
       setSubmittedData(submitted);
@@ -308,7 +343,7 @@ export default function LandingPage() {
           <div className="aether-rise w-full max-w-[34rem]">
             <RotatingHeadline id="titulo-aether" />
             <p className="mt-5 max-w-[30rem] text-base leading-relaxed text-bone-muted [text-wrap:balance] sm:text-[17px]">
-              Estudamos o seu negócio de verdade e criamos o site do zero a partir dele.
+              Estudamos seu negócio e criamos seu projeto do zero a partir dele.
             </p>
 
             <div className="relative isolate mt-8">
@@ -322,7 +357,13 @@ export default function LandingPage() {
                     <h2 className="text-3xl leading-tight">Recebemos, {submittedData.name.split(' ')[0]}.</h2>
                     <p className="text-sm leading-relaxed text-bone-muted">
                       Vamos estudar {submittedData.company ? <strong className="text-bone">{submittedData.company}</strong> : 'o seu negócio'} e
-                      chamar você no WhatsApp <strong className="text-bone">{submittedData.phone}</strong> com a proposta.
+                      chamar você no WhatsApp <strong className="text-bone">{submittedData.phone}</strong> com a proposta
+                      {submittedData.projectTypes?.length > 0 && (
+                        <>
+                          {' '}de <strong className="text-bone">{joinPt(submittedData.projectTypes)}</strong>
+                        </>
+                      )}
+                      .
                     </p>
                   </div>
                   <button
@@ -339,6 +380,43 @@ export default function LandingPage() {
                     <h2 className="whitespace-nowrap text-2xl leading-none sm:text-[1.75rem]">Peça a sua proposta</h2>
                     <span className="text-xs text-bone-faint">Sem compromisso</span>
                   </div>
+
+                  {/* Tipo de projeto: múltipla escolha, cada opção é um checkbox de verdade com cara de chip */}
+                  <fieldset>
+                    <legend className={labelClass}>
+                      O que você quer criar? <span className="text-bone-faint">(pode escolher mais de um)</span>
+                    </legend>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {PROJECT_TYPE_OPTIONS.map((option) => {
+                        const checked = formData.projectTypes.includes(option.key);
+                        return (
+                          <label key={option.key} className="press relative cursor-pointer">
+                            <input
+                              type="checkbox"
+                              name="project_types"
+                              value={option.key}
+                              checked={checked}
+                              onChange={handleProjectTypeToggle(option.key)}
+                              className="peer absolute inset-0 cursor-pointer opacity-0"
+                            />
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-line-strong px-3.5 py-1.5 text-sm text-bone-muted transition-colors peer-hover:border-bone-muted peer-hover:text-bone peer-checked:border-signal peer-checked:bg-signal/10 peer-checked:text-bone peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-signal">
+                              {/* Marcador: círculo vazio que se preenche com o ✓ ao marcar */}
+                              <span
+                                aria-hidden
+                                className={`grid size-3.5 place-items-center rounded-full border transition-colors duration-150 ${checked ? 'border-signal bg-signal' : 'border-line-strong'}`}
+                              >
+                                <Check
+                                  strokeWidth={3}
+                                  className={`size-2.5 text-void transition-[opacity,transform] duration-150 ${checked ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}
+                                />
+                              </span>
+                              {option.label}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className={fieldWrapClass}>
@@ -494,8 +572,32 @@ export default function LandingPage() {
         className="border-t border-line bg-void bg-[radial-gradient(ellipse_70%_90%_at_8%_0%,rgb(198_244_50/0.07),transparent_70%)]"
       >
         <div data-reveal className="mx-auto grid max-w-[1400px] gap-14 px-5 py-24 sm:px-8 sm:py-32 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:px-12">
-          <h2 id="titulo-diferenciais" className="r-up max-w-[14ch] text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
-            Um site que só podia ser do seu negócio.
+          {/* A promessa do modelo pronto é riscada e reescrita: "de qualquer negócio" vira "do seu negócio" */}
+          <h2
+            id="titulo-diferenciais"
+            aria-label="Um projeto que só podia ser do seu negócio."
+            className="r-up claim max-w-[14ch] text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]"
+          >
+            <span aria-hidden className="claim-generic">
+              Um projeto que podia ser <span className="claim-strike">de qualquer negócio</span>.
+            </span>
+            <span aria-hidden className="claim-own">
+              {CLAIM_WORDS.map((w, i) => (
+                <React.Fragment key={w}>
+                  <span className="claim-word" style={{ '--w': i }}>
+                    {w}
+                  </span>{' '}
+                </React.Fragment>
+              ))}
+              <em className="claim-accent font-medium italic">
+                <span className="claim-word" style={{ '--w': CLAIM_WORDS.length }}>
+                  seu
+                </span>{' '}
+                <span className="claim-word" style={{ '--w': CLAIM_WORDS.length + 1 }}>
+                  negócio.
+                </span>
+              </em>
+            </span>
           </h2>
           <dl className="divide-y divide-line border-y border-line">
             {DIFERENCIAIS.map((d, i) => (

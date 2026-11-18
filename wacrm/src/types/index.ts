@@ -105,6 +105,8 @@ export interface Contact {
     texts?: Array<{ label: string; text: string }>;
     /** Quoted project value, written by the portal backend on lead intake. */
     orcamento?: { valor: number; moeda: string };
+    /** Project types the client picked on the portal form (e.g. "Site", "App mobile", "Agenda"). */
+    tipos_projeto?: string[];
   } | null;
   rag_report?: string | null;
   rag_status?: 'idle' | 'processing' | 'completed' | 'failed' | null;

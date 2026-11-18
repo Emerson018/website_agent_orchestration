@@ -12,6 +12,7 @@ import { runMultimodalBusinessDiagnosis, buildMasterPrompt } from './multimodal_
 import { CATALOG_BUCKET, catalogStoragePath, newCatalogFileId, parseCatalogUpload } from './catalog_files.js';
 import { extractCatalog } from './catalog_extraction.js';
 import { geminiErrorStatus } from './gemini_client.js';
+import { normalizeProjectTypes } from './project_types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -239,6 +240,12 @@ app.post('/api/leads', async (req, res) => {
         existingLinks.push({ label: 'Site Oficial', url: website });
       }
       finalAdditionalData.links = existingLinks;
+    }
+
+    // Tipos de projeto escolhidos no formulário (Site, App mobile, Agenda), para o CRM mostrar no contato.
+    const projectTypes = normalizeProjectTypes(req.body.project_types);
+    if (projectTypes.length > 0) {
+      finalAdditionalData.tipos_projeto = projectTypes;
     }
 
     // Orçamento do projeto fica no próprio contato (o CRM não tem mais Pipelines/Deals).

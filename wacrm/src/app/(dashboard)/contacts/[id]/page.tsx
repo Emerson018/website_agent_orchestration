@@ -52,6 +52,7 @@ import { computeSiteChecklist } from '@/lib/contacts/site-checklist';
 import { DisqualifiedBanner, DisqualifyButton } from '@/components/contacts/disqualification';
 import type { Disqualification } from '@/lib/contacts/disqualification';
 import { computeLeadSteps, nextLeadStep, type LeadStep, type StepKey } from '@/lib/contacts/lead-steps';
+import { projectTypesOf } from '@/lib/contacts/project-types';
 
 export default function ContactProfilePage() {
   const params = useParams();
@@ -511,6 +512,16 @@ export default function ContactProfilePage() {
             {contact.email && <span>· {contact.email}</span>}
             {dossie?.nicho_detectado && <span className="capitalize">· {dossie.nicho_detectado}</span>}
           </p>
+          {projectTypesOf(contact).length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+              <span>Quer:</span>
+              {projectTypesOf(contact).map((type) => (
+                <Badge key={type} variant="secondary" className="text-xs">
+                  {type}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

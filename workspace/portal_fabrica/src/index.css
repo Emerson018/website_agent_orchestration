@@ -223,6 +223,82 @@
   color: var(--color-lime-mist);
 }
 
+/* Título dos diferenciais: a frase do modelo pronto ("de qualquer negócio") é riscada e dá lugar
+   à da Aether ("só ... do seu negócio"). As duas frases ficam na mesma célula, então nada pula.
+   Toca uma vez, quando a seção se revela. Sem o JS da revelação, só a frase final aparece. */
+.claim {
+  display: grid;
+}
+
+.claim-generic,
+.claim-own {
+  grid-area: 1 / 1;
+}
+
+.claim-generic {
+  opacity: 0;
+}
+
+.claim-strike {
+  background-image: linear-gradient(var(--color-tertiary), var(--color-tertiary));
+  background-repeat: no-repeat;
+  background-position: 0 60%;
+  background-size: 0% 0.06em;
+}
+
+.claim-word {
+  display: inline-block;
+}
+
+.claim-accent {
+  color: var(--color-tertiary);
+}
+
+/* Antes de revelar, a versão genérica está pronta para aparecer junto com o título */
+.reveal-ready [data-reveal]:not([data-revealed]) .claim-generic {
+  opacity: 1;
+}
+
+/* 1. O fio risca "de qualquer negócio", linha por linha */
+.reveal-ready [data-revealed] .claim-strike {
+  animation: claim-strike 650ms var(--ease-in-out-strong) 800ms forwards;
+}
+
+/* 2. A frase genérica sobe e desfoca */
+.reveal-ready [data-revealed] .claim-generic {
+  animation: claim-out 420ms var(--ease-out-strong) 2650ms both;
+}
+
+/* 3. A frase própria entra palavra por palavra */
+.reveal-ready [data-revealed] .claim-word {
+  animation: claim-in 650ms var(--ease-out-strong) calc(2850ms + var(--w) * 55ms) both;
+}
+
+@keyframes claim-strike {
+  to {
+    background-size: 100% 0.06em;
+  }
+}
+
+@keyframes claim-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-0.18em);
+    filter: blur(6px);
+  }
+}
+
+@keyframes claim-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.32em);
+    filter: blur(6px);
+  }
+}
+
 /* Respostas do formulário: curtas, saindo rápido (ease-out forte) */
 @keyframes aether-enter {
   from {
@@ -311,6 +387,16 @@
   .r-lit,
   .r-fade {
     transition: opacity 300ms ease !important;
+  }
+
+  /* Diferenciais: sem riscar nem reescrever; só a frase final, que esmaece com a seção */
+  .reveal-ready [data-reveal]:not([data-revealed]) .claim-generic,
+  .reveal-ready [data-revealed] .claim-generic {
+    opacity: 0;
+    animation: none;
+  }
+  .reveal-ready [data-revealed] .claim-word {
+    animation: none;
   }
 
   /* Título: as palavras só esmaecem uma na outra, sem subir nem desfocar */
