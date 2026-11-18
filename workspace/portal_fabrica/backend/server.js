@@ -650,6 +650,7 @@ function rebuildMasterPrompts(contact, additionalData) {
     scrapedData: additionalData.scraped_data || null,
     mapsUrl: dossie?.google_maps_url || additionalData.maps_url || additionalData.maps_search_link || '',
     catalogoExtraido: additionalData.catalogo_extraido || null,
+    designDoCliente: additionalData.design_do_cliente?.markdown || '',
   });
 }
 
@@ -1013,6 +1014,7 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
       scrapedData,
       mapsUrl,
       catalogoExtraido: contactRecord.additional_data?.catalogo_extraido || null,
+      designDoCliente: contactRecord.additional_data?.design_do_cliente?.markdown || '',
       apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
     });
 

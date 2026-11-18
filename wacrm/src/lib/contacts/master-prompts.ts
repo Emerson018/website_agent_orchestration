@@ -22,6 +22,9 @@ export const PROMPT_SOURCE_STEP_LABELS = {
   catalogo: "Catálogo Extraído",
 } as const;
 
+/** O Design do Cliente também entra nos prompts: salvá-lo, mudá-lo ou limpá-lo os deixa Desatualizados. */
+export const DESIGN_DO_CLIENTE_LABEL = "Design do Cliente";
+
 type Raw = Record<string, unknown> | null | undefined;
 
 const isKey = (k: string): k is MasterPromptKey => MASTER_PROMPT_TYPES.some((t) => t.key === k);
@@ -57,6 +60,18 @@ export function promptTabOrder(tiposProjeto: string[]): MasterPromptKey[] {
   return [...chosen, ...rest];
 }
 
+/**
+ * Design do Cliente (GLOSSARY.md): o DESIGN.md do primeiro projeto deste cliente, colado pelo operador.
+ * Gravado em contacts.additional_data.design_do_cliente = { markdown, salvo_em }.
+ */
+export function designDoClienteOf(additionalData: Raw): { markdown: string; salvoEm?: string } | null {
+  const raw = (additionalData || {}).design_do_cliente as { markdown?: unknown; salvo_em?: unknown } | null | undefined;
+  const markdown = str(raw?.markdown);
+  if (!markdown) return null;
+  const salvoEm = str(raw?.salvo_em);
+  return salvoEm ? { markdown, salvoEm } : { markdown };
+}
+
 const isAfter = (a?: unknown, b?: string) =>
   typeof a === "string" && Boolean(b) && new Date(a).getTime() > new Date(b as string).getTime();
 
@@ -66,11 +81,13 @@ export function promptChangesSince(additionalData: Raw, geradoEm?: string): stri
     dossie?: { consultado_em?: string } | null;
     scraped_data?: { raspado_em?: string } | null;
     catalogo_extraido?: { editado_em?: string; gerado_em?: string } | null;
+    design_do_cliente?: { salvo_em?: string } | null;
   };
   const catalog = ad.catalogo_extraido;
   return [
     isAfter(ad.dossie?.consultado_em, geradoEm) && PROMPT_SOURCE_STEP_LABELS.dossie,
     isAfter(ad.scraped_data?.raspado_em, geradoEm) && PROMPT_SOURCE_STEP_LABELS.raspagem,
     isAfter(catalog?.editado_em || catalog?.gerado_em, geradoEm) && PROMPT_SOURCE_STEP_LABELS.catalogo,
+    isAfter(ad.design_do_cliente?.salvo_em, geradoEm) && DESIGN_DO_CLIENTE_LABEL,
   ].filter(Boolean) as string[];
 }

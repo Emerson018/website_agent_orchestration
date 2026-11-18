@@ -52,6 +52,8 @@ import type { Disqualification } from '@/lib/contacts/disqualification';
 import { computeLeadSteps, nextLeadStep, type LeadStep, type StepKey } from '@/lib/contacts/lead-steps';
 import { projectTypesOf } from '@/lib/contacts/project-types';
 import { MasterPromptPanel } from '@/components/contacts/master-prompt-panel';
+import { ClientDesignCard } from '@/components/contacts/client-design-card';
+import { designDoClienteOf } from '@/lib/contacts/master-prompts';
 
 export default function ContactProfilePage() {
   const params = useParams();
@@ -381,6 +383,27 @@ export default function ContactProfilePage() {
       toast.error(err.message || 'Falha ao executar diagnóstico multimodal da IA.');
     } finally {
       setDiagnosing(false);
+    }
+  };
+
+  // Design do Cliente: grava no contato (lendo antes o que está salvo, para não sobrescrever o backend).
+  // A data nova deixa os Prompts Mestre Desatualizados até serem refeitos.
+  const handleSaveClientDesign = async (markdown: string) => {
+    try {
+      const { data: current, error: readError } = await supabase
+        .from('contacts')
+        .select('additional_data')
+        .eq('id', contactId)
+        .single();
+      if (readError) throw readError;
+      const design = { markdown: markdown.trim(), salvo_em: new Date().toISOString() };
+      const nextData = { ...((current?.additional_data as Record<string, unknown>) || {}), design_do_cliente: design };
+      const { error } = await supabase.from('contacts').update({ additional_data: nextData }).eq('id', contactId);
+      if (error) throw error;
+      setContact((prev: any) => (prev ? { ...prev, additional_data: nextData } : prev));
+      toast.success(design.markdown ? 'Design do Cliente salvo. Atualize os prompts para usá-lo.' : 'Design do Cliente removido.');
+    } catch (err: any) {
+      toast.error('Erro ao salvar o Design do Cliente: ' + err.message);
     }
   };
 
@@ -968,6 +991,11 @@ export default function ContactProfilePage() {
             status={stepOf('prompt').status}
             hasDiagnosis={Boolean(diagnostico)}
             onPromptsChange={applyMasterPrompts}
+          />
+          <ClientDesignCard
+            markdown={designDoClienteOf(additionalData)?.markdown ?? ''}
+            salvoEm={designDoClienteOf(additionalData)?.salvoEm}
+            onSave={handleSaveClientDesign}
           />
           <div className="rounded-2xl border border-border bg-card p-5">
             <SiteChecklistPanel items={computeSiteChecklist(contact)} />

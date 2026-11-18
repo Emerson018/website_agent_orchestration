@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { masterPromptsOf, promptChangesSince, promptTabOrder } from "./master-prompts";
+import { designDoClienteOf, masterPromptsOf, promptChangesSince, promptTabOrder } from "./master-prompts";
 import { computeLeadSteps } from "./lead-steps";
 
 const AT = "2026-03-01T10:00:00.000Z";
@@ -47,6 +47,23 @@ describe("promptChangesSince", () => {
     };
     expect(promptChangesSince(ad, AT)).toEqual(["Dossiê"]);
     expect(promptChangesSince(ad, "2026-04-01T00:00:00.000Z")).toEqual([]);
+  });
+});
+
+describe("Design do Cliente", () => {
+  it("reads the pasted DESIGN.md and when it was saved", () => {
+    expect(designDoClienteOf({ design_do_cliente: { markdown: "# DESIGN", salvo_em: AT } })).toEqual({ markdown: "# DESIGN", salvoEm: AT });
+    expect(designDoClienteOf({ design_do_cliente: { markdown: "   " } })).toBeNull();
+    expect(designDoClienteOf(null)).toBeNull();
+  });
+
+  it("makes the prompts Desatualizado when it is saved after them", () => {
+    expect(promptChangesSince({ design_do_cliente: { markdown: "# D", salvo_em: LATER } }, AT)).toEqual(["Design do Cliente"]);
+    expect(promptChangesSince({ design_do_cliente: { markdown: "# D", salvo_em: AT } }, LATER)).toEqual([]);
+  });
+
+  it("counts clearing it as a change too", () => {
+    expect(promptChangesSince({ design_do_cliente: { markdown: "", salvo_em: LATER } }, AT)).toEqual(["Design do Cliente"]);
   });
 });
 

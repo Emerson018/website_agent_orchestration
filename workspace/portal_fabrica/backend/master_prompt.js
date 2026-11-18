@@ -12,7 +12,7 @@ import { catalogGeneralInfo, catalogHasItems } from './catalog_extraction.js';
 const list = (items) => items.map((item) => `- ${item}`).join('\n');
 
 /** Junta os fatos do lead e anota o que falta. Não inventa nada. */
-function collectFacts({ companyName, dossie, diagnostico, scrapedData, mapsUrl, catalogoExtraido }) {
+function collectFacts({ companyName, dossie, diagnostico, scrapedData, mapsUrl, catalogoExtraido, designDoCliente }) {
   const pendencias = [];
   const d = dossie || {};
   const diag = diagnostico || {};
@@ -49,6 +49,8 @@ function collectFacts({ companyName, dossie, diagnostico, scrapedData, mapsUrl, 
 
   return {
     companyName,
+    // Design do Cliente: o DESIGN.md do primeiro projeto deste cliente, colado pelo operador no WACRM
+    designDoCliente: typeof designDoCliente === 'string' ? designDoCliente.trim() : '',
     resumo: diag.resumo_empresa || '',
     atmosfera: diag.estilo_visual_vibe || '',
     publico: diag.publico_alvo || '',
@@ -67,6 +69,21 @@ function collectFacts({ companyName, dossie, diagnostico, scrapedData, mapsUrl, 
     itensRaspados,
     pendencias,
   };
+}
+
+/**
+ * Design: com Design do Cliente, os projetos seguem o design que o primeiro projeto definiu (para poderem
+ * ser conectados); sem ele, a IA decide o design e entrega o DESIGN.md para o operador guardar.
+ */
+function buildDesignSection(f) {
+  if (f.designDoCliente) {
+    return `### Design
+Este cliente já tem um design, definido no primeiro projeto feito para ele. Siga este design à risca: cores, tipografia, espaçamento, layout, componentes e movimento. Não crie um design novo; se faltar alguma decisão, siga o espírito do que está aqui.
+
+${f.designDoCliente}`;
+  }
+  return `### Design
+Antes de codar, decida o design system a partir da atmosfera e do público do negócio: cores, tipografia, espaçamento, layout e movimento. Registre as decisões num \`DESIGN.md\` e entregue esse arquivo no fim, junto com o projeto.${f.paleta ? ` Referência de cores observada no negócio (só referência, não regra): ${f.paleta}.` : ''}`;
 }
 
 /** Briefing do Negócio: igual em todos os Tipos de Projeto do cliente. */
@@ -109,7 +126,7 @@ function buildBriefing(f) {
     catalogo.length > 0 && `### Catálogo\n${catalogo.join('\n\n')}`,
     `### Regras de conteúdo\n${list(regras)}`,
     `### Tecnologia\nReact, Vite, TypeScript e Tailwind CSS, com a biblioteca Motion para as animações.`,
-    `### Design\nAntes de codar, decida o design system a partir da atmosfera e do público do negócio: cores, tipografia, espaçamento, layout e movimento. Registre as decisões num \`DESIGN.md\` e entregue esse arquivo no fim, junto com o projeto.${f.paleta ? ` Referência de cores observada no negócio (só referência, não regra): ${f.paleta}.` : ''}`,
+    buildDesignSection(f),
   ]
     .filter(Boolean)
     .join('\n\n');

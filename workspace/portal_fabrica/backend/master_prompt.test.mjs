@@ -111,6 +111,24 @@ test('The Agenda module: booking, owner panel with login, WhatsApp confirmation,
   assert.ok(!buildMasterPrompts(FULL).site.includes('Duração de cada serviço'), 'durations are an Agenda gap only');
 });
 
+test('With a Design do Cliente every prompt embeds it verbatim and must follow it', () => {
+  const DESIGN = '# DESIGN.md\n\n## Cores\n- primária: #1B4D3E\n\n## Tipografia\n- títulos: Fraunces';
+  const prompts = buildMasterPrompts({ ...FULL, designDoCliente: DESIGN });
+  for (const prompt of Object.values(prompts)) {
+    assert.ok(prompt.includes(DESIGN), 'the design is embedded verbatim');
+    assert.match(prompt, /siga este design à risca/i);
+    assert.ok(!prompt.includes('Antes de codar, decida o design system'), 'no new design is decided');
+    assert.ok(!prompt.includes('Verde sálvia'), 'the diagnosis palette gives way to the client design');
+  }
+});
+
+test('Without a Design do Cliente the prompt asks to decide the design and deliver the DESIGN.md', () => {
+  const prompt = buildMasterPrompt(FULL);
+  assert.ok(prompt.includes('Antes de codar, decida o design system'));
+  assert.match(prompt, /entregue esse arquivo no fim/);
+  assert.ok(!/siga este design à risca/i.test(prompt));
+});
+
 test('Master Prompt ends as a Prompt de Especificação: interview, specify, split, do not build yet', () => {
   const prompt = buildMasterPrompt(FULL);
   const lastPart = prompt.slice(prompt.lastIndexOf('## Antes de construir'));

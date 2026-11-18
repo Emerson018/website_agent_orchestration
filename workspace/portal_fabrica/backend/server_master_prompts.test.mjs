@@ -40,6 +40,12 @@ test('POST /api/leads/:id/master-prompts rebuilds one Tipo de Projeto from saved
     assert.deepEqual(prompts_mestre.site, OLD_SITE, 'only the requested tab is rebuilt');
     assert.deepEqual(fake.tables.contacts[0].additional_data.prompts_mestre, prompts_mestre, 'saves what it returns');
 
+    // Design do Cliente salvo no contato entra no prompt refeito
+    fake.tables.contacts[0].additional_data.design_do_cliente = { markdown: '## Cores\n- primária: #1B4D3E', salvo_em: '2026-03-01T00:00:00.000Z' };
+    const withDesign = await (await post('c-1', { tipo: 'site' })).json();
+    assert.ok(withDesign.prompts_mestre.site.texto.includes('- primária: #1B4D3E'));
+    assert.match(withDesign.prompts_mestre.site.texto, /siga este design à risca/i);
+
     assert.equal((await post('c-1', { tipo: 'app_mobile' })).status, 400, 'unknown type');
     assert.equal((await post('c-sem-diagnostico', { tipo: 'site' })).status, 409, 'needs the diagnosis first');
     assert.equal((await post('c-404', { tipo: 'site' })).status, 404);

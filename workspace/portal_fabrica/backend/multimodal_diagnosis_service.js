@@ -19,6 +19,7 @@ export async function runMultimodalBusinessDiagnosis({
   scrapedData,
   mapsUrl,
   catalogoExtraido,
+  designDoCliente = '',
   apiKey = defaultGeminiApiKey(),
   models = defaultGeminiModels(),
 }) {
@@ -125,6 +126,7 @@ Responda APENAS o JSON válido, sem blocos de markdown adicionais.`;
       scrapedData,
       mapsUrl: mapsLink,
       catalogoExtraido,
+      designDoCliente,
     });
 
     return {
