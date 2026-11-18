@@ -28,8 +28,8 @@ export interface ExtractedCatalogCardProps {
   files: CatalogFile[];
   catalog: ExtractedCatalog | null;
   onFilesChange: (files: CatalogFile[]) => void;
-  /** promptMestre vem preenchido quando o backend refez o Prompt Mestre com o catálogo novo. */
-  onCatalogChange: (catalog: ExtractedCatalog, promptMestre: string | null, promptMestreGeradoEm: string | null) => void;
+  /** promptsMestre vem preenchido quando o backend refez os Prompts Mestre (um por Tipo de Projeto) com o catálogo novo. */
+  onCatalogChange: (catalog: ExtractedCatalog, promptsMestre: Record<string, unknown> | null) => void;
   /** Dentro de uma Etapa do Lead: sem moldura e sem título próprio. */
   embedded?: boolean;
 }
@@ -49,8 +49,7 @@ async function readJson(
   error?: string;
   files?: CatalogFile[];
   catalogo_extraido?: ExtractedCatalog;
-  prompt_mestre?: string | null;
-  prompt_mestre_gerado_em?: string | null;
+  prompts_mestre?: Record<string, unknown> | null;
 }> {
   try {
     return await res.json();
@@ -102,7 +101,7 @@ export function ExtractedCatalogCard({
       });
       const data = await readJson(res);
       if (!res.ok || !data.catalogo_extraido) throw new Error(data.error || 'Falha ao salvar o catálogo.');
-      onCatalogChange(data.catalogo_extraido, data.prompt_mestre ?? null, data.prompt_mestre_gerado_em ?? null);
+      onCatalogChange(data.catalogo_extraido, data.prompts_mestre ?? null);
       toast.success('Catálogo salvo.');
     } catch (err) {
       toast.error((err as Error).message);
@@ -118,7 +117,7 @@ export function ExtractedCatalogCard({
       const res = await fetch(`/api/leads/${leadId}/extract-catalog`, { method: 'POST' });
       const data = await readJson(res);
       if (!res.ok || !data.catalogo_extraido) throw new Error(data.error || 'Falha ao extrair o catálogo.');
-      onCatalogChange(data.catalogo_extraido, data.prompt_mestre ?? null, data.prompt_mestre_gerado_em ?? null);
+      onCatalogChange(data.catalogo_extraido, data.prompts_mestre ?? null);
       toast.success('Catálogo extraído com sucesso.');
     } catch (err) {
       toast.error((err as Error).message);

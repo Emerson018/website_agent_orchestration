@@ -37,9 +37,11 @@ test('POST /api/leads/:id/diagnose puts the stored Catálogo Extraído into the 
     const res = await fetch('http://localhost:5089/api/leads/c-1/diagnose', { method: 'POST' });
     assert.equal(res.status, 200);
     const body = await res.json();
-    assert.ok(body.prompt_mestre.includes('### Margherita'));
-    assert.ok(fake.tables.contacts[0].additional_data.prompt_mestre.includes('R$ 48,00'));
-    assert.ok(Date.parse(fake.tables.contacts[0].additional_data.prompt_mestre_gerado_em), 'grava quando o prompt foi gerado');
+    assert.ok(body.prompts_mestre.site.texto.includes('### Margherita'));
+    const saved = fake.tables.contacts[0].additional_data.prompts_mestre;
+    assert.ok(saved.site.texto.includes('R$ 48,00'));
+    assert.ok(saved.agenda.texto.includes('## O que construir: Agenda'));
+    assert.ok(Date.parse(saved.site.gerado_em), 'grava quando o prompt foi gerado');
   } finally {
     delete process.env.GEMINI_API_BASE_URL;
     delete process.env.GEMINI_API_KEY;

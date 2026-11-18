@@ -8,11 +8,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { buildLeadDossier, extractPlaceQueryFromUrl } from './places_service.js';
 
-import { runMultimodalBusinessDiagnosis, buildMasterPrompt } from './multimodal_diagnosis_service.js';
+import { runMultimodalBusinessDiagnosis } from './multimodal_diagnosis_service.js';
 import { CATALOG_BUCKET, catalogStoragePath, newCatalogFileId, parseCatalogUpload } from './catalog_files.js';
 import { extractCatalog } from './catalog_extraction.js';
 import { geminiErrorStatus } from './gemini_client.js';
 import { normalizeProjectTypes } from './project_types.js';
+import { PROJECT_TYPE_KEYS, buildMasterPrompts } from './master_prompt.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -638,11 +639,11 @@ async function findContact(id) {
   return data || null;
 }
 
-// Refaz o Prompt Mestre com o catálogo novo quando o lead já tem diagnóstico (sem chamar o Gemini)
-function rebuildMasterPrompt(contact, additionalData) {
+// Refaz os Prompts Mestre (um por Tipo de Projeto) a partir dos dados salvos, sem chamar o Gemini
+function rebuildMasterPrompts(contact, additionalData) {
   if (!additionalData.diagnostico_ia) return null;
   const dossie = additionalData.dossie || null;
-  return buildMasterPrompt({
+  return buildMasterPrompts({
     companyName: contact.company || contact.name || dossie?.nome_verificado || 'Empresa',
     dossie,
     diagnostico: additionalData.diagnostico_ia,
@@ -652,17 +653,28 @@ function rebuildMasterPrompt(contact, additionalData) {
   });
 }
 
-// Salva o Catálogo Extraído e, se houver diagnóstico, o Prompt Mestre refeito
+/**
+ * Grava os textos novos em additional_data.prompts_mestre ({ tipo: { texto, gerado_em } }), cada tipo com
+ * a sua data, mantendo os tipos não refeitos. O prompt único antigo (prompt_mestre) sai: o WACRM o lê
+ * como aba Site só até os prompts por tipo existirem.
+ */
+function withMasterPrompts(additionalData, textosPorTipo) {
+  const geradoEm = new Date().toISOString();
+  const atuais = additionalData.prompts_mestre && typeof additionalData.prompts_mestre === 'object' ? additionalData.prompts_mestre : {};
+  const novos = Object.fromEntries(Object.entries(textosPorTipo).map(([tipo, texto]) => [tipo, { texto, gerado_em: geradoEm }]));
+  const next = { ...additionalData, prompts_mestre: { ...atuais, ...novos } };
+  delete next.prompt_mestre;
+  delete next.prompt_mestre_gerado_em;
+  return next;
+}
+
+// Salva o Catálogo Extraído e, se houver diagnóstico, os Prompts Mestre refeitos
 async function saveExtractedCatalog(contact, catalogoExtraido) {
-  const additionalData = { ...(contact.additional_data || {}), catalogo_extraido: catalogoExtraido };
-  const promptMestre = rebuildMasterPrompt(contact, additionalData);
-  const promptMestreGeradoEm = promptMestre ? new Date().toISOString() : null;
-  if (promptMestre) {
-    additionalData.prompt_mestre = promptMestre;
-    additionalData.prompt_mestre_gerado_em = promptMestreGeradoEm;
-  }
+  let additionalData = { ...(contact.additional_data || {}), catalogo_extraido: catalogoExtraido };
+  const prompts = rebuildMasterPrompts(contact, additionalData);
+  if (prompts) additionalData = withMasterPrompts(additionalData, prompts);
   const { error } = await supabase.from('contacts').update({ additional_data: additionalData }).eq('id', contact.id);
-  return { error, promptMestre, promptMestreGeradoEm };
+  return { error, promptsMestre: additionalData.prompts_mestre || null };
 }
 
 async function saveCatalogFiles(contact, files) {
@@ -786,7 +798,7 @@ app.post('/api/leads/:id/extract-catalog', async (req, res) => {
 
     // Relê o contato para não sobrescrever o que mudou durante a chamada ao Gemini
     const latestContact = (await findContact(id)) || contact;
-    const { error: saveErr, promptMestre, promptMestreGeradoEm } = await saveExtractedCatalog(latestContact, catalogoExtraido);
+    const { error: saveErr, promptsMestre } = await saveExtractedCatalog(latestContact, catalogoExtraido);
     if (saveErr) {
       return res.status(502).json({ error: `Falha ao salvar o catálogo no contato: ${saveErr.message}` });
     }
@@ -794,8 +806,7 @@ app.post('/api/leads/:id/extract-catalog', async (req, res) => {
     return res.json({
       success: true,
       catalogo_extraido: catalogoExtraido,
-      prompt_mestre: promptMestre,
-      prompt_mestre_gerado_em: promptMestreGeradoEm,
+      prompts_mestre: promptsMestre,
     });
   } catch (err) {
     console.error(`[Catalogo] Erro ao extrair catálogo do lead ${id}:`, err.message);
@@ -823,19 +834,50 @@ app.put('/api/leads/:id/extracted-catalog', async (req, res) => {
       editado_manualmente: true,
       editado_em: new Date().toISOString(),
     };
-    const { error: saveErr, promptMestre, promptMestreGeradoEm } = await saveExtractedCatalog(contact, catalogoExtraido);
+    const { error: saveErr, promptsMestre } = await saveExtractedCatalog(contact, catalogoExtraido);
     if (saveErr) {
       return res.status(502).json({ error: `Falha ao salvar o catálogo no contato: ${saveErr.message}` });
     }
     return res.json({
       success: true,
       catalogo_extraido: catalogoExtraido,
-      prompt_mestre: promptMestre,
-      prompt_mestre_gerado_em: promptMestreGeradoEm,
+      prompts_mestre: promptsMestre,
     });
   } catch (err) {
     console.error(`[Catalogo] Erro ao salvar edição do catálogo do lead ${id}:`, err.message);
     return res.status(500).json({ error: 'Erro ao salvar o catálogo.', details: err.message });
+  }
+});
+
+// Refaz o Prompt Mestre de um Tipo de Projeto a partir dos dados salvos. Não chama o Gemini.
+app.post('/api/leads/:id/master-prompts', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const tipo = req.body?.tipo;
+    if (!PROJECT_TYPE_KEYS.includes(tipo)) {
+      return res.status(400).json({ error: `Tipo de projeto inválido. Use: ${PROJECT_TYPE_KEYS.join(', ')}.` });
+    }
+
+    const contact = await findContact(id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+
+    const additionalData = contact.additional_data || {};
+    const prompts = rebuildMasterPrompts(contact, additionalData);
+    if (!prompts) {
+      return res.status(409).json({ error: 'Gere o diagnóstico primeiro: o Prompt Mestre depende dele.' });
+    }
+
+    const nextAdd = withMasterPrompts(additionalData, { [tipo]: prompts[tipo] });
+    const { error } = await supabase.from('contacts').update({ additional_data: nextAdd }).eq('id', contact.id);
+    if (error) {
+      return res.status(502).json({ error: `Falha ao salvar o Prompt Mestre: ${error.message}` });
+    }
+    return res.json({ success: true, prompts_mestre: nextAdd.prompts_mestre });
+  } catch (err) {
+    console.error(`[PromptMestre] Erro ao refazer o prompt do lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao refazer o Prompt Mestre.', details: err.message });
   }
 });
 
@@ -987,22 +1029,13 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
       .maybeSingle();
 
     const curAdd = ct?.additional_data || {};
-    await supabase
-      .from('contacts')
-      .update({
-        additional_data: {
-          ...curAdd,
-          diagnostico_ia: result.diagnostico,
-          prompt_mestre: result.prompt_mestre,
-          prompt_mestre_gerado_em: new Date().toISOString(),
-        },
-      })
-      .eq('id', contactRecord.id);
+    const nextAdd = withMasterPrompts({ ...curAdd, diagnostico_ia: result.diagnostico }, result.prompts_mestre);
+    await supabase.from('contacts').update({ additional_data: nextAdd }).eq('id', contactRecord.id);
 
     return res.json({
       success: true,
       diagnostico: result.diagnostico,
-      prompt_mestre: result.prompt_mestre,
+      prompts_mestre: nextAdd.prompts_mestre,
     });
   } catch (err) {
     console.error(`Erro ao gerar diagnóstico multimodal do lead ${id}:`, err.message);

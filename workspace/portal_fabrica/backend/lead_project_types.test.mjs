@@ -14,7 +14,7 @@ test('normalizeProjectTypes keeps known types as labels, in a fixed order, witho
 });
 
 test('Lead intake stores the chosen project types on the CRM contact', async () => {
-  process.env.PORT = '5093';
+  process.env.PORT = '5102';
   process.env.SUPABASE_URL = 'https://placeholder.supabase.co';
 
   const { server, setSupabaseClientForTests } = await import('./server.js');
@@ -23,7 +23,7 @@ test('Lead intake stores the chosen project types on the CRM contact', async () 
   await new Promise((r) => setTimeout(r, 400));
 
   const post = (body) =>
-    fetch('http://localhost:5093/api/leads', {
+    fetch('http://localhost:5102/api/leads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

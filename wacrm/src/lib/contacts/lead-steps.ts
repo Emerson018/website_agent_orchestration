@@ -2,6 +2,7 @@
 // Regras validadas no protótipo (branch prototype/lead-profile-layout) e no issue #9.
 
 import { catalogHasItems } from './extracted-catalog';
+import { PROMPT_SOURCE_STEP_LABELS, masterPromptsOf, promptChangesSince } from './master-prompts';
 
 export type StepStatus = 'feito' | 'faltando' | 'opcional' | 'desatualizado';
 
@@ -27,8 +28,6 @@ interface LeadAdditionalData {
   scraped_data?: { cardapio?: unknown[]; institucional?: unknown; markdown_resumo?: string; raspado_em?: string } | null;
   catalogo_extraido?: { markdown?: string; gerado_em?: string; editado_em?: string } | null;
   diagnostico_ia?: unknown;
-  prompt_mestre?: string;
-  prompt_mestre_gerado_em?: string;
 }
 
 /** O que as regras leem do contato. */
@@ -42,9 +41,7 @@ export interface LeadStepsInput {
 
 export const STEP_LABELS: Record<StepKey, string> = {
   briefing: 'Briefing',
-  dossie: 'Dossiê',
-  raspagem: 'Raspagem',
-  catalogo: 'Catálogo Extraído',
+  ...PROMPT_SOURCE_STEP_LABELS,
   diagnostico: 'Diagnóstico',
   prompt: 'Prompt Mestre',
 };
@@ -64,14 +61,14 @@ function leadHasSite(input: LeadStepsInput): boolean {
   );
 }
 
-const isAfter = (a?: string | null, b?: string | null) => Boolean(a && b && new Date(a).getTime() > new Date(b).getTime());
-
 export function computeLeadSteps(input: LeadStepsInput): LeadStep[] {
   const ad = (input.additional_data || {}) as LeadAdditionalData;
   const dossie = ad.dossie;
   const scraped = ad.scraped_data;
   const catalog = ad.catalogo_extraido;
-  const promptAt: string | undefined = ad.prompt_mestre_gerado_em;
+  // Um Prompt Mestre por Tipo de Projeto; a etapa olha todas as abas que já existem
+  const prompts = Object.values(masterPromptsOf(input.additional_data as Record<string, unknown> | null));
+  const hasPrompt = prompts.length > 0;
 
   const missing = [
     !input.name?.trim() && 'nome',
@@ -84,13 +81,9 @@ export function computeLeadSteps(input: LeadStepsInput): LeadStep[] {
   const hasSite = leadHasSite(input);
   const catalogItems = catalogHasItems(catalog?.markdown);
 
-  const changed = ad.prompt_mestre
-    ? [
-        isAfter(dossie?.consultado_em, promptAt) && STEP_LABELS.dossie,
-        isAfter(scraped?.raspado_em, promptAt) && STEP_LABELS.raspagem,
-        isAfter(catalog?.editado_em || catalog?.gerado_em, promptAt) && STEP_LABELS.catalogo,
-      ].filter(Boolean) as string[]
-    : [];
+  const changed = [
+    ...new Set(prompts.flatMap((p) => promptChangesSince(input.additional_data as Record<string, unknown> | null, p.geradoEm))),
+  ];
   const promptStale = changed.length > 0;
 
   const steps: Array<Omit<LeadStep, 'label'>> = [
@@ -126,8 +119,8 @@ export function computeLeadSteps(input: LeadStepsInput): LeadStep[] {
     },
     {
       key: 'prompt',
-      status: !ad.prompt_mestre ? 'faltando' : promptStale ? 'desatualizado' : 'feito',
-      summary: !ad.prompt_mestre ? 'Ainda não gerado' : promptStale ? 'Dados mudaram depois do prompt' : 'Pronto para copiar',
+      status: !hasPrompt ? 'faltando' : promptStale ? 'desatualizado' : 'feito',
+      summary: !hasPrompt ? 'Ainda não gerado' : promptStale ? 'Dados mudaram depois do prompt' : 'Pronto para copiar',
       ...(promptStale ? { changed } : {}),
     },
   ];

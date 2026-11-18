@@ -32,17 +32,19 @@ test('PUT /api/leads/:id/extracted-catalog saves the operator edit and marks it 
   try {
     const res = await put('c-1', { markdown: '## Pizzas\n### Margherita\n- **Preço:** R$ 50,00' });
     assert.equal(res.status, 200);
-    const { catalogo_extraido, prompt_mestre, prompt_mestre_gerado_em } = await res.json();
-    assert.ok(prompt_mestre.includes('### Margherita'));
+    const { catalogo_extraido, prompts_mestre } = await res.json();
+    assert.ok(prompts_mestre.site.texto.includes('### Margherita'));
+    assert.ok(prompts_mestre.agenda.texto.includes('### Margherita'), 'every Tipo de Projeto is rebuilt');
     assert.equal(catalogo_extraido.markdown, '## Pizzas\n### Margherita\n- **Preço:** R$ 50,00');
     assert.equal(catalogo_extraido.editado_manualmente, true);
     assert.ok(catalogo_extraido.editado_em);
     assert.equal(catalogo_extraido.modelo_utilizado, 'm', 'metadados da extração são mantidos');
 
     const saved = fake.tables.contacts[0].additional_data;
-    assert.ok(saved.prompt_mestre.includes('R$ 50,00'), 'o Prompt Mestre é refeito com a edição');
-    assert.ok(Date.parse(saved.prompt_mestre_gerado_em), 'grava quando o prompt foi refeito');
-    assert.equal(prompt_mestre_gerado_em, saved.prompt_mestre_gerado_em, 'devolve a data que gravou');
+    assert.ok(saved.prompts_mestre.site.texto.includes('R$ 50,00'), 'o Prompt Mestre é refeito com a edição');
+    assert.ok(Date.parse(saved.prompts_mestre.site.gerado_em), 'grava quando o prompt foi refeito');
+    assert.deepEqual(prompts_mestre, saved.prompts_mestre, 'devolve o que gravou');
+    assert.equal(saved.prompt_mestre, undefined, 'o prompt único antigo dá lugar aos prompts por tipo');
     assert.equal(saved.catalogo_extraido.editado_manualmente, true);
     assert.equal(saved.catalogo_arquivos.length, 1, 'os arquivos continuam guardados');
 

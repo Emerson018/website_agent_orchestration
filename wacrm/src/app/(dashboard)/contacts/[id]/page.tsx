@@ -20,7 +20,6 @@ import {
   AlertCircle,
   ThumbsUp,
   AlertTriangle,
-  RotateCcw,
   MessageCircle,
   Utensils,
   Bike,
@@ -45,7 +44,6 @@ import {
   LeadStepSection,
   NextStepButton,
   SiteChecklistPanel,
-  StatusChip,
   StepEmptyState,
 } from '@/components/contacts/lead-steps-ui';
 import { computeSiteChecklist } from '@/lib/contacts/site-checklist';
@@ -53,6 +51,7 @@ import { DisqualifiedBanner, DisqualifyButton } from '@/components/contacts/disq
 import type { Disqualification } from '@/lib/contacts/disqualification';
 import { computeLeadSteps, nextLeadStep, type LeadStep, type StepKey } from '@/lib/contacts/lead-steps';
 import { projectTypesOf } from '@/lib/contacts/project-types';
+import { MasterPromptPanel } from '@/components/contacts/master-prompt-panel';
 
 export default function ContactProfilePage() {
   const params = useParams();
@@ -71,10 +70,6 @@ export default function ContactProfilePage() {
   const [diagnosing, setDiagnosing] = useState(false);
   const [activePhoto, setActivePhoto] = useState<string | null>(null);
 
-  // Master Prompt State (Editable)
-  const [promptMestre, setPromptMestre] = useState('');
-  const [originalPrompt, setOriginalPrompt] = useState('');
-  const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [copiedPitch, setCopiedPitch] = useState(false);
 
   // Estado de Edição do Nome do Estabelecimento
@@ -97,9 +92,6 @@ export default function ContactProfilePage() {
         // A página abre no Próximo Passo; depois disso a etapa aberta é escolha do operador
         setOpenStepKey((prev) => (prev === undefined ? nextLeadStep(computeLeadSteps(data))?.key ?? 'dossie' : prev));
         const addData = data.additional_data as Record<string, any> || {};
-        const savedPrompt = addData.prompt_mestre || '';
-        setPromptMestre(savedPrompt);
-        setOriginalPrompt(savedPrompt);
         setCompanyInput(data.company || '');
         const currentMaps =
           addData.maps_search_link ||
@@ -383,11 +375,7 @@ export default function ContactProfilePage() {
         throw new Error(data.message || data.error || 'Não foi possível gerar o diagnóstico multimodal.');
       }
 
-      toast.success('Diagnóstico da IA e Prompt Mestre gerados com sucesso!');
-      if (data.prompt_mestre) {
-        setPromptMestre(data.prompt_mestre);
-        setOriginalPrompt(data.prompt_mestre);
-      }
+      toast.success('Diagnóstico da IA e Prompts Mestre gerados com sucesso!');
       await fetchContactData();
     } catch (err: any) {
       toast.error(err.message || 'Falha ao executar diagnóstico multimodal da IA.');
@@ -396,12 +384,15 @@ export default function ContactProfilePage() {
     }
   };
 
-  const handleCopyPrompt = () => {
-    if (!promptMestre) return;
-    navigator.clipboard.writeText(promptMestre);
-    setCopiedPrompt(true);
-    toast.success('Prompt Mestre copiado para a área de transferência! Cole na sua IA de preferência.');
-    setTimeout(() => setCopiedPrompt(false), 3000);
+  // O backend refez os Prompts Mestre: o prompt único antigo dá lugar aos prompts por tipo
+  const applyMasterPrompts = (promptsMestre: Record<string, unknown>) => {
+    setContact((prev: any) => {
+      if (!prev) return prev;
+      const nextData = { ...(prev.additional_data || {}), prompts_mestre: promptsMestre };
+      delete nextData.prompt_mestre;
+      delete nextData.prompt_mestre_gerado_em;
+      return { ...prev, additional_data: nextData };
+    });
   };
 
   const handleCopyPitch = () => {
@@ -889,23 +880,11 @@ export default function ContactProfilePage() {
                   );
                 }}
                 catalog={additionalData.catalogo_extraido || null}
-                onCatalogChange={(catalog, newPrompt, promptAt) => {
+                onCatalogChange={(catalog, promptsMestre) => {
                   setContact((prev: any) =>
-                    prev
-                      ? {
-                          ...prev,
-                          additional_data: {
-                            ...(prev.additional_data || {}),
-                            catalogo_extraido: catalog,
-                            ...(newPrompt ? { prompt_mestre: newPrompt, prompt_mestre_gerado_em: promptAt } : {}),
-                          },
-                        }
-                      : prev
+                    prev ? { ...prev, additional_data: { ...(prev.additional_data || {}), catalogo_extraido: catalog } } : prev
                   );
-                  if (newPrompt) {
-                    setPromptMestre(newPrompt);
-                    setOriginalPrompt(newPrompt);
-                  }
+                  if (promptsMestre) applyMasterPrompts(promptsMestre);
                 }}
               />
             </LeadStepSection>
@@ -972,9 +951,9 @@ export default function ContactProfilePage() {
             {/* 6. Prompt Mestre */}
             <LeadStepSection step={stepOf('prompt')} open={openStep === 'prompt'} onToggle={toggleStep}>
               <StepEmptyState>
-                {additionalData.prompt_mestre
-                  ? 'O Prompt Mestre fica sempre à mão, na coluna ao lado.'
-                  : 'O Prompt Mestre é gerado junto com o diagnóstico e aparece na coluna ao lado.'}
+                {stepOf('prompt').status !== 'faltando'
+                  ? 'Os Prompts Mestre, um por tipo de projeto, ficam sempre à mão na coluna ao lado.'
+                  : 'Os Prompts Mestre são gerados junto com o diagnóstico e aparecem na coluna ao lado.'}
               </StepEmptyState>
             </LeadStepSection>
           </div>
@@ -982,59 +961,14 @@ export default function ContactProfilePage() {
 
         {/* Coluna lateral fixa: Prompt Mestre e Checklist de Dados do Site */}
         <aside className="space-y-4 lg:col-span-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:self-start lg:overflow-y-auto xl:col-span-4">
-          <div className="space-y-3 rounded-2xl border border-border bg-card p-5">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-semibold">Prompt Mestre</h2>
-                  <StatusChip status={stepOf('prompt').status} />
-                </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">Copie e cole na sua IA (Claude, ChatGPT, v0) para gerar o site.</p>
-              </div>
-              {originalPrompt && promptMestre !== originalPrompt && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPromptMestre(originalPrompt)}
-                  className="h-7 gap-1 text-xs text-muted-foreground"
-                >
-                  <RotateCcw className="size-3" />
-                  Restaurar
-                </Button>
-              )}
-            </div>
-            {stepOf('prompt').status === 'desatualizado' && (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-orange-500/10 px-3 py-2 text-xs text-orange-300">
-                <span className="flex items-center gap-1.5">
-                  <AlertTriangle className="size-3.5 shrink-0" />
-                  {stepOf('prompt').changed?.join(' e ')} {(stepOf('prompt').changed?.length ?? 0) > 1 ? 'mudaram' : 'mudou'}{' '}
-                  depois deste prompt.
-                </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 gap-1 text-xs"
-                  onClick={handleRunAiDiagnosis}
-                  disabled={diagnosing}
-                >
-                  <RefreshCw className={`size-3 ${diagnosing ? 'animate-spin' : ''}`} />
-                  Atualizar
-                </Button>
-              </div>
-            )}
-            <textarea
-              value={promptMestre}
-              onChange={(e) => setPromptMestre(e.target.value)}
-              placeholder="O Prompt Mestre aparece aqui depois do diagnóstico."
-              aria-label="Prompt Mestre"
-              rows={14}
-              className="w-full resize-y rounded-xl border border-border bg-background/60 p-3 font-mono text-xs leading-relaxed text-foreground focus:border-primary focus:outline-none"
-            />
-            <Button onClick={handleCopyPrompt} disabled={!promptMestre} className="w-full gap-2">
-              {copiedPrompt ? <Check className="size-4" /> : <Copy className="size-4" />}
-              {copiedPrompt ? 'Prompt Mestre copiado' : 'Copiar Prompt Mestre'}
-            </Button>
-          </div>
+          <MasterPromptPanel
+            leadId={contact.id}
+            additionalData={additionalData}
+            tiposProjeto={projectTypesOf(contact)}
+            status={stepOf('prompt').status}
+            hasDiagnosis={Boolean(diagnostico)}
+            onPromptsChange={applyMasterPrompts}
+          />
           <div className="rounded-2xl border border-border bg-card p-5">
             <SiteChecklistPanel items={computeSiteChecklist(contact)} />
           </div>

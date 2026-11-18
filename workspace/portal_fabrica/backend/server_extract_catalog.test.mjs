@@ -130,11 +130,10 @@ test('POST /api/leads/:id/extract-catalog turns stored files into the Catálogo 
     assert.equal(saved.diagnostico_ia.resumo_empresa, 'Pizzaria de bairro.', 'o resto de additional_data é preservado');
 
     // Com diagnóstico salvo, o Prompt Mestre é refeito com o catálogo, sem nova chamada ao Gemini
-    assert.ok(body.prompt_mestre.includes('### Margherita'));
-    assert.ok(body.prompt_mestre.includes('Pizzaria de bairro.'));
-    assert.equal(saved.prompt_mestre, body.prompt_mestre);
-    assert.ok(Date.parse(saved.prompt_mestre_gerado_em), 'grava quando o prompt foi refeito');
-    assert.equal(body.prompt_mestre_gerado_em, saved.prompt_mestre_gerado_em, 'devolve a data que gravou');
+    assert.ok(body.prompts_mestre.site.texto.includes('### Margherita'));
+    assert.ok(body.prompts_mestre.site.texto.includes('Pizzaria de bairro.'));
+    assert.deepEqual(saved.prompts_mestre, body.prompts_mestre, 'devolve o que gravou');
+    assert.ok(Date.parse(saved.prompts_mestre.site.gerado_em), 'grava quando o prompt foi refeito');
     assert.equal(geminiCalls.length, 1);
   } finally {
     delete process.env.GEMINI_API_BASE_URL;

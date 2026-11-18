@@ -141,8 +141,8 @@ test('Multimodal Diagnosis - returns the diagnosis and Master Prompt from a Gemi
     assert.equal(result.diagnostico.resumo_empresa, 'Pizzaria de bairro com forno a lenha.');
     assert.equal(result.diagnostico.modelo_utilizado, 'modelo-teste');
     assert.equal(result.diagnostico.fotos_analisadas, 1);
-    assert.ok(result.prompt_mestre.includes('Pizzaria de bairro com forno a lenha.'));
-    assert.ok(result.prompt_mestre.includes('Massa de fermentação natural'));
+    assert.ok(result.prompts_mestre.site.includes('Pizzaria de bairro com forno a lenha.'));
+    assert.ok(result.prompts_mestre.agenda.includes('Massa de fermentação natural'));
     assert.equal(sentParts[1].inlineData.mimeType, 'image/jpeg', 'a foto do dossiê vai como inlineData');
   } finally {
     delete process.env.GEMINI_API_BASE_URL;

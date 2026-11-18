@@ -5,7 +5,7 @@ import {
   fileUrlToInlinePart,
   generateGeminiContent,
 } from './gemini_client.js';
-import { buildMasterPrompt } from './master_prompt.js';
+import { buildMasterPrompt, buildMasterPrompts } from './master_prompt.js';
 
 // O Prompt Mestre mora em master_prompt.js; reexportado aqui para quem já importa deste módulo.
 export { buildMasterPrompt };
@@ -117,7 +117,8 @@ Responda APENAS o JSON válido, sem blocos de markdown adicionais.`;
       fotos_analisadas: imageParts.length,
     };
 
-    const promptMestre = buildMasterPrompt({
+    // Um Prompt Mestre por Tipo de Projeto, todos do mesmo briefing (montados pelo código)
+    const promptsMestre = buildMasterPrompts({
       companyName,
       dossie,
       diagnostico: diagnosticoFinal,
@@ -129,7 +130,7 @@ Responda APENAS o JSON válido, sem blocos de markdown adicionais.`;
     return {
       success: true,
       diagnostico: diagnosticoFinal,
-      prompt_mestre: promptMestre,
+      prompts_mestre: promptsMestre,
     };
   } catch (err) {
     return {

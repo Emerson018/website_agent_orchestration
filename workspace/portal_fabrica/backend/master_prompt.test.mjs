@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMasterPrompt } from './master_prompt.js';
+import { buildMasterPrompt, buildMasterPrompts } from './master_prompt.js';
+
+// O Briefing do Negócio é tudo entre o título e o módulo do tipo
+const briefingOf = (prompt) => prompt.slice(prompt.indexOf('## Briefing do Negócio'), prompt.indexOf('## O que construir'));
 
 // Lead completo: dossiê do Google Maps, diagnóstico e catálogo
 const FULL = {
@@ -81,6 +84,31 @@ test('The Site module asks for a single landing page with WhatsApp as the main a
   assert.ok(prompt.includes('src/data/business.json'), 'business data kept apart from code');
   assert.ok(prompt.includes('React, Vite, TypeScript e Tailwind CSS') && prompt.includes('Motion'));
   assert.ok(prompt.includes('DESIGN.md'));
+});
+
+test('buildMasterPrompts makes one prompt per Tipo de Projeto sharing the same Briefing do Negócio', () => {
+  const prompts = buildMasterPrompts(FULL);
+  assert.ok(prompts.site.includes('## O que construir: Site'));
+  assert.ok(prompts.agenda.includes('## O que construir: Agenda'));
+  assert.ok(briefingOf(prompts.site).length > 200);
+  assert.equal(briefingOf(prompts.agenda), briefingOf(prompts.site));
+  assert.equal(prompts.site, buildMasterPrompt(FULL), 'the Site prompt is the default Master Prompt');
+});
+
+test('The Agenda module: booking, owner panel with login, WhatsApp confirmation, shared Supabase, durations as a gap', () => {
+  const agenda = buildMasterPrompts(FULL).agenda;
+  const module = agenda.slice(agenda.indexOf('## O que construir: Agenda'), agenda.indexOf('## Antes de construir'));
+  assert.match(module, /serviço, o dia e um horário livre/);
+  assert.match(module, /painel com login/);
+  assert.match(module, /link do WhatsApp/);
+  assert.match(module, /Supabase/);
+  assert.match(module, /mesmo projeto Supabase/);
+  assert.match(module, /sem pagamento online/i);
+  assert.ok(!/(anon|service_role|supabase\.co)/i.test(agenda), 'no Supabase URL or key in the prompt');
+
+  const gaps = agenda.slice(agenda.indexOf('## Pendências do Prompt'));
+  assert.match(gaps, /Duração de cada serviço/);
+  assert.ok(!buildMasterPrompts(FULL).site.includes('Duração de cada serviço'), 'durations are an Agenda gap only');
 });
 
 test('Master Prompt ends as a Prompt de Especificação: interview, specify, split, do not build yet', () => {

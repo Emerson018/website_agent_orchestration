@@ -115,13 +115,30 @@ function buildBriefing(f) {
     .join('\n\n');
 }
 
+// Módulo do Tipo de Projeto: o que construir, e o que falta só para este tipo
 const MODULES = {
-  site: (f) => `## O que construir: Site
+  site: (f) => ({
+    texto: `## O que construir: Site
 Uma landing page, uma página só, para quem procura o negócio pela primeira vez.
 - Abertura que diga em uma frase o que o negócio é e leve ao WhatsApp.
 - Seções, na ordem que fizer mais sentido, só quando houver dado para elas: diferenciais, catálogo, depoimentos, localização com horários.
 - Mobile em primeiro lugar, acessível e rápida.${f.mapsLink ? '' : '\n- Sem link do Google Maps, não crie botão de mapa.'}`,
+    pendencias: [],
+  }),
+  agenda: () => ({
+    texto: `## O que construir: Agenda
+Um agendamento online para os clientes do negócio, com um painel para o dono.
+- O cliente escolhe o serviço, o dia e um horário livre, e informa nome e WhatsApp.
+- O dono entra num painel com login, vê os agendamentos e confirma ou cancela cada um.
+- A confirmação ao cliente sai por um link do WhatsApp com a mensagem pronta, sem API paga.
+- Os serviços e os horários de atendimento vêm dos dados do negócio; horário ocupado não aparece como livre.
+- Sem pagamento online e com um profissional só, a menos que os dados do negócio mostrem mais de um.
+- Os dados ficam no Supabase (banco e login do dono), no mesmo projeto Supabase de todos os projetos deste cliente: use o projeto existente ou crie um se ainda não houver. O operador fornece URL e chaves na configuração; elas nunca vão para o código.`,
+    pendencias: ['Duração de cada serviço (não estime: pergunte)'],
+  }),
 };
+
+export const PROJECT_TYPE_KEYS = Object.keys(MODULES);
 
 function buildEnding(pendencias) {
   const gaps =
@@ -136,9 +153,22 @@ Não comece a construir ainda. Primeiro:
 Só depois construa, tarefa por tarefa.${gaps}`;
 }
 
-/** Prompt Mestre de um Tipo de Projeto (por enquanto, o Site). */
+function assemble(facts, briefing, tipo) {
+  const module = (MODULES[tipo] || MODULES.site)(facts);
+  return (
+    [`# Prompt Mestre: ${facts.companyName}`, briefing, module.texto, buildEnding([...facts.pendencias, ...module.pendencias])].join('\n\n') + '\n'
+  );
+}
+
+/** Prompt Mestre de um Tipo de Projeto (Site por padrão). */
 export function buildMasterPrompt(input, tipo = 'site') {
   const facts = collectFacts(input || {});
-  const module = MODULES[tipo] || MODULES.site;
-  return [`# Prompt Mestre: ${facts.companyName}`, buildBriefing(facts), module(facts), buildEnding(facts.pendencias)].join('\n\n') + '\n';
+  return assemble(facts, buildBriefing(facts), tipo);
+}
+
+/** Um Prompt Mestre por Tipo de Projeto, todos com o mesmo Briefing do Negócio. Montado pelo código: não gasta IA. */
+export function buildMasterPrompts(input) {
+  const facts = collectFacts(input || {});
+  const briefing = buildBriefing(facts);
+  return Object.fromEntries(PROJECT_TYPE_KEYS.map((tipo) => [tipo, assemble(facts, briefing, tipo)]));
 }
