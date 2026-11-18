@@ -28,7 +28,8 @@ export const DESIGN_DO_CLIENTE_LABEL = "Design do Cliente";
 type Raw = Record<string, unknown> | null | undefined;
 
 const isKey = (k: string): k is MasterPromptKey => MASTER_PROMPT_TYPES.some((t) => t.key === k);
-const str = (v: unknown) => (typeof v === "string" && v.trim() !== "" ? v : undefined);
+/** O texto, se for uma string não vazia; senão undefined. */
+const nonBlank = (v: unknown) => (typeof v === "string" && v.trim() !== "" ? v : undefined);
 
 export function masterPromptsOf(additionalData: Raw): Partial<Record<MasterPromptKey, MasterPrompt>> {
   const ad = additionalData || {};
@@ -37,25 +38,30 @@ export function masterPromptsOf(additionalData: Raw): Partial<Record<MasterPromp
 
   if (perType && typeof perType === "object") {
     for (const [key, value] of Object.entries(perType as Record<string, unknown>)) {
-      const texto = str((value as { texto?: unknown } | null)?.texto);
+      const texto = nonBlank((value as { texto?: unknown } | null)?.texto);
       if (!isKey(key) || !texto) continue;
-      const geradoEm = str((value as { gerado_em?: unknown }).gerado_em);
+      const geradoEm = nonBlank((value as { gerado_em?: unknown }).gerado_em);
       result[key] = geradoEm ? { texto, geradoEm } : { texto };
     }
     if (Object.keys(result).length > 0) return result;
   }
 
-  const legado = str(ad.prompt_mestre);
+  const legado = nonBlank(ad.prompt_mestre);
   if (legado) {
-    const geradoEm = str(ad.prompt_mestre_gerado_em);
+    const geradoEm = nonBlank(ad.prompt_mestre_gerado_em);
     return { site: geradoEm ? { texto: legado, geradoEm } : { texto: legado } };
   }
   return result;
 }
 
+/** Os tipos que o cliente pediu, como chaves das abas. O contato guarda os rótulos ("Agenda"). */
+export function requestedPromptKeys(tiposProjeto: string[]): MasterPromptKey[] {
+  return MASTER_PROMPT_TYPES.filter((t) => tiposProjeto.includes(t.label)).map((t) => t.key);
+}
+
 /** Abas: os tipos que o cliente pediu primeiro, depois os outros, na ordem fixa. */
 export function promptTabOrder(tiposProjeto: string[]): MasterPromptKey[] {
-  const chosen = MASTER_PROMPT_TYPES.filter((t) => tiposProjeto.includes(t.label)).map((t) => t.key);
+  const chosen = requestedPromptKeys(tiposProjeto);
   const rest = MASTER_PROMPT_TYPES.map((t) => t.key).filter((k) => !chosen.includes(k));
   return [...chosen, ...rest];
 }
@@ -66,9 +72,9 @@ export function promptTabOrder(tiposProjeto: string[]): MasterPromptKey[] {
  */
 export function designDoClienteOf(additionalData: Raw): { markdown: string; salvoEm?: string } | null {
   const raw = (additionalData || {}).design_do_cliente as { markdown?: unknown; salvo_em?: unknown } | null | undefined;
-  const markdown = str(raw?.markdown);
+  const markdown = nonBlank(raw?.markdown);
   if (!markdown) return null;
-  const salvoEm = str(raw?.salvo_em);
+  const salvoEm = nonBlank(raw?.salvo_em);
   return salvoEm ? { markdown, salvoEm } : { markdown };
 }
 

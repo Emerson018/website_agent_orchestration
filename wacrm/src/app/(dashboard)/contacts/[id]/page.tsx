@@ -128,6 +128,8 @@ export default function ContactProfilePage() {
   const additionalData = (contact?.additional_data || {}) as Record<string, any>;
   const dossie = additionalData.dossie || null;
   const leadSteps = contact ? computeLeadSteps(contact) : [];
+  const tiposProjeto = projectTypesOf(contact);
+  const clientDesign = designDoClienteOf(additionalData);
   const nextStep = nextLeadStep(leadSteps);
 
   const disqualification: Disqualification | null = additionalData.desqualificacao || null;
@@ -386,36 +388,30 @@ export default function ContactProfilePage() {
     }
   };
 
-  // Design do Cliente: grava no contato (lendo antes o que está salvo, para não sobrescrever o backend).
-  // A data nova deixa os Prompts Mestre Desatualizados até serem refeitos.
+  // Design do Cliente: o backend do portal grava; a data nova deixa os Prompts Mestre Desatualizados
   const handleSaveClientDesign = async (markdown: string) => {
     try {
-      const { data: current, error: readError } = await supabase
-        .from('contacts')
-        .select('additional_data')
-        .eq('id', contactId)
-        .single();
-      if (readError) throw readError;
-      const design = { markdown: markdown.trim(), salvo_em: new Date().toISOString() };
-      const nextData = { ...((current?.additional_data as Record<string, unknown>) || {}), design_do_cliente: design };
-      const { error } = await supabase.from('contacts').update({ additional_data: nextData }).eq('id', contactId);
-      if (error) throw error;
-      setContact((prev: any) => (prev ? { ...prev, additional_data: nextData } : prev));
-      toast.success(design.markdown ? 'Design do Cliente salvo. Atualize os prompts para usá-lo.' : 'Design do Cliente removido.');
+      const res = await fetch(`/api/leads/${contactId}/client-design`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markdown }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.design_do_cliente) throw new Error(data.error || 'Falha ao salvar o Design do Cliente.');
+      setContact((prev: any) =>
+        prev ? { ...prev, additional_data: { ...(prev.additional_data || {}), design_do_cliente: data.design_do_cliente } } : prev
+      );
+      toast.success(data.design_do_cliente.markdown ? 'Design do Cliente salvo. Atualize os prompts para usá-lo.' : 'Design do Cliente removido.');
     } catch (err: any) {
-      toast.error('Erro ao salvar o Design do Cliente: ' + err.message);
+      toast.error(err.message);
     }
   };
 
-  // O backend refez os Prompts Mestre: o prompt único antigo dá lugar aos prompts por tipo
+  // O backend refez os Prompts Mestre (ele também já levou o prompt único antigo para a aba Site)
   const applyMasterPrompts = (promptsMestre: Record<string, unknown>) => {
-    setContact((prev: any) => {
-      if (!prev) return prev;
-      const nextData = { ...(prev.additional_data || {}), prompts_mestre: promptsMestre };
-      delete nextData.prompt_mestre;
-      delete nextData.prompt_mestre_gerado_em;
-      return { ...prev, additional_data: nextData };
-    });
+    setContact((prev: any) =>
+      prev ? { ...prev, additional_data: { ...(prev.additional_data || {}), prompts_mestre: promptsMestre } } : prev
+    );
   };
 
   const handleCopyPitch = () => {
@@ -526,10 +522,10 @@ export default function ContactProfilePage() {
             {contact.email && <span>· {contact.email}</span>}
             {dossie?.nicho_detectado && <span className="capitalize">· {dossie.nicho_detectado}</span>}
           </p>
-          {projectTypesOf(contact).length > 0 && (
+          {tiposProjeto.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
               <span>Quer:</span>
-              {projectTypesOf(contact).map((type) => (
+              {tiposProjeto.map((type) => (
                 <Badge key={type} variant="secondary" className="text-xs">
                   {type}
                 </Badge>
@@ -987,14 +983,14 @@ export default function ContactProfilePage() {
           <MasterPromptPanel
             leadId={contact.id}
             additionalData={additionalData}
-            tiposProjeto={projectTypesOf(contact)}
+            tiposProjeto={tiposProjeto}
             status={stepOf('prompt').status}
             hasDiagnosis={Boolean(diagnostico)}
             onPromptsChange={applyMasterPrompts}
           />
           <ClientDesignCard
-            markdown={designDoClienteOf(additionalData)?.markdown ?? ''}
-            salvoEm={designDoClienteOf(additionalData)?.salvoEm}
+            markdown={clientDesign?.markdown ?? ''}
+            salvoEm={clientDesign?.salvoEm}
             onSave={handleSaveClientDesign}
           />
           <div className="rounded-2xl border border-border bg-card p-5">

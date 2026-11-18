@@ -11,6 +11,7 @@ import {
   masterPromptsOf,
   promptChangesSince,
   promptTabOrder,
+  requestedPromptKeys,
   type MasterPromptKey,
 } from '@/lib/contacts/master-prompts';
 
@@ -32,6 +33,7 @@ const labelOf = (key: MasterPromptKey) => MASTER_PROMPT_TYPES.find((t) => t.key 
 export function MasterPromptPanel({ leadId, additionalData, tiposProjeto, status, hasDiagnosis, onPromptsChange }: MasterPromptPanelProps) {
   const saved = masterPromptsOf(additionalData);
   const order = promptTabOrder(tiposProjeto);
+  const requested = requestedPromptKeys(tiposProjeto);
   const [active, setActive] = useState<MasterPromptKey>(order[0]);
   const [rebuilding, setRebuilding] = useState<MasterPromptKey | null>(null);
   const [copied, setCopied] = useState(false);
@@ -109,7 +111,6 @@ export function MasterPromptPanel({ leadId, additionalData, tiposProjeto, status
 
       <div role="tablist" aria-label="Tipo de projeto" className="flex gap-1 rounded-lg bg-muted/60 p-1">
         {order.map((key) => {
-          const requested = tiposProjeto.includes(labelOf(key));
           const selected = key === active;
           return (
             <button
@@ -122,7 +123,7 @@ export function MasterPromptPanel({ leadId, additionalData, tiposProjeto, status
                 selected ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {requested && <span aria-label="pedido pelo cliente" className="size-1.5 rounded-full bg-primary" />}
+              {requested.includes(key) && <span aria-label="pedido pelo cliente" className="size-1.5 rounded-full bg-primary" />}
               {labelOf(key)}
             </button>
           );

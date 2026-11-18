@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMasterPrompt } from './multimodal_diagnosis_service.js';
+import { buildMasterPrompt } from './master_prompt.js';
 
 const base = { companyName: 'Pizzaria Bella', dossie: { nota: 4.8, total_avaliacoes: 10 }, diagnostico: {} };
 

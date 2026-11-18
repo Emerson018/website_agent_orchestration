@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { designDoClienteOf, masterPromptsOf, promptChangesSince, promptTabOrder } from "./master-prompts";
+import { designDoClienteOf, masterPromptsOf, promptChangesSince, promptTabOrder, requestedPromptKeys } from "./master-prompts";
 import { computeLeadSteps } from "./lead-steps";
 
 const AT = "2026-03-01T10:00:00.000Z";
@@ -28,6 +28,13 @@ describe("masterPromptsOf", () => {
     });
     expect(prompts).toEqual({ site: { texto: "novo", geradoEm: AT } });
     expect(masterPromptsOf(null)).toEqual({});
+  });
+});
+
+describe("requestedPromptKeys", () => {
+  it("maps the labels saved on the contact to tab keys, ignoring unknown ones", () => {
+    expect(requestedPromptKeys(["Dashboard", "Site", "App mobile"])).toEqual(["site", "dashboard"]);
+    expect(requestedPromptKeys([])).toEqual([]);
   });
 });
 

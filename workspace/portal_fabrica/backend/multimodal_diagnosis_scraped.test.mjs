@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMasterPrompt } from './multimodal_diagnosis_service.js';
+import { buildMasterPrompt } from './master_prompt.js';
 
 test('Master Prompt Studio - integra dados raspados via Scrapling', async (t) => {
   const baseDossie = {

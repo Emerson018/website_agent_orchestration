@@ -1,9 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  runMultimodalBusinessDiagnosis,
-  buildMasterPrompt,
-} from './multimodal_diagnosis_service.js';
+import { runMultimodalBusinessDiagnosis } from './multimodal_diagnosis_service.js';
+import { buildMasterPrompt } from './master_prompt.js';
 
 test('Multimodal Diagnosis - fail-fast when GEMINI_API_KEY is missing', async () => {
   const mockDossie = {

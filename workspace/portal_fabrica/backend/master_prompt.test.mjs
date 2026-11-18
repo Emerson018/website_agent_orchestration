@@ -160,6 +160,29 @@ test('Without an Agenda the Dashboard starts from imported spreadsheets and the 
   assert.match(withoutAgenda.slice(withoutAgenda.indexOf('## Pendências do Prompt')), /Fonte dos dados do Dashboard/);
 });
 
+test('Every Tipo de Projeto has a module, from the single list in project_types.js', async () => {
+  const { PROJECT_TYPES } = await import('./project_types.js');
+  const prompts = buildMasterPrompts(FULL);
+  assert.deepEqual(Object.keys(prompts), PROJECT_TYPES.map((t) => t.key));
+  for (const { key, label } of PROJECT_TYPES) assert.ok(prompts[key].includes(`## O que construir: ${label}`));
+});
+
+test('The Agenda gap names the services whose duration is unknown, from the catalog and the site', () => {
+  const agenda = buildMasterPrompts({
+    ...FULL,
+    catalogoExtraido: { markdown: '## Cortes\n### Corte masculino\n- **Preço:** R$ 40,00\n### Barba\n- **Preço:** R$ 30,00' },
+    scrapedData: { cardapio: [{ nome: 'Sobrancelha' }], institucional: { servicos: ['Pigmentação'] } },
+  }).agenda;
+  const gap = agenda.slice(agenda.indexOf('## Pendências do Prompt')).split('\n').find((l) => l.includes('Duração'));
+  assert.match(gap, /Corte masculino/);
+  assert.match(gap, /Barba/);
+  assert.match(gap, /Sobrancelha/);
+  assert.match(gap, /Pigmentação/);
+
+  const semCatalogo = buildMasterPrompts(EMPTY).agenda;
+  assert.match(semCatalogo, /Duração de cada serviço/);
+});
+
 test('Master Prompt ends as a Prompt de Especificação: interview, specify, split, do not build yet', () => {
   const prompt = buildMasterPrompt(FULL);
   const lastPart = prompt.slice(prompt.lastIndexOf('## Antes de construir'));

@@ -12,8 +12,8 @@ import { runMultimodalBusinessDiagnosis } from './multimodal_diagnosis_service.j
 import { CATALOG_BUCKET, catalogStoragePath, newCatalogFileId, parseCatalogUpload } from './catalog_files.js';
 import { extractCatalog } from './catalog_extraction.js';
 import { geminiErrorStatus } from './gemini_client.js';
-import { normalizeProjectTypes } from './project_types.js';
-import { PROJECT_TYPE_KEYS, buildMasterPrompts } from './master_prompt.js';
+import { PROJECT_TYPE_KEYS, normalizeProjectTypes } from './project_types.js';
+import { buildMasterPrompts } from './master_prompt.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -639,20 +639,24 @@ async function findContact(id) {
   return data || null;
 }
 
-// Refaz os Prompts Mestre (um por Tipo de Projeto) a partir dos dados salvos, sem chamar o Gemini
-function rebuildMasterPrompts(contact, additionalData) {
-  if (!additionalData.diagnostico_ia) return null;
+// O que o Prompt Mestre lê do contato (o diagnóstico entra à parte, quando já existe)
+function masterPromptInputFrom(contact, additionalData) {
   const dossie = additionalData.dossie || null;
-  return buildMasterPrompts({
+  return {
     companyName: contact.company || contact.name || dossie?.nome_verificado || 'Empresa',
     dossie,
-    diagnostico: additionalData.diagnostico_ia,
     scrapedData: additionalData.scraped_data || null,
     mapsUrl: dossie?.google_maps_url || additionalData.maps_url || additionalData.maps_search_link || '',
     catalogoExtraido: additionalData.catalogo_extraido || null,
     designDoCliente: additionalData.design_do_cliente?.markdown || '',
     tiposProjeto: additionalData.tipos_projeto || [],
-  });
+  };
+}
+
+// Refaz os Prompts Mestre (um por Tipo de Projeto) a partir dos dados salvos, sem chamar o Gemini
+function rebuildMasterPrompts(contact, additionalData) {
+  if (!additionalData.diagnostico_ia) return null;
+  return buildMasterPrompts({ ...masterPromptInputFrom(contact, additionalData), diagnostico: additionalData.diagnostico_ia });
 }
 
 /**
@@ -855,6 +859,31 @@ app.put('/api/leads/:id/extracted-catalog', async (req, res) => {
   }
 });
 
+// Design do Cliente: o DESIGN.md do primeiro projeto deste cliente. Texto vazio limpa.
+// A data salva deixa os Prompts Mestre Desatualizados até serem refeitos.
+app.put('/api/leads/:id/client-design', async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (typeof req.body?.markdown !== 'string') {
+      return res.status(400).json({ error: 'Envie o design em texto (markdown).' });
+    }
+    const contact = await findContact(id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+    const designDoCliente = { markdown: req.body.markdown.trim(), salvo_em: new Date().toISOString() };
+    const additionalData = { ...(contact.additional_data || {}), design_do_cliente: designDoCliente };
+    const { error } = await supabase.from('contacts').update({ additional_data: additionalData }).eq('id', contact.id);
+    if (error) {
+      return res.status(502).json({ error: `Falha ao salvar o Design do Cliente: ${error.message}` });
+    }
+    return res.json({ success: true, design_do_cliente: designDoCliente });
+  } catch (err) {
+    console.error(`[DesignDoCliente] Erro ao salvar o design do lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao salvar o Design do Cliente.', details: err.message });
+  }
+});
+
 // Refaz o Prompt Mestre de um Tipo de Projeto a partir dos dados salvos. Não chama o Gemini.
 app.post('/api/leads/:id/master-prompts', async (req, res) => {
   const { id } = req.params;
@@ -992,35 +1021,16 @@ app.post('/api/leads/:id/diagnose', async (req, res) => {
       return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
     }
 
-    const dossie = contactRecord.additional_data?.dossie || null;
-    const companyName =
-      contactRecord.company ||
-      contactRecord.name ||
-      dossie?.nome_verificado ||
-      'Empresa';
-
-    if (!dossie) {
+    const promptInput = masterPromptInputFrom(contactRecord, contactRecord.additional_data || {});
+    if (!promptInput.dossie) {
       return res.status(400).json({
         success: false,
         error: 'Lead não possui Dossiê do Google Maps. Consulte o Maps antes de gerar o diagnóstico.',
       });
     }
 
-    const scrapedData = contactRecord.additional_data?.scraped_data || null;
-    const mapsUrl =
-      dossie?.google_maps_url ||
-      contactRecord?.additional_data?.maps_url ||
-      contactRecord?.additional_data?.maps_search_link ||
-      '';
-
     const result = await runMultimodalBusinessDiagnosis({
-      dossie,
-      companyName,
-      scrapedData,
-      mapsUrl,
-      catalogoExtraido: contactRecord.additional_data?.catalogo_extraido || null,
-      designDoCliente: contactRecord.additional_data?.design_do_cliente?.markdown || '',
-      tiposProjeto: contactRecord.additional_data?.tipos_projeto || [],
+      ...promptInput,
       apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
     });
 

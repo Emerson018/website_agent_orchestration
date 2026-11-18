@@ -1,4 +1,5 @@
 import { catalogGeneralInfo, catalogHasItems } from './catalog_extraction.js';
+import { PROJECT_TYPE_KEYS, projectTypeKeysFromLabels } from './project_types.js';
 
 /**
  * Prompt Mestre (GLOSSARY.md): Briefing do Negócio + Módulo do Tipo de Projeto.
@@ -47,12 +48,21 @@ function collectFacts({ companyName, dossie, diagnostico, scrapedData, mapsUrl, 
   const sobreSite = scrapedData?.institucional?.sobre || '';
   const servicosSite = Array.isArray(scrapedData?.institucional?.servicos) ? scrapedData.institucional.servicos.filter(Boolean) : [];
 
+  // Nomes dos itens/serviços conhecidos (catálogo, site), sem repetição: a Agenda pergunta a duração de cada um
+  const nomesItens = [
+    ...new Set([
+      ...[...catalogoArquivos.matchAll(/^###\s+(.+)$/gm)].map((m) => m[1].trim()),
+      ...(Array.isArray(scrapedData?.cardapio) ? scrapedData.cardapio : []).map((it) => it?.nome).filter(Boolean),
+      ...servicosSite,
+    ]),
+  ];
+
   return {
     companyName,
     // Design do Cliente: o DESIGN.md do primeiro projeto deste cliente, colado pelo operador no WACRM
     designDoCliente: typeof designDoCliente === 'string' ? designDoCliente.trim() : '',
-    // Tipos de Projeto que o cliente pediu no formulário ("Site", "Agenda", "Dashboard")
-    tiposProjeto: Array.isArray(tiposProjeto) ? tiposProjeto : [],
+    // Tipos de Projeto que o cliente pediu, como chaves ("agenda"); o contato guarda os rótulos ("Agenda")
+    tiposProjeto: projectTypeKeysFromLabels(tiposProjeto),
     resumo: diag.resumo_empresa || '',
     atmosfera: diag.estilo_visual_vibe || '',
     publico: diag.publico_alvo || '',
@@ -60,6 +70,7 @@ function collectFacts({ companyName, dossie, diagnostico, scrapedData, mapsUrl, 
     diferenciais,
     sobreSite,
     servicosSite,
+    nomesItens,
     telefone,
     endereco,
     mapsLink,
@@ -144,7 +155,7 @@ Uma landing page, uma página só, para quem procura o negócio pela primeira ve
 - Mobile em primeiro lugar, acessível e rápida.${f.mapsLink ? '' : '\n- Sem link do Google Maps, não crie botão de mapa.'}`,
     pendencias: [],
   }),
-  agenda: () => ({
+  agenda: (f) => ({
     texto: `## O que construir: Agenda
 Um agendamento online para os clientes do negócio, com um painel para o dono.
 - O cliente escolhe o serviço, o dia e um horário livre, e informa nome e WhatsApp.
@@ -153,11 +164,15 @@ Um agendamento online para os clientes do negócio, com um painel para o dono.
 - Os serviços e os horários de atendimento vêm dos dados do negócio; horário ocupado não aparece como livre.
 - Sem pagamento online e com um profissional só, a menos que os dados do negócio mostrem mais de um.
 - Os dados ficam no Supabase (banco e login do dono), no mesmo projeto Supabase de todos os projetos deste cliente: use o projeto existente ou crie um se ainda não houver. O operador fornece URL e chaves na configuração; elas nunca vão para o código.`,
-    pendencias: ['Duração de cada serviço (não estime: pergunte)'],
+    pendencias: [
+      f.nomesItens.length > 0
+        ? `Duração de cada serviço (não estime: pergunte): ${f.nomesItens.slice(0, 20).join(', ')}`
+        : 'Duração de cada serviço (não estime: pergunte)',
+    ],
   }),
   // Dashboard ("Painel de resultados" para o cliente): lê a Agenda quando o cliente a pediu, senão começa por planilhas
   dashboard: (f) => {
-    const comAgenda = f.tiposProjeto.includes('Agenda');
+    const comAgenda = f.tiposProjeto.includes('agenda');
     const fontes = comAgenda
       ? `- Lê os agendamentos da Agenda deste cliente (por dia, por serviço, por horário, cancelamentos, clientes que voltam) e também aceita planilhas ou CSV que o dono importar (vendas, pedidos, atendimentos).`
       : `- O cliente não pediu a Agenda: o painel começa pela importação de planilhas ou CSV que o dono já usa (vendas, pedidos, atendimentos). Se a Agenda vier depois, ele passa a ler os agendamentos dela.`;
@@ -173,7 +188,6 @@ ${fontes}
   },
 };
 
-export const PROJECT_TYPE_KEYS = Object.keys(MODULES);
 
 function buildEnding(pendencias) {
   const gaps =

@@ -5,10 +5,7 @@ import {
   fileUrlToInlinePart,
   generateGeminiContent,
 } from './gemini_client.js';
-import { buildMasterPrompt, buildMasterPrompts } from './master_prompt.js';
-
-// O Prompt Mestre mora em master_prompt.js; reexportado aqui para quem já importa deste módulo.
-export { buildMasterPrompt };
+import { buildMasterPrompts } from './master_prompt.js';
 
 /**
  * Executa o Diagnóstico Multimodal de Negócio usando a API do Gemini Vision
