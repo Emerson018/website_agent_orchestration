@@ -95,7 +95,7 @@ The part of every Master Prompt that is the same for all Tipos de Projeto of a c
 _Avoid_: Base prompt, header, Source of Truth block
 
 **Módulo do Tipo de Projeto (Project Type Module)**:
-The part of a Master Prompt specific to one Tipo de Projeto: what to build and how, for Site, App mobile or Agenda.
+The part of a Master Prompt specific to one Tipo de Projeto: what to build and how, for Site, Agenda or Dashboard.
 _Avoid_: Template, variant, sub-prompt
 
 **Prompt de Especificação (Specification Prompt)**:

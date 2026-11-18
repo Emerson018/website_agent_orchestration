@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted (§3 superseded by ADR-0012)
 ---
 
 # Multimodal Lead Dossier and Operator-Driven Master Prompt Engine
