@@ -83,8 +83,36 @@ An AI-driven analysis endpoint powered by Gemini Multimodal Vision and semantic 
 _Avoid_: Basic text summary, raw niche label, static category, brand analysis, RAG report
 
 **Master Prompt Generator**:
-The automated engine that transforms a Lead Dossier and Multimodal Business Diagnosis into a hyper-personalized, production-grade master prompt containing real client assets, design guidelines, tone, and component specifications, engineered for the operator to copy and execute in any frontier AI. It is the final step of the pipeline: nothing is built inside the app.
+The automated engine that transforms a Lead Dossier and Multimodal Business Diagnosis into one Master Prompt per Tipo de Projeto, each made of the shared Briefing do Negócio plus that type's Módulo do Tipo de Projeto, engineered for the operator to copy and execute in any frontier AI, without naming a specific tool. It is the final step of the pipeline: nothing is built inside the app.
 _Avoid_: Auto-builder script, hardcoded template, generic system prompt
+
+**Tipo de Projeto (Project Type)**:
+What the client asks Aether to build: Site (a single landing page), Agenda (online booking with an owner panel, stored in Supabase; a link to the owner's Google Calendar may come later) or Dashboard (shown to clients as "Painel de resultados": an owner-only panel, behind the same login as the Agenda, where the owner follows the business's numbers read from the Agenda and from spreadsheets they import; which numbers is settled in the specification interview). A client's Agenda and Dashboard share one Supabase project. The client picks one or more on the portal form; each type is built as a separate project, so they cannot collide, and they are connected later when the client asked for more than one: same Design do Cliente, cross links, and the same Dados do Negócio. All share one stack (React, Vite, TypeScript, Tailwind, with an animation library for professional motion). An App mobile type existed briefly and is off for now.
+_Avoid_: Product, plan, package, module, App mobile (off)
+
+**Briefing do Negócio (Business Briefing)**:
+The part of every Master Prompt that is the same for all Tipos de Projeto of a client: who the business is, its verified data, real testimonials, catalog and the content rules. It holds only facts the builder AI cannot find out alone; it never fills a missing fact with invented text.
+_Avoid_: Base prompt, header, Source of Truth block
+
+**Módulo do Tipo de Projeto (Project Type Module)**:
+The part of a Master Prompt specific to one Tipo de Projeto: what to build and how, for Site, App mobile or Agenda.
+_Avoid_: Template, variant, sub-prompt
+
+**Prompt de Especificação (Specification Prompt)**:
+How every Master Prompt ends: it asks the builder AI not to build yet, but to interview the operator about what is ambiguous, write a specification and split it into tasks. Building starts from that specification, never straight from the prompt.
+_Avoid_: Build prompt, one-shot prompt, "copy to build"
+
+**Design do Cliente (Client Design File)**:
+The `DESIGN.md` that the first project built for a client produces, holding the design decisions (colors, type, layout) the builder AI made for that business. Later projects of the same client must follow it so they can be connected; a different client always gets its own, decided from scratch.
+_Avoid_: Global theme, Aether style, shared palette across clients
+
+**Dados do Negócio (Business Data File)**:
+The file each project keeps apart from its code, holding exactly the data the client provided (name, contact, address, Maps link, opening hours, catalog) in the same format in every project of that client, so the projects can later read from a single source.
+_Avoid_: Config, constants, seed data
+
+**Pendências do Prompt (Prompt Gaps)**:
+The list at the end of a Master Prompt naming the facts that are missing (no catalog, no opening hours, no rating), for the operator to obtain from the client. The section that would show a missing fact is left out of the project instead of being filled with placeholders.
+_Avoid_: Placeholders, TODOs, "inserir aqui" markers
 
 **Operator-Driven Generation**:
 The bespoke workflow where the human operator reviews the Lead Profile Page and Multimodal Diagnosis, copies the synthesized Master Prompt, and directs an external frontier AI to generate a zero-template website tailored from scratch.
