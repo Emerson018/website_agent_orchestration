@@ -20,6 +20,7 @@ export async function runMultimodalBusinessDiagnosis({
   mapsUrl,
   catalogoExtraido,
   designDoCliente = '',
+  tiposProjeto = [],
   apiKey = defaultGeminiApiKey(),
   models = defaultGeminiModels(),
 }) {
@@ -127,6 +128,7 @@ Responda APENAS o JSON válido, sem blocos de markdown adicionais.`;
       mapsUrl: mapsLink,
       catalogoExtraido,
       designDoCliente,
+      tiposProjeto,
     });
 
     return {

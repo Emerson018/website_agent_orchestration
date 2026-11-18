@@ -46,6 +46,14 @@ test('POST /api/leads/:id/master-prompts rebuilds one Tipo de Projeto from saved
     assert.ok(withDesign.prompts_mestre.site.texto.includes('- primária: #1B4D3E'));
     assert.match(withDesign.prompts_mestre.site.texto, /siga este design à risca/i);
 
+    // O Dashboard sabe se o cliente pediu a Agenda pelos tipos gravados no contato
+    fake.tables.contacts[0].additional_data.tipos_projeto = ['Dashboard'];
+    const dashboard = (await (await post('c-1', { tipo: 'dashboard' })).json()).prompts_mestre.dashboard.texto;
+    assert.ok(dashboard.includes('Fonte dos dados do Dashboard'), 'no Agenda requested: data source is a gap');
+    fake.tables.contacts[0].additional_data.tipos_projeto = ['Agenda', 'Dashboard'];
+    const dashboardComAgenda = (await (await post('c-1', { tipo: 'dashboard' })).json()).prompts_mestre.dashboard.texto;
+    assert.ok(!dashboardComAgenda.includes('Fonte dos dados do Dashboard'));
+
     assert.equal((await post('c-1', { tipo: 'app_mobile' })).status, 400, 'unknown type');
     assert.equal((await post('c-sem-diagnostico', { tipo: 'site' })).status, 409, 'needs the diagnosis first');
     assert.equal((await post('c-404', { tipo: 'site' })).status, 404);

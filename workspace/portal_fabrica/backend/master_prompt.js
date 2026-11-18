@@ -12,7 +12,7 @@ import { catalogGeneralInfo, catalogHasItems } from './catalog_extraction.js';
 const list = (items) => items.map((item) => `- ${item}`).join('\n');
 
 /** Junta os fatos do lead e anota o que falta. Não inventa nada. */
-function collectFacts({ companyName, dossie, diagnostico, scrapedData, mapsUrl, catalogoExtraido, designDoCliente }) {
+function collectFacts({ companyName, dossie, diagnostico, scrapedData, mapsUrl, catalogoExtraido, designDoCliente, tiposProjeto }) {
   const pendencias = [];
   const d = dossie || {};
   const diag = diagnostico || {};
@@ -51,6 +51,8 @@ function collectFacts({ companyName, dossie, diagnostico, scrapedData, mapsUrl, 
     companyName,
     // Design do Cliente: o DESIGN.md do primeiro projeto deste cliente, colado pelo operador no WACRM
     designDoCliente: typeof designDoCliente === 'string' ? designDoCliente.trim() : '',
+    // Tipos de Projeto que o cliente pediu no formulário ("Site", "Agenda", "Dashboard")
+    tiposProjeto: Array.isArray(tiposProjeto) ? tiposProjeto : [],
     resumo: diag.resumo_empresa || '',
     atmosfera: diag.estilo_visual_vibe || '',
     publico: diag.publico_alvo || '',
@@ -153,6 +155,22 @@ Um agendamento online para os clientes do negócio, com um painel para o dono.
 - Os dados ficam no Supabase (banco e login do dono), no mesmo projeto Supabase de todos os projetos deste cliente: use o projeto existente ou crie um se ainda não houver. O operador fornece URL e chaves na configuração; elas nunca vão para o código.`,
     pendencias: ['Duração de cada serviço (não estime: pergunte)'],
   }),
+  // Dashboard ("Painel de resultados" para o cliente): lê a Agenda quando o cliente a pediu, senão começa por planilhas
+  dashboard: (f) => {
+    const comAgenda = f.tiposProjeto.includes('Agenda');
+    const fontes = comAgenda
+      ? `- Lê os agendamentos da Agenda deste cliente (por dia, por serviço, por horário, cancelamentos, clientes que voltam) e também aceita planilhas ou CSV que o dono importar (vendas, pedidos, atendimentos).`
+      : `- O cliente não pediu a Agenda: o painel começa pela importação de planilhas ou CSV que o dono já usa (vendas, pedidos, atendimentos). Se a Agenda vier depois, ele passa a ler os agendamentos dela.`;
+    return {
+      texto: `## O que construir: Dashboard
+Um painel de resultados para o dono acompanhar os números do negócio (para o cliente, "Painel de resultados").
+- Acesso só para o dono, com login: o mesmo login do painel da Agenda quando houver.
+${fontes}
+- Os dados ficam no mesmo projeto Supabase de todos os projetos deste cliente: use o projeto existente ou crie um se ainda não houver. O operador fornece URL e chaves na configuração; elas nunca vão para o código.
+- Quais números mostrar são decididos na entrevista, porque dependem do negócio. Sugestões, não obrigações: movimento por dia e por horário, itens ou serviços mais procurados, clientes que voltam, comparação com o mês anterior.`,
+      pendencias: comAgenda ? [] : ['Fonte dos dados do Dashboard (que planilhas ou sistemas o dono usa hoje)'],
+    };
+  },
 };
 
 export const PROJECT_TYPE_KEYS = Object.keys(MODULES);

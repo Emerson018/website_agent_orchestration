@@ -129,6 +129,37 @@ test('Without a Design do Cliente the prompt asks to decide the design and deliv
   assert.ok(!/siga este design à risca/i.test(prompt));
 });
 
+const moduleOf = (prompt) => prompt.slice(prompt.indexOf('## O que construir'), prompt.indexOf('## Antes de construir'));
+
+test('The Dashboard prompt shares the Briefing do Negócio exactly with Site and Agenda', () => {
+  const prompts = buildMasterPrompts(FULL);
+  assert.ok(prompts.dashboard.includes('## O que construir: Dashboard'));
+  assert.equal(briefingOf(prompts.dashboard), briefingOf(prompts.site));
+  assert.equal(briefingOf(prompts.dashboard), briefingOf(prompts.agenda));
+});
+
+test('The Dashboard module: owner-only login shared with the Agenda, shared Supabase, metrics left to the interview', () => {
+  const module = moduleOf(buildMasterPrompts({ ...FULL, tiposProjeto: ['Agenda', 'Dashboard'] }).dashboard);
+  assert.match(module, /só para o dono/i);
+  assert.match(module, /mesmo login do painel da Agenda/);
+  assert.match(module, /mesmo projeto Supabase/);
+  assert.match(module, /agendamentos/);
+  assert.match(module, /planilha/i);
+  assert.match(module, /decididos na entrevista/);
+  assert.ok(!/(anon|service_role|supabase\.co)/i.test(module), 'no Supabase URL or key');
+});
+
+test('Without an Agenda the Dashboard starts from imported spreadsheets and the data source is a Pendência', () => {
+  const withAgenda = buildMasterPrompts({ ...FULL, tiposProjeto: ['Agenda', 'Dashboard'] }).dashboard;
+  const withoutAgenda = buildMasterPrompts({ ...FULL, tiposProjeto: ['Dashboard'] }).dashboard;
+
+  assert.match(moduleOf(withAgenda), /lê os agendamentos da Agenda/i);
+  assert.ok(!withAgenda.includes('Fonte dos dados do Dashboard'));
+
+  assert.match(moduleOf(withoutAgenda), /começa pela importação/);
+  assert.match(withoutAgenda.slice(withoutAgenda.indexOf('## Pendências do Prompt')), /Fonte dos dados do Dashboard/);
+});
+
 test('Master Prompt ends as a Prompt de Especificação: interview, specify, split, do not build yet', () => {
   const prompt = buildMasterPrompt(FULL);
   const lastPart = prompt.slice(prompt.lastIndexOf('## Antes de construir'));
