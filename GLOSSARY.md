@@ -15,8 +15,16 @@ An enriched business intelligence profile synthesized from Google Places API and
 _Avoid_: Scraping dump, raw places json, info sheet
 
 **Modalidade de Atendimento (Service Modalities)**:
-The operational fulfillment channels supported by an establishment, extracted from Google Places API attributes (delivery, dine-in, takeout) and classified into structured flags (permite_entrega, permite_consumo_local, permite_retirada) and high-level status (modalidade) to steer both CRM lead insights and the feature directives in the Master Prompt.
+The operational fulfillment channels supported by an establishment, extracted from Google Places API attributes (delivery, dine-in, takeout) and classified into structured flags (permite_entrega, permite_consumo_local, permite_retirada) and high-level status (modalidade) to steer both CRM lead insights and the feature directives in the Master Prompt. Only modalities Google confirmed are stated: a false flag means "not confirmed", never "does not offer"; when none is confirmed, the modalities go to the Pendências do Prompt.
 _Avoid_: Delivery status, shipping options, service flags
+
+**Horário Resumido (Grouped Opening Hours)**:
+The readable form of the opening hours, in which consecutive days with identical hours share one line ("Segunda a sexta: 11:00 até 23:00", "Sábado e domingo: 10:00 até 14:00"). It is derived from the hours Google returned, which stay stored unchanged next to it. Equal days that are not consecutive stay on separate lines.
+_Avoid_: Formatted hours, business hours string, hours override
+
+**Instagram do Negócio (Business Instagram)**:
+The business's Instagram profile, taken in order of priority from what the client typed on the portal form (a @handle or a link), the links the operator registered on the lead, and the links found on the business's own site. Google does not provide it and it is never guessed from the business name; when no source has it, it goes to the Pendências do Prompt.
+_Avoid_: Social handle, website (a @handle is not a site), guessed profile
 
 **Classificação de Mídia do Dossiê (Dossier Media Classification)**:
 The multimodal categorization applied to the verified photo gallery (restricted to 6 photos), tagging each visual asset as either cardapio (menu, price lists, dish catalogs) or foto_normal (atmosphere, facade, team, food), enabling focused UI presentation in the CRM and targeted asset references in the Master Prompt.

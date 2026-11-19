@@ -6,6 +6,7 @@ import {
   generateGeminiContent,
 } from './gemini_client.js';
 import { buildMasterPrompts } from './master_prompt.js';
+import { withGooglePhotoKey } from './dossier_photos.js';
 
 /**
  * Executa o Diagnóstico Multimodal de Negócio usando a API do Gemini Vision
@@ -18,6 +19,8 @@ export async function runMultimodalBusinessDiagnosis({
   catalogoExtraido,
   designDoCliente = '',
   tiposProjeto = [],
+  instagram = '',
+  siteAtual = '',
   apiKey = defaultGeminiApiKey(),
   models = defaultGeminiModels(),
 }) {
@@ -48,7 +51,7 @@ export async function runMultimodalBusinessDiagnosis({
   const imageParts = [];
   for (const foto of photos.slice(0, 3)) {
     if (foto.photo_url) {
-      const part = await fileUrlToInlinePart(foto.photo_url);
+      const part = await fileUrlToInlinePart(withGooglePhotoKey(foto.photo_url));
       if (part) imageParts.push(part);
     }
   }
@@ -126,6 +129,8 @@ Responda APENAS o JSON válido, sem blocos de markdown adicionais.`;
       catalogoExtraido,
       designDoCliente,
       tiposProjeto,
+      instagram,
+      siteAtual,
     });
 
     return {

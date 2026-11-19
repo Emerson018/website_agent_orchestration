@@ -27,6 +27,7 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { DownloadPhotosButton, dossierPhotoUrl } from '@/components/contacts/download-photos-button';
 
 export interface LeadDossierData {
   place_id?: string;
@@ -623,12 +624,15 @@ export function LeadDossierCard({
       )}
 
       {/* Galeria de Fotos Curadas (Até 6) com Filtro Cardápio / Geral */}
-      {fotos.length > 0 && (
+      {leadId != null && fotos.length > 0 && (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               Fotos do Estabelecimento ({fotosFiltradas.length}/{fotos.length})
             </span>
+            <DownloadPhotosButton leadId={leadId} />
+          </div>
+          <div className="flex items-center justify-end">
             <div className="flex gap-1">
               <button
                 type="button"
@@ -664,14 +668,14 @@ export function LeadDossierCard({
             {fotosFiltradas.map((f, i) => (
               <a
                 key={i}
-                href={f.photo_url}
+                href={dossierPhotoUrl(leadId, fotos.indexOf(f))}
                 target="_blank"
                 rel="noreferrer"
                 className="relative shrink-0 rounded border border-border overflow-hidden hover:opacity-85 transition group"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={f.photo_url}
+                  src={dossierPhotoUrl(leadId, fotos.indexOf(f))}
                   alt={f.tipo === 'cardapio' ? 'Cardápio' : 'Fachada/Local'}
                   className="h-14 w-20 object-cover"
                 />

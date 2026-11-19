@@ -1,5 +1,6 @@
 import { catalogGeneralInfo, catalogHasItems } from './catalog_extraction.js';
 import { PROJECT_TYPE_KEYS, projectTypeKeysFromLabels } from './project_types.js';
+import { summarizeOpeningHours } from './opening_hours.js';
 
 /**
  * Prompt Mestre (GLOSSARY.md): Briefing do Negócio + Módulo do Tipo de Projeto.
@@ -12,8 +13,37 @@ import { PROJECT_TYPE_KEYS, projectTypeKeysFromLabels } from './project_types.js
 
 const list = (items) => items.map((item) => `- ${item}`).join('\n');
 
+// "entrega", "entrega e retirada", "entrega, retirada e consumo no local"
+const joinPt = (items) => (items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} e ${items[items.length - 1]}`);
+
+/** Só o que o Google confirmou: um campo falso quer dizer "não confirmado", nunca "não oferece". */
+function confirmedModalities(modalidades) {
+  const m = modalidades || {};
+  return [m.permite_entrega && 'entrega', m.permite_retirada && 'retirada', m.permite_consumo_local && 'consumo no local'].filter(Boolean);
+}
+
+/** Links públicos do negócio, com o Instagram primeiro. */
+function onlinePresence(d, instagram, siteAtual) {
+  const web = Array.isArray(d.resultados_web) ? d.resultados_web : [];
+  const firstOf = (tipo) => web.find((r) => r?.tipo === tipo && r.url)?.url;
+  return [
+    ['Instagram', instagram],
+    ['Site atual', d.site_oficial || siteAtual],
+    ['Cardápio digital', d.link_cardapio],
+    ['Facebook', firstOf('facebook')],
+    ['iFood', firstOf('ifood')],
+  ].filter(([, url]) => url);
+}
+
+/** Comodidades do Google (pagamento, estacionamento, reservas, acessibilidade) e a faixa de preço, se informada. */
+function usefulInfo(info) {
+  const comodidades = Array.isArray(info?.comodidades) ? info.comodidades.filter(Boolean) : [];
+  const faixa = info?.faixa_preco && info.faixa_preco !== 'Não informado' ? [`Faixa de preço: ${info.faixa_preco}`] : [];
+  return [...comodidades, ...faixa];
+}
+
 /** Junta os fatos do lead e anota o que falta. Não inventa nada. */
-function collectFacts({ companyName, dossie, diagnostico, scrapedData, mapsUrl, catalogoExtraido, designDoCliente, tiposProjeto }) {
+function collectFacts({ companyName, dossie, diagnostico, scrapedData, mapsUrl, catalogoExtraido, designDoCliente, tiposProjeto, instagram, siteAtual }) {
   const pendencias = [];
   const d = dossie || {};
   const diag = diagnostico || {};
@@ -21,11 +51,15 @@ function collectFacts({ companyName, dossie, diagnostico, scrapedData, mapsUrl, 
   const mapsLink = d.google_maps_url || d.maps_url || (typeof mapsUrl === 'string' && mapsUrl) || '';
   const telefone = d.telefone || '';
   const endereco = d.endereco_formatado || '';
-  const horarios = Array.isArray(d.horarios_funcionamento) ? d.horarios_funcionamento.filter(Boolean) : [];
+  // Horário Resumido salvo no dossiê; leads antigos só têm o texto do Google e são resumidos aqui
+  const horarios = Array.isArray(d.horarios_resumidos) && d.horarios_resumidos.length > 0 ? d.horarios_resumidos : summarizeOpeningHours(d.horarios_funcionamento);
   const nota = typeof d.nota === 'number' && d.total_avaliacoes > 0 ? `${d.nota.toFixed(1)}★ em ${d.total_avaliacoes} avaliações no Google` : '';
-  const depoimentos = Array.isArray(d.elogios_destaque)
-    ? d.elogios_destaque.filter((e) => e?.text).map((e) => `"${e.text}"${e.author ? ` (${e.author})` : ''}`)
-    : [];
+  // O dossiê atual guarda as avaliações positivas em avaliacoes_positivas; os antigos, em elogios_destaque
+  const avaliacoes = [d.elogios_destaque, d.avaliacoes_positivas].find((lista) => Array.isArray(lista) && lista.length > 0) || [];
+  const depoimentos = avaliacoes.filter((e) => e?.text).map((e) => `"${e.text}"${e.author ? ` (${e.author})` : ''}`);
+  const atendimento = confirmedModalities(d.modalidades_atendimento);
+  const presenca = onlinePresence(d, instagram, siteAtual);
+  const informacoes = usefulInfo(d.informacoes_relevantes);
   const diferenciais = Array.isArray(diag.diferenciais_unicos) ? diag.diferenciais_unicos.filter(Boolean) : [];
 
   if (!telefone) pendencias.push('WhatsApp do negócio (é a ação principal do projeto)');
@@ -34,6 +68,8 @@ function collectFacts({ companyName, dossie, diagnostico, scrapedData, mapsUrl, 
   if (horarios.length === 0) pendencias.push('Horários de funcionamento');
   if (!nota) pendencias.push('Nota e número de avaliações no Google');
   if (depoimentos.length === 0) pendencias.push('Depoimentos reais de clientes');
+  if (atendimento.length === 0) pendencias.push('Formas de atendimento (entrega, retirada, consumo no local)');
+  if (!instagram) pendencias.push('Instagram do negócio');
 
   // Catálogo: Catálogo Extraído (arquivos do cliente) e/ou itens raspados do site
   const catalogMarkdown = catalogoExtraido?.markdown || '';
@@ -77,6 +113,9 @@ function collectFacts({ companyName, dossie, diagnostico, scrapedData, mapsUrl, 
     horarios,
     nota,
     depoimentos,
+    atendimento,
+    presenca,
+    informacoes,
     catalogoArquivos,
     infoGerais,
     itensRaspados,
@@ -115,6 +154,7 @@ function buildBriefing(f) {
     f.endereco && `**Endereço:** ${f.endereco}`,
     f.mapsLink && `**Google Maps:** ${f.mapsLink}`,
     f.horarios.length > 0 && `**Horários:**\n${list(f.horarios)}`,
+    f.atendimento.length > 0 && `**Atendimento:** ${joinPt(f.atendimento)}`,
     f.nota && `**Avaliação:** ${f.nota}`,
     f.depoimentos.length > 0 && `**Depoimentos reais:**\n${list(f.depoimentos)}`,
   ].filter(Boolean);
@@ -127,15 +167,18 @@ function buildBriefing(f) {
 
   const regras = [
     'Use só os dados deste briefing. Não invente nota, depoimento, preço, horário, item ou número. Se faltar um dado, a seção que dependeria dele fica de fora.',
+    'Não afirme que o negócio deixa de oferecer algo só porque não está neste briefing.',
     f.mapsLink && `Toda ação de mapa ("Como chegar", "Ver no mapa", clique no endereço) abre ${f.mapsLink}.`,
     f.telefone && `A ação principal leva ao WhatsApp ${f.telefone}, com uma mensagem pronta que faça sentido para o negócio.`,
-    'Guarde os dados do negócio num arquivo separado do código, `src/data/business.json`, com exatamente os dados deste briefing e o formato: `nome`, `whatsapp`, `endereco`, `mapsUrl`, `horarios[]`, `avaliacao`, `depoimentos[]`, `catalogo[{ categoria, itens[{ nome, descricao, preco }] }]`. Os outros projetos deste cliente usam o mesmo formato.',
+    'Guarde os dados do negócio num arquivo separado do código, `src/data/business.json`, com exatamente os dados deste briefing e o formato: `nome`, `whatsapp`, `endereco`, `mapsUrl`, `horarios[]`, `atendimento[]`, `instagram`, `links[{ tipo, url }]`, `informacoes[]`, `avaliacao`, `depoimentos[]`, `catalogo[{ categoria, itens[{ nome, descricao, preco }] }]`. Os outros projetos deste cliente usam o mesmo formato.',
   ].filter(Boolean);
 
   return [
     `## Briefing do Negócio: ${f.companyName}`,
     quem.length > 0 && `### Quem é\n${quem.join('\n')}`,
     dados.length > 0 && `### Dados verificados\n${dados.join('\n')}`,
+    f.presenca.length > 0 && `### Presença online\n${f.presenca.map(([nome, url]) => `**${nome}:** ${url}`).join('\n')}`,
+    f.informacoes.length > 0 && `### Informações úteis\n${list(f.informacoes)}`,
     catalogo.length > 0 && `### Catálogo\n${catalogo.join('\n\n')}`,
     `### Regras de conteúdo\n${list(regras)}`,
     `### Tecnologia\nReact, Vite, TypeScript e Tailwind CSS, com a biblioteca Motion para as animações.`,
@@ -147,14 +190,26 @@ function buildBriefing(f) {
 
 // Módulo do Tipo de Projeto: o que construir, e o que falta só para este tipo
 const MODULES = {
-  site: (f) => ({
-    texto: `## O que construir: Site
+  site: (f) => {
+    const recebePedidos = f.atendimento.includes('entrega') || f.atendimento.includes('retirada');
+    const regras = [
+      f.atendimento.length > 0 && `- Mostre as formas de atendimento confirmadas: ${joinPt(f.atendimento)}.`,
+      recebePedidos && '- A chamada do WhatsApp convida a pedir ("Peça pelo WhatsApp"). Não crie carrinho nem sistema de pedidos: o pedido acontece na conversa.',
+      f.presenca.length > 0 && '- Inclua os links de presença online do briefing.',
+      !f.mapsLink && '- Sem link do Google Maps, não crie botão de mapa.',
+    ].filter(Boolean);
+    return {
+      texto: [
+        `## O que construir: Site
 Uma landing page, uma página só, para quem procura o negócio pela primeira vez.
 - Abertura que diga em uma frase o que o negócio é e leve ao WhatsApp.
 - Seções, na ordem que fizer mais sentido, só quando houver dado para elas: diferenciais, catálogo, depoimentos, localização com horários.
-- Mobile em primeiro lugar, acessível e rápida.${f.mapsLink ? '' : '\n- Sem link do Google Maps, não crie botão de mapa.'}`,
-    pendencias: [],
-  }),
+- Mobile em primeiro lugar, acessível e rápida.`,
+        ...regras,
+      ].join('\n'),
+      pendencias: [],
+    };
+  },
   agenda: (f) => ({
     texto: `## O que construir: Agenda
 Um agendamento online para os clientes do negócio, com um painel para o dono.

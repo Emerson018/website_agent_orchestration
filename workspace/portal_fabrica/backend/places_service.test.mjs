@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   synthesizeAmenitiesAndInfo,
   extractWebResults,
+  placesPhotoUrl,
+  legacyPlacesPhotoUrl,
   extractPlaceQueryFromUrl,
   synthesizeSentimentAndPitch,
   buildLeadDossier,
@@ -66,11 +68,13 @@ test('places_service - high-resolution photo gallery capacity and hours matrix s
     id: index + 1,
     width: p.widthPx,
     height: p.heightPx,
-    photo_url: `https://places.googleapis.com/v1/${p.name}/media?maxWidthPx=1200&key=${cleanKey}`,
+    photo_url: placesPhotoUrl(p.name),
   }));
 
   assert.equal(parsedPhotos.length, 6, 'Must cap photos at 6 high-resolution assets');
   assert.ok(parsedPhotos[0].photo_url.includes('maxWidthPx=1200'), 'Must use 1200px max width for high-res');
+  assert.ok(!parsedPhotos[0].photo_url.includes('key='), 'The saved link never carries the Google key');
+  assert.ok(!legacyPlacesPhotoUrl('abc').includes('key='), 'The legacy link never carries the Google key');
   assert.equal(parsedPhotos[5].id, 6);
 });
 

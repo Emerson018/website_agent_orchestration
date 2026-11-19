@@ -59,6 +59,13 @@ export function MasterPromptPanel({ leadId, additionalData, tiposProjeto, status
   const edited = drafts[active] !== undefined && drafts[active] !== original;
   const changed = prompt ? promptChangesSince(additionalData, prompt.geradoEm) : [];
 
+  // Refazer substitui o texto da aba: confirma antes de descartar uma edição do operador
+  function redo() {
+    if (edited && !window.confirm('Refazer este prompt descarta a sua edição. Continuar?')) return;
+    setDrafts((prev) => ({ ...prev, [active]: undefined }));
+    void rebuild(active);
+  }
+
   async function rebuild(tipo: MasterPromptKey) {
     setRebuilding(tipo);
     try {
@@ -155,6 +162,10 @@ export function MasterPromptPanel({ leadId, additionalData, tiposProjeto, status
           <Button onClick={copy} disabled={!text} className="w-full gap-2">
             {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
             {copied ? 'Prompt Mestre copiado' : `Copiar Prompt Mestre de ${labelOf(active)}`}
+          </Button>
+          <Button variant="outline" onClick={redo} disabled={rebuilding !== null} className="w-full gap-2">
+            <RefreshCw className={`size-4 ${rebuilding === active ? 'animate-spin' : ''}`} />
+            Refazer prompt
           </Button>
         </>
       ) : (

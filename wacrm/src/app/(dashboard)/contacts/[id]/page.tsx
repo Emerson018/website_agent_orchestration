@@ -51,6 +51,8 @@ import { DisqualifiedBanner, DisqualifyButton } from '@/components/contacts/disq
 import type { Disqualification } from '@/lib/contacts/disqualification';
 import { computeLeadSteps, nextLeadStep, type LeadStep, type StepKey } from '@/lib/contacts/lead-steps';
 import { projectTypesOf } from '@/lib/contacts/project-types';
+import { openingHoursOf } from '@/lib/contacts/opening-hours';
+import { DownloadPhotosButton, dossierPhotoUrl } from '@/components/contacts/download-photos-button';
 import { MasterPromptPanel } from '@/components/contacts/master-prompt-panel';
 import { ClientDesignCard } from '@/components/contacts/client-design-card';
 import { designDoClienteOf } from '@/lib/contacts/master-prompts';
@@ -664,19 +666,22 @@ export default function ContactProfilePage() {
                 <div className="space-y-6">
                   {dossie.fotos && dossie.fotos.length > 0 && (
                     <div className="space-y-2">
-                      <h3 className="text-xs font-semibold text-muted-foreground">Fotos do Google Maps ({dossie.fotos.length})</h3>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="text-xs font-semibold text-muted-foreground">Fotos do Google Maps ({dossie.fotos.length})</h3>
+                        <DownloadPhotosButton leadId={contact.id} />
+                      </div>
                       <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
                         {dossie.fotos.slice(0, 6).map((foto: any, index: number) => (
                           <button
                             key={index}
                             type="button"
-                            onClick={() => setActivePhoto(foto.photo_url)}
+                            onClick={() => setActivePhoto(dossierPhotoUrl(contact.id, index))}
                             className="group relative aspect-square overflow-hidden rounded-lg bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             aria-label={`Ampliar foto ${index + 1} de ${companyName}`}
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
-                              src={foto.photo_url}
+                              src={dossierPhotoUrl(contact.id, index)}
                               alt=""
                               className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                               loading="lazy"
@@ -720,9 +725,9 @@ export default function ContactProfilePage() {
                           </span>
                         )}
                       </div>
-                      {dossie.horarios_funcionamento && dossie.horarios_funcionamento.length > 0 ? (
+                      {openingHoursOf(dossie).length > 0 ? (
                         <ul className="space-y-0.5 text-sm">
-                          {dossie.horarios_funcionamento.map((horario: string, idx: number) => (
+                          {openingHoursOf(dossie).map((horario: string, idx: number) => (
                             <li key={idx}>{horario}</li>
                           ))}
                         </ul>

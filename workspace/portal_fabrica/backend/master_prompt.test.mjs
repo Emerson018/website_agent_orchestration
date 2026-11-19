@@ -16,7 +16,16 @@ const FULL = {
     google_maps_url: 'https://maps.app.goo.gl/aurora123',
     horarios_funcionamento: ['Segunda: 08:00–18:00', 'Sábado: 09:00–14:00'],
     elogios_destaque: [{ text: 'Melhor café filtrado da cidade', author: 'Ana' }],
+    modalidades_atendimento: { permite_entrega: true, permite_retirada: true, permite_consumo_local: false },
+    site_oficial: 'https://cafeaurora.com.br',
+    link_cardapio: 'https://cafeaurora.com.br/cardapio',
+    resultados_web: [
+      { tipo: 'facebook', url: 'https://facebook.com/cafeaurora' },
+      { tipo: 'ifood', url: 'https://ifood.com.br/delivery/cafe-aurora' },
+    ],
+    informacoes_relevantes: { faixa_preco: 'Moderado ($$)', comodidades: ['Aceita cartões de crédito/débito', 'Estacionamento gratuito', 'Aceita reservas'] },
   },
+  instagram: 'https://www.instagram.com/cafe.aurora',
   diagnostico: {
     resumo_empresa: 'Cafeteria de cafés especiais com coworking.',
     estilo_visual_vibe: 'Escandinavo minimalista, madeira clara.',
@@ -69,7 +78,7 @@ test('With full data every fact appears once and map actions use the official Ma
   assert.equal(count('Melhor café filtrado da cidade'), 1);
   assert.equal(count('### Coado'), 1);
   assert.ok(prompt.includes('4.9★ em 85 avaliações'));
-  assert.ok(prompt.includes('Sábado: 09:00–14:00'));
+  assert.ok(prompt.includes('Sábado: 09:00 até 14:00'));
   assert.ok(prompt.includes('Toda ação de mapa'));
   assert.equal(count('https://maps.app.goo.gl/aurora123'), 2, 'Maps link in the data and in the map rule');
   assert.ok(!prompt.includes('google.com/maps/search'), 'never a generic Maps search');
@@ -181,6 +190,74 @@ test('The Agenda gap names the services whose duration is unknown, from the cata
 
   const semCatalogo = buildMasterPrompts(EMPTY).agenda;
   assert.match(semCatalogo, /Duração de cada serviço/);
+});
+
+test('Grouped hours: uses the saved summary and computes it for old leads', () => {
+  const raw = ['segunda-feira: 11:00 – 23:00', 'terça-feira: 11:00 – 23:00', 'quarta-feira: 11:00 – 23:00'];
+  const oldLead = buildMasterPrompt({ ...EMPTY, dossie: { horarios_funcionamento: raw } });
+  assert.ok(oldLead.includes('- Segunda a quarta: 11:00 até 23:00'));
+  assert.ok(!oldLead.includes('segunda-feira'));
+
+  const saved = buildMasterPrompt({ ...EMPTY, dossie: { horarios_funcionamento: raw, horarios_resumidos: ['Todos os dias: 09:00 até 18:00'] } });
+  assert.ok(saved.includes('- Todos os dias: 09:00 até 18:00'));
+});
+
+test('Service modalities: states only what Google confirmed, otherwise it is a gap', () => {
+  const prompt = buildMasterPrompt(FULL);
+  assert.ok(prompt.includes('**Atendimento:** entrega e retirada'));
+  assert.ok(!/consumo no local/i.test(prompt), 'an unconfirmed modality is not mentioned');
+  assert.ok(!/não faz entrega|não oferece entrega/i.test(prompt));
+
+  const gaps = buildMasterPrompt(EMPTY);
+  assert.ok(!gaps.includes('**Atendimento:**'));
+  assert.match(gaps.slice(gaps.indexOf('## Pendências do Prompt')), /Formas de atendimento/);
+});
+
+test('The Site module shows the confirmed modalities and invites orders on WhatsApp, with no order system', () => {
+  const site = moduleOf(buildMasterPrompt(FULL));
+  assert.match(site, /formas de atendimento confirmadas: entrega e retirada/);
+  assert.match(site, /Peça pelo WhatsApp/);
+  assert.match(site, /Não crie carrinho nem sistema de pedidos/);
+
+  const dineIn = moduleOf(buildMasterPrompt({ ...FULL, dossie: { ...FULL.dossie, modalidades_atendimento: { permite_consumo_local: true } } }));
+  assert.match(dineIn, /formas de atendimento confirmadas: consumo no local/);
+  assert.ok(!dineIn.includes('Peça pelo WhatsApp'), 'no ordering call without delivery or pickup');
+});
+
+test('Instagram, online links and useful information reach the Briefing', () => {
+  const prompt = buildMasterPrompt(FULL);
+  for (const expected of [
+    '**Instagram:** https://www.instagram.com/cafe.aurora',
+    '**Site atual:** https://cafeaurora.com.br',
+    '**Cardápio digital:** https://cafeaurora.com.br/cardapio',
+    '**Facebook:** https://facebook.com/cafeaurora',
+    '**iFood:** https://ifood.com.br/delivery/cafe-aurora',
+    '- Aceita cartões de crédito/débito',
+    '- Estacionamento gratuito',
+    '- Aceita reservas',
+    '- Faixa de preço: Moderado ($$)',
+  ]) {
+    assert.ok(prompt.includes(expected), expected);
+  }
+  assert.match(moduleOf(prompt), /links de presença online/);
+
+  const gaps = buildMasterPrompt(EMPTY);
+  assert.ok(!gaps.includes('### Presença online') && !gaps.includes('### Informações úteis'));
+  assert.ok(!gaps.includes('Faixa de preço'));
+  assert.match(gaps.slice(gaps.indexOf('## Pendências do Prompt')), /Instagram do negócio/);
+});
+
+test('Testimonials also come from the positive reviews of the current dossier; internal notes stay out', () => {
+  const prompt = buildMasterPrompt({
+    ...EMPTY,
+    dossie: {
+      avaliacoes_positivas: [{ text: 'Atendimento impecável', author: 'Bruno' }],
+      dores_destaque: ['Fila demorada na entrada'],
+      pitch_comercial_sugerido: 'Oi, vi que sua fila demora',
+    },
+  });
+  assert.ok(prompt.includes('Atendimento impecável'));
+  assert.ok(!prompt.includes('Fila demorada') && !prompt.includes('Oi, vi que sua fila'));
 });
 
 test('Master Prompt ends as a Prompt de Especificação: interview, specify, split, do not build yet', () => {

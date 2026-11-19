@@ -1,3 +1,4 @@
+import { summarizeOpeningHours } from './opening_hours.js';
 import fetch from 'node-fetch';
 
 /**
@@ -55,6 +56,11 @@ export async function extractPlaceQueryFromUrl(input) {
     return input;
   }
 }
+
+// Links das fotos salvos no dossiê: sem a chave do Google, que o servidor acrescenta ao buscar a foto
+export const placesPhotoUrl = (photoName) => `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=1200`;
+export const legacyPlacesPhotoUrl = (photoReference) =>
+  `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1200&photoreference=${photoReference}`;
 
 /**
  * Sintetiza opções operacionais de atendimento (entrega, consumo no local, retirada).
@@ -637,7 +643,7 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
             id: index + 1,
             width: photoRef.widthPx || 1200,
             height: photoRef.heightPx || 800,
-            photo_url: `https://places.googleapis.com/v1/${photoRef.name}/media?maxWidthPx=1200&key=${cleanKey}`,
+            photo_url: placesPhotoUrl(photoRef.name),
             attribution: photoRef.authorAttributions?.[0]?.displayName || '',
             tipo: 'foto_normal',
           }))
@@ -689,6 +695,7 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
         nota: place.rating || null,
         total_avaliacoes: place.userRatingCount || 0,
         horarios_funcionamento: place.regularOpeningHours?.weekdayDescriptions || [],
+        horarios_resumidos: summarizeOpeningHours(place.regularOpeningHours?.weekdayDescriptions),
         aberto_agora: Boolean(place.regularOpeningHours?.openNow),
         fotos: classifiedPhotos,
         categorias: place.types || [],
@@ -791,7 +798,7 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
           id: index + 1,
           width: photoRef.width,
           height: photoRef.height,
-          photo_url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1200&photoreference=${photoRef.photo_reference}&key=${cleanKey}`,
+          photo_url: legacyPlacesPhotoUrl(photoRef.photo_reference),
           attribution: photoRef.html_attributions?.[0] || '',
           tipo: 'foto_normal',
         }))
@@ -826,6 +833,7 @@ export async function buildLeadDossier(queryOrUrl, apiKey = process.env.GOOGLE_M
       nota: placeDetails.rating || null,
       total_avaliacoes: placeDetails.user_ratings_total || 0,
       horarios_funcionamento: placeDetails.opening_hours?.weekday_text || [],
+      horarios_resumidos: summarizeOpeningHours(placeDetails.opening_hours?.weekday_text),
       aberto_agora: Boolean(placeDetails.opening_hours?.open_now),
       fotos: classifiedPhotos,
       categorias: placeDetails.types || [],

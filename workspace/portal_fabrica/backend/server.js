@@ -14,6 +14,8 @@ import { extractCatalog } from './catalog_extraction.js';
 import { geminiErrorStatus } from './gemini_client.js';
 import { PROJECT_TYPE_KEYS, normalizeProjectTypes } from './project_types.js';
 import { buildMasterPrompts } from './master_prompt.js';
+import { parseInstagram, resolveInstagram } from './instagram.js';
+import { buildDossierPhotosZip, downloadDossierPhoto, zipFileName } from './dossier_photos.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -218,7 +220,9 @@ app.post('/api/leads', async (req, res) => {
 
     const phone = req.body.phone || client_info?.phone || 'Não informado';
     const email = req.body.email || client_info?.email || 'Não informado';
-    const website = raw_website || site || (reference_links?.[0]?.url) || null;
+    // "Site ou Instagram" no formulário: um @perfil ou link do Instagram não é o site do negócio
+    const instagramInformado = parseInstagram(raw_website || site);
+    const website = instagramInformado ? null : raw_website || site || reference_links?.[0]?.url || null;
 
     const companyName =
       company ||
@@ -235,6 +239,7 @@ app.post('/api/leads', async (req, res) => {
     }
 
     let finalAdditionalData = additional_data ? { ...additional_data } : {};
+    if (instagramInformado) finalAdditionalData.instagram = instagramInformado;
     if (website) {
       const existingLinks = Array.isArray(finalAdditionalData.links) ? [...finalAdditionalData.links] : [];
       if (!existingLinks.some((l) => l.url === website)) {
@@ -642,7 +647,16 @@ async function findContact(id) {
 // O que o Prompt Mestre lê do contato (o diagnóstico entra à parte, quando já existe)
 function masterPromptInputFrom(contact, additionalData) {
   const dossie = additionalData.dossie || null;
+  const website = contact.website || '';
   return {
+    instagram: resolveInstagram({
+      instagram: additionalData.instagram,
+      website,
+      links: additionalData.links,
+      resultadosWeb: dossie?.resultados_web,
+    }),
+    // O campo do contato às vezes guarda o Instagram ou o link do Maps: esses não são o site do negócio
+    siteAtual: parseInstagram(website) || /maps|goo\.gl/i.test(website) ? '' : website,
     companyName: contact.company || contact.name || dossie?.nome_verificado || 'Empresa',
     dossie,
     scrapedData: additionalData.scraped_data || null,
@@ -856,6 +870,61 @@ app.put('/api/leads/:id/extracted-catalog', async (req, res) => {
   } catch (err) {
     console.error(`[Catalogo] Erro ao salvar edição do catálogo do lead ${id}:`, err.message);
     return res.status(500).json({ error: 'Erro ao salvar o catálogo.', details: err.message });
+  }
+});
+
+// Entrega uma foto do dossiê pela posição, para o navegador nunca receber o link do Google com a chave
+app.get('/api/leads/:id/photos/:index', async (req, res) => {
+  const { id, index } = req.params;
+  try {
+    const contact = await findContact(id);
+    const foto = /^\d+$/.test(index) ? contact?.additional_data?.dossie?.fotos?.[Number(index)] : null;
+    if (!foto?.photo_url) {
+      return res.status(404).json({ error: 'Foto não encontrada.' });
+    }
+
+    const photo = await downloadDossierPhoto(foto.photo_url);
+    if (!photo) {
+      return res.status(502).json({ error: 'Não foi possível carregar a foto do Google.' });
+    }
+
+    res.set({ 'Content-Type': photo.contentType, 'Cache-Control': 'private, max-age=86400' });
+    return res.send(photo.data);
+  } catch (err) {
+    console.error(`[Fotos] Erro ao carregar a foto ${index} do lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao carregar a foto.' });
+  }
+});
+
+// Baixa as fotos do dossiê num ZIP. Foto que falhar fica de fora e é contada no cabeçalho X-Fotos-Ignoradas.
+app.get('/api/leads/:id/photos.zip', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const contact = await findContact(id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Lead ou contato não encontrado no sistema.' });
+    }
+
+    const dossie = contact.additional_data?.dossie;
+    if (!Array.isArray(dossie?.fotos) || dossie.fotos.length === 0) {
+      return res.status(404).json({ error: 'Este lead não tem fotos no dossiê.' });
+    }
+
+    const { zip, skipped } = await buildDossierPhotosZip({ fotos: dossie.fotos });
+    if (!zip) {
+      return res.status(502).json({ error: 'Não foi possível baixar as fotos do Google. Consulte o Google Maps de novo e tente outra vez.' });
+    }
+
+    const fileName = zipFileName(contact.company || dossie.nome_verificado || contact.name);
+    res.set({
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+      'X-Fotos-Ignoradas': String(skipped),
+    });
+    return res.send(zip);
+  } catch (err) {
+    console.error(`[Fotos] Erro ao montar o ZIP do lead ${id}:`, err.message);
+    return res.status(500).json({ error: 'Erro ao preparar as fotos.' });
   }
 });
 
