@@ -25,8 +25,10 @@ export async function middleware(request: NextRequest) {
       }
     )
 
-    const { data } = await supabase.auth.getUser()
-    user = data?.user ?? null
+    // getClaims valida o JWT localmente (chave assinada em cache), sem ida à rede a cada
+    // requisição, e renova a sessão vencida. Rotas sensíveis continuam usando getUser().
+    const { data } = await supabase.auth.getClaims()
+    user = data?.claims ? { id: data.claims.sub, email: data.claims.email } : null
   } catch (err) {
     // Supabase network error or offline mode fallback
   }
@@ -83,6 +85,8 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Fora do middleware: arquivos estáticos e as rotas de API, que validam o usuário por conta
+    // própria. /api/whatsapp fica aqui porque o bloqueio de não autenticados dela é este.
+    '/((?!_next/static|_next/image|favicon.ico|api/(?!whatsapp/)|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

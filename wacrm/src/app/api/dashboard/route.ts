@@ -21,6 +21,11 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const rangeDays = parseInt(searchParams.get('range') || '30', 10);
 
+    // Trocar o período do gráfico só precisa da série
+    if (searchParams.get('only') === 'series') {
+      return NextResponse.json({ series: await loadConversationsSeries(supabase, rangeDays) });
+    }
+
     const [metrics, series, responseTime, activity] = await Promise.all([
       loadMetrics(supabase),
       loadConversationsSeries(supabase, rangeDays),

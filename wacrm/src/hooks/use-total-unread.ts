@@ -28,7 +28,8 @@ export function useTotalUnread(): number {
     (async () => {
       const { data, error } = await supabase
         .from("conversations")
-        .select("id, unread_count");
+        .select("id, unread_count")
+        .gt("unread_count", 0);
       if (cancelled || error || !data) return;
 
       const map = new Map<string, number>();

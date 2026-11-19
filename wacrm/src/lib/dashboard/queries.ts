@@ -16,14 +16,29 @@ import type {
 } from './types'
 
 // ------------------------------------------------------------
-// All client-side aggregation. RLS scopes every query to the
-// signed-in user automatically, so we never pass user_id explicitly
-// here. Perf is acceptable for the current scale (low thousands of
-// messages) — if a tenant's dataset outgrows this, we'd migrate the
-// heavy aggregations to SQL RPCs. Noted in the PR.
+// RLS scopes every query to the signed-in user automatically, so we
+// never pass user_id explicitly here. The two heavy aggregations run
+// in SQL (migration 027); until that migration is applied they fall
+// back to reading every page of messages and aggregating here.
 // ------------------------------------------------------------
 
 type DB = SupabaseClient
+
+const PAGE_SIZE = 1000
+
+/** Reads all rows page by page, so PostgREST's row cap never cuts the result. */
+async function fetchAllPages<T>(
+  readPage: (from: number, to: number) => PromiseLike<{ data: unknown; error: unknown }>,
+): Promise<T[]> {
+  const rows: T[] = []
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await readPage(from, from + PAGE_SIZE - 1)
+    if (error) throw error
+    const page = (data ?? []) as T[]
+    rows.push(...page)
+    if (page.length < PAGE_SIZE) return rows
+  }
+}
 
 // --- 1. Metric cards ---------------------------------------------------
 
@@ -94,23 +109,35 @@ export async function loadConversationsSeries(
   rangeDays: number,
 ): Promise<ConversationsSeriesPoint[]> {
   const start = daysAgoStart(rangeDays - 1).toISOString()
-  const { data, error } = await db
-    .from('messages')
-    .select('created_at, sender_type')
-    .gte('created_at', start)
-    .order('created_at', { ascending: true })
-  if (error) throw error
-
   const keys = lastNDayKeys(rangeDays)
   const buckets = new Map<string, { incoming: number; outgoing: number }>()
   for (const k of keys) buckets.set(k, { incoming: 0, outgoing: 0 })
 
-  for (const row of (data ?? []) as { created_at: string; sender_type: string }[]) {
-    const key = localDayKey(row.created_at)
-    const bucket = buckets.get(key)
-    if (!bucket) continue
-    if (row.sender_type === 'customer') bucket.incoming += 1
-    else bucket.outgoing += 1 // agent + bot both count as outgoing
+  const { data, error } = await db.rpc('dashboard_message_series', {
+    p_start: start,
+    p_time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  })
+
+  if (!error) {
+    for (const row of (data ?? []) as ConversationsSeriesPoint[]) {
+      if (buckets.has(row.day)) buckets.set(row.day, { incoming: row.incoming, outgoing: row.outgoing })
+    }
+  } else {
+    const rows = await fetchAllPages<{ created_at: string; sender_type: string }>((from, to) =>
+      db
+        .from('messages')
+        .select('created_at, sender_type')
+        .gte('created_at', start)
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
+        .range(from, to),
+    )
+    for (const row of rows) {
+      const bucket = buckets.get(localDayKey(row.created_at))
+      if (!bucket) continue
+      if (row.sender_type === 'customer') bucket.incoming += 1
+      else bucket.outgoing += 1 // agent + bot both count as outgoing
+    }
   }
 
   return keys.map((day) => ({ day, ...(buckets.get(day) ?? { incoming: 0, outgoing: 0 }) }))
@@ -118,37 +145,21 @@ export async function loadConversationsSeries(
 
 // --- 3. Response time by day of week ----------------------------------
 
-export async function loadResponseTime(db: DB): Promise<ResponseTimeSummary> {
-  // Pull the last 14 days of messages in one shot, then walk per
-  // conversation to find each "first inbound" → "first subsequent
-  // outbound" pair. 14 days gives us both "this week" + "last week"
-  // with enough overlap if the user opens the dashboard late on a
-  // Monday.
-  const fourteenDaysAgo = daysAgoStart(13).toISOString()
-  const { data, error } = await db
-    .from('messages')
-    .select('conversation_id, sender_type, created_at')
-    .gte('created_at', fourteenDaysAgo)
-    .order('conversation_id', { ascending: true })
-    .order('created_at', { ascending: true })
-  if (error) throw error
+interface ResponseSample {
+  customerAt: Date
+  responseAt: Date
+}
 
-  const rows = (data ?? []) as {
-    conversation_id: string
-    sender_type: string
-    created_at: string
-  }[]
-
-  // Group per conversation, pair unreplied customer messages with the
-  // next outbound message from the agent/bot. A single customer message
-  // can only count once (avoids inflating averages if the customer
-  // double-messages while the agent takes time to reply).
-  interface Sample {
-    customerAt: Date
-    responseAt: Date
-  }
-  const samples: Sample[] = []
-
+/**
+ * Pairs unreplied customer messages with the next outbound message from
+ * the agent/bot. A single customer message can only count once (avoids
+ * inflating averages if the customer double-messages while the agent
+ * takes time to reply). Same rule as dashboard_response_samples in SQL.
+ */
+function pairResponseSamples(
+  rows: { conversation_id: string; sender_type: string; created_at: string }[],
+): ResponseSample[] {
+  const samples: ResponseSample[] = []
   let currentConv = ''
   let pendingCustomer: Date | null = null
   for (const row of rows) {
@@ -164,6 +175,34 @@ export async function loadResponseTime(db: DB): Promise<ResponseTimeSummary> {
       pendingCustomer = null
     }
   }
+  return samples
+}
+
+async function loadResponseSamples(db: DB, start: string): Promise<ResponseSample[]> {
+  const { data, error } = await db.rpc('dashboard_response_samples', { p_start: start })
+  if (!error) {
+    return ((data ?? []) as { customer_at: string; response_at: string }[]).map((row) => ({
+      customerAt: new Date(row.customer_at),
+      responseAt: new Date(row.response_at),
+    }))
+  }
+  const rows = await fetchAllPages<{ conversation_id: string; sender_type: string; created_at: string }>((from, to) =>
+    db
+      .from('messages')
+      .select('conversation_id, sender_type, created_at')
+      .gte('created_at', start)
+      .order('conversation_id', { ascending: true })
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(from, to),
+  )
+  return pairResponseSamples(rows)
+}
+
+export async function loadResponseTime(db: DB): Promise<ResponseTimeSummary> {
+  // The last 14 days give us both "this week" + "last week" with enough
+  // overlap if the user opens the dashboard late on a Monday.
+  const samples = await loadResponseSamples(db, daysAgoStart(13).toISOString())
 
   const now = new Date()
   const thisWeekStart = daysAgoStart(mondayIndex(now))

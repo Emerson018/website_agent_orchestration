@@ -269,8 +269,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return;
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // A sessão inicial já é tratada por init(); repetir aqui buscaria o perfil duas vezes
+      if (!mounted || event === "INITIAL_SESSION") return;
       const currentUser = session?.user ?? null;
 
       if (currentUser) {

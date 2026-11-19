@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import {
   MessageSquare,
@@ -25,8 +26,13 @@ import { MetricCard } from '@/components/dashboard/metric-card'
 import { SkeletonCard } from '@/components/dashboard/skeleton'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { ConversationsChart } from '@/components/dashboard/conversations-chart'
-import { ResponseTimeChart } from '@/components/dashboard/response-time-chart'
 import { ActivityFeed } from '@/components/dashboard/activity-feed'
+
+// O gráfico usa recharts, biblioteca pesada: carrega depois do resto da tela
+const ResponseTimeChart = dynamic(
+  () => import('@/components/dashboard/response-time-chart').then((m) => m.ResponseTimeChart),
+  { ssr: false, loading: () => <SkeletonCard className="h-72" /> },
+)
 
 type RangeDays = 7 | 30 | 90
 
@@ -89,7 +95,7 @@ export default function DashboardPage() {
       setRange(r)
       if (series[r] !== null) return
       setSeriesLoading(true)
-      fetch(`/api/dashboard?range=${r}`)
+      fetch(`/api/dashboard?range=${r}&only=series`)
         .then((res) => res.json())
         .then((data) => {
           if (data.series) {
