@@ -159,11 +159,24 @@ function useScrollReveal() {
 const stagger = (i) => ({ '--i': i });
 
 // Tipos de projeto do formulário (múltipla escolha). As chaves são as que o backend aceita.
-// "Painel de resultados" é o nome do Dashboard para o cliente (sem jargão, PRODUCT.md).
+// `hint` aparece ao passar o mouse (ou focar pelo teclado) e só descreve o que o
+// Master Prompt manda construir para cada tipo (backend/master_prompt.js).
 const PROJECT_TYPE_OPTIONS = [
-  { key: 'site', label: 'Site' },
-  { key: 'agenda', label: 'Agenda' },
-  { key: 'dashboard', label: 'Painel de resultados' }
+  {
+    key: 'site',
+    label: 'Site',
+    hint: 'Uma página do seu negócio, criada do zero: mostra o que você faz e leva o cliente direto para o seu WhatsApp.'
+  },
+  {
+    key: 'agenda',
+    label: 'Agenda',
+    hint: 'Seus clientes escolhem o serviço, o dia e um horário livre pelo celular. Você confirma ou cancela cada um num painel só seu.'
+  },
+  {
+    key: 'dashboard',
+    label: 'Dashboard',
+    hint: 'Um painel só seu para acompanhar os números do negócio, como o movimento de cada dia e os serviços mais procurados.'
+  }
 ];
 
 // "site", "site e agenda", "site, app mobile e agenda"
@@ -391,13 +404,14 @@ export default function LandingPage() {
                       {PROJECT_TYPE_OPTIONS.map((option) => {
                         const checked = formData.projectTypes.includes(option.key);
                         return (
-                          <label key={option.key} className="press relative cursor-pointer">
+                          <label key={option.key} className="group press relative cursor-pointer">
                             <input
                               type="checkbox"
                               name="project_types"
                               value={option.key}
                               checked={checked}
                               onChange={handleProjectTypeToggle(option.key)}
+                              aria-describedby={`tipo-${option.key}-dica`}
                               className="peer absolute inset-0 cursor-pointer opacity-0"
                             />
                             <span className="inline-flex items-center gap-1.5 rounded-full border border-line-strong px-3.5 py-1.5 text-sm text-bone-muted transition-colors peer-hover:border-bone-muted peer-hover:text-bone peer-checked:border-signal peer-checked:bg-signal/10 peer-checked:text-bone peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-signal">
@@ -412,6 +426,16 @@ export default function LandingPage() {
                                 />
                               </span>
                               {option.label}
+                            </span>
+                            {/* Dica: plaqueta de hairline sobre o chip, ligada ao marcador por um filamento */}
+                            <span
+                              id={`tipo-${option.key}-dica`}
+                              role="tooltip"
+                              className="tipo-dica pointer-events-none absolute bottom-full left-0 z-20 mb-3 block w-[15.5rem] border border-line-strong bg-void px-3.5 py-3 text-left text-xs leading-relaxed text-bone-muted group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-hover:blur-none peer-focus-visible:visible peer-focus-visible:translate-y-0 peer-focus-visible:opacity-100 peer-focus-visible:blur-none"
+                            >
+                              <span className="mb-1 block font-medium text-bone">{option.label}</span>
+                              {option.hint}
+                              <span aria-hidden className="absolute left-[1.3rem] top-full h-3 w-px bg-line-strong" />
                             </span>
                           </label>
                         );

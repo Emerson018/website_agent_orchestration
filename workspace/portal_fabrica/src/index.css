@@ -356,6 +356,29 @@
   transform: scale(0.97);
 }
 
+/* Dica dos tipos de projeto: escondida até o hover ou o foco pelo teclado (os
+   utilitários group-hover / peer-focus-visible no JSX a revelam). Fica na camada
+   components para que esses utilitários vençam. Sobe 4px e perde o desfoque,
+   como os pontos da escultura acendendo; some na hora certa via visibility. */
+@layer components {
+  .tipo-dica {
+    visibility: hidden;
+    opacity: 0;
+    translate: 0 4px;
+    filter: blur(2px);
+    transition:
+      opacity 180ms cubic-bezier(0.23, 1, 0.32, 1),
+      translate 220ms cubic-bezier(0.23, 1, 0.32, 1),
+      filter 180ms cubic-bezier(0.23, 1, 0.32, 1),
+      visibility 0s linear 180ms;
+  }
+
+  .group:hover .tipo-dica,
+  .peer:focus-visible ~ .tipo-dica {
+    transition-delay: 0s;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -376,6 +399,18 @@
 
   .press:active:not(:disabled) {
     transform: none;
+  }
+
+  /* Dica: só esmaece, sem subir nem desfocar */
+  .tipo-dica {
+    translate: none !important;
+    filter: none !important;
+    transition: opacity 150ms ease, visibility 0s linear 150ms !important;
+  }
+
+  .group:hover .tipo-dica,
+  .peer:focus-visible ~ .tipo-dica {
+    transition-delay: 0s !important;
   }
 
   /* Seções: sem subir, desenhar ou recortar; só esmaecem juntas */

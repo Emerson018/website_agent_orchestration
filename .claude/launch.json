@@ -4,26 +4,99 @@
     {
       "name": "orquestrador-ia",
       "runtimeExecutable": ".venv/Scripts/python.exe",
-      "runtimeArgs": ["-u", "-m", "uvicorn", "ai_software_factory.main:app_api", "--host", "0.0.0.0", "--port", "8000"],
+      "runtimeArgs": [
+        "-u",
+        "-m",
+        "uvicorn",
+        "ai_software_factory.main:app_api",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ],
       "port": 8000
     },
     {
       "name": "portal-backend",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "workspace/portal_fabrica/backend", "run", "dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "workspace/portal_fabrica/backend",
+        "run",
+        "dev"
+      ],
       "port": 5000
     },
     {
       "name": "portal-frontend",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "workspace/portal_fabrica", "run", "dev", "--", "--port", "5180", "--strictPort"],
+      "runtimeArgs": [
+        "--prefix",
+        "workspace/portal_fabrica",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5180",
+        "--strictPort"
+      ],
       "port": 5180
     },
     {
       "name": "wacrm",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "wacrm", "run", "dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "wacrm",
+        "run",
+        "dev"
+      ],
       "port": 3000
+    },
+    {
+      "name": "site-20barranove",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "workspace/20barranove/frontend",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5175",
+        "--strictPort"
+      ],
+      "port": 5175
+    },
+    {
+      "name": "site-campeiro",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "workspace/campeiro_fogo/frontend",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5174",
+        "--strictPort"
+      ],
+      "port": 5174
+    },
+    {
+      "name": "site-marcianos",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "workspace/Marcianos/frontend",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5177",
+        "--strictPort"
+      ],
+      "port": 5177
     }
   ]
 }
