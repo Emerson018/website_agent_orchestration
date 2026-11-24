@@ -1,42 +1,438 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
-html, body, #root {
-  background-color: #020617;
+/* Dois mundos com as mesmas regras:
+   - Nave (widget de reserva): céu noturno e os três neons do logo, cada um com um trabalho.
+     ciano = ação, verde alienígena = selecionado, laranja = o único destaque quente.
+   - Painel (dono): fundo claro quente, menta como o verde alienígena, sombra só no que flutua. */
+@theme {
+  --font-display: "Exo 2 Variable", "Exo 2", ui-sans-serif, system-ui, sans-serif;
+  --font-panel: "Nunito Variable", "Nunito", ui-rounded, ui-sans-serif, system-ui, sans-serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --color-ship-void: #070a18;
+  --color-ship-hull: #0e1328;
+  --color-ship-hull-raised: #161d3a;
+  --color-ship-line: rgb(150 170 255 / 0.16);
+  --color-ship-line-strong: rgb(150 170 255 / 0.32);
+  --color-ship-ink: #eef2ff;
+  --color-ship-ink-soft: #aab4d8;
+  --color-ship-cyan: #3dd9f5;
+  --color-ship-cyan-hover: #7ce6fa;
+  --color-ship-on-cyan: #04121a;
+  --color-ship-green: #7cf06b;
+  --color-ship-on-green: #062107;
+  --color-ship-orange: #ff9a3c;
+  --color-ship-danger: #ff8a7a;
+
+  --color-panel-bg: #f4f2ec;
+  --color-panel-sheet: #fffefb;
+  --color-panel-sunken: #ece9e1;
+  --color-panel-line: #e2ddd1;
+  --color-panel-line-strong: #cfc8b8;
+  --color-panel-ink: #1d2826;
+  --color-panel-ink-soft: #56625e;
+  --color-mint: #bfebdd;
+  --color-mint-soft: #e3f6ef;
+  --color-mint-strong: #0f6b52;
+  --color-mint-deep: #0a5440;
+
+  --color-st-confirmada-bg: #d7f3e8;
+  --color-st-confirmada-ink: #0f6b52;
+  --color-st-pre-bg: #fbefc7;
+  --color-st-pre-ink: #6f4b00;
+  --color-st-chegou-bg: #dce8fb;
+  --color-st-chegou-ink: #1d4f91;
+  --color-st-naoveio-bg: #f9deda;
+  --color-st-naoveio-ink: #962a1d;
+  --color-st-cancelada-bg: #ebe8e1;
+  --color-st-cancelada-ink: #57564f;
+
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+html,
+body,
+#root {
   margin: 0;
   padding: 0;
   width: 100%;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
-/* Custom Scrollbar Styling (Modern Dark Indigo Theme) */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(99, 102, 241, 0.25) rgba(2, 6, 23, 0.3);
+/* O fundo atrás da página (rolagem elástica, bordas) acompanha o mundo da tela */
+html {
+  background-color: var(--color-ship-void);
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+html:has(.panel-root) {
+  background-color: var(--color-panel-bg);
 }
 
-::-webkit-scrollbar-track {
-  background: rgba(2, 6, 23, 0.3);
-  border-radius: 10px;
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.25);
-  border-radius: 10px;
-  border: 1px solid transparent;
-  background-clip: padding-box;
-  transition: all 0.3s ease;
+/* ---------- Nave: página e widget de reserva ---------- */
+
+.ship-root {
+  background-color: var(--color-ship-void);
+  color: var(--color-ship-ink);
+  color-scheme: dark;
+  /* Campo de estrelas fixo, desenhado com pontos: o céu da nave, sem brilho decorativo */
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgb(238 242 255 / 0.55), transparent 60%),
+    radial-gradient(1px 1px at 78% 9%, rgb(238 242 255 / 0.4), transparent 60%),
+    radial-gradient(1.5px 1.5px at 64% 32%, rgb(124 240 107 / 0.45), transparent 60%),
+    radial-gradient(1px 1px at 30% 58%, rgb(238 242 255 / 0.35), transparent 60%),
+    radial-gradient(1.5px 1.5px at 88% 66%, rgb(61 217 245 / 0.45), transparent 60%),
+    radial-gradient(1px 1px at 6% 84%, rgb(238 242 255 / 0.4), transparent 60%),
+    radial-gradient(1px 1px at 48% 92%, rgb(255 154 60 / 0.4), transparent 60%);
+  background-attachment: fixed;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.55);
+.ship-root ::selection {
+  background: var(--color-ship-green);
+  color: var(--color-ship-on-green);
 }
 
-::-webkit-scrollbar-corner {
-  background: transparent;
+.ship-root input,
+.ship-root textarea {
+  caret-color: var(--color-ship-cyan);
+}
+
+.ship-root :focus-visible {
+  outline: 2px solid var(--color-ship-cyan);
+  outline-offset: 3px;
+}
+
+.ship-root {
+  scrollbar-color: var(--color-ship-line-strong) var(--color-ship-void);
+}
+
+/* Componentes na camada do Tailwind: os utilitários (hidden, px-0, size-*) vencem quando usados junto.
+   ship-key é a tecla do console (todas as escolhas do widget); selecionada, ganha o verde alienígena
+   e o único brilho do widget fora do cartão de embarque. */
+@layer components {
+  .ship-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    border: 1px solid var(--color-ship-line-strong);
+    background: var(--color-ship-hull-raised);
+    color: var(--color-ship-ink);
+    transition:
+      background-color 160ms var(--ease-out-strong),
+      border-color 160ms var(--ease-out-strong),
+      color 160ms var(--ease-out-strong),
+      transform 160ms var(--ease-out-strong);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .ship-key:not(:disabled):not([aria-checked='true']):hover {
+      border-color: var(--color-ship-cyan);
+    }
+  }
+
+  .ship-key:not(:disabled):active {
+    transform: scale(0.97);
+  }
+
+  .ship-key[aria-checked='true'] {
+    background: var(--color-ship-green);
+    border-color: var(--color-ship-green);
+    color: var(--color-ship-on-green);
+    box-shadow: 0 6px 18px -6px rgb(124 240 107 / 0.55);
+  }
+
+  .ship-key:disabled {
+    cursor: not-allowed;
+    background: transparent;
+    border-style: dashed;
+    color: var(--color-ship-ink-soft);
+  }
+
+  .ship-field {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--color-ship-line-strong);
+    background: var(--color-ship-hull);
+    color: var(--color-ship-ink);
+    font-size: 16px; /* 16px evita o zoom automático do iPhone ao tocar */
+    line-height: 1.4;
+    padding: 12px 14px;
+    transition: border-color 160ms var(--ease-out-strong);
+  }
+
+  .ship-field::placeholder {
+    color: #8d97bf;
+  }
+
+  .ship-field:focus-visible {
+    outline: none;
+    border-color: var(--color-ship-cyan);
+    box-shadow: 0 0 0 3px rgb(61 217 245 / 0.25);
+  }
+
+  .ship-field[aria-invalid='true'] {
+    border-color: var(--color-ship-danger);
+  }
+
+  .panel-field {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--color-panel-line-strong);
+    background: var(--color-panel-sheet);
+    color: var(--color-panel-ink);
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+
+  .panel-field:focus-visible {
+    outline: none;
+    border-color: var(--color-mint-strong);
+    box-shadow: 0 0 0 3px rgb(15 107 82 / 0.18);
+  }
+
+  .panel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    border-radius: 999px;
+    padding: 0 16px;
+    font-size: 14px;
+    font-weight: 600;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      transform 160ms var(--ease-out-strong);
+  }
+
+  .panel-btn:not(:disabled):active {
+    transform: scale(0.97);
+  }
+
+  .panel-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .panel-btn-primary {
+    background: var(--color-mint-strong);
+    color: #ffffff;
+  }
+
+  .panel-btn-soft {
+    background: var(--color-mint);
+    color: var(--color-mint-deep);
+  }
+
+  .panel-btn-ghost {
+    background: var(--color-panel-sheet);
+    border: 1px solid var(--color-panel-line-strong);
+    color: var(--color-panel-ink);
+  }
+
+  .panel-btn-danger {
+    background: var(--color-st-naoveio-bg);
+    color: var(--color-st-naoveio-ink);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .panel-btn-primary:not(:disabled):hover {
+      background: var(--color-mint-deep);
+    }
+    .panel-btn-soft:not(:disabled):hover {
+      background: #a9e3cf;
+    }
+    .panel-btn-ghost:not(:disabled):hover {
+      border-color: var(--color-mint-strong);
+    }
+  }
+
+  .panel-dialog {
+    border: 0;
+    padding: 0;
+    border-radius: 24px;
+    background: var(--color-panel-sheet);
+    color: var(--color-panel-ink);
+    box-shadow: 0 24px 60px -20px rgb(29 40 38 / 0.35);
+    width: min(560px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+  }
+
+  .panel-dialog::backdrop {
+    background: rgb(29 40 38 / 0.32);
+  }
+
+  .panel-dialog[open] {
+    animation: dialog-in 220ms var(--ease-out-strong) both;
+  }
+}
+
+/* Trilha de voo pontilhada que liga as etapas */
+.flight-path {
+  background-image: radial-gradient(circle, var(--color-ship-line-strong) 1.2px, transparent 1.6px);
+  background-size: 2px 10px;
+  background-repeat: repeat-y;
+  background-position: center top;
+}
+
+/* Cartão de embarque: o momento marcante, revelado uma vez de cima para baixo */
+.boarding-pass {
+  animation: pass-print 620ms var(--ease-out-strong) both;
+}
+
+@keyframes pass-print {
+  from {
+    clip-path: inset(0 0 100% 0 round 24px);
+    transform: translateY(-10px);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 24px);
+    transform: none;
+  }
+}
+
+/* Picote do cartão: dois entalhes nas laterais, como num bilhete de verdade */
+.pass-perforation {
+  position: relative;
+}
+
+.pass-perforation::before,
+.pass-perforation::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--color-ship-void);
+  border: 1px solid var(--color-ship-line-strong);
+  transform: translateY(-50%);
+}
+
+.pass-perforation::before {
+  left: -12px;
+}
+
+.pass-perforation::after {
+  right: -12px;
+}
+
+.pass-perforation {
+  background-image: radial-gradient(circle, var(--color-ship-void) 3px, transparent 3.5px);
+  background-size: 14px 8px;
+  background-repeat: repeat-x;
+  background-position: left center;
+}
+
+/* ---------- Painel do dono ---------- */
+
+.panel-root {
+  background-color: var(--color-panel-bg);
+  color: var(--color-panel-ink);
+  color-scheme: light;
+  scrollbar-color: var(--color-panel-line-strong) var(--color-panel-bg);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Títulos, horários e a linha de resumo do painel falam com a Nunito; o resto segue no texto do sistema */
+.panel-root :is(h1, h2, h3),
+.panel-voice {
+  font-family: var(--font-panel);
+  letter-spacing: -0.005em;
+}
+
+/* Partes nativas dos campos no tom do painel: texto de exemplo, data e hora */
+.panel-root input::placeholder,
+.panel-root textarea::placeholder {
+  color: var(--color-panel-ink-soft);
+}
+
+.panel-root input[type='date'],
+.panel-root input[type='time'] {
+  font-variant-numeric: tabular-nums;
+  accent-color: var(--color-mint-strong);
+}
+
+.panel-root input[type='date']::-webkit-datetime-edit-fields-wrapper,
+.panel-root input[type='time']::-webkit-datetime-edit-fields-wrapper {
+  color: var(--color-panel-ink);
+}
+
+.panel-root input[type='date']::-webkit-calendar-picker-indicator,
+.panel-root input[type='time']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  /* O ícone do sistema vira o verde do painel (o filtro tingiria qualquer fundo junto) */
+  filter: invert(27%) sepia(52%) saturate(640%) hue-rotate(118deg) brightness(92%);
+}
+
+.panel-root ::selection {
+  background: var(--color-mint);
+  color: var(--color-panel-ink);
+}
+
+.panel-root input,
+.panel-root textarea,
+.panel-root select {
+  caret-color: var(--color-mint-strong);
+}
+
+.panel-root :focus-visible {
+  outline: 2px solid var(--color-mint-strong);
+  outline-offset: 2px;
+}
+
+/* Janela de detalhes (.panel-dialog, na camada de componentes): a única sombra de verdade do painel, junto com menus e avisos */
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+.panel-toast {
+  animation: toast-in 240ms var(--ease-out-strong) both;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.scroll-row {
+  scrollbar-width: none;
+}
+
+.scroll-row::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boarding-pass {
+    animation: pass-fade 300ms ease both;
+  }
+  .panel-dialog[open],
+  .panel-toast {
+    animation: pass-fade 200ms ease both;
+  }
+  .ship-key:not(:disabled):active,
+  .panel-btn:not(:disabled):active {
+    transform: none;
+  }
+}
+
+@keyframes pass-fade {
+  from {
+    opacity: 0;
+  }
 }
