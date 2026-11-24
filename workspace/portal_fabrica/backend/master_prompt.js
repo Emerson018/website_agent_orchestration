@@ -225,7 +225,7 @@ Um agendamento online para os clientes do negócio, com um painel para o dono.
         : 'Duração de cada serviço (não estime: pergunte)',
     ],
   }),
-  // Dashboard ("Painel de resultados" para o cliente): lê a Agenda quando o cliente a pediu, senão começa por planilhas
+  // Dashboard: lê a Agenda quando o cliente a pediu, senão começa por planilhas
   dashboard: (f) => {
     const comAgenda = f.tiposProjeto.includes('agenda');
     const fontes = comAgenda
@@ -233,7 +233,7 @@ Um agendamento online para os clientes do negócio, com um painel para o dono.
       : `- O cliente não pediu a Agenda: o painel começa pela importação de planilhas ou CSV que o dono já usa (vendas, pedidos, atendimentos). Se a Agenda vier depois, ele passa a ler os agendamentos dela.`;
     return {
       texto: `## O que construir: Dashboard
-Um painel de resultados para o dono acompanhar os números do negócio (para o cliente, "Painel de resultados").
+Um painel de resultados para o dono acompanhar os números do negócio.
 - Acesso só para o dono, com login: o mesmo login do painel da Agenda quando houver.
 ${fontes}
 - Os dados ficam no mesmo projeto Supabase de todos os projetos deste cliente: use o projeto existente ou crie um se ainda não houver. O operador fornece URL e chaves na configuração; elas nunca vão para o código.
