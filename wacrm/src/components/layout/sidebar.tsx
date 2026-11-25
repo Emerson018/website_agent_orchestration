@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useTotalUnread } from "@/hooks/use-total-unread";
@@ -102,6 +102,14 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { profile, profileLoading, account, accountRole, signOut } = useAuth();
   const totalUnread = useTotalUnread();
+  // Bumped only when the unread count goes UP, so the dot pops once per new
+  // message instead of pinging forever.
+  const [prevUnread, setPrevUnread] = useState(totalUnread);
+  const [unreadPop, setUnreadPop] = useState(0);
+  if (totalUnread !== prevUnread) {
+    if (totalUnread > prevUnread) setUnreadPop((n) => n + 1);
+    setPrevUnread(totalUnread);
+  }
   // Only surface the account-name strip when it actually carries
   // information. A solo user's personal account is named after them
   // (the 017 signup trigger seeds it from `full_name`), so showing it
@@ -223,12 +231,10 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                     )}
                     {showUnreadDot && (
                       <span
+                        key={unreadPop}
                         aria-label={`${totalUnread} unread conversation${totalUnread === 1 ? "" : "s"}`}
-                        className="relative flex h-2 w-2"
-                      >
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-                      </span>
+                        className={cn("inline-flex h-2 w-2 rounded-full bg-primary", unreadPop > 0 && "motion-pop")}
+                      />
                     )}
                   </Link>
                 </li>

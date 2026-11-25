@@ -1,5 +1,7 @@
 'use client';
 
+import { WorkingLine } from '@/components/contacts/lead-steps-ui';
+
 import { useState } from 'react';
 import { AlertTriangle, Check, Copy, RefreshCw, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -159,9 +161,17 @@ export function MasterPromptPanel({ leadId, additionalData, tiposProjeto, status
             rows={14}
             className="w-full resize-y rounded-xl border border-border bg-background/60 p-3 font-mono text-xs leading-relaxed text-foreground focus:border-primary focus:outline-none"
           />
+          <WorkingLine active={rebuilding === active} />
           <Button onClick={copy} disabled={!text} className="w-full gap-2">
-            {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-            {copied ? 'Prompt Mestre copiado' : `Copiar Prompt Mestre de ${labelOf(active)}`}
+            {/* key: a troca Copiar ↔ Copiado remonta ícone e texto, que entram com crossfade */}
+            {copied ? (
+              <Check key="copiado" className="motion-swap size-4" />
+            ) : (
+              <Copy key="copiar" className="motion-swap size-4" />
+            )}
+            <span key={copied ? 'copiado' : 'copiar'} className="motion-label">
+              {copied ? 'Prompt Mestre copiado' : `Copiar Prompt Mestre de ${labelOf(active)}`}
+            </span>
           </Button>
           <Button variant="outline" onClick={redo} disabled={rebuilding !== null} className="w-full gap-2">
             <RefreshCw className={`size-4 ${rebuilding === active ? 'animate-spin' : ''}`} />
@@ -173,6 +183,7 @@ export function MasterPromptPanel({ leadId, additionalData, tiposProjeto, status
           {hasDiagnosis ? (
             <>
               <p>O prompt de {labelOf(active)} ainda não foi gerado para este lead.</p>
+              <WorkingLine active={rebuilding === active} />
               <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => rebuild(active)} disabled={rebuilding !== null}>
                 <RefreshCw className={`size-3.5 ${rebuilding === active ? 'animate-spin' : ''}`} />
                 Gerar prompt de {labelOf(active)}

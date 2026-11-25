@@ -173,6 +173,12 @@ export function MessageThread({
   // parent's resyncToken); the 700ms spin is just feedback so the click
   // doesn't feel like a no-op. Cleared via the timer ref on unmount.
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // When this conversation was opened. Customer messages created after it
+  // arrived live and slide in; history and the owner's own sends don't.
+  const [openedAt, setOpenedAt] = useState<number | null>(null);
+  useEffect(() => {
+    setOpenedAt(Date.now());
+  }, [conversation?.id]);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     return () => {
@@ -1034,6 +1040,13 @@ export function MessageThread({
                       <MessageActions
                         key={msg.id}
                         message={msg}
+                        className={
+                          openedAt !== null &&
+                          msg.sender_type === "customer" &&
+                          new Date(msg.created_at).getTime() > openedAt
+                            ? "motion-enter"
+                            : undefined
+                        }
                         onReply={() => handleStartReply(msg)}
                         onReact={(emoji) => {
                           if (emoji) void postReaction(msg.id, emoji);

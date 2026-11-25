@@ -638,6 +638,7 @@ export default function ContactProfilePage() {
               step={stepOf('dossie')}
               open={openStep === 'dossie'}
               onToggle={toggleStep}
+              busy={enrichingDossier}
               action={
                 <>
                   <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs" onClick={openMapsLinkDialog}>
@@ -918,6 +919,7 @@ export default function ContactProfilePage() {
               step={stepOf('diagnostico')}
               open={openStep === 'diagnostico'}
               onToggle={toggleStep}
+              busy={diagnosing}
               action={
                 <Button
                   variant="outline"
@@ -926,7 +928,7 @@ export default function ContactProfilePage() {
                   onClick={handleRunAiDiagnosis}
                   disabled={diagnosing || !dossie}
                 >
-                  <Sparkles className={`size-3.5 ${diagnosing ? 'animate-spin' : ''}`} />
+                  {diagnosing ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
                   {diagnosing ? 'Diagnosticando...' : diagnostico ? 'Gerar de novo' : 'Gerar Diagnóstico'}
                 </Button>
               }

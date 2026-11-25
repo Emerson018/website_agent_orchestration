@@ -129,41 +129,47 @@ export default function DashboardPage() {
           Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
         ) : (
           <>
-            <MetricCard
-              title="Active Conversations"
-              value={metrics.activeConversations.current.toLocaleString()}
-              icon={MessageSquare}
-              delta={{
-                sign: metrics.activeConversations.previous,
-                label: deltaLabel(metrics.activeConversations.previous, 'new today vs yesterday'),
-              }}
-            />
-            <MetricCard
-              title="New Contacts Today"
-              value={metrics.newContactsToday.current.toLocaleString()}
-              icon={UserPlus}
-              delta={{
-                sign:
-                  metrics.newContactsToday.current - metrics.newContactsToday.previous,
-                label: deltaLabel(
-                  metrics.newContactsToday.current - metrics.newContactsToday.previous,
-                  'vs yesterday',
-                ),
-              }}
-            />
-            <MetricCard
-              title="Messages Sent Today"
-              value={metrics.messagesSentToday.current.toLocaleString()}
-              icon={Send}
-              delta={{
-                sign:
-                  metrics.messagesSentToday.current - metrics.messagesSentToday.previous,
-                label: deltaLabel(
-                  metrics.messagesSentToday.current - metrics.messagesSentToday.previous,
-                  'vs yesterday',
-                ),
-              }}
-            />
+            <div className="motion-enter" style={{ animationDelay: '0ms' }}>
+              <MetricCard
+                title="Active Conversations"
+                value={metrics.activeConversations.current.toLocaleString()}
+                icon={MessageSquare}
+                delta={{
+                  sign: metrics.activeConversations.previous,
+                  label: deltaLabel(metrics.activeConversations.previous, 'new today vs yesterday'),
+                }}
+              />
+            </div>
+            <div className="motion-enter" style={{ animationDelay: '50ms' }}>
+              <MetricCard
+                title="New Contacts Today"
+                value={metrics.newContactsToday.current.toLocaleString()}
+                icon={UserPlus}
+                delta={{
+                  sign:
+                    metrics.newContactsToday.current - metrics.newContactsToday.previous,
+                  label: deltaLabel(
+                    metrics.newContactsToday.current - metrics.newContactsToday.previous,
+                    'vs yesterday',
+                  ),
+                }}
+              />
+            </div>
+            <div className="motion-enter" style={{ animationDelay: '100ms' }}>
+              <MetricCard
+                title="Messages Sent Today"
+                value={metrics.messagesSentToday.current.toLocaleString()}
+                icon={Send}
+                delta={{
+                  sign:
+                    metrics.messagesSentToday.current - metrics.messagesSentToday.previous,
+                  label: deltaLabel(
+                    metrics.messagesSentToday.current - metrics.messagesSentToday.previous,
+                    'vs yesterday',
+                  ),
+                }}
+              />
+            </div>
           </>
         )}
       </div>
@@ -180,10 +186,14 @@ export default function DashboardPage() {
       />
 
       {/* Response time */}
-      <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />
+      <div key={responseTimeLoading ? 'response-time-loading' : 'response-time-ready'} className={responseTimeLoading ? undefined : 'motion-enter'}>
+        <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />
+      </div>
 
       {/* Activity feed */}
-      <ActivityFeed items={activity} loading={activityLoading} />
+      <div key={activityLoading ? 'activity-loading' : 'activity-ready'} className={activityLoading ? undefined : 'motion-enter'}>
+        <ActivityFeed items={activity} loading={activityLoading} />
+      </div>
     </div>
   )
 }

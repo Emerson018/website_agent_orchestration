@@ -1,5 +1,7 @@
 'use client';
 
+import { WorkingLine } from '@/components/contacts/lead-steps-ui';
+
 import React, { useState } from 'react';
 import {
   Globe,
@@ -290,7 +292,8 @@ export function ScraplingDeepScraperCard({
           </p>
         )}
 
-        <div className="pt-2">
+        <div className="space-y-2 pt-2">
+          <WorkingLine active={isScraping} />
           <Button
             type="button"
             onClick={handleExecuteScrape}

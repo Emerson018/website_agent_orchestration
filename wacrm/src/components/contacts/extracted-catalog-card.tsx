@@ -1,5 +1,7 @@
 'use client';
 
+import { WorkingLine } from '@/components/contacts/lead-steps-ui';
+
 import React, { useRef, useState } from 'react';
 import { BookOpen, FileText, ImageIcon, Loader2, Save, Sparkles, Trash2, Undo2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -251,6 +253,7 @@ export function ExtractedCatalogCard({
           {isExtracting ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
           {isExtracting ? 'Extraindo com IA...' : 'Extrair com IA'}
         </Button>
+        <WorkingLine active={isExtracting} />
 
         {catalog?.markdown ? (
           <div className="space-y-2">

@@ -2,7 +2,7 @@
 
 // Peças visuais das Etapas do Lead: selo de status, ícone e Painel de Progresso.
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Check, ChevronDown, CircleDashed, Clock, Loader2, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -31,8 +31,9 @@ export function StepIcon({ status }: { status: StepStatus }) {
   const meta = STATUS_META[status];
   const Icon = meta.icon;
   return (
-    <span className={cn('grid size-6 shrink-0 place-items-center rounded-full border', meta.tone)}>
-      <Icon className="size-3.5" aria-hidden />
+    <span className={cn('grid size-6 shrink-0 place-items-center rounded-full border transition-colors duration-200', meta.tone)}>
+      {/* key = status: a troca de status remonta o ícone e ele entra com crossfade */}
+      <Icon key={status} className="motion-swap size-3.5" aria-hidden />
       <span className="sr-only">{meta.label}</span>
     </span>
   );
@@ -68,7 +69,10 @@ export function NextStepButton({ step, busy, onRun }: NextStepButtonProps) {
   return (
     <Button size="sm" className="gap-1.5" disabled={busy} onClick={() => onRun(step)}>
       {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
-      {nextStepActionLabel(step)}
+      {/* key = rótulo: quando o lead avança, o novo passo entra com crossfade */}
+      <span key={nextStepActionLabel(step)} className="motion-label">
+        {nextStepActionLabel(step)}
+      </span>
     </Button>
   );
 }
@@ -81,6 +85,17 @@ interface LeadProgressPanelProps {
 
 /** Painel de Progresso: barra segmentada clicável com o status de cada Etapa do Lead. */
 export function LeadProgressPanel({ steps, active, onSelect }: LeadProgressPanelProps) {
+  // Etapas que acabaram de virar "Feito" nesta sessão: só elas preenchem a barra
+  // (abrir a página com etapas já feitas não anima nada).
+  const signature = steps.map((s) => `${s.key}:${s.status}`).join('|');
+  const [prevSignature, setPrevSignature] = useState(signature);
+  const [justDone, setJustDone] = useState<StepKey[]>([]);
+  if (signature !== prevSignature) {
+    const before = new Map(prevSignature.split('|').map((p) => p.split(':') as [string, string]));
+    setJustDone(steps.filter((s) => s.status === 'feito' && before.get(s.key) !== 'feito').map((s) => s.key));
+    setPrevSignature(signature);
+  }
+
   return (
     <nav aria-label="Etapas do lead">
       <ol className="flex gap-1">
@@ -96,7 +111,12 @@ export function LeadProgressPanel({ steps, active, onSelect }: LeadProgressPanel
                 active === s.key ? 'bg-muted' : 'hover:bg-muted/50'
               )}
             >
-              <span className={cn('mb-1.5 block h-1 rounded-full', STATUS_META[s.status].bar)} aria-hidden />
+              <span className="mb-1.5 block h-1 overflow-hidden rounded-full bg-border" aria-hidden>
+                <span
+                  key={justDone.includes(s.key) ? `${s.key}-feito` : s.key}
+                  className={cn('block h-full rounded-full', STATUS_META[s.status].bar, justDone.includes(s.key) && 'motion-fill')}
+                />
+              </span>
               <span className="block truncate text-xs font-medium">{s.label}</span>
               <span className="block truncate text-[11px] text-muted-foreground">
                 <span className="sr-only">{STATUS_META[s.status].label}: </span>
@@ -117,15 +137,39 @@ interface LeadStepSectionProps {
   onToggle: (key: StepKey) => void;
   /** Ação principal da etapa, mostrada no cabeçalho quando aberta. */
   action?: React.ReactNode;
+  /** Uma tarefa longa (IA, Maps, raspagem) está rodando para esta etapa. */
+  busy?: boolean;
   children: React.ReactNode;
 }
 
+const STEP_CLOSE_MS = 200;
+
+/** Linha fina que corre enquanto uma tarefa longa trabalha. */
+export function WorkingLine({ active, className }: { active: boolean; className?: string }) {
+  if (!active) return null;
+  return <div role="progressbar" aria-label="Trabalhando" aria-busy className={cn('working-line', className)} />;
+}
+
 /** Molde único de cada Etapa do Lead: fechada vira uma linha de resumo; aberta mostra status, ação e conteúdo. */
-export function LeadStepSection({ step, open, onToggle, action, children }: LeadStepSectionProps) {
+export function LeadStepSection({ step, open, onToggle, action, busy, children }: LeadStepSectionProps) {
   const headingId = `etapa-${step.key}-titulo`;
+
+  // Ao fechar, o conteúdo fica montado o tempo da animação de recolher.
+  const [lastOpen, setLastOpen] = useState(open);
+  const [closing, setClosing] = useState(false);
+  if (open !== lastOpen) {
+    setLastOpen(open);
+    setClosing(!open);
+  }
+  useEffect(() => {
+    if (!closing) return;
+    const t = setTimeout(() => setClosing(false), STEP_CLOSE_MS);
+    return () => clearTimeout(t);
+  }, [closing]);
+
   return (
     <section id={`etapa-${step.key}`} aria-labelledby={headingId} className="scroll-mt-6 border-b border-border/60 last:border-b-0">
-      <div className={cn('flex flex-wrap items-center gap-3 px-5 py-3', open && 'bg-muted/30')}>
+      <div className={cn('flex flex-wrap items-center gap-3 px-5 py-3 transition-colors duration-200', open && 'bg-muted/30')}>
         <button
           type="button"
           onClick={() => onToggle(step.key)}
@@ -139,7 +183,10 @@ export function LeadStepSection({ step, open, onToggle, action, children }: Lead
             </span>
             {!open && <span className="block truncate text-xs text-muted-foreground">{step.summary}</span>}
           </span>
-          <ChevronDown className={cn('size-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} aria-hidden />
+          <ChevronDown
+            className={cn('size-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-(--ease-out-strong)', open && 'rotate-180')}
+            aria-hidden
+          />
         </button>
         {open && (
           <div className="flex items-center gap-2">
@@ -148,7 +195,22 @@ export function LeadStepSection({ step, open, onToggle, action, children }: Lead
           </div>
         )}
       </div>
-      {open && <div className="px-5 pb-5 pt-3">{children}</div>}
+      <WorkingLine active={!!busy} className="mx-5 -mt-px mb-px" />
+      {(open || closing) && (
+        // Recolhe/expande a altura real com grid-rows 0fr↔1fr; starting: dá o 0fr inicial ao abrir.
+        <div
+          className={cn(
+            'grid transition-[grid-template-rows] duration-200 ease-(--ease-out-strong) motion-reduce:transition-none',
+            open ? 'grid-rows-[1fr] starting:grid-rows-[0fr]' : 'grid-rows-[0fr]'
+          )}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <div className={cn('px-5 pb-5 pt-3', open ? 'motion-rise' : 'opacity-0 transition-opacity duration-150')}>
+              {children}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

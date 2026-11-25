@@ -20,6 +20,8 @@ interface MessageActionsProps {
   onReply: () => void;
   onReact: (emoji: string) => void;
   children: ReactNode;
+  /** Extra classes on the row (e.g. the arrival animation). */
+  className?: string;
 }
 
 /**
@@ -32,6 +34,7 @@ export function MessageActions({
   onReply,
   onReact,
   children,
+  className,
 }: MessageActionsProps) {
   // Touch devices have no hover. Long-press fires `contextmenu`; we capture
   // it, suppress the native menu, and pin the toolbar open until the user
@@ -81,6 +84,7 @@ export function MessageActions({
       className={cn(
         "flex w-full",
         isAgent ? "justify-end" : "justify-start",
+        className,
       )}
       onContextMenu={handleContextMenu}
       onBlur={() => setTouchOpen(false)}

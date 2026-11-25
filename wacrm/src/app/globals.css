@@ -228,3 +228,89 @@ html[data-theme="rose"] {
     @apply font-sans;
   }
 }
+/* ============================================================
+   Motion — one vocabulary for the owner's panel.
+   Strong ease-out for anything entering or confirming; linear only
+   for the continuous "working" line. Every class collapses to a
+   plain fade (or nothing) under prefers-reduced-motion.
+   ============================================================ */
+:root {
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes crm-enter {
+  from { opacity: 0; transform: translateY(8px); }
+}
+@keyframes crm-rise {
+  from { opacity: 0; transform: translateY(4px); }
+}
+@keyframes crm-swap {
+  from { opacity: 0; transform: scale(0.9); filter: blur(2px); }
+}
+@keyframes crm-label {
+  from { opacity: 0; filter: blur(2px); }
+}
+@keyframes crm-pop {
+  from { transform: scale(0.9); }
+}
+@keyframes crm-fill {
+  from { transform: scaleX(0); }
+}
+@keyframes crm-fade {
+  from { opacity: 0; }
+}
+@keyframes crm-working {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(250%); }
+}
+
+/* New inbound message, dashboard content arriving */
+.motion-enter { animation: crm-enter 200ms var(--ease-out-strong) both; }
+/* Content of a Lead step as it opens */
+.motion-rise { animation: crm-rise 200ms var(--ease-out-strong) both; }
+/* Icon swaps: status icon → ✓, copy → copied */
+.motion-swap { animation: crm-swap 150ms var(--ease-out-strong) both; }
+/* Button label changing to the next action */
+.motion-label { animation: crm-label 200ms var(--ease-out-strong) both; }
+/* Unread badge when the count goes up */
+.motion-pop { animation: crm-pop 150ms var(--ease-out-strong) both; }
+/* A progress segment turning "Feito" */
+.motion-fill { transform-origin: left; animation: crm-fill 400ms var(--ease-out-strong) both; }
+
+/* Thin line under a step while an AI task runs (Maps, scraping,
+   extraction, diagnosis, Prompt Mestre). */
+.working-line {
+  position: relative;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: color-mix(in oklch, var(--primary) 15%, transparent);
+}
+.working-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  animation: crm-working 1.1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-enter,
+  .motion-rise,
+  .motion-swap,
+  .motion-label {
+    animation: crm-fade 200ms ease both;
+  }
+  .motion-pop,
+  .motion-fill {
+    animation: none;
+  }
+  /* No sweeping: a calm, static tint still says "working" */
+  .working-line::after {
+    animation: none;
+    width: 100%;
+    opacity: 0.5;
+  }
+}
