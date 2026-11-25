@@ -98,6 +98,18 @@ _Avoid_: Auto-builder script, hardcoded template, generic system prompt
 What the client asks Aether to build: Site (a single landing page), Agenda (online booking with an owner panel, stored in Supabase; a link to the owner's Google Calendar may come later) or Dashboard (shown to clients under the same name: an owner-only panel, behind the same login as the Agenda, where the owner follows the business's numbers read from the Agenda and from spreadsheets they import; which numbers is settled in the specification interview). A client's Agenda and Dashboard share one Supabase project. The client picks one or more on the portal form; each type is built as a separate project, so they cannot collide, and they are connected later when the client asked for more than one: same Design do Cliente, cross links, and the same Dados do Negócio. All share one stack (React, Vite, TypeScript, Tailwind, with an animation library for professional motion). An App mobile type existed briefly and is off for now.
 _Avoid_: Product, plan, package, module, App mobile (off)
 
+**Combinação (Combination)**:
+Two or more Tipos de Projeto bought by the same client, priced below the sum of the types alone. A type added later by an existing client also gets the Combinação price. The Dashboard is sold only in a Combinação that includes the Agenda.
+_Avoid_: Package, plan, bundle, combo, module
+
+**Implantação (Setup Fee)**:
+The one-time price of building and delivering a Tipo de Projeto, fixed per type within limits stated on its card.
+_Avoid_: Setup, entry fee, project price
+
+**Mensalidade (Monthly Fee)**:
+The recurring price of keeping a delivered Tipo de Projeto running: hosting, domain, maintenance and small adjustments. The Agenda's varies with the number of professionals; the other types have a single value.
+_Avoid_: Subscription, plan, hosting fee
+
 **Briefing do Negócio (Business Briefing)**:
 The part of every Master Prompt that is the same for all Tipos de Projeto of a client: who the business is, its verified data, real testimonials, catalog and the content rules. It holds only facts the builder AI cannot find out alone; it never fills a missing fact with invented text.
 _Avoid_: Base prompt, header, Source of Truth block
