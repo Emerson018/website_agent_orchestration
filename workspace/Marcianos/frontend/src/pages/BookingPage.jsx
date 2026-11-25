@@ -21,12 +21,12 @@ function BookingPage() {
   }, []);
 
   return (
-    <div className="ship-root min-h-dvh">
+    <div className="dusk-root min-h-dvh">
       <main>
         <ReservaWidget />
       </main>
-      <footer className="mx-auto w-full max-w-[560px] px-4 pb-10 pt-4 text-[15px] text-ship-ink-soft">
-        <ul className="space-y-2 border-t border-ship-line pt-6">
+      <footer className="mx-auto w-full max-w-[1120px] px-5 pb-10 pt-2 text-[15px] text-dusk-ink-soft sm:px-8">
+        <ul className="flex flex-col gap-x-10 gap-y-2 border-t border-dusk-line pt-6 lg:flex-row lg:flex-wrap">
           {info.address && (
             <li className="flex gap-3">
               <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -42,7 +42,7 @@ function BookingPage() {
           {info.phone && (
             <li className="flex gap-3">
               <Phone className="mt-0.5 size-4 shrink-0" aria-hidden />
-              <a href={telLink(info.phone)} className="underline underline-offset-4 hover:text-ship-ink">
+              <a href={telLink(info.phone)} className="underline underline-offset-4 hover:text-dusk-ink">
                 {info.phone}
               </a>
             </li>

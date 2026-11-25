@@ -1,0 +1,32 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-color",
+        "value": "rgb(15 107 82 / 0.18)",
+        "createdAt": "2026-11-25T02:29:30.921Z",
+        "reason": "Claude: owner-panel (.panel-*) colour in the shared index.css; workspace/Marcianos/frontend/DESIGN.md documents only the public booking (dusk) world and names the panel as out of scope"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#a9e3cf",
+        "createdAt": "2026-11-25T02:29:31.312Z",
+        "reason": "Claude: owner-panel (.panel-*) colour in the shared index.css; workspace/Marcianos/frontend/DESIGN.md documents only the public booking (dusk) world and names the panel as out of scope"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgb(29 40 38 / 0.35)",
+        "createdAt": "2026-11-25T02:29:31.695Z",
+        "reason": "Claude: owner-panel (.panel-*) colour in the shared index.css; workspace/Marcianos/frontend/DESIGN.md documents only the public booking (dusk) world and names the panel as out of scope"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgb(29 40 38 / 0.32)",
+        "createdAt": "2026-11-25T02:29:32.088Z",
+        "reason": "Claude: owner-panel (.panel-*) colour in the shared index.css; workspace/Marcianos/frontend/DESIGN.md documents only the public booking (dusk) world and names the panel as out of scope"
+      }
+    ]
+  }
+}

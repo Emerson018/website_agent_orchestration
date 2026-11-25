@@ -1,0 +1,506 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-25T02:28:20+00:00",
+  "title": "Design System: Marcianos Reservas",
+  "extensions": {
+    "colorMeta": {
+      "dusk-violet": {
+        "role": "primary",
+        "displayName": "Muted Dusk Violet",
+        "canonical": "oklch(45.8% 0.101 294)",
+        "tonalRamp": [
+          "oklch(15% 0.044 294)",
+          "oklch(26% 0.061 294)",
+          "oklch(38% 0.077 294)",
+          "oklch(49% 0.093 294)",
+          "oklch(61% 0.093 294)",
+          "oklch(72% 0.077 294)",
+          "oklch(84% 0.061 294)",
+          "oklch(95% 0.044 294)"
+        ]
+      },
+      "dusk-violet-hover": {
+        "role": "primary",
+        "displayName": "Night Violet",
+        "canonical": "oklch(39.9% 0.094 293)",
+        "tonalRamp": [
+          "oklch(15% 0.041 293)",
+          "oklch(26% 0.056 293)",
+          "oklch(38% 0.071 293)",
+          "oklch(49% 0.087 293)",
+          "oklch(61% 0.087 293)",
+          "oklch(72% 0.071 293)",
+          "oklch(84% 0.056 293)",
+          "oklch(95% 0.041 293)"
+        ]
+      },
+      "dusk-violet-soft": {
+        "role": "primary",
+        "displayName": "Violet Mist",
+        "canonical": "oklch(93.8% 0.019 299)",
+        "tonalRamp": [
+          "oklch(15% 0.009 299)",
+          "oklch(26% 0.012 299)",
+          "oklch(38% 0.015 299)",
+          "oklch(49% 0.018 299)",
+          "oklch(61% 0.018 299)",
+          "oklch(72% 0.015 299)",
+          "oklch(84% 0.012 299)",
+          "oklch(95% 0.009 299)"
+        ]
+      },
+      "dusk-amber": {
+        "role": "tertiary",
+        "displayName": "Ember Amber",
+        "canonical": "oklch(48.0% 0.108 57)",
+        "tonalRamp": [
+          "oklch(15% 0.047 57)",
+          "oklch(26% 0.065 57)",
+          "oklch(38% 0.082 57)",
+          "oklch(49% 0.099 57)",
+          "oklch(61% 0.099 57)",
+          "oklch(72% 0.082 57)",
+          "oklch(84% 0.065 57)",
+          "oklch(95% 0.047 57)"
+        ]
+      },
+      "dusk-danger": {
+        "role": "tertiary",
+        "displayName": "Brick Red",
+        "canonical": "oklch(48.3% 0.152 27)",
+        "tonalRamp": [
+          "oklch(15% 0.067 27)",
+          "oklch(26% 0.091 27)",
+          "oklch(38% 0.116 27)",
+          "oklch(49% 0.140 27)",
+          "oklch(61% 0.140 27)",
+          "oklch(72% 0.116 27)",
+          "oklch(84% 0.091 27)",
+          "oklch(95% 0.067 27)"
+        ]
+      },
+      "dusk-ground": {
+        "role": "neutral",
+        "displayName": "Dusk Ground",
+        "canonical": "oklch(96.1% 0.008 301)",
+        "tonalRamp": [
+          "oklch(15% 0.009 301)",
+          "oklch(26% 0.012 301)",
+          "oklch(38% 0.015 301)",
+          "oklch(49% 0.018 301)",
+          "oklch(61% 0.018 301)",
+          "oklch(72% 0.015 301)",
+          "oklch(84% 0.012 301)",
+          "oklch(95% 0.009 301)"
+        ]
+      },
+      "dusk-surface": {
+        "role": "neutral",
+        "displayName": "White Surface",
+        "canonical": "oklch(100.0% 0.000 90)",
+        "tonalRamp": [
+          "oklch(15% 0.009 90)",
+          "oklch(26% 0.012 90)",
+          "oklch(38% 0.015 90)",
+          "oklch(49% 0.018 90)",
+          "oklch(61% 0.018 90)",
+          "oklch(72% 0.015 90)",
+          "oklch(84% 0.012 90)",
+          "oklch(95% 0.009 90)"
+        ]
+      },
+      "dusk-line": {
+        "role": "neutral",
+        "displayName": "Lilac Hairline",
+        "canonical": "oklch(91.1% 0.018 300)",
+        "tonalRamp": [
+          "oklch(15% 0.009 300)",
+          "oklch(26% 0.012 300)",
+          "oklch(38% 0.015 300)",
+          "oklch(49% 0.018 300)",
+          "oklch(61% 0.018 300)",
+          "oklch(72% 0.015 300)",
+          "oklch(84% 0.012 300)",
+          "oklch(95% 0.009 300)"
+        ]
+      },
+      "dusk-line-strong": {
+        "role": "neutral",
+        "displayName": "Firm Hairline",
+        "canonical": "oklch(84.4% 0.028 299)",
+        "tonalRamp": [
+          "oklch(15% 0.012 299)",
+          "oklch(26% 0.017 299)",
+          "oklch(38% 0.021 299)",
+          "oklch(49% 0.026 299)",
+          "oklch(61% 0.026 299)",
+          "oklch(72% 0.021 299)",
+          "oklch(84% 0.017 299)",
+          "oklch(95% 0.012 299)"
+        ]
+      },
+      "dusk-ink": {
+        "role": "neutral",
+        "displayName": "Plum Ink",
+        "canonical": "oklch(28.2% 0.051 294)",
+        "tonalRamp": [
+          "oklch(15% 0.022 294)",
+          "oklch(26% 0.031 294)",
+          "oklch(38% 0.039 294)",
+          "oklch(49% 0.047 294)",
+          "oklch(61% 0.047 294)",
+          "oklch(72% 0.039 294)",
+          "oklch(84% 0.031 294)",
+          "oklch(95% 0.022 294)"
+        ]
+      },
+      "dusk-ink-soft": {
+        "role": "neutral",
+        "displayName": "Soft Plum Ink",
+        "canonical": "oklch(47.8% 0.047 296)",
+        "tonalRamp": [
+          "oklch(15% 0.021 296)",
+          "oklch(26% 0.028 296)",
+          "oklch(38% 0.036 296)",
+          "oklch(49% 0.043 296)",
+          "oklch(61% 0.043 296)",
+          "oklch(72% 0.036 296)",
+          "oklch(84% 0.028 296)",
+          "oklch(95% 0.021 296)"
+        ]
+      },
+      "sky-1": {
+        "role": "secondary",
+        "displayName": "Sky Peach (first sitting)",
+        "canonical": "oklch(90.4% 0.051 64)",
+        "tonalRamp": [
+          "#a29bd2",
+          "#b3a9dc",
+          "#c6b5e2",
+          "#d5b5d3",
+          "#e2b7c2",
+          "#ecbcb2",
+          "#f2c6aa",
+          "#f8d9bd"
+        ],
+        "note": "The ramp is the sky itself (lilac to peach). Slot colours are interpolated across these 8 stops by position in the evening (SKY_STOPS in ReservaWidget.jsx)."
+      },
+      "sky-2": {
+        "role": "secondary",
+        "displayName": "Sky Apricot",
+        "canonical": "oklch(85.8% 0.063 54)",
+        "tonalRamp": [
+          "#a29bd2",
+          "#b3a9dc",
+          "#c6b5e2",
+          "#d5b5d3",
+          "#e2b7c2",
+          "#ecbcb2",
+          "#f2c6aa",
+          "#f8d9bd"
+        ],
+        "note": "The ramp is the sky itself (lilac to peach). Slot colours are interpolated across these 8 stops by position in the evening (SKY_STOPS in ReservaWidget.jsx)."
+      },
+      "sky-3": {
+        "role": "secondary",
+        "displayName": "Sky Rose Sand",
+        "canonical": "oklch(83.5% 0.057 32)",
+        "tonalRamp": [
+          "#a29bd2",
+          "#b3a9dc",
+          "#c6b5e2",
+          "#d5b5d3",
+          "#e2b7c2",
+          "#ecbcb2",
+          "#f2c6aa",
+          "#f8d9bd"
+        ],
+        "note": "The ramp is the sky itself (lilac to peach). Slot colours are interpolated across these 8 stops by position in the evening (SKY_STOPS in ReservaWidget.jsx)."
+      },
+      "sky-4": {
+        "role": "secondary",
+        "displayName": "Sky Dusty Rose",
+        "canonical": "oklch(82.1% 0.052 1)",
+        "tonalRamp": [
+          "#a29bd2",
+          "#b3a9dc",
+          "#c6b5e2",
+          "#d5b5d3",
+          "#e2b7c2",
+          "#ecbcb2",
+          "#f2c6aa",
+          "#f8d9bd"
+        ],
+        "note": "The ramp is the sky itself (lilac to peach). Slot colours are interpolated across these 8 stops by position in the evening (SKY_STOPS in ReservaWidget.jsx)."
+      },
+      "sky-5": {
+        "role": "secondary",
+        "displayName": "Sky Mauve",
+        "canonical": "oklch(81.0% 0.054 328)",
+        "tonalRamp": [
+          "#a29bd2",
+          "#b3a9dc",
+          "#c6b5e2",
+          "#d5b5d3",
+          "#e2b7c2",
+          "#ecbcb2",
+          "#f2c6aa",
+          "#f8d9bd"
+        ],
+        "note": "The ramp is the sky itself (lilac to peach). Slot colours are interpolated across these 8 stops by position in the evening (SKY_STOPS in ReservaWidget.jsx)."
+      },
+      "sky-6": {
+        "role": "secondary",
+        "displayName": "Sky Lavender",
+        "canonical": "oklch(80.2% 0.065 302)",
+        "tonalRamp": [
+          "#a29bd2",
+          "#b3a9dc",
+          "#c6b5e2",
+          "#d5b5d3",
+          "#e2b7c2",
+          "#ecbcb2",
+          "#f2c6aa",
+          "#f8d9bd"
+        ],
+        "note": "The ramp is the sky itself (lilac to peach). Slot colours are interpolated across these 8 stops by position in the evening (SKY_STOPS in ReservaWidget.jsx)."
+      },
+      "sky-7": {
+        "role": "secondary",
+        "displayName": "Sky Wisteria",
+        "canonical": "oklch(76.1% 0.073 294)",
+        "tonalRamp": [
+          "#a29bd2",
+          "#b3a9dc",
+          "#c6b5e2",
+          "#d5b5d3",
+          "#e2b7c2",
+          "#ecbcb2",
+          "#f2c6aa",
+          "#f8d9bd"
+        ],
+        "note": "The ramp is the sky itself (lilac to peach). Slot colours are interpolated across these 8 stops by position in the evening (SKY_STOPS in ReservaWidget.jsx)."
+      },
+      "sky-8": {
+        "role": "secondary",
+        "displayName": "Sky Lilac (last sitting)",
+        "canonical": "oklch(71.5% 0.080 290)",
+        "tonalRamp": [
+          "#a29bd2",
+          "#b3a9dc",
+          "#c6b5e2",
+          "#d5b5d3",
+          "#e2b7c2",
+          "#ecbcb2",
+          "#f2c6aa",
+          "#f8d9bd"
+        ],
+        "note": "The ramp is the sky itself (lilac to peach). Slot colours are interpolated across these 8 stops by position in the evening (SKY_STOPS in ReservaWidget.jsx)."
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The reserved time on the confirmation card's sky header (52px / 600, tabular)."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page title and confirmation title; 30px on phones, 38px (36px on confirmation) from 640px."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Fieldset legends and card values (17px / 600)."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Intro, field text (16px iOS no-zoom floor), summary line; 15px for notes and footer."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field labels (14px / 500), day names, card terms (13px), slot notes (12px / 500)."
+      }
+    },
+    "shadows": [
+      {
+        "name": "selected-key-ring",
+        "value": "inset 0 0 0 1px var(--color-dusk-violet)",
+        "purpose": "Doubles the selected key's violet border without layout shift."
+      },
+      {
+        "name": "selected-slot-ring",
+        "value": "inset 0 0 0 3px var(--color-dusk-ink)",
+        "purpose": "Chosen time, on a pseudo-element inset 6px with 12px radius inside the sky cell."
+      },
+      {
+        "name": "slot-focus-halo",
+        "value": "inset 0 0 0 2px var(--color-dusk-violet), 0 0 0 3px rgb(255 255 255 / 0.85)",
+        "purpose": "Keyboard focus on an unselected sky cell; 3px ink ring when also selected."
+      },
+      {
+        "name": "field-focus-glow",
+        "value": "0 0 0 3px rgb(91 75 138 / 0.18)",
+        "purpose": "Soft violet halo with the violet border on focused fields."
+      },
+      {
+        "name": "focus-outline",
+        "value": "outline: 2px solid var(--color-dusk-violet); outline-offset: 3px",
+        "purpose": "Default keyboard focus in the booking world (everything except sky cells and fields)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-strong",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "The one easing for state changes and reveals (--ease-out-strong)."
+      },
+      {
+        "name": "state-change",
+        "value": "160ms",
+        "purpose": "Key and slot colour, border, ring and press transitions."
+      },
+      {
+        "name": "slot-ring-in",
+        "value": "200ms, scale 0.96 to 1",
+        "purpose": "Selected or focused slot ring easing in; static under reduced motion."
+      },
+      {
+        "name": "press",
+        "value": "scale(0.97)",
+        "purpose": "Active press on keys, slots and the primary button; removed under reduced motion."
+      },
+      {
+        "name": "card-reveal",
+        "value": "620ms clip-path inset top-down + translateY(-10px)",
+        "purpose": "Confirmation card reveal, once; a 300ms fade under reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px",
+        "purpose": "Band becomes one row; details side by side; summary bar becomes an inset rounded panel."
+      },
+      {
+        "name": "lg",
+        "value": "1024px",
+        "purpose": "Larger header top padding; footer items in a row."
+      }
+    ],
+    "outOfScope": "src/index.css also hosts the owner panel world (panel-*, mint*, st-* tokens, Nunito via --font-panel, Exo 2 via --font-display). It is a separate system and is not documented here."
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one filled action: confirm the reservation. Violet pill, lives in the sticky summary bar.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Confirmar reserva</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; gap:8px; height:56px; padding:0 32px; border:0; border-radius:999px; background:var(--color-dusk-violet, #5b4b8a); color:#ffffff; font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size:16px; font-weight:600; cursor:pointer; transition:background-color 150ms ease, transform 160ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)); } .ds-btn-primary:hover { background:var(--color-dusk-violet-hover, #4a3c75); } .ds-btn-primary:active { transform:scale(0.97); } .ds-btn-primary:focus-visible { outline:2px solid var(--color-dusk-violet, #5b4b8a); outline-offset:3px; }"
+    },
+    {
+      "name": "Choice Key",
+      "kind": "chip",
+      "refersTo": "key",
+      "description": "Every discrete choice (people, day, card actions). White, lilac hairline, 14px corners; selected fills with violet mist and a violet ring.",
+      "html": "<div class=\"ds-keys\" role=\"radiogroup\" aria-label=\"Pessoas\"><button class=\"ds-key\" role=\"radio\" aria-checked=\"false\">1</button><button class=\"ds-key\" role=\"radio\" aria-checked=\"true\">2</button><button class=\"ds-key\" role=\"radio\" aria-checked=\"false\">3</button><button class=\"ds-key\" role=\"radio\" aria-checked=\"false\">6+</button></div>",
+      "css": ".ds-keys { display:grid; grid-template-columns:repeat(4, 88px); gap:12px; } .ds-key { display:inline-flex; align-items:center; justify-content:center; height:56px; border-radius:14px; border:1px solid var(--color-dusk-line, #e3dfec); background:var(--color-dusk-surface, #ffffff); color:var(--color-dusk-ink-soft, #5f5875); font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size:18px; font-weight:600; font-variant-numeric:tabular-nums; cursor:pointer; transition:background-color 160ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)), border-color 160ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)), color 160ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)), box-shadow 160ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)), transform 160ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)); } .ds-key:not([aria-checked='true']):hover { border-color:var(--color-dusk-line-strong, #cec8dc); color:var(--color-dusk-ink, #2b2440); } .ds-key:active { transform:scale(0.97); } .ds-key[aria-checked='true'] { background:var(--color-dusk-violet-soft, #ece8f6); border-color:var(--color-dusk-violet, #5b4b8a); box-shadow:inset 0 0 0 1px var(--color-dusk-violet, #5b4b8a); color:var(--color-dusk-ink, #2b2440); } .ds-key:focus-visible { outline:2px solid var(--color-dusk-violet, #5b4b8a); outline-offset:3px; }"
+    },
+    {
+      "name": "Day Key",
+      "kind": "chip",
+      "refersTo": "key",
+      "description": "Key variant for days: weekday name over the date, 76px tall.",
+      "html": "<div class=\"ds-days\"><button class=\"ds-day\" aria-checked=\"false\"><span class=\"ds-day-name\">hoje</span><span class=\"ds-day-date\">24/11</span></button><button class=\"ds-day\" aria-checked=\"true\"><span class=\"ds-day-name\">amanhã</span><span class=\"ds-day-date\">25/11</span></button></div>",
+      "css": ".ds-days { display:flex; gap:12px; } .ds-day { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; width:120px; height:76px; border-radius:14px; border:1px solid var(--color-dusk-line, #e3dfec); background:var(--color-dusk-surface, #ffffff); color:var(--color-dusk-ink-soft, #5f5875); font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; cursor:pointer; transition:background-color 160ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)), border-color 160ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)), box-shadow 160ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)); } .ds-day:not([aria-checked='true']):hover { border-color:var(--color-dusk-line-strong, #cec8dc); } .ds-day[aria-checked='true'] { background:var(--color-dusk-violet-soft, #ece8f6); border-color:var(--color-dusk-violet, #5b4b8a); box-shadow:inset 0 0 0 1px var(--color-dusk-violet, #5b4b8a); color:var(--color-dusk-ink, #2b2440); } .ds-day-name { font-size:13px; font-weight:500; } .ds-day-date { font-size:20px; font-weight:600; line-height:1; font-variant-numeric:tabular-nums; color:var(--color-dusk-ink, #2b2440); } .ds-day:focus-visible { outline:2px solid var(--color-dusk-violet, #5b4b8a); outline-offset:3px; }"
+    },
+    {
+      "name": "Sky Band",
+      "kind": "custom",
+      "refersTo": "sky-slot",
+      "description": "Signature: the evening's times as one continuous band, each cell painted by its position in the night; the chosen time gets a 3px ink ring inside the cell.",
+      "html": "<div class=\"ds-sky\" role=\"radiogroup\" aria-label=\"Horário\"><button class=\"ds-slot\" role=\"radio\" aria-checked=\"false\" style=\"--sky:#f8d9bd\"><span class=\"ds-slot-time\">18:30</span></button><button class=\"ds-slot\" role=\"radio\" aria-checked=\"false\" style=\"--sky:#f2c6aa\"><span class=\"ds-slot-time\">19:00</span></button><button class=\"ds-slot\" role=\"radio\" aria-checked=\"false\" style=\"--sky:#ecbcb2\"><span class=\"ds-slot-time\">19:30</span></button><button class=\"ds-slot\" role=\"radio\" aria-checked=\"false\" style=\"--sky:#e2b7c2\"><span class=\"ds-slot-time\">20:00</span></button><button class=\"ds-slot\" role=\"radio\" aria-checked=\"true\" style=\"--sky:#d5b5d3\"><span class=\"ds-slot-time\">20:30</span></button><button class=\"ds-slot\" role=\"radio\" aria-checked=\"false\" style=\"--sky:#c6b5e2\"><span class=\"ds-slot-time\">21:00</span></button><button class=\"ds-slot\" role=\"radio\" aria-checked=\"false\" style=\"--sky:#b3a9dc\"><span class=\"ds-slot-time\">21:30</span><span class=\"ds-slot-note\">últimos lugares</span></button><button class=\"ds-slot\" role=\"radio\" aria-checked=\"false\" style=\"--sky:#a29bd2\"><span class=\"ds-slot-time\">22:00</span></button></div>",
+      "css": ".ds-sky { display:grid; grid-template-columns:repeat(8, minmax(0,1fr)); overflow:hidden; border-radius:20px; max-width:880px; } .ds-slot { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; min-height:88px; border:0; background:var(--sky); color:var(--color-dusk-ink, #2b2440); font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; cursor:pointer; transition:transform 160ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)), filter 160ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)); } .ds-slot:not([aria-checked='true']):hover { filter:brightness(1.04) saturate(1.1); } .ds-slot:active { transform:scale(0.97); } .ds-slot-time { font-size:18px; font-weight:600; line-height:1; font-variant-numeric:tabular-nums; } .ds-slot-note { font-size:12px; font-weight:700; color:var(--color-dusk-ink, #2b2440); } .ds-slot::after { content:''; position:absolute; inset:6px; border-radius:12px; pointer-events:none; box-shadow:inset 0 0 0 3px transparent; transform:scale(0.96); transition:box-shadow 200ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)), transform 200ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)); } .ds-slot[aria-checked='true']::after { box-shadow:inset 0 0 0 3px var(--color-dusk-ink, #2b2440); transform:scale(1); } .ds-slot:focus-visible { outline:none; } .ds-slot:focus-visible::after { box-shadow:inset 0 0 0 2px var(--color-dusk-violet, #5b4b8a), 0 0 0 3px rgb(255 255 255 / 0.85); transform:scale(1); } .ds-slot[aria-checked='true']:focus-visible::after { box-shadow:inset 0 0 0 3px var(--color-dusk-ink, #2b2440), 0 0 0 3px rgb(255 255 255 / 0.85); }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Name, WhatsApp and notes. White, firm hairline, 14px corners, 16px text; violet border and soft glow on focus.",
+      "html": "<label class=\"ds-label\">WhatsApp<input class=\"ds-field\" type=\"tel\" placeholder=\"(51) 99999-9999\"></label>",
+      "css": ".ds-label { display:grid; gap:6px; max-width:360px; font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size:14px; font-weight:500; color:var(--color-dusk-ink, #2b2440); } .ds-field { width:100%; border-radius:14px; border:1px solid var(--color-dusk-line-strong, #cec8dc); background:var(--color-dusk-surface, #ffffff); color:var(--color-dusk-ink, #2b2440); font:inherit; font-size:16px; font-weight:400; line-height:1.4; padding:12px 14px; transition:border-color 160ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)), box-shadow 160ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)); } .ds-field::placeholder { color:#8a839e; } .ds-field:focus-visible { outline:none; border-color:var(--color-dusk-violet, #5b4b8a); box-shadow:0 0 0 3px rgb(91 75 138 / 0.18); } .ds-field[aria-invalid='true'] { border-color:var(--color-dusk-danger, #a3302a); }"
+    },
+    {
+      "name": "Summary Bar",
+      "kind": "nav",
+      "refersTo": "summary-bar",
+      "description": "Sticky bottom bar: sky swatch of the chosen time, what is chosen, the next step, and the confirm button.",
+      "html": "<div class=\"ds-summary\"><div class=\"ds-summary-text\"><p class=\"ds-summary-when\"><span class=\"ds-swatch\"></span>qua, 25/11 · 20:30</p><p class=\"ds-summary-next\">2 pessoas · faltam seus dados</p></div><button class=\"ds-summary-btn\" type=\"button\">Confirmar reserva</button></div>",
+      "css": ".ds-summary { display:flex; align-items:center; gap:16px; padding:16px 24px; border:1px solid var(--color-dusk-line, #e3dfec); border-radius:20px; background:rgb(255 255 255 / 0.95); backdrop-filter:blur(8px); font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; } .ds-summary-text { flex:1; min-width:0; } .ds-summary-when { display:flex; align-items:center; gap:8px; margin:0; font-size:16px; font-weight:600; color:var(--color-dusk-ink, #2b2440); } .ds-swatch { width:14px; height:14px; flex-shrink:0; border-radius:999px; background:#d5b5d3; box-shadow:0 0 0 1px rgb(43 36 64 / 0.15); } .ds-summary-next { margin:0; font-size:14px; color:var(--color-dusk-ink-soft, #5f5875); } .ds-summary-btn { height:56px; padding:0 32px; border:0; border-radius:999px; background:var(--color-dusk-violet, #5b4b8a); color:#ffffff; font:inherit; font-size:16px; font-weight:600; cursor:pointer; transition:background-color 150ms ease, transform 160ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)); } .ds-summary-btn:hover { background:var(--color-dusk-violet-hover, #4a3c75); } .ds-summary-btn:active { transform:scale(0.97); } .ds-summary-btn:focus-visible { outline:2px solid var(--color-dusk-violet, #5b4b8a); outline-offset:3px; }"
+    },
+    {
+      "name": "Reservation Card",
+      "kind": "card",
+      "refersTo": "reservation-card",
+      "description": "The confirmation: header filled with the chosen time's sky, white body with the details. Revealed once top-down.",
+      "html": "<article class=\"ds-card\" aria-label=\"Sua reserva\"><div class=\"ds-card-sky\"><div><p class=\"ds-card-date\">quarta-feira, 25 de novembro</p><p class=\"ds-card-time\">20:30</p></div><span class=\"ds-pill\">Confirmada</span></div><dl class=\"ds-card-body\"><div><dt>Nome</dt><dd>Ana Souza</dd></div><div><dt>Pessoas</dt><dd>2 pessoas</dd></div></dl></article>",
+      "css": ".ds-card { max-width:560px; overflow:hidden; border-radius:24px; border:1px solid var(--color-dusk-line, #e3dfec); background:var(--color-dusk-surface, #ffffff); color:var(--color-dusk-ink, #2b2440); font-family:ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; animation:ds-print 620ms var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)) both; } .ds-card-sky { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; padding:24px 24px 20px; background:#d5b5d3; } .ds-card-date { margin:0; font-size:14px; font-weight:500; color:rgb(43 36 64 / 0.8); } .ds-card-time { margin:0; font-size:52px; font-weight:600; line-height:1; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; } .ds-pill { border-radius:999px; background:rgb(255 255 255 / 0.9); padding:4px 12px; font-size:13px; font-weight:600; } .ds-card-body { display:grid; grid-template-columns:1fr 1fr; gap:20px 24px; margin:0; padding:24px; } .ds-card-body dt { font-size:13px; color:var(--color-dusk-ink-soft, #5f5875); } .ds-card-body dd { margin:0; font-size:17px; font-weight:600; } @keyframes ds-print { from { clip-path:inset(0 0 100% 0 round 24px); transform:translateY(-10px); } to { clip-path:inset(0 0 0 0 round 24px); transform:none; } } @media (prefers-reduced-motion: reduce) { .ds-card { animation:none; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Evening Is the Schedule",
+    "overview": "Booking a table at Marcianos means choosing a moment of the night. The times between 18:30 and 22:00 are painted as one continuous band of Guaíba sky, peach at the first sitting fading to lilac at the last, so the guest reads the evening as colour before reading it as numbers. Everything around that band stays quiet: a pale, cool lilac-grey ground, white surfaces with soft lilac-grey hairlines, deep plum-ink text and a single muted violet for action.\n\nThe page is one wide column (up to 1120px), not a phone-width form. Choices are big, calm keys laid out across the full width; the form reads top to bottom as people, day, time, details, confirm. A summary bar pinned to the bottom of the viewport keeps what has been chosen, and the confirm action, always within reach. Density is generous but not airy: groups are separated by 36px, keys by 8 to 12px.\n\nRank comes from weight and size, not from a second typeface or from colour. Depth is near-flat: hairlines and tonal fills do the work; the only rings are state rings drawn inside elements. The confirmation card reuses the sky colour of the chosen time across its header, so the result feels like a ticket for that exact moment of the evening.",
+    "keyCharacteristics": [
+      "One continuous sky band of equal cells for the times; colour is computed from each slot's position in the night.",
+      "Cool lilac-grey ground, white surfaces, lilac-grey hairlines; never cream or warm paper.",
+      "Muted violet is the only action colour; plum-ink carries text.",
+      "Rounded keys (14px) for every choice; pill-shaped primary button.",
+      "Flat surfaces; state shown with inset rings and tonal fills, not shadows.",
+      "The chosen time's sky colour follows the guest: summary swatch, then the confirmation card's header."
+    ],
+    "rules": [
+      {
+        "name": "The Sky Is Time Rule",
+        "body": "The sky colours appear only where a reservation time is represented (band, swatch, card header). They are never decoration, never a background for anything else.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Action Colour Rule",
+        "body": "Violet is the only colour that means \"do this\". Amber and red speak only of scarcity and error.",
+        "section": "colors"
+      },
+      {
+        "name": "The Weight Ranks Rule",
+        "body": "Within a family, rank by weight and size; colour stays reserved for action and state, and labels stay in sentence case.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Time Rule",
+        "body": "Every number a guest compares (people, dates, times) uses tabular figures.",
+        "section": "typography"
+      },
+      {
+        "name": "The Rings, Not Shadows Rule",
+        "body": "State is drawn with rings and tonal fills. Nothing in the booking world lifts or casts a shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** paint times with the sky ramp computed from each slot's position in the evening, first slot peach, last slot lilac, whatever the number of slots.",
+      "**Do** carry the chosen time's sky colour forward into the summary swatch and the confirmation card's header.",
+      "**Do** use the key (white, lilac hairline, 14px corners, violet-mist selected state) for every discrete choice.",
+      "**Do** draw selection and focus as rings inside the element (3px ink for a chosen slot, 2px violet for focus) so clipping never cuts them.",
+      "**Do** keep the confirm action in the sticky summary bar at every width.",
+      "**Do** keep field text at 16px and use tabular figures for people, dates and times.",
+      "**Do** gate hover styles behind `(hover: hover) and (pointer: fine)` and replace press scaling and ring scaling with static states under reduced motion."
+    ],
+    "donts": [
+      "**Don't** use sky colours as decoration or as a background for anything that is not a time.",
+      "**Don't** introduce a second action colour; amber and red mean scarcity and error only.",
+      "**Don't** warm the ground toward cream or paper; the ground is cool lilac-grey.",
+      "**Don't** add drop shadows or lift to surfaces; the selected slot is marked by its ring, not by rising.",
+      "**Don't** split the sky band into separated tiles; its cells touch inside one rounded band.",
+      "**Don't** depend on the restaurant logo; the name appears in text (footer, copy) and the owner may replace or remove the mark.",
+      "**Don't** borrow the panel world's mint, warm ground, Nunito or `panel-` components on booking surfaces."
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { CalendarDays, Clock, Loader2, Minus, Plus, TriangleAlert, User, Users } from 'lucide-react';
+import { Loader2, Minus, Plus, TriangleAlert } from 'lucide-react';
 import { createAgendamento, getAgendaConfig, getOcupacao, trackPageAccess } from '../../services/api';
 import {
   GRUPO_GRANDE,
@@ -18,7 +18,6 @@ import {
   whatsappLink,
 } from '../../services/agenda';
 import { notifyNewBooking } from '../../services/notify';
-import logo from '../../logo.png';
 import BoardingPass from './BoardingPass';
 
 const CONFIG_CACHE = 'cached_agenda_config';
@@ -31,6 +30,24 @@ function readCachedConfig() {
   } catch {
     return null;
   }
+}
+
+// O céu do fim de tarde no Guaíba, do pêssego ao lilás. Cada horário ganha a cor da sua posição na noite.
+const SKY_STOPS = ['#f8d9bd', '#f2c6aa', '#ecbcb2', '#e2b7c2', '#d5b5d3', '#c6b5e2', '#b3a9dc', '#a29bd2'];
+
+function mix(a, b, t) {
+  const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
+  const pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
+  return `#${pa.map((v, k) => Math.round(v + (pb[k] - v) * t).toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** Cor do céu para o horário de índice i entre n horários. */
+function skyColor(i, n) {
+  if (n <= 1) return SKY_STOPS[0];
+  const pos = (i / (n - 1)) * (SKY_STOPS.length - 1);
+  const lo = Math.floor(pos);
+  const hi = Math.min(SKY_STOPS.length - 1, lo + 1);
+  return mix(SKY_STOPS[lo], SKY_STOPS[hi], pos - lo);
 }
 
 const SLOT_NOTE = {
@@ -105,12 +122,12 @@ export default function ReservaWidget({ headingLevel = 'h1' }) {
   const availabilityOf = (slot, dayKey = date, people = guests) =>
     getSlotAvailability({ config, bookings: ocupacao, dateKey: dayKey, time: slot, guests: people });
 
-  // Mudou o dia ou o grupo e o horário escolhido não cabe mais: solta o horário e explica por quê
+  // Mudou o dia e o horário escolhido lotou: solta o horário e explica por quê
   useEffect(() => {
     if (!time || !date || !config) return;
     const { state } = availabilityOf(time);
     if (state !== 'livre' && state !== 'poucos') {
-      setTimeCleared(`O horário ${time} não tem lugar para ${pessoasLabel(guests)} nesse dia. Escolha outro.`);
+      setTimeCleared(`O horário ${time} não tem mais vagas nesse dia. Escolha outro.`);
       setTime('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -129,10 +146,8 @@ export default function ReservaWidget({ headingLevel = 'h1' }) {
     setGuests((g) => Math.max(g, GRUPO_GRANDE));
   };
 
-  const chooseDate = (key, el) => {
+  const chooseDate = (key) => {
     setDate(key);
-    // O dia escolhido fica sempre à vista na fileira rolável
-    el?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     setTimeCleared('');
     setErrors((e) => ({ ...e, date: undefined }));
   };
@@ -208,41 +223,42 @@ export default function ReservaWidget({ headingLevel = 'h1' }) {
 
   if (confirmed) {
     return (
-      <section className="ship-root mx-auto w-full max-w-[560px] px-4 pb-10 pt-6 font-sans" aria-labelledby={ids.heading}>
-        <BoardingPass booking={confirmed} config={config || {}} headingId={ids.heading} Heading={Heading} onRestart={restart} />
+      <section className="mx-auto w-full max-w-[1120px] px-5 pb-12 pt-10 sm:px-8 lg:pt-16" aria-labelledby={ids.heading}>
+        <div className="max-w-[720px]">
+        <BoardingPass
+          booking={confirmed}
+          config={config || {}}
+          headingId={ids.heading}
+          Heading={Heading}
+          onRestart={restart}
+          sky={skyColor(Math.max(0, times.indexOf(confirmed.time)), times.length)}
+        />
+        </div>
       </section>
     );
   }
 
-  // Resumo curto o bastante para caber ao lado do botão: o que já foi escolhido e só o próximo passo
+  // Resumo curto: o que já foi escolhido e só o próximo passo
   const summaryWhen = date ? `${shortDateLabel(date)}${time ? ` · ${time}` : ''}` : pessoasLabel(guests);
   const nextStep = !date ? 'falta escolher o dia' : !time ? 'falta o horário' : !name.trim() || !isValidPhone(phone) ? 'faltam seus dados' : isBig ? 'pré-reserva' : 'tudo pronto';
+  const cols = Math.min(Math.max(times.length, 1), 8);
 
   return (
-    <section className="ship-root mx-auto w-full max-w-[560px] font-sans" aria-labelledby={ids.heading}>
+    <section className="mx-auto w-full max-w-[1120px]" aria-labelledby={ids.heading}>
       <form onSubmit={handleSubmit} noValidate>
-        <header className="flex items-center gap-4 px-4 pb-6 pt-6">
-          <img
-            src={logo}
-            alt={`Logo do ${appName}`}
-            width="64"
-            height="64"
-            className="size-16 shrink-0 rounded-2xl border border-ship-line-strong object-cover"
-          />
+        <header className="px-5 pb-8 pt-8 sm:px-8 lg:pb-10 lg:pt-14">
           <div className="min-w-0">
-            <Heading id={ids.heading} className="font-display text-[28px] font-bold leading-tight tracking-[-0.01em] text-ship-ink sm:text-[32px]">
+            <Heading id={ids.heading} className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-dusk-ink sm:text-[38px]">
               Reserve sua mesa
             </Heading>
-            <p className="mt-1 text-[15px] text-ship-ink-soft">Pessoas, dia e horário. Leva menos de um minuto.</p>
+            <p className="mt-1 text-[16px] text-dusk-ink-soft">Pessoas, dia e horário. Leva menos de um minuto.</p>
           </div>
         </header>
 
-        <ol className="relative px-4">
-          <span aria-hidden className="flight-path absolute bottom-6 left-[35px] top-6 w-0.5" />
-
-          {/* 1. Pessoas */}
-          <Step icon={Users} title="Quantas pessoas?" done={pessoasLabel(guests)}>
-            <div role="radiogroup" aria-label="Quantas pessoas" className="grid grid-cols-6 gap-2">
+        <div className="space-y-9 px-5 sm:px-8">
+          {/* Pessoas */}
+          <Group title="Quantas pessoas?" value={pessoasLabel(guests)}>
+            <div role="radiogroup" aria-label="Quantas pessoas" className="grid grid-cols-6 gap-2 sm:gap-3">
               {PEOPLE_KEYS.map((n) => (
                 <button
                   key={n}
@@ -251,7 +267,7 @@ export default function ReservaWidget({ headingLevel = 'h1' }) {
                   aria-checked={!bigGroup && guests === n}
                   aria-label={pessoasLabel(n)}
                   onClick={() => chooseGuests(n)}
-                  className="ship-key h-12 font-display text-lg font-semibold"
+                  className="dusk-key h-14 text-lg font-semibold tabular-nums"
                 >
                   {n}
                 </button>
@@ -262,34 +278,34 @@ export default function ReservaWidget({ headingLevel = 'h1' }) {
                 aria-checked={bigGroup}
                 aria-label="6 ou mais pessoas"
                 onClick={chooseBigGroup}
-                className="ship-key h-12 font-display text-lg font-semibold"
+                className="dusk-key h-14 text-lg font-semibold"
               >
                 6+
               </button>
             </div>
 
             {bigGroup && (
-              <div className="mt-3 rounded-2xl border border-ship-line-strong bg-ship-hull p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <span id={`${uid}-big-label`} className="text-[15px] text-ship-ink">
+              <div className="mt-3 rounded-2xl border border-dusk-line bg-dusk-surface p-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
+                <div className="flex items-center justify-between gap-4 sm:order-2">
+                  <span id={`${uid}-big-label`} className="text-[15px] text-dusk-ink sm:sr-only">
                     Quantas pessoas no grupo?
                   </span>
                   <div className="flex items-center gap-2" role="group" aria-labelledby={`${uid}-big-label`}>
                     <button
                       type="button"
-                      className="ship-key size-11"
+                      className="dusk-key size-11"
                       aria-label="Uma pessoa a menos"
                       disabled={guests <= GRUPO_GRANDE}
                       onClick={() => setGuests((g) => Math.max(GRUPO_GRANDE, g - 1))}
                     >
                       <Minus className="size-5" aria-hidden />
                     </button>
-                    <output aria-live="polite" className="w-10 text-center font-display text-xl font-bold">
+                    <output aria-live="polite" className="w-10 text-center text-xl font-semibold tabular-nums">
                       {guests}
                     </output>
                     <button
                       type="button"
-                      className="ship-key size-11"
+                      className="dusk-key size-11"
                       aria-label="Uma pessoa a mais"
                       disabled={guests >= MAX_PESSOAS}
                       onClick={() => setGuests((g) => Math.min(MAX_PESSOAS, g + 1))}
@@ -298,25 +314,25 @@ export default function ReservaWidget({ headingLevel = 'h1' }) {
                     </button>
                   </div>
                 </div>
-                <p className="mt-3 flex gap-2 text-sm leading-relaxed text-ship-ink-soft">
-                  <TriangleAlert className="mt-0.5 size-4 shrink-0 text-ship-orange" aria-hidden />
+                <p className="mt-3 flex gap-2 text-[15px] leading-relaxed text-dusk-ink-soft sm:mt-0">
+                  <TriangleAlert className="mt-0.5 size-4 shrink-0 text-dusk-amber" aria-hidden />
                   <span>
-                    Grupos a partir de {GRUPO_GRANDE} pessoas fazem <strong className="font-semibold text-ship-ink">pré-reserva</strong>: a equipe do{' '}
+                    Grupos a partir de {GRUPO_GRANDE} pessoas fazem <strong className="font-semibold text-dusk-ink">pré-reserva</strong>: a equipe do{' '}
                     {appName} confirma pelo WhatsApp. Mais de {MAX_PESSOAS} pessoas? Fale com a gente.
                   </span>
                 </p>
               </div>
             )}
-          </Step>
+          </Group>
 
-          {/* 2. Dia */}
-          <Step icon={CalendarDays} title="Que dia?" done={date ? shortDateLabel(date) : null}>
+          {/* Dia */}
+          <Group title="Que dia?" value={date ? shortDateLabel(date) : null}>
             <div
               ref={daysRef}
               role="radiogroup"
               aria-label="Dia da reserva"
               aria-describedby={errors.date ? ids.dateError : undefined}
-              className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 scroll-row"
+              className="grid grid-cols-[repeat(auto-fit,minmax(88px,1fr))] gap-2 sm:gap-3"
             >
               {openDays.map((d) => {
                 const key = toDateKey(d);
@@ -328,35 +344,42 @@ export default function ReservaWidget({ headingLevel = 'h1' }) {
                     role="radio"
                     aria-checked={date === key}
                     aria-label={shortDateLabel(key)}
-                    onClick={(e) => chooseDate(key, e.currentTarget)}
-                    className="ship-key h-[72px] min-w-[72px] shrink-0 snap-start flex-col gap-0.5 px-2"
+                    onClick={() => chooseDate(key)}
+                    className="dusk-key h-[76px] flex-col gap-1 px-2"
                   >
                     <span className="text-[13px] font-medium">{label}</span>
-                    <span className="font-display text-xl font-bold leading-none">{dayMonth(d)}</span>
+                    <span className="text-xl font-semibold leading-none tabular-nums text-dusk-ink">{dayMonth(d)}</span>
                   </button>
                 );
               })}
               {!loadingSlots && openDays.length === 0 && (
-                <p className="text-[15px] text-ship-ink-soft">Não há dias abertos para reserva agora. Fale com o {appName} pelo WhatsApp.</p>
+                <p className="col-span-full text-[15px] text-dusk-ink-soft">Não há dias abertos para reserva agora. Fale com o {appName} pelo WhatsApp.</p>
               )}
             </div>
             <FieldError id={ids.dateError} message={errors.date} />
-          </Step>
+          </Group>
 
-          {/* 3. Horário */}
-          <Step icon={Clock} title="Que horário?" done={time || null}>
+          {/* Horário: a faixa de céu */}
+          <Group title="Que horário?" value={time || null}>
             <div ref={timesRef} aria-describedby={errors.time ? ids.timeError : undefined}>
               {!date ? (
-                <p className="text-[15px] text-ship-ink-soft">Escolha o dia para ver os horários livres.</p>
+                <SkyPlaceholder>Escolha o dia para ver os horários livres.</SkyPlaceholder>
               ) : loadingSlots ? (
-                <p className="flex items-center gap-2 text-[15px] text-ship-ink-soft" role="status">
-                  <Loader2 className="size-4 animate-spin" aria-hidden /> Vendo os lugares livres…
-                </p>
+                <SkyPlaceholder>
+                  <span className="flex items-center gap-2" role="status">
+                    <Loader2 className="size-4 animate-spin" aria-hidden /> Vendo os horários livres…
+                  </span>
+                </SkyPlaceholder>
               ) : times.length === 0 ? (
-                <p className="text-[15px] text-ship-ink-soft">Nenhum horário de reserva cadastrado para esse dia.</p>
+                <SkyPlaceholder>Nenhum horário de reserva cadastrado para esse dia.</SkyPlaceholder>
               ) : (
-                <div role="radiogroup" aria-label="Horário da reserva" className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                  {times.map((slot) => {
+                <div
+                  role="radiogroup"
+                  aria-label="Horário da reserva"
+                  style={{ '--cols': cols }}
+                  className="grid grid-cols-4 overflow-hidden rounded-[20px] sm:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
+                >
+                  {times.map((slot, i) => {
                     const { state } = availabilityOf(slot);
                     const disabled = state === 'cheio' || state === 'bloqueado' || state === 'passou';
                     const note = SLOT_NOTE[state];
@@ -369,12 +392,11 @@ export default function ReservaWidget({ headingLevel = 'h1' }) {
                         disabled={disabled}
                         aria-label={note ? `${slot}, ${note}` : slot}
                         onClick={() => chooseTime(slot)}
-                        className="ship-key h-16 flex-col gap-0.5"
+                        style={{ '--sky': skyColor(i, times.length) }}
+                        className="dusk-slot"
                       >
-                        <span className={`font-display text-lg font-bold leading-none ${disabled ? 'line-through' : ''}`}>{slot}</span>
-                        {note && (
-                          <span className={`text-xs font-medium ${state === 'poucos' && time !== slot ? 'text-ship-orange' : ''}`}>{note}</span>
-                        )}
+                        <span className={`text-lg font-semibold leading-none tabular-nums ${disabled ? 'line-through' : ''}`}>{slot}</span>
+                        {note && <span className={`text-[12px] ${state === 'poucos' ? 'font-bold' : 'font-medium'}`}>{note}</span>}
                       </button>
                     );
                   })}
@@ -382,18 +404,18 @@ export default function ReservaWidget({ headingLevel = 'h1' }) {
               )}
             </div>
             {timeCleared && (
-              <p className="mt-2 text-sm text-ship-orange" role="status">
+              <p className="mt-2 text-sm font-medium text-dusk-amber" role="status">
                 {timeCleared}
               </p>
             )}
             <FieldError id={ids.timeError} message={errors.time} />
-          </Step>
+          </Group>
 
-          {/* 4. Dados */}
-          <Step icon={User} title="Seus dados" last>
-            <div className="space-y-4">
+          {/* Dados */}
+          <Group title="Seus dados">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor={ids.name} className="mb-1.5 block text-sm font-medium text-ship-ink">
+                <label htmlFor={ids.name} className="mb-1.5 block text-sm font-medium text-dusk-ink">
                   Nome para a reserva
                 </label>
                 <input
@@ -410,12 +432,12 @@ export default function ReservaWidget({ headingLevel = 'h1' }) {
                   aria-invalid={Boolean(errors.name)}
                   aria-describedby={errors.name ? ids.nameError : undefined}
                   placeholder="Como devemos chamar você"
-                  className="ship-field"
+                  className="dusk-field"
                 />
                 <FieldError id={ids.nameError} message={errors.name} />
               </div>
               <div>
-                <label htmlFor={ids.phone} className="mb-1.5 block text-sm font-medium text-ship-ink">
+                <label htmlFor={ids.phone} className="mb-1.5 block text-sm font-medium text-dusk-ink">
                   WhatsApp
                 </label>
                 <input
@@ -432,14 +454,14 @@ export default function ReservaWidget({ headingLevel = 'h1' }) {
                   aria-invalid={Boolean(errors.phone)}
                   aria-describedby={errors.phone ? ids.phoneError : undefined}
                   placeholder="(51) 99999-9999"
-                  className="ship-field"
+                  className="dusk-field"
                 />
                 <FieldError id={ids.phoneError} message={errors.phone} />
               </div>
               {notesEnabled && (
-                <div>
-                  <label htmlFor={ids.notes} className="mb-1.5 block text-sm font-medium text-ship-ink">
-                    Alguma observação? <span className="font-normal text-ship-ink-soft">(opcional)</span>
+                <div className="sm:col-span-2">
+                  <label htmlFor={ids.notes} className="mb-1.5 block text-sm font-medium text-dusk-ink">
+                    Alguma observação? <span className="font-normal text-dusk-ink-soft">(opcional)</span>
                   </label>
                   <textarea
                     id={ids.notes}
@@ -448,49 +470,56 @@ export default function ReservaWidget({ headingLevel = 'h1' }) {
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Aniversário, alergia, cadeirinha para criança…"
-                    className="ship-field resize-none"
+                    className="dusk-field resize-none"
                   />
-                  <p className="mt-1 text-right text-xs text-ship-ink-soft" aria-hidden>
+                  <p className="mt-1 text-right text-xs text-dusk-ink-soft" aria-hidden>
                     {notes.length}/200
                   </p>
                 </div>
               )}
             </div>
-          </Step>
-        </ol>
+          </Group>
 
-        {submitError && (
-          <div role="alert" className="mx-4 mb-4 rounded-2xl border border-ship-danger/60 bg-ship-hull p-4 text-[15px] leading-relaxed">
-            <p className="font-semibold text-ship-ink">Não conseguimos salvar sua reserva.</p>
-            <p className="mt-1 text-ship-ink-soft">
-              Seus dados continuam aqui: tente de novo em instantes
-              {restaurantWhatsapp ? (
-                <>
-                  {' '}
-                  ou{' '}
-                  <a href={restaurantWhatsapp} target="_blank" rel="noreferrer" className="font-semibold text-ship-cyan underline underline-offset-4">
-                    reserve pelo WhatsApp
-                  </a>
-                </>
-              ) : null}
-              .
-            </p>
-          </div>
-        )}
-
-        {/* Resumo sempre à mão, com o botão no alcance do polegar */}
-        <div className="sticky bottom-0 z-10 border-t border-ship-line-strong bg-ship-hull/95 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 backdrop-blur">
-          <div className="flex items-center gap-3">
-            <div className="min-w-0 flex-1" aria-live="polite">
-              <p className="truncate font-display text-[15px] font-semibold text-ship-ink">{summaryWhen}</p>
-              <p className="truncate text-[13px] text-ship-ink-soft">
-                {date ? `${pessoasLabel(guests)} · ${nextStep}` : nextStep}
+          {submitError && (
+            <div role="alert" className="rounded-2xl border border-dusk-danger/40 bg-dusk-surface p-4 text-[15px] leading-relaxed">
+              <p className="font-semibold text-dusk-ink">Não conseguimos salvar sua reserva.</p>
+              <p className="mt-1 text-dusk-ink-soft">
+                Seus dados continuam aqui: tente de novo em instantes
+                {restaurantWhatsapp ? (
+                  <>
+                    {' '}
+                    ou{' '}
+                    <a href={restaurantWhatsapp} target="_blank" rel="noreferrer" className="font-semibold text-dusk-violet underline underline-offset-4">
+                      reserve pelo WhatsApp
+                    </a>
+                  </>
+                ) : null}
+                .
               </p>
+            </div>
+          )}
+        </div>
+
+        {/* Resumo e botão sempre à mão, presos embaixo da tela */}
+        <div className="sticky bottom-0 z-10 mt-9 border-t border-dusk-line bg-dusk-surface/95 px-5 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:mx-8 sm:mb-6 sm:rounded-[20px] sm:border sm:px-6 sm:py-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="min-w-0 flex-1" aria-live="polite">
+              <p className="flex items-center gap-2 text-[16px] font-semibold text-dusk-ink">
+                {time && (
+                  <span
+                    aria-hidden
+                    className="size-3.5 shrink-0 rounded-full ring-1 ring-dusk-ink/15"
+                    style={{ background: skyColor(times.indexOf(time), times.length) }}
+                  />
+                )}
+                <span className="truncate">{summaryWhen}</span>
+              </p>
+              <p className="text-[14px] leading-snug text-dusk-ink-soft">{date ? `${pessoasLabel(guests)} · ${nextStep}` : nextStep}</p>
             </div>
             <button
               type="submit"
               disabled={sending}
-              className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full bg-ship-cyan px-5 font-display text-[15px] font-bold text-ship-on-cyan transition-[background-color,transform] duration-150 enabled:active:scale-[0.97] disabled:cursor-wait disabled:opacity-80 [@media(hover:hover)]:enabled:hover:bg-ship-cyan-hover"
+              className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full bg-dusk-violet px-5 text-[15px] font-semibold text-white transition-[background-color,transform] duration-150 enabled:active:scale-[0.97] disabled:cursor-wait disabled:opacity-80 sm:h-14 sm:px-8 sm:text-[16px] [@media(hover:hover)]:enabled:hover:bg-dusk-violet-hover"
             >
               {sending && <Loader2 className="size-4 animate-spin" aria-hidden />}
               {sending ? 'Reservando…' : isBig ? 'Enviar pré-reserva' : 'Confirmar reserva'}
@@ -502,35 +531,34 @@ export default function ReservaWidget({ headingLevel = 'h1' }) {
   );
 }
 
-function Step({ icon: Icon, title, done, last = false, children }) {
+function Group({ title, value = null, children }) {
   return (
-    <li className={`relative pl-12 ${last ? 'pb-6' : 'pb-8'}`}>
-      <span
-        aria-hidden
-        className={`absolute left-0 top-0 grid size-10 place-items-center rounded-full border ${
-          done ? 'border-ship-green bg-ship-hull text-ship-green' : 'border-ship-line-strong bg-ship-hull text-ship-ink-soft'
-        }`}
-      >
-        <Icon className="size-5" />
-      </span>
-      {/* min-w-0: um fieldset não encolhe abaixo do conteúdo e a fileira de dias esticaria a página */}
-      <fieldset className="min-w-0">
-        <legend className="mb-3 w-full">
-          <span className="flex min-h-10 items-center justify-between gap-3">
-            <span className="font-display text-lg font-semibold text-ship-ink">{title}</span>
-            {done && <span className="text-sm font-medium text-ship-ink">{done}</span>}
-          </span>
-        </legend>
-        {children}
-      </fieldset>
-    </li>
+    // min-w-0: um fieldset não encolhe abaixo do conteúdo
+    <fieldset className="min-w-0">
+      <legend className="mb-3 w-full">
+        <span className="flex items-baseline justify-between gap-3">
+          <span className="text-[17px] font-semibold text-dusk-ink">{title}</span>
+          {value && <span className="text-[15px] text-dusk-ink-soft">{value}</span>}
+        </span>
+      </legend>
+      {children}
+    </fieldset>
+  );
+}
+
+/** Lugar da faixa de céu antes de haver horários. */
+function SkyPlaceholder({ children }) {
+  return (
+    <div className="flex min-h-[88px] items-center justify-center rounded-[20px] border border-dashed border-dusk-line-strong bg-dusk-surface/60 px-4 text-center text-[15px] text-dusk-ink-soft">
+      {children}
+    </div>
   );
 }
 
 function FieldError({ id, message }) {
   if (!message) return null;
   return (
-    <p id={id} className="mt-2 text-sm font-medium text-ship-danger">
+    <p id={id} className="mt-2 text-sm font-medium text-dusk-danger">
       {message}
     </p>
   );

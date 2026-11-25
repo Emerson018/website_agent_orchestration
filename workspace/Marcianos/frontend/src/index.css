@@ -1,29 +1,26 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
-/* Dois mundos com as mesmas regras:
-   - Nave (widget de reserva): céu noturno e os três neons do logo, cada um com um trabalho.
-     ciano = ação, verde alienígena = selecionado, laranja = o único destaque quente.
-   - Painel (dono): fundo claro quente, menta como o verde alienígena, sombra só no que flutua. */
+/* Dois mundos:
+   - Agendamento (público): o fim de tarde no Guaíba. Fundo lilás-acinzentado claro, superfícies brancas,
+     tinta ameixa, violeta suave como a única cor de ação; os horários levam as cores do céu.
+   - Painel (dono): fundo claro quente, menta como cor de ação, sombra só no que flutua. */
 @theme {
   --font-display: "Exo 2 Variable", "Exo 2", ui-sans-serif, system-ui, sans-serif;
   --font-panel: "Nunito Variable", "Nunito", ui-rounded, ui-sans-serif, system-ui, sans-serif;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
-  --color-ship-void: #070a18;
-  --color-ship-hull: #0e1328;
-  --color-ship-hull-raised: #161d3a;
-  --color-ship-line: rgb(150 170 255 / 0.16);
-  --color-ship-line-strong: rgb(150 170 255 / 0.32);
-  --color-ship-ink: #eef2ff;
-  --color-ship-ink-soft: #aab4d8;
-  --color-ship-cyan: #3dd9f5;
-  --color-ship-cyan-hover: #7ce6fa;
-  --color-ship-on-cyan: #04121a;
-  --color-ship-green: #7cf06b;
-  --color-ship-on-green: #062107;
-  --color-ship-orange: #ff9a3c;
-  --color-ship-danger: #ff8a7a;
+  --color-dusk-ground: #f3f1f7;
+  --color-dusk-surface: #ffffff;
+  --color-dusk-line: #e3dfec;
+  --color-dusk-line-strong: #cec8dc;
+  --color-dusk-ink: #2b2440;
+  --color-dusk-ink-soft: #5f5875;
+  --color-dusk-violet: #5b4b8a;
+  --color-dusk-violet-hover: #4a3c75;
+  --color-dusk-violet-soft: #ece8f6;
+  --color-dusk-amber: #8a4b12;
+  --color-dusk-danger: #a3302a;
 
   --color-panel-bg: #f4f2ec;
   --color-panel-sheet: #fffefb;
@@ -62,7 +59,7 @@ body,
 
 /* O fundo atrás da página (rolagem elástica, bordas) acompanha o mundo da tela */
 html {
-  background-color: var(--color-ship-void);
+  background-color: var(--color-dusk-ground);
 }
 
 html:has(.panel-root) {
@@ -74,110 +71,168 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ---------- Nave: página e widget de reserva ---------- */
+/* ---------- Agendamento: página e widget de reserva ---------- */
 
-.ship-root {
-  background-color: var(--color-ship-void);
-  color: var(--color-ship-ink);
-  color-scheme: dark;
-  /* Campo de estrelas fixo, desenhado com pontos: o céu da nave, sem brilho decorativo */
-  background-image:
-    radial-gradient(1px 1px at 12% 18%, rgb(238 242 255 / 0.55), transparent 60%),
-    radial-gradient(1px 1px at 78% 9%, rgb(238 242 255 / 0.4), transparent 60%),
-    radial-gradient(1.5px 1.5px at 64% 32%, rgb(124 240 107 / 0.45), transparent 60%),
-    radial-gradient(1px 1px at 30% 58%, rgb(238 242 255 / 0.35), transparent 60%),
-    radial-gradient(1.5px 1.5px at 88% 66%, rgb(61 217 245 / 0.45), transparent 60%),
-    radial-gradient(1px 1px at 6% 84%, rgb(238 242 255 / 0.4), transparent 60%),
-    radial-gradient(1px 1px at 48% 92%, rgb(255 154 60 / 0.4), transparent 60%);
-  background-attachment: fixed;
+.dusk-root {
+  background-color: var(--color-dusk-ground);
+  color: var(--color-dusk-ink);
+  color-scheme: light;
 }
 
-.ship-root ::selection {
-  background: var(--color-ship-green);
-  color: var(--color-ship-on-green);
+.dusk-root ::selection {
+  background: var(--color-dusk-violet-soft);
+  color: var(--color-dusk-ink);
 }
 
-.ship-root input,
-.ship-root textarea {
-  caret-color: var(--color-ship-cyan);
+.dusk-root input,
+.dusk-root textarea {
+  caret-color: var(--color-dusk-violet);
 }
 
-.ship-root :focus-visible {
-  outline: 2px solid var(--color-ship-cyan);
+.dusk-root :focus-visible {
+  outline: 2px solid var(--color-dusk-violet);
   outline-offset: 3px;
 }
 
-.ship-root {
-  scrollbar-color: var(--color-ship-line-strong) var(--color-ship-void);
+.dusk-root {
+  scrollbar-color: var(--color-dusk-line-strong) var(--color-dusk-ground);
+}
+
+/* Faixa de céu: o anel do horário escolhido e o foco do teclado são desenhados por dentro da célula,
+   arredondados e recuados 6px, para que o recorte arredondado da faixa e as células vizinhas não os cortem.
+   Fora da camada de componentes para vencer o contorno global de foco do .dusk-root. */
+.dusk-root .dusk-slot::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 12px;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 3px transparent;
+  transition: box-shadow 200ms var(--ease-out-strong), transform 200ms var(--ease-out-strong);
+  transform: scale(0.96);
+}
+
+.dusk-root .dusk-slot[aria-checked='true']::after {
+  box-shadow: inset 0 0 0 3px var(--color-dusk-ink);
+  transform: scale(1);
+}
+
+.dusk-root .dusk-slot:focus-visible {
+  outline: none;
+}
+
+.dusk-root .dusk-slot:focus-visible::after {
+  box-shadow:
+    inset 0 0 0 3px var(--color-dusk-ink),
+    0 0 0 3px rgb(255 255 255 / 0.85);
+  transform: scale(1);
+}
+
+.dusk-root .dusk-slot:focus-visible:not([aria-checked='true'])::after {
+  box-shadow: inset 0 0 0 2px var(--color-dusk-violet), 0 0 0 3px rgb(255 255 255 / 0.85);
 }
 
 /* Componentes na camada do Tailwind: os utilitários (hidden, px-0, size-*) vencem quando usados junto.
-   ship-key é a tecla do console (todas as escolhas do widget); selecionada, ganha o verde alienígena
-   e o único brilho do widget fora do cartão de embarque. */
+   dusk-key é toda escolha do agendamento (pessoas, dias, botões do cartão); selecionada, ganha a borda violeta.
+   dusk-slot é a célula da faixa de céu dos horários: a cor vem de --sky, calculada pela posição na noite. */
 @layer components {
-  .ship-key {
+  .dusk-key {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 16px;
-    border: 1px solid var(--color-ship-line-strong);
-    background: var(--color-ship-hull-raised);
-    color: var(--color-ship-ink);
+    border-radius: 14px;
+    border: 1px solid var(--color-dusk-line);
+    background: var(--color-dusk-surface);
+    color: var(--color-dusk-ink-soft);
     transition:
       background-color 160ms var(--ease-out-strong),
       border-color 160ms var(--ease-out-strong),
       color 160ms var(--ease-out-strong),
+      box-shadow 160ms var(--ease-out-strong),
       transform 160ms var(--ease-out-strong);
   }
 
   @media (hover: hover) and (pointer: fine) {
-    .ship-key:not(:disabled):not([aria-checked='true']):hover {
-      border-color: var(--color-ship-cyan);
+    .dusk-key:not(:disabled):not([aria-checked='true']):hover {
+      border-color: var(--color-dusk-line-strong);
+      color: var(--color-dusk-ink);
     }
   }
 
-  .ship-key:not(:disabled):active {
+  .dusk-key:not(:disabled):active {
     transform: scale(0.97);
   }
 
-  .ship-key[aria-checked='true'] {
-    background: var(--color-ship-green);
-    border-color: var(--color-ship-green);
-    color: var(--color-ship-on-green);
-    box-shadow: 0 6px 18px -6px rgb(124 240 107 / 0.55);
+  .dusk-key[aria-checked='true'] {
+    background: var(--color-dusk-violet-soft);
+    border-color: var(--color-dusk-violet);
+    box-shadow: inset 0 0 0 1px var(--color-dusk-violet);
+    color: var(--color-dusk-ink);
   }
 
-  .ship-key:disabled {
+  .dusk-key:disabled {
     cursor: not-allowed;
-    background: transparent;
-    border-style: dashed;
-    color: var(--color-ship-ink-soft);
+    opacity: 0.5;
   }
 
-  .ship-field {
+  .dusk-slot {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 88px;
+    background: var(--sky);
+    color: var(--color-dusk-ink);
+    transition:
+      transform 160ms var(--ease-out-strong),
+      box-shadow 160ms var(--ease-out-strong),
+      filter 160ms var(--ease-out-strong);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .dusk-slot:not(:disabled):not([aria-checked='true']):hover {
+      filter: brightness(1.04) saturate(1.1);
+    }
+  }
+
+  .dusk-slot:not(:disabled):active {
+    transform: scale(0.97);
+  }
+
+  .dusk-slot:disabled {
+    cursor: not-allowed;
+    background: color-mix(in oklab, var(--sky) 35%, var(--color-dusk-ground));
+    color: var(--color-dusk-ink-soft);
+  }
+
+  .dusk-field {
     width: 100%;
     border-radius: 14px;
-    border: 1px solid var(--color-ship-line-strong);
-    background: var(--color-ship-hull);
-    color: var(--color-ship-ink);
+    border: 1px solid var(--color-dusk-line-strong);
+    background: var(--color-dusk-surface);
+    color: var(--color-dusk-ink);
     font-size: 16px; /* 16px evita o zoom automático do iPhone ao tocar */
     line-height: 1.4;
     padding: 12px 14px;
-    transition: border-color 160ms var(--ease-out-strong);
+    transition:
+      border-color 160ms var(--ease-out-strong),
+      box-shadow 160ms var(--ease-out-strong);
   }
 
-  .ship-field::placeholder {
-    color: #8d97bf;
+  .dusk-field::placeholder {
+    color: #8a839e;
   }
 
-  .ship-field:focus-visible {
+  .dusk-field:focus-visible {
     outline: none;
-    border-color: var(--color-ship-cyan);
-    box-shadow: 0 0 0 3px rgb(61 217 245 / 0.25);
+    border-color: var(--color-dusk-violet);
+    box-shadow: 0 0 0 3px rgb(91 75 138 / 0.18);
   }
 
-  .ship-field[aria-invalid='true'] {
-    border-color: var(--color-ship-danger);
+  .dusk-field[aria-invalid='true'] {
+    border-color: var(--color-dusk-danger);
   }
 
   .panel-field {
@@ -275,16 +330,8 @@ body {
   }
 }
 
-/* Trilha de voo pontilhada que liga as etapas */
-.flight-path {
-  background-image: radial-gradient(circle, var(--color-ship-line-strong) 1.2px, transparent 1.6px);
-  background-size: 2px 10px;
-  background-repeat: repeat-y;
-  background-position: center top;
-}
-
-/* Cartão de embarque: o momento marcante, revelado uma vez de cima para baixo */
-.boarding-pass {
+/* Cartão da reserva confirmada: revelado uma vez de cima para baixo */
+.reserva-card {
   animation: pass-print 620ms var(--ease-out-strong) both;
 }
 
@@ -297,39 +344,6 @@ body {
     clip-path: inset(0 0 0 0 round 24px);
     transform: none;
   }
-}
-
-/* Picote do cartão: dois entalhes nas laterais, como num bilhete de verdade */
-.pass-perforation {
-  position: relative;
-}
-
-.pass-perforation::before,
-.pass-perforation::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  background: var(--color-ship-void);
-  border: 1px solid var(--color-ship-line-strong);
-  transform: translateY(-50%);
-}
-
-.pass-perforation::before {
-  left: -12px;
-}
-
-.pass-perforation::after {
-  right: -12px;
-}
-
-.pass-perforation {
-  background-image: radial-gradient(circle, var(--color-ship-void) 3px, transparent 3.5px);
-  background-size: 14px 8px;
-  background-repeat: repeat-x;
-  background-position: left center;
 }
 
 /* ---------- Painel do dono ---------- */
@@ -418,15 +432,19 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .boarding-pass {
+  .reserva-card {
     animation: pass-fade 300ms ease both;
   }
   .panel-dialog[open],
   .panel-toast {
     animation: pass-fade 200ms ease both;
   }
-  .ship-key:not(:disabled):active,
+  .dusk-key:not(:disabled):active,
+  .dusk-slot:not(:disabled):active,
   .panel-btn:not(:disabled):active {
+    transform: none;
+  }
+  .dusk-root .dusk-slot::after {
     transform: none;
   }
 }
