@@ -3,10 +3,11 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   STATUS,
   fromDateKey,
-  getSeatsTaken,
+  getPeopleBooked,
+  getReservationsTaken,
   getSlotLimit,
   longDateLabel,
-  lugaresLabel,
+  vagasLabel,
   ocupaLugar,
   pessoasLabel,
   sortTimes,
@@ -34,9 +35,9 @@ export default function HojeView({ bookings, config, onStatus, onOpen }) {
   const arrived = ofDay.filter((b) => b.status === STATUS.CHEGOU).reduce((s, b) => s + b.pessoas, 0);
 
   const isOpen = (config.dias_funcionamento || []).includes(fromDateKey(day).getDay());
-  // Lugares livres somados por horário: um horário lotado acima do limite não "come" vagas de outro
+  // Vagas livres somadas por horário: um horário lotado acima do limite não "come" vagas de outro
   const slotTimes = isOpen ? sortTimes(config.horarios_disponiveis || []) : [];
-  const freeSeats = slotTimes.reduce((sum, t) => sum + Math.max(0, getSlotLimit(config, day, t) - getSeatsTaken(bookings, day, t)), 0);
+  const freeSeats = slotTimes.reduce((sum, t) => sum + Math.max(0, getSlotLimit(config, day, t) - getReservationsTaken(bookings, day, t)), 0);
 
   const matcher = FILTERS.find((f) => f.id === filter).match;
   const visible = ofDay.filter((b) => matcher(b.status));
@@ -85,7 +86,7 @@ export default function HojeView({ bookings, config, onStatus, onOpen }) {
               <strong className="font-semibold">{pessoasLabel(people)}</strong> em {active.length} {active.length === 1 ? 'reserva' : 'reservas'}
             </span>
             {arrived > 0 && <>{' '}<span className="whitespace-nowrap">· {arrived} já chegaram</span></>}
-            {isOpen && slotTimes.length > 0 && <>{' '}<span className="whitespace-nowrap">· {lugaresLabel(freeSeats)} livres</span></>}
+            {isOpen && slotTimes.length > 0 && <>{' '}<span className="whitespace-nowrap">· {vagasLabel(freeSeats)} livres</span></>}
             {pending > 0 && (
               <>
                 {' '}
@@ -131,7 +132,8 @@ export default function HojeView({ bookings, config, onStatus, onOpen }) {
         <div className="space-y-4">
           {groups.map(({ time, items }) => {
             const limit = getSlotLimit(config, day, time);
-            const taken = getSeatsTaken(bookings, day, time);
+            const taken = getReservationsTaken(bookings, day, time);
+            const peopleInSlot = getPeopleBooked(bookings, day, time);
             return (
               <section key={time} aria-labelledby={`slot-${time}`} className="overflow-hidden rounded-[20px] border border-panel-line bg-panel-sheet">
                 <header className="flex items-baseline justify-between gap-3 border-b border-panel-line bg-panel-bg/60 px-4 py-2.5">
@@ -139,8 +141,9 @@ export default function HojeView({ bookings, config, onStatus, onOpen }) {
                     {time}
                   </h3>
                   <p className={`text-[14px] ${taken > limit ? 'font-semibold text-st-naoveio-ink' : 'text-panel-ink-soft'}`}>
-                    {taken} de {lugaresLabel(limit)}
+                    {taken} de {vagasLabel(limit)}
                     {taken > limit ? ' (acima do limite)' : ''}
+                    <span className="text-panel-ink-soft"> · {pessoasLabel(peopleInSlot)}</span>
                   </p>
                 </header>
                 <ul className="divide-y divide-panel-line">

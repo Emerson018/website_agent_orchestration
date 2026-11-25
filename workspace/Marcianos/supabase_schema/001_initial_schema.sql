@@ -32,7 +32,7 @@ ON CONFLICT (chave) DO NOTHING;
 
 INSERT INTO configuracao_agenda (chave, valor)
 VALUES 
-('vagas_padrao', '5') -- Capacidade padrão de 5 pessoas/lugares por slot
+('vagas_padrao', '5') -- Capacidade padrão: 5 reservas (mesas) por horário, qualquer que seja o tamanho do grupo
 ON CONFLICT (chave) DO NOTHING;
 
 INSERT INTO configuracao_agenda (chave, valor)

@@ -1,6 +1,6 @@
 import React, { useEffect, useId, useMemo, useState } from 'react';
 import { Loader2, Minus, Plus, X } from 'lucide-react';
-import { formatPhone, lugaresLabel, sortTimes, toDateKey, pad2 } from '../../services/agenda';
+import { formatPhone, vagasLabel, sortTimes, toDateKey, pad2 } from '../../services/agenda';
 import { isWebhookDevUrl } from '../../services/notify';
 
 const WEEK = [
@@ -229,15 +229,15 @@ export default function ConfigView({ config, usingDb, onSave, onDirtyChange }) {
         </div>
       </Sheet>
 
-      <Sheet title="Lugares e regras">
+      <Sheet title="Vagas e regras">
         <div className="grid gap-5 sm:grid-cols-2">
           <Stepper
-            label="Lugares por horário"
-            hint="Quantas pessoas cabem em cada horário. Uma reserva de 4 pessoas ocupa 4 lugares."
+            label="Reservas por horário"
+            hint="Quantas reservas (mesas) cabem em cada horário. Cada reserva ocupa 1 vaga, seja de 2 ou de 5 pessoas."
             value={Number(draft.vagas_padrao) || 0}
             min={1}
             max={200}
-            format={lugaresLabel}
+            format={vagasLabel}
             onChange={(v) => set('vagas_padrao', v)}
           />
           <Stepper
@@ -264,7 +264,7 @@ export default function ConfigView({ config, usingDb, onSave, onDirtyChange }) {
         </label>
       </Sheet>
 
-      <Sheet title="Exceções de um dia" hint="Feriado, evento ou casa cheia: mude os lugares só daquele dia. 0 fecha o horário.">
+      <Sheet title="Exceções de um dia" hint="Feriado, evento ou casa cheia: mude as vagas só daquele dia. 0 fecha o horário.">
         <div className="flex flex-wrap items-end gap-3">
           <label className="block text-sm font-semibold">
             Dia
@@ -299,7 +299,7 @@ export default function ConfigView({ config, usingDb, onSave, onDirtyChange }) {
                     onChange={(e) => setException(t, e.target.value)}
                     className="panel-field mt-1.5"
                   />
-                  <p className="mt-1 text-[13px] text-panel-ink-soft">{value === 0 ? 'Fechado' : value !== undefined ? lugaresLabel(value) : 'Padrão'}</p>
+                  <p className="mt-1 text-[13px] text-panel-ink-soft">{value === 0 ? 'Fechado' : value !== undefined ? vagasLabel(value) : 'Padrão'}</p>
                 </li>
               );
             })}

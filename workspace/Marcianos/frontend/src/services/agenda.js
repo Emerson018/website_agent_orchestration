@@ -45,15 +45,21 @@ export function fromDateKey(key) {
   return new Date(`${key}T00:00:00`);
 }
 
-/** Lugares do horário: exceção do dia quando houver, senão o padrão. 0 = horário bloqueado. */
+/** Vagas do horário (reservas que cabem nele): exceção do dia quando houver, senão o padrão. 0 = horário bloqueado. */
 export function getSlotLimit(config, dateKey, time) {
   const custom = config.limites_customizados?.[dateKey]?.[time];
   const value = custom ?? config.vagas_padrao ?? 0;
   return Math.max(0, Number(value) || 0);
 }
 
-/** Pessoas já reservadas num horário. A capacidade conta pessoas, não reservas. */
-export function getSeatsTaken(bookings, dateKey, time) {
+/** Reservas que ocupam vaga num horário. A capacidade conta reservas (mesas), não pessoas:
+ *  uma reserva de 5 pessoas ocupa 1 vaga, igual a uma de 2. */
+export function getReservationsTaken(bookings, dateKey, time) {
+  return bookings.filter((b) => b.data === dateKey && b.horario === time && ocupaLugar(b.status)).length;
+}
+
+/** Pessoas reservadas num horário (informativo para o painel; não limita a agenda). */
+export function getPeopleBooked(bookings, dateKey, time) {
   return bookings
     .filter((b) => b.data === dateKey && b.horario === time && ocupaLugar(b.status))
     .reduce((sum, b) => sum + (Number(b.pessoas) || 0), 0);
@@ -76,11 +82,12 @@ export function getSlotAvailability({ config, bookings, dateKey, time, guests = 
   const limit = getSlotLimit(config, dateKey, time);
   if (isPastSlot(dateKey, time, now)) return { state: 'passou', remaining: 0, limit };
   if (limit === 0) return { state: 'bloqueado', remaining: 0, limit };
-  const remaining = Math.max(0, limit - getSeatsTaken(bookings, dateKey, time));
-  // Grupo grande é pré-reserva: o dono decide, então não esbarra no limite de lugares
-  if (guests >= GRUPO_GRANDE) return { state: remaining > 0 ? 'livre' : 'cheio', remaining, limit };
-  if (remaining < guests) return { state: 'cheio', remaining, limit };
-  return { state: remaining - guests <= 1 ? 'poucos' : 'livre', remaining, limit };
+  // Cada reserva ocupa uma vaga, qualquer que seja o tamanho do grupo
+  const remaining = Math.max(0, limit - getReservationsTaken(bookings, dateKey, time));
+  if (remaining === 0) return { state: 'cheio', remaining, limit };
+  // Grupo grande é pré-reserva: o dono decide, então basta haver vaga
+  if (guests >= GRUPO_GRANDE) return { state: 'livre', remaining, limit };
+  return { state: remaining === 1 ? 'poucos' : 'livre', remaining, limit };
 }
 
 /** Dias abertos dentro da janela de antecedência, a partir de hoje. */
@@ -149,7 +156,7 @@ export function longDateLabel(dateKey) {
 }
 
 export const pessoasLabel = (n) => `${n} ${Number(n) === 1 ? 'pessoa' : 'pessoas'}`;
-export const lugaresLabel = (n) => `${n} ${Number(n) === 1 ? 'lugar' : 'lugares'}`;
+export const vagasLabel = (n) => `${n} ${Number(n) === 1 ? 'vaga' : 'vagas'}`;
 
 /** Arquivo .ics para o cliente salvar a reserva na agenda do celular. */
 export function buildIcs({ title, dateKey, time, durationMinutes = 120, location, description }) {

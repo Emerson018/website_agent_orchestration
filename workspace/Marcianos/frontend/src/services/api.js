@@ -57,8 +57,8 @@ const MOCK_CONFIG = 'mock_configuracao_agenda';
 const DEFAULT_CONFIG = {
   dias_funcionamento: [2, 3, 4, 5, 6, 0], // Terça a domingo (0 = domingo)
   horarios_disponiveis: ['18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00'],
-  vagas_padrao: 5, // Lugares (pessoas) por horário
-  limites_customizados: {}, // { 'AAAA-MM-DD': { 'HH:MM': lugares } }, 0 = bloqueado
+  vagas_padrao: 5, // Reservas (mesas) por horário; cada reserva ocupa 1 vaga, qualquer que seja o grupo
+  limites_customizados: {}, // { 'AAAA-MM-DD': { 'HH:MM': vagas } }, 0 = bloqueado
   campo_observacoes_ativo: true,
   antecedencia_maxima_dias: 7,
   acessos_pagina_agenda: 0,
