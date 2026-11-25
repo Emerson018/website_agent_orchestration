@@ -107,7 +107,7 @@ The one-time price of building and delivering a Tipo de Projeto, fixed per type 
 _Avoid_: Setup, entry fee, project price
 
 **Mensalidade (Monthly Fee)**:
-The recurring price of keeping a delivered Tipo de Projeto running: hosting, domain, maintenance and small adjustments. The Agenda's varies with the number of professionals; the other types have a single value.
+The recurring price of keeping a delivered Tipo de Projeto running: hosting, domain, maintenance and small adjustments. The Agenda's varies with the number of professionals; the other types have a single value. The first month is included in the Implantação.
 _Avoid_: Subscription, plan, hosting fee
 
 **Briefing do Negócio (Business Briefing)**:
