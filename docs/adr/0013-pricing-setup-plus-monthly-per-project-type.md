@@ -21,6 +21,7 @@ Each Tipo de Projeto has a one-time Implantação and a Mensalidade, because the
 | Site + Agenda + Dashboard | R$ 3.690 | R$ 780 | 20 dias úteis (Site day 6, Agenda day 15) |
 
 - The discount applies only to the Implantação; Mensalidades add up. A type added later by an existing client gets the Combinação price.
+- What each Implantação includes (stated on the public page): Site, one page with up to ~8 sections and a catalog of up to 60 items, WhatsApp button, map, hours and photos; Agenda, services and professionals registered, configurable hours, the owner panel; both with 2 rounds of adjustment. Copywriting from scratch, professional photos and items beyond the limits are quoted apart.
 - Prazos count from the day the client's material arrives. A Combinação is faster than the sum because the Design do Cliente is made once.
 - Implantação: Pix, 50% on approving the proposal and 50% on delivery, 5% off; or card in up to 10x sem juros at full price, received month by month (anticipation only when needed and approved).
 - Mensalidade: the first month is included; billing starts 30 days after delivery, by Pix Automático or card. A notice goes out at 15 days late; at 30 days the project goes offline and the client gets its files.

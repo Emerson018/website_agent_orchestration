@@ -235,7 +235,7 @@ function PriceColumn({ column, index, onChoose }) {
   const combinacao = column.tipos.length > 1;
   const aPartirDe = q.mensalidade_a_partir_de ? 'a partir de ' : '';
   return (
-    <li style={stagger(index + 1)} className="r-up flex flex-col py-10 lg:px-10 lg:first:pl-0 lg:last:pr-0">
+    <li style={stagger(index + 2)} className="r-up flex flex-col py-10 lg:px-10 lg:first:pl-0 lg:last:pr-0">
       {/* O selo usa o ponto aceso da linha de etapas; as outras colunas reservam a mesma altura */}
       <p className={`flex h-5 items-center gap-2 text-xs font-medium tracking-wide text-bone ${column.recomendada ? '' : 'max-lg:hidden'}`}>
         {column.recomendada && (
@@ -280,7 +280,7 @@ function PriceColumn({ column, index, onChoose }) {
           className={
             column.recomendada
               ? 'press mt-6 inline-flex items-center gap-2 rounded-full bg-signal px-6 py-3 text-sm font-semibold text-void hover:bg-signal-hover'
-              : 'press mt-6 inline-flex items-center gap-2 rounded-full border border-line-strong px-5 py-2.5 text-sm font-medium text-bone hover:border-signal hover:text-signal'
+              : 'press mt-6 inline-flex items-center gap-2 rounded-full border border-line-strong px-4 py-2 text-sm font-medium text-bone hover:border-signal hover:text-signal'
           }
         >
           {column.acao}
@@ -408,11 +408,13 @@ export default function LandingPage() {
 
   // Botão de uma coluna de preço: marca os tipos dela no formulário e leva o cliente até ele
   const handleChoosePrice = (tipos) => {
+    // Depois de um envio o formulário está fechado: reabre (handleResetForm já rola até ele)
     if (submittedData) handleResetForm();
+    else document.getElementById('formulario')?.scrollIntoView({ behavior: scrollBehavior() });
     setFormData((prev) => ({ ...prev, projectTypes: tipos }));
     setErrorMessage('');
-    document.getElementById('formulario')?.scrollIntoView({ behavior: scrollBehavior() });
-    document.getElementById('field-name')?.focus({ preventScroll: true });
+    // O campo só existe depois que o formulário renderiza de novo
+    setTimeout(() => document.getElementById('field-name')?.focus({ preventScroll: true }), 60);
   };
 
   const handleSubmit = async (e) => {
@@ -831,7 +833,7 @@ export default function LandingPage() {
           </p>
           <ul className="mt-14 grid divide-y divide-line border-y border-line lg:grid-cols-3 lg:divide-x lg:divide-y-0">
             {PRICE_COLUMNS.map((column, i) => (
-              <PriceColumn key={column.titulo} column={column} index={i + 1} onChoose={handleChoosePrice} />
+              <PriceColumn key={column.titulo} column={column} index={i} onChoose={handleChoosePrice} />
             ))}
           </ul>
 
@@ -841,7 +843,7 @@ export default function LandingPage() {
           <dl className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
             {PAGAMENTO.map((p, i) => (
               <div key={p.titulo} style={stagger(i + 6)} className="r-up border-t border-line pt-4">
-                <dt className="text-sm font-semibold text-bone">{p.titulo}</dt>
+                <dt className="font-display text-xl leading-tight">{p.titulo}</dt>
                 <dd className="mt-1 text-[15px] leading-relaxed text-bone-muted">{p.texto}</dd>
               </div>
             ))}
