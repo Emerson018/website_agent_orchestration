@@ -35,3 +35,7 @@ Each Tipo de Projeto has a one-time Implantação and a Mensalidade, because the
 - Monthly only, no setup: rejected, the operator would finance the build and lose it on an early cancellation.
 - No public prices: rejected, the operator would spend WhatsApp time on leads who cannot pay.
 - Lock-in contract: rejected in favor of "o site é seu", which is a true selling point.
+
+## Consequences
+
+- Deferred: the operator recording in the CRM what the client closed (Tipos de Projeto including the Dashboard, and the Agenda's number of professionals) is left for later, tracked in Emerson018/website_agent_orchestration#24. Until then the stored quote assumes the portal choice and 1 professional.
