@@ -134,7 +134,7 @@ A near-monochrome dark palette of void (primary) and bone (secondary), with one 
 - **Muted Bone** (bone-muted): subcopy, body paragraphs, field labels at rest, quiet links at rest.
 - **Faint Bone** (bone-faint): placeholders, "(opcional)" hints, the copyright line, minor annotations.
 - **Hairline** (line): section dividers, the form slab frame, list dividers, screenshot frames.
-- **Strong Hairline** (line-strong): input underlines at rest, the outline pill border, the step-rail connector, underline decoration on text buttons.
+- **Strong Hairline** (line-strong): input underlines at rest, the outline pill border, the step-rail connector, underline decoration on text buttons, the left rule of the Quote Summary.
 
 ### Named Rules
 **The One Lime Rule.** Signal lime marks only what you can do or where you are: actions, focus, caret, selection, errors, and the awakened point. It never colors decoration. The one exception is the rotating word in the hero title (see The Rotating Word Rule).
@@ -209,7 +209,7 @@ There are no cards. The one framed container is the **form slab**: square corner
 - **Labels:** 12px medium, 0.025em tracking, muted bone, 6px above the field; optional hints in faint bone.
 
 ### Quote Summary
-The live total under the Tipo de Projeto chips in the form slab, read from the price table (ADR 0013). Hidden until a type is ticked. A 1px strong-hairline rule on the left with 14px indent, three lines: "A partir de" plus the Implantação in 14px bone (the value semibold), then the 10x and Pix prices in muted bone; the Mensalidade and prazo in 13px muted bone; the Combinação saving in muted bone and "O valor final vem na sua proposta." in faint bone. No lime: it is information, not an action. It sits in a polite live region so screen readers hear each change; it does not animate.
+The live total under the Tipo de Projeto chips in the form slab, read from the price table (ADR 0013). Hidden until a type is ticked. A 1px strong-hairline rule on the left with 14px indent, three lines: "A partir de" plus the Implantação in 14px bone (the value semibold), then the 10x and Pix prices in muted bone; the Mensalidade and prazo in 13px muted bone; the Combinação saving in muted bone and "O valor final vem na sua proposta." in faint bone. No lime: it is information, not an action. It sits in a polite live region that is always rendered (never display:none) so screen readers hear each change, including the first; it does not animate.
 
 ### Navigation
 An absolutely positioned 80px header over the hero: the Cormorant wordmark on the left; on the right, two 14px muted-bone anchor links (hidden below md) that brighten to bone on hover, then the outline pill CTA. The footer mirrors it below a hairline: wordmark at 1.875rem with a one-line muted description, and the WhatsApp number in bone turning signal on hover.

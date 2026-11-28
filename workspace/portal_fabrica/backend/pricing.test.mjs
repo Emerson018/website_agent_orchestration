@@ -11,6 +11,8 @@ test('a Site alone costs its own Implantação and Mensalidade', () => {
     mensalidade: 59,
     economia: 0,
     prazo_dias_uteis: 7,
+    mensalidade_a_partir_de: false,
+    parcelas: 10,
     parcela_10x: 149,
     pix: 1415.5,
   });
@@ -24,6 +26,8 @@ test("the Agenda's Mensalidade follows the number of professionals", () => {
     mensalidade: 89,
     economia: 0,
     prazo_dias_uteis: 10,
+    mensalidade_a_partir_de: true,
+    parcelas: 10,
     parcela_10x: 199,
     pix: 1890.5,
   });
@@ -44,6 +48,8 @@ test('Site + Agenda is a Combinação with a fixed price and the saving in reais
     mensalidade: 148,
     economia: 490,
     prazo_dias_uteis: 15,
+    mensalidade_a_partir_de: true,
+    parcelas: 10,
     parcela_10x: 299,
     pix: 2840.5,
   });
@@ -56,6 +62,8 @@ test('Agenda + Dashboard is a Combinação', () => {
     mensalidade: 138,
     economia: 390,
     prazo_dias_uteis: 15,
+    mensalidade_a_partir_de: true,
+    parcelas: 10,
     parcela_10x: 259,
     pix: 2460.5,
   });
@@ -68,6 +76,8 @@ test('Site + Agenda + Dashboard is a Combinação, with the Agenda tier in the M
     mensalidade: 237,
     economia: 780,
     prazo_dias_uteis: 20,
+    mensalidade_a_partir_de: true,
+    parcelas: 10,
     parcela_10x: 369,
     pix: 3505.5,
   });
@@ -86,4 +96,12 @@ test('an order with no known Tipo de Projeto has no price', () => {
 
 test('repeated and unknown types are ignored', () => {
   assert.equal(quoteProject({ tipos: ['site', 'site', 'app_mobile'] }).implantacao, 1490);
+});
+
+test('the quote says when the Mensalidade is "a partir de" and how many installments the card takes', () => {
+  const site = quoteProject({ tipos: ['site'] });
+  assert.equal(site.mensalidade_a_partir_de, false);
+  assert.equal(site.parcelas, 10);
+  assert.equal(quoteProject({ tipos: ['agenda'] }).mensalidade_a_partir_de, true);
+  assert.equal(quoteProject({ tipos: ['site', 'agenda'] }).mensalidade_a_partir_de, true);
 });

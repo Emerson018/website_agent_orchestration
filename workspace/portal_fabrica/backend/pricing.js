@@ -12,7 +12,8 @@ function mensalidadeDaAgenda(profissionais) {
 
 const TIPOS = {
   site: { implantacao: 1490, mensalidade: () => 59, prazo_dias_uteis: 7 },
-  agenda: { implantacao: 1990, mensalidade: mensalidadeDaAgenda, prazo_dias_uteis: 10 },
+  // A única Mensalidade que muda por faixa: por isso é mostrada como "a partir de".
+  agenda: { implantacao: 1990, mensalidade: mensalidadeDaAgenda, prazo_dias_uteis: 10, mensalidade_por_faixa: true },
   dashboard: { implantacao: 990, mensalidade: () => 49, prazo_dias_uteis: 7 },
 };
 
@@ -51,6 +52,8 @@ export function quoteProject({ tipos = [], profissionais = 1 } = {}) {
     mensalidade: escolhidos.reduce((total, tipo) => total + TIPOS[tipo].mensalidade(profissionais), 0),
     economia: soma - implantacao,
     prazo_dias_uteis,
+    mensalidade_a_partir_de: escolhidos.some((tipo) => TIPOS[tipo].mensalidade_por_faixa === true),
+    parcelas: PARCELAS,
     parcela_10x: centavos(implantacao / PARCELAS),
     pix: centavos(implantacao * (1 - DESCONTO_PIX)),
   };

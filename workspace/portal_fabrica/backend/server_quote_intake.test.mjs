@@ -39,6 +39,8 @@ test('Lead intake stores the quote computed on the server and ignores prices sen
       mensalidade: 148,
       economia: 490,
       prazo_dias_uteis: 15,
+      mensalidade_a_partir_de: true,
+      parcelas: 10,
       parcela_10x: 299,
       pix: 2840.5,
     });

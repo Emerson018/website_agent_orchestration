@@ -190,20 +190,21 @@ const formatBRL = (value) =>
 // A região viva existe sempre (vazia sem escolha) para o leitor de tela anunciar cada mudança.
 function QuoteSummary({ projectTypes }) {
   const quote = quoteProject({ tipos: projectTypes });
-  const temAgenda = quote?.tipos.includes('agenda');
+  // Sem display:none: uma região viva escondida até a primeira escolha não anuncia o primeiro total
   return (
-    <div aria-live="polite" aria-atomic="true" className="empty:hidden">
+    <div aria-live="polite" aria-atomic="true">
       {quote && (
         <div className="mt-3 border-l border-line-strong pl-3.5 text-[13px] leading-relaxed text-bone-muted">
           <p className="text-sm text-bone">
             A partir de <strong className="font-semibold">{formatBRL(quote.implantacao)}</strong>
             <span className="text-bone-muted">
-              {' '}· ou 10x de {formatBRL(quote.parcela_10x)} sem juros · {formatBRL(quote.pix)} no Pix
+              {' '}· ou {quote.parcelas}x de {formatBRL(quote.parcela_10x)} sem juros · {formatBRL(quote.pix)} no Pix
             </span>
           </p>
           <p>
-            + {temAgenda ? 'a partir de ' : ''}
+            + {quote.mensalidade_a_partir_de ? 'a partir de ' : ''}
             {formatBRL(quote.mensalidade)}/mês, 1º mês incluso · pronto em até {quote.prazo_dias_uteis} dias úteis
+            depois do seu material
           </p>
           <p className="text-bone-faint">
             {quote.economia > 0 && <span className="text-bone-muted">Juntos, você economiza {formatBRL(quote.economia)}. </span>}
