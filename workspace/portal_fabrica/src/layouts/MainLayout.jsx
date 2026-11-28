@@ -16,6 +16,9 @@ export default function MainLayout({ children }) {
             <a href="#trabalhos" className="hidden text-bone-muted transition-colors hover:text-bone md:inline">
               Trabalhos
             </a>
+            <a href="#precos" className="hidden text-bone-muted transition-colors hover:text-bone md:inline">
+              Preços
+            </a>
             <a
               href="#formulario"
               className="rounded-full border border-line-strong px-4 py-2 font-medium text-bone press hover:border-signal hover:text-signal"

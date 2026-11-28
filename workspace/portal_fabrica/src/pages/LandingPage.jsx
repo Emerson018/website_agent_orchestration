@@ -5,7 +5,7 @@ import { WHATSAPP_URL } from '../lib/contact';
 import EcosDeLuzBackdrop from '../components/EcosDeLuzBackdrop';
 import RotatingHeadline from '../components/RotatingHeadline';
 // A mesma tabela de preços que o backend usa para gravar o Orçamento (ADR 0013)
-import { quoteProject } from '../../backend/pricing.js';
+import { DESCONTO_PIX, PARCELAS, quoteProject } from '../../backend/pricing.js';
 
 // Sites que a Aether já fez (PRODUCT.md, Evidence on Hand): nome, tipo de negócio e captura de tela, sem links.
 const TRABALHOS = [
@@ -186,6 +186,119 @@ const formatBRL = (value) =>
     maximumFractionDigits: 2
   }).format(value);
 
+// Colunas de preço da página (ADR 0013). Os números vêm da tabela de preços; aqui fica só o texto.
+// O Dashboard não aparece na página pública: é oferecido só na proposta.
+const PRICE_COLUMNS = [
+  {
+    tipos: ['site'],
+    titulo: 'Site',
+    texto:
+      'Uma página do seu negócio, criada do zero com as suas fotos, os seus horários e o seu cardápio ou lista de serviços. Quem visita chama você no WhatsApp com um toque.',
+    itens: (q) => [
+      'Feita do zero, sem modelo pronto',
+      'Cardápio ou serviços com até 60 itens',
+      'Botão do WhatsApp, mapa e horários',
+      `Pronta em até ${q.prazo_dias_uteis} dias úteis, com 2 rodadas de ajuste`
+    ],
+    acao: 'Quero o meu site'
+  },
+  {
+    tipos: ['agenda'],
+    titulo: 'Agenda',
+    texto:
+      'Seus clientes escolhem o serviço, o dia e um horário livre pelo celular, a qualquer hora. Você confirma ou cancela cada um num painel só seu.',
+    itens: (q) => [
+      'Seus serviços e profissionais cadastrados',
+      'Horários do jeito que você trabalha',
+      'Painel para confirmar e cancelar',
+      `Pronta em até ${q.prazo_dias_uteis} dias úteis, com 2 rodadas de ajuste`
+    ],
+    acao: 'Quero a minha agenda'
+  },
+  {
+    tipos: ['site', 'agenda'],
+    titulo: 'Site + Agenda',
+    recomendada: true,
+    texto:
+      'O site e a agenda com a mesma cara, ligados um ao outro: quem conhece o seu negócio pelo site já marca o horário ali mesmo.',
+    itens: (q) => [
+      'Tudo do Site e da Agenda',
+      `Site pronto no ${q.entregas.site}º dia útil e Agenda no ${q.entregas.agenda}º`
+    ],
+    acao: 'Quero os dois'
+  }
+];
+
+// Uma coluna de preço: texto, o que inclui, valores e a ação que já marca os tipos no formulário.
+function PriceColumn({ column, index, onChoose }) {
+  const q = quoteProject({ tipos: column.tipos });
+  const combinacao = column.tipos.length > 1;
+  const aPartirDe = q.mensalidade_a_partir_de ? 'a partir de ' : '';
+  return (
+    <li style={stagger(index + 1)} className="r-up flex flex-col py-10 lg:px-10 lg:first:pl-0 lg:last:pr-0">
+      {/* O selo usa o ponto aceso da linha de etapas; as outras colunas reservam a mesma altura */}
+      <p className={`flex h-5 items-center gap-2 text-xs font-medium tracking-wide text-bone ${column.recomendada ? '' : 'max-lg:hidden'}`}>
+        {column.recomendada && (
+          <>
+            <span aria-hidden className="size-[7px] rounded-full bg-signal shadow-[0_0_0_4px_rgb(198_244_50/0.18)]" />
+            Recomendada
+          </>
+        )}
+      </p>
+      <h3 className="mt-3 font-display text-[1.65rem] leading-tight">{column.titulo}</h3>
+      <p className="mt-3 max-w-[38ch] text-[15px] leading-relaxed text-bone-muted">{column.texto}</p>
+      <ul className="mt-6 space-y-2 text-sm text-bone-muted">
+        {column.itens(q).map((item) => (
+          <li key={item} className="flex gap-2.5">
+            <Check className="mt-0.5 size-4 shrink-0 text-bone-faint" aria-hidden />
+            {item}
+          </li>
+        ))}
+      </ul>
+      <div className="mt-auto pt-8">
+        <p className="font-display text-[2.4rem] leading-none text-bone">
+          {!combinacao && <span className="mr-2 font-sans text-sm text-bone-muted">a partir de </span>}
+          {formatBRL(q.implantacao)}
+        </p>
+        <p className="mt-2 text-sm text-bone-muted">
+          ou {q.parcelas}x de {formatBRL(q.parcela_10x)} sem juros
+          {combinacao && (
+            <>
+              {' '}· <strong className="font-semibold text-bone">você economiza {formatBRL(q.economia)}</strong>
+            </>
+          )}
+        </p>
+        <p className="mt-1 text-sm text-bone-muted">
+          + {aPartirDe}
+          {formatBRL(q.mensalidade)}/mês
+          {!combinacao && <> (menos de {formatBRL(q.mensalidade_por_dia_menos_de)} por dia)</>}
+        </p>
+        <p className="mt-1 text-sm text-bone-faint">1º mês incluso</p>
+        <button
+          type="button"
+          onClick={() => onChoose(column.tipos)}
+          className={
+            column.recomendada
+              ? 'press mt-6 inline-flex items-center gap-2 rounded-full bg-signal px-6 py-3 text-sm font-semibold text-void hover:bg-signal-hover'
+              : 'press mt-6 inline-flex items-center gap-2 rounded-full border border-line-strong px-5 py-2.5 text-sm font-medium text-bone hover:border-signal hover:text-signal'
+          }
+        >
+          {column.acao}
+          <ArrowRight className="size-4" aria-hidden />
+        </button>
+      </div>
+    </li>
+  );
+}
+
+// Como você paga (ADR 0013): as condições valem para qualquer escolha.
+const PAGAMENTO = [
+  { titulo: 'Pix', texto: `50% para começar e 50% na entrega, com ${Math.round(DESCONTO_PIX * 100)}% de desconto.` },
+  { titulo: 'Cartão', texto: `Em até ${PARCELAS}x sem juros.` },
+  { titulo: 'Mensalidade', texto: 'Começa 30 dias depois da entrega, no Pix Automático ou no cartão.' },
+  { titulo: 'Sem fidelidade', texto: 'O domínio fica no seu nome e, se você cancelar, recebe os arquivos do projeto.' }
+];
+
 // Total do pedido, calculado na hora enquanto o cliente marca os tipos.
 // A região viva existe sempre (vazia sem escolha) para o leitor de tela anunciar cada mudança.
 function QuoteSummary({ projectTypes }) {
@@ -291,6 +404,15 @@ export default function LandingPage() {
       const el = document.getElementById('formulario');
       if (el) el.scrollIntoView({ behavior: scrollBehavior() });
     }, 50);
+  };
+
+  // Botão de uma coluna de preço: marca os tipos dela no formulário e leva o cliente até ele
+  const handleChoosePrice = (tipos) => {
+    if (submittedData) handleResetForm();
+    setFormData((prev) => ({ ...prev, projectTypes: tipos }));
+    setErrorMessage('');
+    document.getElementById('formulario')?.scrollIntoView({ behavior: scrollBehavior() });
+    document.getElementById('field-name')?.focus({ preventScroll: true });
   };
 
   const handleSubmit = async (e) => {
@@ -694,6 +816,36 @@ export default function LandingPage() {
               </li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      {/* Preços: três colunas abertas separadas por hairlines (sem cards) e as condições de pagamento */}
+      <section id="precos" aria-labelledby="titulo-precos" className="scroll-mt-8 border-t border-line">
+        <div data-reveal className="mx-auto max-w-[1400px] px-5 py-24 sm:px-8 sm:py-32 lg:px-12">
+          <h2 id="titulo-precos" className="r-up max-w-[16ch] text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.02]">
+            Quanto custa o seu projeto.
+          </h2>
+          <p style={stagger(1)} className="r-up mt-5 max-w-[46ch] text-[15px] leading-relaxed text-bone-muted">
+            Você paga uma vez para criar e uma mensalidade que mantém tudo no ar: hospedagem, domínio e ajustes pequenos. O valor
+            final vem na sua proposta.
+          </p>
+          <ul className="mt-14 grid divide-y divide-line border-y border-line lg:grid-cols-3 lg:divide-x lg:divide-y-0">
+            {PRICE_COLUMNS.map((column, i) => (
+              <PriceColumn key={column.titulo} column={column} index={i + 1} onChoose={handleChoosePrice} />
+            ))}
+          </ul>
+
+          <h3 style={stagger(5)} className="r-up mt-16 font-display text-[1.65rem] leading-tight">
+            Como você paga
+          </h3>
+          <dl className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
+            {PAGAMENTO.map((p, i) => (
+              <div key={p.titulo} style={stagger(i + 6)} className="r-up border-t border-line pt-4">
+                <dt className="text-sm font-semibold text-bone">{p.titulo}</dt>
+                <dd className="mt-1 text-[15px] leading-relaxed text-bone-muted">{p.texto}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 

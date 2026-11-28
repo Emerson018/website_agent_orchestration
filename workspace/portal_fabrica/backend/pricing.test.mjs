@@ -9,8 +9,10 @@ test('a Site alone costs its own Implantação and Mensalidade', () => {
     tipos: ['site'],
     implantacao: 1490,
     mensalidade: 59,
+    mensalidade_por_dia_menos_de: 2,
     economia: 0,
     prazo_dias_uteis: 7,
+    entregas: { site: 7 },
     mensalidade_a_partir_de: false,
     parcelas: 10,
     parcela_10x: 149,
@@ -24,8 +26,10 @@ test("the Agenda's Mensalidade follows the number of professionals", () => {
     tipos: ['agenda'],
     implantacao: 1990,
     mensalidade: 89,
+    mensalidade_por_dia_menos_de: 3,
     economia: 0,
     prazo_dias_uteis: 10,
+    entregas: { agenda: 10 },
     mensalidade_a_partir_de: true,
     parcelas: 10,
     parcela_10x: 199,
@@ -46,8 +50,10 @@ test('Site + Agenda is a Combinação with a fixed price and the saving in reais
     tipos: ['site', 'agenda'],
     implantacao: 2990,
     mensalidade: 148,
+    mensalidade_por_dia_menos_de: 5,
     economia: 490,
     prazo_dias_uteis: 15,
+    entregas: { site: 6, agenda: 15 },
     mensalidade_a_partir_de: true,
     parcelas: 10,
     parcela_10x: 299,
@@ -60,8 +66,10 @@ test('Agenda + Dashboard is a Combinação', () => {
     tipos: ['agenda', 'dashboard'],
     implantacao: 2590,
     mensalidade: 138,
+    mensalidade_por_dia_menos_de: 5,
     economia: 390,
     prazo_dias_uteis: 15,
+    entregas: { agenda: 10, dashboard: 15 },
     mensalidade_a_partir_de: true,
     parcelas: 10,
     parcela_10x: 259,
@@ -74,8 +82,10 @@ test('Site + Agenda + Dashboard is a Combinação, with the Agenda tier in the M
     tipos: ['site', 'agenda', 'dashboard'],
     implantacao: 3690,
     mensalidade: 237,
+    mensalidade_por_dia_menos_de: 8,
     economia: 780,
     prazo_dias_uteis: 20,
+    entregas: { site: 6, agenda: 15, dashboard: 20 },
     mensalidade_a_partir_de: true,
     parcelas: 10,
     parcela_10x: 369,
@@ -104,4 +114,17 @@ test('the quote says when the Mensalidade is "a partir de" and how many installm
   assert.equal(site.parcelas, 10);
   assert.equal(quoteProject({ tipos: ['agenda'] }).mensalidade_a_partir_de, true);
   assert.equal(quoteProject({ tipos: ['site', 'agenda'] }).mensalidade_a_partir_de, true);
+});
+
+test('a Combinação delivers each type on its own day; a single type on its prazo', () => {
+  assert.deepEqual(quoteProject({ tipos: ['site'] }).entregas, { site: 7 });
+  assert.deepEqual(quoteProject({ tipos: ['agenda'] }).entregas, { agenda: 10 });
+  assert.deepEqual(quoteProject({ tipos: ['site', 'agenda'] }).entregas, { site: 6, agenda: 15 });
+  assert.deepEqual(quoteProject({ tipos: ['agenda', 'dashboard'] }).entregas, { agenda: 10, dashboard: 15 });
+  assert.deepEqual(quoteProject({ tipos: ['site', 'agenda', 'dashboard'] }).entregas, { site: 6, agenda: 15, dashboard: 20 });
+});
+
+test('the Mensalidade per day is stated as "menos de R$ X"', () => {
+  assert.equal(quoteProject({ tipos: ['site'] }).mensalidade_por_dia_menos_de, 2);
+  assert.equal(quoteProject({ tipos: ['agenda'] }).mensalidade_por_dia_menos_de, 3);
 });

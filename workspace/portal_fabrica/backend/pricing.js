@@ -20,15 +20,17 @@ const TIPOS = {
 // Mesma ordem fixa dos Tipos de Projeto do formulário.
 const ORDEM = PROJECT_TYPE_KEYS;
 
-// Combinações: preço fechado da Implantação e prazo total. A economia é a soma dos tipos menos esse preço.
+// Combinações: preço fechado da Implantação, prazo total e o dia útil em que cada tipo é entregue
+// (o Design do Cliente é feito uma vez só). A economia é a soma dos tipos menos esse preço.
 const COMBINACOES = {
-  'site+agenda': { implantacao: 2990, prazo_dias_uteis: 15 },
-  'agenda+dashboard': { implantacao: 2590, prazo_dias_uteis: 15 },
-  'site+agenda+dashboard': { implantacao: 3690, prazo_dias_uteis: 20 },
+  'site+agenda': { implantacao: 2990, prazo_dias_uteis: 15, entregas: { site: 6, agenda: 15 } },
+  'agenda+dashboard': { implantacao: 2590, prazo_dias_uteis: 15, entregas: { agenda: 10, dashboard: 15 } },
+  'site+agenda+dashboard': { implantacao: 3690, prazo_dias_uteis: 20, entregas: { site: 6, agenda: 15, dashboard: 20 } },
 };
 
-const DESCONTO_PIX = 0.05;
-const PARCELAS = 10;
+// Condições de pagamento da Implantação (ADR 0013), também mostradas na página.
+export const DESCONTO_PIX = 0.05;
+export const PARCELAS = 10;
 
 const centavos = (valor) => Math.round(valor * 100) / 100;
 
@@ -44,14 +46,20 @@ export function quoteProject({ tipos = [], profissionais = 1 } = {}) {
     return null;
   }
   const soma = escolhidos.reduce((total, tipo) => total + TIPOS[tipo].implantacao, 0);
-  const { implantacao, prazo_dias_uteis } =
-    escolhidos.length > 1 ? COMBINACOES[escolhidos.join('+')] : TIPOS[escolhidos[0]];
+  const { implantacao, prazo_dias_uteis, entregas } =
+    escolhidos.length > 1
+      ? COMBINACOES[escolhidos.join('+')]
+      : { ...TIPOS[escolhidos[0]], entregas: { [escolhidos[0]]: TIPOS[escolhidos[0]].prazo_dias_uteis } };
+  const mensalidade = escolhidos.reduce((total, tipo) => total + TIPOS[tipo].mensalidade(profissionais), 0);
   return {
     tipos: escolhidos,
     implantacao,
-    mensalidade: escolhidos.reduce((total, tipo) => total + TIPOS[tipo].mensalidade(profissionais), 0),
+    mensalidade,
+    // "menos de R$ X por dia", num mês de 30 dias
+    mensalidade_por_dia_menos_de: Math.floor(mensalidade / 30) + 1,
     economia: soma - implantacao,
     prazo_dias_uteis,
+    entregas,
     mensalidade_a_partir_de: escolhidos.some((tipo) => TIPOS[tipo].mensalidade_por_faixa === true),
     parcelas: PARCELAS,
     parcela_10x: centavos(implantacao / PARCELAS),
