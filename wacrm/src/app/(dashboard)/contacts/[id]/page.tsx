@@ -51,6 +51,8 @@ import { DisqualifiedBanner, DisqualifyButton } from '@/components/contacts/disq
 import type { Disqualification } from '@/lib/contacts/disqualification';
 import { computeLeadSteps, nextLeadStep, type LeadStep, type StepKey } from '@/lib/contacts/lead-steps';
 import { projectTypesOf } from '@/lib/contacts/project-types';
+import { quoteOf } from '@/lib/contacts/quote';
+import { QuoteSummary } from '@/components/contacts/quote-summary';
 import { openingHoursOf } from '@/lib/contacts/opening-hours';
 import { DownloadPhotosButton, dossierPhotoUrl } from '@/components/contacts/download-photos-button';
 import { MasterPromptPanel } from '@/components/contacts/master-prompt-panel';
@@ -131,6 +133,7 @@ export default function ContactProfilePage() {
   const dossie = additionalData.dossie || null;
   const leadSteps = contact ? computeLeadSteps(contact) : [];
   const tiposProjeto = projectTypesOf(contact);
+  const orcamento = quoteOf(contact);
   const clientDesign = designDoClienteOf(additionalData);
   const nextStep = nextLeadStep(leadSteps);
 
@@ -534,6 +537,7 @@ export default function ContactProfilePage() {
               ))}
             </div>
           )}
+          {orcamento && <QuoteSummary quote={orcamento} className="max-w-sm" />}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

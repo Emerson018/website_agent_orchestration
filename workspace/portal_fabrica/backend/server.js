@@ -12,7 +12,8 @@ import { runMultimodalBusinessDiagnosis } from './multimodal_diagnosis_service.j
 import { CATALOG_BUCKET, catalogStoragePath, newCatalogFileId, parseCatalogUpload } from './catalog_files.js';
 import { extractCatalog } from './catalog_extraction.js';
 import { geminiErrorStatus } from './gemini_client.js';
-import { PROJECT_TYPE_KEYS, normalizeProjectTypes } from './project_types.js';
+import { PROJECT_TYPE_KEYS, normalizeProjectTypes, projectTypeKeysFromLabels } from './project_types.js';
+import { cotarProjeto } from './pricing.js';
 import { buildMasterPrompts } from './master_prompt.js';
 import { parseInstagram, resolveInstagram } from './instagram.js';
 import { buildDossierPhotosZip, downloadDossierPhoto, zipFileName } from './dossier_photos.js';
@@ -207,7 +208,6 @@ app.post('/api/leads', async (req, res) => {
       contact_id: incomingContactId,
       reference_links,
       client_info,
-      summary,
       additional_data,
     } = req.body;
 
@@ -255,9 +255,14 @@ app.post('/api/leads', async (req, res) => {
     }
 
     // Orçamento do projeto fica no próprio contato (o CRM não tem mais Pipelines/Deals).
-    const quotedValue = Number(summary?.total_setup_price);
-    if (Number.isFinite(quotedValue) && quotedValue > 0) {
-      finalAdditionalData.orcamento = { valor: quotedValue, moeda: 'BRL' };
+    // É sempre calculado aqui pela tabela de preços (ADR 0013): qualquer valor enviado pelo navegador é ignorado.
+    // A Agenda é cotada para 1 profissional até o operador ajustar a proposta no CRM.
+    delete finalAdditionalData.orcamento;
+    const profissionais = 1;
+    const cotacao = cotarProjeto({ tipos: projectTypeKeysFromLabels(projectTypes), profissionais });
+    if (cotacao) {
+      const { implantacao, tipos, ...resto } = cotacao;
+      finalAdditionalData.orcamento = { valor: implantacao, moeda: 'BRL', tipos, profissionais, ...resto };
     }
 
     let defaultUserId = '2b66650c-a300-4239-b922-2aab9bccac6f';

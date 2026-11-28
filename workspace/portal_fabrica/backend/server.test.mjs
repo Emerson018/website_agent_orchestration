@@ -48,7 +48,7 @@ test('Lead intake: offline guard, validation and CRM-only persistence', async ()
     assert.equal(contact.company, 'Barbearia Teste');
     assert.equal(contact.website, 'https://barbeariateste.com.br');
     assert.equal(fake.tables.deals, undefined, 'A captação não cria mais Deals (Pipelines foi removido do CRM)');
-    assert.equal(contact.additional_data.orcamento, undefined, 'Sem summary não há orçamento a guardar');
+    assert.equal(contact.additional_data.orcamento, undefined, 'Sem Tipo de Projeto não há orçamento a guardar');
 
     const quoted = await post({
       name: 'Ana',
@@ -59,7 +59,11 @@ test('Lead intake: offline guard, validation and CRM-only persistence', async ()
     assert.equal(quoted.status, 201);
     const quotedBody = await quoted.json();
     const quotedContact = fake.tables.contacts.find((c) => c.id === quotedBody.contact_id);
-    assert.deepEqual(quotedContact.additional_data.orcamento, { valor: 1590, moeda: 'BRL' });
+    assert.equal(
+      quotedContact.additional_data.orcamento,
+      undefined,
+      'O valor enviado pelo navegador é ignorado: o orçamento vem da tabela de preços (ADR 0013)'
+    );
     assert.equal(fake.tables.fila_projetos, undefined, 'A captação não usa mais a fila de projetos');
 
     const legacy = await fetch(`${baseUrl}/api/projetos`, { method: 'POST' });

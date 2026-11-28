@@ -103,8 +103,21 @@ export interface Contact {
     files?: Array<{ name: string; url: string }>;
     links?: Array<{ label: string; url: string }>;
     texts?: Array<{ label: string; text: string }>;
-    /** Quoted project value, written by the portal backend on lead intake. */
-    orcamento?: { valor: number; moeda: string };
+    /**
+     * Quote computed by the portal backend from the price table on lead intake (ADR 0013).
+     * `valor` is the Implantação; older quotes have only `valor` and `moeda`. Read it with quoteOf().
+     */
+    orcamento?: {
+      valor: number;
+      moeda: string;
+      tipos?: string[];
+      profissionais?: number;
+      mensalidade?: number;
+      economia?: number;
+      prazo_dias_uteis?: number;
+      parcela_10x?: number;
+      pix?: number;
+    };
     /** Project types the client picked on the portal form ("Site", "Agenda", "Dashboard"). */
     tipos_projeto?: string[];
   } | null;

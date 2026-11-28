@@ -11,7 +11,6 @@ import {
   Copy,
   Check,
   Tag as TagIcon,
-  DollarSign,
   StickyNote,
   Plus,
   Sparkles,
@@ -20,11 +19,12 @@ import {
   Layers,
 } from "lucide-react";
 import { projectTypesOf } from "@/lib/contacts/project-types";
+import { quoteOf } from "@/lib/contacts/quote";
+import { QuoteSummary } from "@/components/contacts/quote-summary";
 import { Button } from "@/components/ui/button";
 import { LeadDossierCard } from "@/components/contacts/lead-dossier-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
-import { formatCurrency } from "@/lib/currency";
 
 
 interface ContactSidebarProps {
@@ -126,6 +126,7 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
 
   const displayName = contact.name || contact.phone;
   const initials = displayName.charAt(0).toUpperCase();
+  const orcamento = quoteOf(contact);
 
   return (
     <div className="flex h-full w-70 flex-col border-l border-border bg-card">
@@ -250,21 +251,7 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
               </div>
             )}
 
-            {contact.additional_data?.orcamento && (
-              <div className="mt-2 flex items-center justify-between rounded-lg bg-muted px-3 py-2 text-xs">
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <DollarSign className="h-3.5 w-3.5" />
-                  Orçamento
-                </span>
-                <span className="font-semibold text-foreground">
-                  {formatCurrency(
-                    contact.additional_data.orcamento.valor,
-                    contact.additional_data.orcamento.moeda,
-                    "pt-BR",
-                  )}
-                </span>
-              </div>
-            )}
+            {orcamento && <QuoteSummary quote={orcamento} className="mt-2" />}
 
             {/* Attachments & Links */}
             {contact.additional_data && (

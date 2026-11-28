@@ -1,0 +1,89 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { cotarProjeto } from './pricing.js';
+
+// Valores esperados copiados das tabelas da ADR 0013, nunca recalculados aqui.
+
+test('a Site alone costs its own Implantação and Mensalidade', () => {
+  assert.deepEqual(cotarProjeto({ tipos: ['site'] }), {
+    tipos: ['site'],
+    implantacao: 1490,
+    mensalidade: 59,
+    economia: 0,
+    prazo_dias_uteis: 7,
+    parcela_10x: 149,
+    pix: 1415.5,
+  });
+});
+
+test("the Agenda's Mensalidade follows the number of professionals", () => {
+  const agenda = (profissionais) => cotarProjeto({ tipos: ['agenda'], profissionais });
+  assert.deepEqual(agenda(1), {
+    tipos: ['agenda'],
+    implantacao: 1990,
+    mensalidade: 89,
+    economia: 0,
+    prazo_dias_uteis: 10,
+    parcela_10x: 199,
+    pix: 1890.5,
+  });
+  assert.equal(agenda(2).mensalidade, 129);
+  assert.equal(agenda(5).mensalidade, 129);
+  assert.equal(agenda(6).mensalidade, 179);
+  assert.equal(agenda(12).mensalidade, 179);
+});
+
+test('without a number of professionals the Agenda is quoted for one', () => {
+  assert.equal(cotarProjeto({ tipos: ['agenda'] }).mensalidade, 89);
+});
+
+test('Site + Agenda is a Combinação with a fixed price and the saving in reais', () => {
+  assert.deepEqual(cotarProjeto({ tipos: ['agenda', 'site'] }), {
+    tipos: ['site', 'agenda'],
+    implantacao: 2990,
+    mensalidade: 148,
+    economia: 490,
+    prazo_dias_uteis: 15,
+    parcela_10x: 299,
+    pix: 2840.5,
+  });
+});
+
+test('Agenda + Dashboard is a Combinação', () => {
+  assert.deepEqual(cotarProjeto({ tipos: ['dashboard', 'agenda'] }), {
+    tipos: ['agenda', 'dashboard'],
+    implantacao: 2590,
+    mensalidade: 138,
+    economia: 390,
+    prazo_dias_uteis: 15,
+    parcela_10x: 259,
+    pix: 2460.5,
+  });
+});
+
+test('Site + Agenda + Dashboard is a Combinação, with the Agenda tier in the Mensalidade', () => {
+  assert.deepEqual(cotarProjeto({ tipos: ['site', 'agenda', 'dashboard'], profissionais: 3 }), {
+    tipos: ['site', 'agenda', 'dashboard'],
+    implantacao: 3690,
+    mensalidade: 237,
+    economia: 780,
+    prazo_dias_uteis: 20,
+    parcela_10x: 369,
+    pix: 3505.5,
+  });
+});
+
+test('a Dashboard without the Agenda has no price', () => {
+  assert.equal(cotarProjeto({ tipos: ['dashboard'] }), null);
+  assert.equal(cotarProjeto({ tipos: ['site', 'dashboard'] }), null);
+});
+
+test('an order with no known Tipo de Projeto has no price', () => {
+  assert.equal(cotarProjeto({ tipos: [] }), null);
+  assert.equal(cotarProjeto({ tipos: ['app_mobile'] }), null);
+  assert.equal(cotarProjeto({}), null);
+});
+
+test('repeated and unknown types are ignored', () => {
+  assert.equal(cotarProjeto({ tipos: ['site', 'site', 'app_mobile'] }).implantacao, 1490);
+});
