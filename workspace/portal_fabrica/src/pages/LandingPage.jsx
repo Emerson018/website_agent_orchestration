@@ -4,6 +4,8 @@ import { apiFetch, formatBrazilianPhone, isValidBrazilianPhone } from '../lib/ap
 import { WHATSAPP_URL } from '../lib/contact';
 import EcosDeLuzBackdrop from '../components/EcosDeLuzBackdrop';
 import RotatingHeadline from '../components/RotatingHeadline';
+// A mesma tabela de preços que o backend usa para gravar o Orçamento (ADR 0013)
+import { quoteProject } from '../../backend/pricing.js';
 
 // Sites que a Aether já fez (PRODUCT.md, Evidence on Hand): nome, tipo de negócio e captura de tela, sem links.
 const TRABALHOS = [
@@ -161,6 +163,7 @@ const stagger = (i) => ({ '--i': i });
 // Tipos de projeto do formulário (múltipla escolha). As chaves são as que o backend aceita.
 // `hint` aparece ao passar o mouse (ou focar pelo teclado) e só descreve o que o
 // Master Prompt manda construir para cada tipo (backend/master_prompt.js).
+// O Dashboard não entra aqui: ele é oferecido só na proposta, junto com a Agenda (GLOSSARY.md, Combinação).
 const PROJECT_TYPE_OPTIONS = [
   {
     key: 'site',
@@ -171,13 +174,46 @@ const PROJECT_TYPE_OPTIONS = [
     key: 'agenda',
     label: 'Agenda',
     hint: 'Seus clientes escolhem o serviço, o dia e um horário livre pelo celular. Você confirma ou cancela cada um num painel só seu.'
-  },
-  {
-    key: 'dashboard',
-    label: 'Dashboard',
-    hint: 'Um painel só seu para acompanhar os números do negócio, como o movimento de cada dia e os serviços mais procurados.'
   }
 ];
+
+// Reais sem centavos quando o valor é inteiro (R$ 2.990), com centavos quando não (R$ 2.840,50)
+const formatBRL = (value) =>
+  new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+    maximumFractionDigits: 2
+  }).format(value);
+
+// Total do pedido, calculado na hora enquanto o cliente marca os tipos.
+// A região viva existe sempre (vazia sem escolha) para o leitor de tela anunciar cada mudança.
+function QuoteSummary({ projectTypes }) {
+  const quote = quoteProject({ tipos: projectTypes });
+  const temAgenda = quote?.tipos.includes('agenda');
+  return (
+    <div aria-live="polite" aria-atomic="true" className="empty:hidden">
+      {quote && (
+        <div className="mt-3 border-l border-line-strong pl-3.5 text-[13px] leading-relaxed text-bone-muted">
+          <p className="text-sm text-bone">
+            A partir de <strong className="font-semibold">{formatBRL(quote.implantacao)}</strong>
+            <span className="text-bone-muted">
+              {' '}· ou 10x de {formatBRL(quote.parcela_10x)} sem juros · {formatBRL(quote.pix)} no Pix
+            </span>
+          </p>
+          <p>
+            + {temAgenda ? 'a partir de ' : ''}
+            {formatBRL(quote.mensalidade)}/mês, 1º mês incluso · pronto em até {quote.prazo_dias_uteis} dias úteis
+          </p>
+          <p className="text-bone-faint">
+            {quote.economia > 0 && <span className="text-bone-muted">Juntos, você economiza {formatBRL(quote.economia)}. </span>}
+            O valor final vem na sua proposta.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // "site", "site e agenda", "site, app mobile e agenda"
 const joinPt = (items) =>
@@ -398,7 +434,7 @@ export default function LandingPage() {
                   {/* Tipo de projeto: múltipla escolha, cada opção é um checkbox de verdade com cara de chip */}
                   <fieldset>
                     <legend className={labelClass}>
-                      O que você quer criar? <span className="text-bone-faint">(pode escolher mais de um)</span>
+                      O que você quer criar? <span className="text-bone-faint">(pode escolher os dois)</span>
                     </legend>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {PROJECT_TYPE_OPTIONS.map((option) => {
@@ -441,6 +477,7 @@ export default function LandingPage() {
                         );
                       })}
                     </div>
+                    <QuoteSummary projectTypes={formData.projectTypes} />
                   </fieldset>
 
                   <div className="grid gap-4 sm:grid-cols-2">

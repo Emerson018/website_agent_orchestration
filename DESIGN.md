@@ -208,6 +208,9 @@ There are no cards. The one framed container is the **form slab**: square corner
 - **Error:** a single message below the fields in 14px signal text (role alert); when the send itself fails it adds an underlined bone "Abrir o WhatsApp" link.
 - **Labels:** 12px medium, 0.025em tracking, muted bone, 6px above the field; optional hints in faint bone.
 
+### Quote Summary
+The live total under the Tipo de Projeto chips in the form slab, read from the price table (ADR 0013). Hidden until a type is ticked. A 1px strong-hairline rule on the left with 14px indent, three lines: "A partir de" plus the Implantação in 14px bone (the value semibold), then the 10x and Pix prices in muted bone; the Mensalidade and prazo in 13px muted bone; the Combinação saving in muted bone and "O valor final vem na sua proposta." in faint bone. No lime: it is information, not an action. It sits in a polite live region so screen readers hear each change; it does not animate.
+
 ### Navigation
 An absolutely positioned 80px header over the hero: the Cormorant wordmark on the left; on the right, two 14px muted-bone anchor links (hidden below md) that brighten to bone on hover, then the outline pill CTA. The footer mirrors it below a hairline: wordmark at 1.875rem with a one-line muted description, and the WhatsApp number in bone turning signal on hover.
 

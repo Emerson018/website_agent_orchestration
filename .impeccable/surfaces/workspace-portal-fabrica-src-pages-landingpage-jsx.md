@@ -9,7 +9,7 @@ related_targets: ["workspace/portal_fabrica/src/layouts/MainLayout.jsx"]
 
 Scope: the public page of the Portal (workspace/portal_fabrica): header, first viewport with the intake form, Como funciona, Diferenciais, Trabalhos, footer. Backend, form fields, validation and the POST to /api/leads stay as they are.
 
-Mode: Persuade. Audience: owners of local businesses (restaurants, barbershops, clinics, cafés) anywhere in Brazil. Action: send the intake form (name, company, e-mail, WhatsApp, optional site), or talk on WhatsApp (51) 98447-0914. Proof: three real sites (20barranove, Campeiro Fogão, Marcianos) shown as screenshots, no links, no metrics. Constraints: no prices, deadlines, invented cases or urgency; plain Portuguese with "você"; persuasion only from true statements.
+Mode: Persuade. Audience: owners of local businesses (restaurants, barbershops, clinics, cafés) anywhere in Brazil. Action: send the intake form (name, company, e-mail, WhatsApp, optional site), or talk on WhatsApp (51) 98447-0914. Proof: three real sites (20barranove, Campeiro Fogão, Marcianos) shown as screenshots, no links, no metrics. Constraints: prices and prazos only from the price table of ADR 0013 ("a partir de", the final value comes in the proposal); no invented cases, "de/por" prices or urgency; plain Portuguese with "você"; persuasion only from true statements.
 
 ## Direction contract
 
