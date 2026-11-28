@@ -14,7 +14,7 @@ Single-context layout (`GLOSSARY.md` + `docs/adr/` at the repo root). See `docs/
 
 ### Skill routing
 
-The primary skills are impeccable (UI design), emilkowalski/skill (motion) and mattpocock/skills (engineering process). Other installed skills answer some of the same requests; use one skill per request, picked by this table. A skill the user names explicitly wins over the table.
+The primary skills are impeccable (UI design), emilkowalski/skills (motion) and mattpocock/skills (engineering process). Other installed skills answer some of the same requests; use one skill per request, picked by this table. A skill the user names explicitly wins over the table.
 
 | Request | Skill |
 | :--- | :--- |
@@ -24,5 +24,5 @@ The primary skills are impeccable (UI design), emilkowalski/skill (motion) and m
 | Plan motion improvements across the app (no code changes) | `improve-animations` |
 | Engineering process: grilling, specs, tickets, TDD, implement, code review, retro | mattpocock/skills |
 
-`.agents/skills/prototype` is the mattpocock/skills `prototype`. Installing or updating `emilkowalski/skill` overwrites that folder and its `skills-lock.json` entry with Emil's skill of the same name; restore both from git afterwards.
+`.agents/skills/prototype` is the mattpocock/skills `prototype`. Installing or updating `emilkowalski/skills` overwrites that folder and its `skills-lock.json` entry with Emil's skill of the same name; restore both from git afterwards.
 
