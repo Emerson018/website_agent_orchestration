@@ -12,7 +12,11 @@ export function QuoteSummary({ quote, className = "" }: { quote: Quote; classNam
         Orçamento
       </span>
       <span className="flex flex-col items-end gap-0.5 text-right">
-        <span className="font-semibold text-foreground">{money(quote.implantacao)} de Implantação</span>
+        {/* Orçamentos antigos (sem Mensalidade) guardavam o total enviado pelo navegador, não a Implantação */}
+        <span className="font-semibold text-foreground">
+          {money(quote.implantacao)}
+          {quote.mensalidade !== null && " de Implantação"}
+        </span>
         {quote.mensalidade !== null && (
           <span className="text-muted-foreground">+ a partir de {money(quote.mensalidade)}/mês</span>
         )}

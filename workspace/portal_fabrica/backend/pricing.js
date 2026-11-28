@@ -1,6 +1,7 @@
 // Tabela de preços da Aether (ADR 0013). Único lugar onde estes valores vivem:
-// o backend calcula o orçamento do lead com ela, e a página do portal lê os mesmos números.
-// Sem dependências, para poder ser importada tanto no Node quanto no navegador.
+// o backend calcula o Orçamento do lead com ela. Não depende de nada do Node,
+// para a página do portal poder ler os mesmos números (#21, #22).
+import { PROJECT_TYPE_KEYS } from './project_types.js';
 
 // Mensalidade da Agenda por faixa de profissionais: 1, 2 a 5, 6 ou mais.
 function mensalidadeDaAgenda(profissionais) {
@@ -15,7 +16,8 @@ const TIPOS = {
   dashboard: { implantacao: 990, mensalidade: () => 49, prazo_dias_uteis: 7 },
 };
 
-const ORDEM = Object.keys(TIPOS);
+// Mesma ordem fixa dos Tipos de Projeto do formulário.
+const ORDEM = PROJECT_TYPE_KEYS;
 
 // Combinações: preço fechado da Implantação e prazo total. A economia é a soma dos tipos menos esse preço.
 const COMBINACOES = {
@@ -34,7 +36,7 @@ const centavos = (valor) => Math.round(valor * 100) / 100;
  * parcela em 10x sem juros e preço no Pix (5% de desconto).
  * Devolve null quando o pedido não tem preço: nenhum tipo conhecido, ou Dashboard sem Agenda.
  */
-export function cotarProjeto({ tipos = [], profissionais = 1 } = {}) {
+export function quoteProject({ tipos = [], profissionais = 1 } = {}) {
   const escolhidos = ORDEM.filter((tipo) => tipos.includes(tipo));
   // O Dashboard só é vendido junto com a Agenda (GLOSSARY.md, Combinação).
   if (escolhidos.length === 0 || (escolhidos.includes('dashboard') && !escolhidos.includes('agenda'))) {

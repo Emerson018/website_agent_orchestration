@@ -110,6 +110,10 @@ _Avoid_: Setup, entry fee, project price
 The recurring price of keeping a delivered Tipo de Projeto running: hosting, domain, maintenance and small adjustments. The Agenda's varies with the number of professionals; the other types have a single value. The first month is included in the Implantação.
 _Avoid_: Subscription, plan, hosting fee
 
+**Orçamento (Quote)**:
+The price of what a lead asked for, computed from the price table at intake: Implantação, Mensalidade "a partir de", the Combinação saving and the prazo. Prices sent by the client are never trusted.
+_Avoid_: Budget, proposal (the proposal is what the operator sends), estimate
+
 **Briefing do Negócio (Business Briefing)**:
 The part of every Master Prompt that is the same for all Tipos de Projeto of a client: who the business is, its verified data, real testimonials, catalog and the content rules. It holds only facts the builder AI cannot find out alone; it never fills a missing fact with invented text.
 _Avoid_: Base prompt, header, Source of Truth block

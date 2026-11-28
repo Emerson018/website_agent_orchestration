@@ -13,7 +13,7 @@ import { CATALOG_BUCKET, catalogStoragePath, newCatalogFileId, parseCatalogUploa
 import { extractCatalog } from './catalog_extraction.js';
 import { geminiErrorStatus } from './gemini_client.js';
 import { PROJECT_TYPE_KEYS, normalizeProjectTypes, projectTypeKeysFromLabels } from './project_types.js';
-import { cotarProjeto } from './pricing.js';
+import { quoteProject } from './pricing.js';
 import { buildMasterPrompts } from './master_prompt.js';
 import { parseInstagram, resolveInstagram } from './instagram.js';
 import { buildDossierPhotosZip, downloadDossierPhoto, zipFileName } from './dossier_photos.js';
@@ -259,7 +259,7 @@ app.post('/api/leads', async (req, res) => {
     // A Agenda é cotada para 1 profissional até o operador ajustar a proposta no CRM.
     delete finalAdditionalData.orcamento;
     const profissionais = 1;
-    const cotacao = cotarProjeto({ tipos: projectTypeKeysFromLabels(projectTypes), profissionais });
+    const cotacao = quoteProject({ tipos: projectTypeKeysFromLabels(projectTypes), profissionais });
     if (cotacao) {
       const { implantacao, tipos, ...resto } = cotacao;
       finalAdditionalData.orcamento = { valor: implantacao, moeda: 'BRL', tipos, profissionais, ...resto };
